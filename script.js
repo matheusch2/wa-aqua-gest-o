@@ -97,12 +97,12 @@ function salvarViveiro() {
             </div>
 
             <div class="viveiro-info">
-                <p>Povoamento: ${formatarData(data)}</p>
-                <p>Laboratório: ${laboratorio}</p>
-                <p>Tamanho: ${tamanho} ha</p>
-            </div>
-
-            <button class="botao-abrir" onclick="abrirViveiro(${index})">
+    <p><strong>Povoamento:</strong> ${formatarData(data)}</p>
+    <p><strong>Laboratório:</strong> ${laboratorio}</p>
+    <p><strong>Tamanho:</strong> ${tamanho} ha</p>
+         </div>
+   
+         <button class="botao-abrir" onclick="abrirViveiro(${index})">
                 Abrir viveiro
             </button>
         </div>
@@ -110,11 +110,14 @@ function salvarViveiro() {
 }
 
 function mostrarListaViveiros() {
+
     const area = document.getElementById("area-gestao");
 
     if (viveiros.length === 0) {
+
         area.innerHTML = `
             <div class="viveiro-card">
+
                 <div class="viveiro-topo">
                     <h3>Nenhum viveiro</h3>
                 </div>
@@ -122,31 +125,66 @@ function mostrarListaViveiros() {
                 <div class="viveiro-info">
                     <p>Cadastre um viveiro para começar.</p>
                 </div>
+
             </div>
         `;
+
         return;
     }
 
-    area.innerHTML = viveiros.map((viveiro, index) => `
+    const viveirosOrdenados = [...viveiros].sort((a, b) => {
+
+        return a.nome.localeCompare(b.nome, undefined, {
+            numeric: true,
+            sensitivity: "base"
+        });
+
+    });
+
+    area.innerHTML = viveirosOrdenados.map((viveiro) => `
+
         <div class="viveiro-card">
+
             <div class="viveiro-topo">
+
                 <h3>${viveiro.nome}</h3>
-                <span>${viveiro.totalPovoado || "--"} PLs</span>
+
+                <span>
+                    ${viveiro.totalPovoado || "--"} PLs
+                </span>
+
             </div>
 
             <div class="viveiro-info">
-                <p>Povoamento: ${formatarData(viveiro.dataPovoamento)}</p>
-                <p>Laboratório: ${viveiro.laboratorio || "--"}</p>
-                <p>Tamanho: ${viveiro.tamanho || "--"} ha</p>
+
+                <p>
+                    <strong>Povoamento:</strong>
+                    ${formatarData(viveiro.dataPovoamento)}
+                </p>
+
+                <p>
+                    <strong>Laboratório:</strong>
+                    ${viveiro.laboratorio || "--"}
+                </p>
+
+                <p>
+                    <strong>Tamanho:</strong>
+                    ${viveiro.tamanho || "--"} ha
+                </p>
+
             </div>
 
-            <button class="botao-abrir" onclick="abrirViveiro(${index})">
+            <button
+                class="botao-abrir"
+                onclick="abrirViveiro(viveiros.indexOf(viveiro))"
+            >
                 Abrir viveiro
             </button>
+
         </div>
+
     `).join("");
 }
-
 function abrirViveiro(index) {
     const viveiro = viveiros[index];
     const area = document.getElementById("area-gestao");
@@ -217,16 +255,16 @@ function abrirViveiro(index) {
                 <button class="botao-painel" onclick="mostrarHistoricoDoViveiroDireto(${index})">
                     Histórico
                 </button>
-
-                 <button class="botao-painel" onclick="abrirEncerrarCiclo(${index})">
+      
+                <button class="botao-painel botao-alerta" onclick="abrirEncerrarCiclo(${index})">
                     Encerrar ciclo
                 </button>
 
-                <button class="botao-painel" onclick="reiniciarCiclo(${index})">
+                <button class="botao-painel botao-alerta" onclick="reiniciarCiclo(${index})">
                     Reiniciar ciclo
                 </button>
 
-                <button class="botao-painel" onclick="excluirViveiro(${index})">
+                <button class="botao-painel botao-perigo" onclick="excluirViveiro(${index})">
                     Excluir viveiro
                 </button>
             </div>
@@ -247,15 +285,21 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         return;
     }
 
+    const dentroDoViveiro = indexSelecionado !== "";
+
     area.innerHTML = `
-        <label>Selecione o viveiro</label>
-        <select id="viveiroRacao">
-            ${viveiros.map((viveiro, index) => `
-                <option value="${index}" ${String(index) === String(indexSelecionado) ? "selected" : ""}>
-                    ${viveiro.nome}
-                </option>
-            `).join("")}
-        </select>
+        <h2>Lançar ração</h2>
+
+        ${dentroDoViveiro ? "" : `
+            <label>Selecione o viveiro</label>
+            <select id="viveiroRacao">
+                ${viveiros.map((viveiro, index) => `
+                    <option value="${index}">
+                        ${viveiro.nome}
+                    </option>
+                `).join("")}
+            </select>
+        `}
 
         <label>Data</label>
         <input type="date" id="dataRacao" value="${new Date().toISOString().split("T")[0]}">
@@ -266,19 +310,26 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <span>kg</span>
         </div>
 
-        <button class="botao-gestao" onclick="salvarLancamentoRacao()">
+        <button class="botao-form" onclick="salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""})">
             Salvar lançamento
+        </button>
+
+        <button class="botao-voltar" onclick="${dentroDoViveiro ? `abrirViveiro(${indexSelecionado})` : "voltarMenuGestao()"}">
+            Voltar
         </button>
     `;
 }
 
-function salvarLancamentoRacao() {
-    const index = document.getElementById("viveiroRacao").value;
+function salvarLancamentoRacao(indexDireto = "") {
+    const index = indexDireto !== "" 
+        ? indexDireto 
+        : document.getElementById("viveiroRacao").value;
+
     const data = document.getElementById("dataRacao").value;
     const racao = parseFloat(document.getElementById("consumoRacao").value);
 
     if (!data || !racao) {
-        document.getElementById("area-gestao").innerHTML += "<p>Preencha todos os campos.</p>";
+        alert("Preencha a data e o consumo de ração.");
         return;
     }
 
@@ -291,17 +342,11 @@ function salvarLancamentoRacao() {
         racao: racao
     });
 
-    document.getElementById("area-gestao").innerHTML = `
-        <div class="resultado-box destaque">
-            <p>Ração lançada</p>
-            <h3>${formatarNumeroBR(racao, 1)} kg</h3>
-            <span>${viveiros[index].nome} - ${formatarData(data)}</span>
-        </div>
+    if (typeof salvarDados === "function") {
+        salvarDados();
+    }
 
-        <button class="limpar" onclick="abrirViveiro(${index})">
-            Voltar ao viveiro
-        </button>
-    `;
+    abrirViveiro(index);
 }
 
 function abrirBiometria(index) {
@@ -483,6 +528,10 @@ function mostrarHistoricoDoViveiroDireto(index) {
             </div>
             
             <div id="resultado-historico"></div>
+
+            <button class="botao-voltar" onclick="abrirViveiro(${index})">
+                 Voltar
+            </button>
 
         </div>
     `;
@@ -898,6 +947,7 @@ function salvarEncerramentoCiclo(index) {
 
     const producaoTotal = despescaParcial + producaoFinal;
     const fca = racaoConsumida / producaoTotal;
+    const produtividade = producaoTotal / parseFloat(viveiro.tamanho);
 
     const totalPovoado = parseFloat(String(viveiro.totalPovoado).replace(/\./g, ""));
     const quantidadeFinal = producaoTotal / (pesoFinal / 1000);
@@ -915,6 +965,7 @@ function salvarEncerramentoCiclo(index) {
         diasCultivo: diasCultivo,
         producaoFinal: producaoFinal,
         despescaParcial: despescaParcial,
+        produtividade: produtividade,
         producaoTotal: producaoTotal,
         pesoFinal: pesoFinal,
         racaoConsumida: racaoConsumida,
@@ -940,95 +991,157 @@ function salvarEncerramentoCiclo(index) {
 }
 
 function mostrarRelatorioCiclo(index, ciclo) {
+
     const area = document.getElementById("area-gestao");
 
     area.innerHTML = `
-        <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>Relatório final</h2>
+
+        <div class="relatorio-final">
+
+            <div class="relatorio-header">
+
+                <h1>WA AQUA GESTÃO</h1>
+
+                <h2>Relatório final do ciclo</h2>
+
                 <span>${ciclo.nomeViveiro}</span>
+
             </div>
 
-            <div class="painel-info">
-                <div class="info-box">
-                    <small>Laboratório</small>
-                    <strong>${ciclo.laboratorio}</strong>
-                </div>
+            <div class="relatorio-periodo">
 
-                <div class="info-box">
-                    <small>Tamanho</small>
-                    <strong>${ciclo.tamanho} ha</strong>
-                </div>
+                <p>
+                    <strong>Período:</strong>
+                    ${formatarData(ciclo.dataPovoamento)}
+                    →
+                    ${formatarData(ciclo.dataEncerramento)}
+                </p>
 
-                <div class="info-box">
-                    <small>Total povoado</small>
-                    <strong>${ciclo.totalPovoado} PLs</strong>
-                </div>
+                <p>
+                    <strong>Dias de cultivo:</strong>
+                    ${ciclo.diasCultivo} dias
+                </p>
 
-                <div class="info-box">
-                    <small>Povoamento</small>
-                    <strong>${formatarData(ciclo.dataPovoamento)}</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Encerramento</small>
-                    <strong>${formatarData(ciclo.dataEncerramento)}</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Dias de cultivo</small>
-                    <strong>${ciclo.diasCultivo} dias</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Produção total</small>
-                    <strong>${formatarNumeroBR(ciclo.producaoTotal, 1)} kg</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Despesca parcial</small>
-                    <strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Produção final</small>
-                    <strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Peso médio final</small>
-                    <strong>${formatarNumeroBR(ciclo.pesoFinal, 1)} g</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Ração consumida</small>
-                    <strong>${formatarNumeroBR(ciclo.racaoConsumida, 1)} kg</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>FCA final</small>
-                    <strong>${formatarNumeroBR(ciclo.fca, 2)}</strong>
-                </div>
-
-                <div class="info-box">
-                    <small>Sobrevivência</small>
-                    <strong>${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</strong>
-                </div>
             </div>
 
-            <div class="resultado-box destaque">
-                <p>Ciclo encerrado</p>
-                <h3>${formatarNumeroBR(ciclo.producaoTotal, 1)} kg</h3>
-                <span>Produção total do ciclo</span>
+            <div class="relatorio-secao">
+
+                <h3>Informações do ciclo</h3>
+
+                <div class="relatorio-grid">
+
+                    <div class="info-box">
+                        <small>Data de povoamento</small>
+                        <strong>${formatarData(ciclo.dataPovoamento)}</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>Total povoado</small>
+                        <strong>${ciclo.totalPovoado} PLs</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>Laboratório</small>
+                        <strong>${ciclo.laboratorio}</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>Tamanho</small>
+                        <strong>${ciclo.tamanho} ha</strong>
+                    </div>
+
+                </div>
+
             </div>
 
-            <button class="botao-painel" onclick="window.print()">
-                Imprimir relatório
-            </button>
+            <div class="relatorio-secao">
 
-            <button class="limpar" onclick="abrirViveiro(${index})">
-                Voltar ao viveiro
-            </button>
+                <h3>Resultado produtivo</h3>
+
+                <div class="relatorio-grid">
+
+                    <div class="info-box">
+                        <small>Produtividade</small>
+                        <strong>${formatarNumeroBR(ciclo.produtividade, 1)} kg/ha</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>Peso médio final</small>
+                        <strong>${formatarNumeroBR(ciclo.pesoFinal, 1)} g</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>Sobrevivência</small>
+                        <strong>${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="relatorio-secao">
+
+                <h3>Alimentação</h3>
+
+                <div class="relatorio-grid">
+
+                    <div class="info-box">
+                        <small>Ração consumida</small>
+                        <strong>${formatarNumeroBR(ciclo.racaoConsumida, 1)} kg</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>FCA final</small>
+                        <strong>${formatarNumeroBR(ciclo.fca, 2)}</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="relatorio-secao">
+
+                <h3>Despesca</h3>
+
+                <div class="relatorio-grid">
+
+                    <div class="info-box">
+                        <small>Despesca parcial</small>
+                        <strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong>
+                    </div>
+
+                    <div class="info-box">
+                        <small>Despesca total</small>
+                        <strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="fechamento-ciclo">
+
+                <p>Produção final do ciclo</p>
+
+                <h2>
+                    ${formatarNumeroBR(ciclo.producaoTotal, 1)} kg
+                </h2>
+
+            </div>
+
+            <div class="acoes-relatorio">
+
+                <button class="botao-painel" onclick="window.print()">
+                    Imprimir relatório
+                </button>
+
+                <button class="limpar" onclick="abrirViveiro(${index})">
+                    Voltar ao viveiro
+                </button>
+
+            </div>
+
         </div>
+
     `;
 }
