@@ -202,7 +202,7 @@ button {
     background: rgba(6,107,99,0.10);
     color: rgb(6,107,99);
     padding: 6px 12px;
-    border-radius: 999px;
+    border-radius: 0px;
     font-size: 13px;
     font-weight: bold;
 }
@@ -211,6 +211,12 @@ button {
     margin: 6px 0;
     color: #6b7280;
     font-size: 14px;
+    font-weight: 500;
+}
+
+.viveiro-info p strong {
+    color: #111827;
+    font-weight: 700;
 }
 
 .botao-abrir {
@@ -252,7 +258,7 @@ button {
     background: rgba(6,107,99,0.10);
     color: rgb(6,107,99);
     padding: 8px 12px;
-    border-radius: 999px;
+    border-radius: 0px;
     font-size: 13px;
     font-weight: bold;
 }
@@ -266,20 +272,30 @@ button {
 
 .info-box {
     background: #f8fafc;
-    border-radius: 12px;
-    padding: 14px;
-}
+    border-radius: 18px;
+    padding: 18px 12px;
 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+}
 .info-box small {
     display: block;
-    color: #6b7280;
-    margin-bottom: 6px;
-    font-size: 12px;
-}
+    color: #374151;
 
+    margin-bottom: 10px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
 .info-box strong {
-    color: #111827;
-    font-size: 15px;
+    color: #0f766e;
+
+    font-size: 17px;
+    font-weight: 600;
 }
 
 .painel-acoes {
@@ -435,5 +451,217 @@ button {
         box-shadow: none;
         width: 100%;
         padding: 8px;
+    }
+}
+
+.botao-form {
+    width: 220px;
+    display: block;
+    margin: 12px auto 0 auto;
+}
+
+.botao-voltar {
+    display: block;
+    width: auto;
+    margin: 10px auto 0 auto;
+    padding: 6px 10px;
+    background: transparent;
+    color: #6b7280;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.botao-alerta {
+    background: #f59e0b;
+}
+
+.botao-alerta:hover {
+    background: #d97706;
+}
+
+.botao-perigo {
+    background: #dc2626;
+}
+
+.botao-perigo:hover {
+    background: #b91c1c;
+}
+
+.relatorio-final{
+    background: white;
+    width: 100%;
+    max-width: 850px;
+    margin: 20px auto;
+    padding: 28px 24px;
+    box-sizing: border-box;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.relatorio-header{
+    text-align: center;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 18px;
+}
+
+.relatorio-header h1{
+    margin: 0;
+    color: #06695f;
+    font-size: 30px;
+    font-weight: 900;
+}
+
+.relatorio-header h2{
+    margin: 10px 0;
+    font-size: 22px;
+    color: #111827;
+}
+
+.relatorio-header span{
+    display: inline-block;
+    margin: 8px auto 0;
+    background: #e6f4f1;
+    color: #06695f;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.relatorio-periodo{
+    margin-bottom: 22px;
+    text-align: center;
+}
+
+.relatorio-periodo p{
+    margin: 6px 0;
+    color: #374151;
+    font-size: 15px;
+}
+
+.relatorio-secao{
+    margin-top: 24px;
+}
+
+.relatorio-secao h3{
+    color: #06695f;
+    margin: 0 0 14px;
+    font-size: 20px;
+    border-left: 5px solid #06695f;
+    padding-left: 10px;
+}
+
+.relatorio-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.relatorio-final .info-box{
+    background: #f8fafc;
+    border-radius: 18px;
+    padding: 16px 10px;
+    min-height: 88px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+}
+
+.relatorio-final .info-box small{
+    display: block;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.relatorio-final .info-box strong{
+    color: #0f766e;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.fechamento-ciclo{
+    margin-top: 26px;
+
+    background: #f8fafc;
+
+    border: 2px solid #e5e7eb;
+
+    border-radius: 18px;
+
+    padding: 22px 18px;
+
+    text-align: center;
+}
+
+.fechamento-ciclo p{
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.fechamento-ciclo h2{
+    margin: 10px 0 0 0;
+
+    color: #06695f;
+
+    font-size: 38px;
+
+    font-weight: 900;
+
+    letter-spacing: -1px;
+}
+
+.acoes-relatorio{
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+@media print{
+    body{
+        background: white;
+    }
+
+    .topo,
+    .botoes-gestao,
+    .acoes-relatorio{
+        display: none !important;
+    }
+
+    .relatorio-final{
+        box-shadow: none;
+        max-width: 100%;
+        margin: 0 auto;
+        border-radius: 0;
+        padding: 18px;
+    }
+
+    .relatorio-grid{
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .relatorio-final .info-box{
+        min-height: 70px;
+        padding: 10px;
+    }
+
+    .fechamento-ciclo{
+        margin-top: 20px;
+        padding: 18px;
     }
 }
