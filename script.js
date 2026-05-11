@@ -584,11 +584,6 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                 }).join("")
             }
         </div>
-${
- direto
-    ?`<button class="limpar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-     :`<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-}
     `;
 }
 
