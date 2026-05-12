@@ -1196,8 +1196,36 @@ function mostrarRelatorioCiclo(index, ciclo) {
                     Voltar ao viveiro
                 </button>
 
-           </div>
-    `;
+           </async function carregarViveiros() {
+  const { data, error } = await supabaseClient
+    .from("viveiros")
+    .select("*")
+    .order("nome", { ascending: true });
+
+  if (error) {
+    console.log(error);
+    alert("Erro ao carregar viveiros.");
+    return;
+  }
+
+  viveiros = data.map((item) => ({
+    id: item.id,
+    nome: item.nome,
+    dataPovoamento: item.data_povoamento,
+    totalPovoado: item.total_povoado,
+    tamanho: item.tamanho,
+    laboratorio: item.laboratorio,
+    racoes: [],
+    biometrias: [],
+    despescas: [],
+    ciclosFinalizados: [],
+  }));
+
+  console.log("Viveiros carregados:", viveiros);
 }
+
+carregarViveiros();
+
+
 
 console.log("Supabase conectado:", supabaseClient);
