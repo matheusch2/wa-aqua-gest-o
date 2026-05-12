@@ -1139,6 +1139,7 @@ function mostrarRelatorioCiclo(index, ciclo) {
             </div>
 
         </div>
-       console.log("Supabase conectado:", supabaseClient);
-    `;
 }
+
+ console.log("Supabase conectado:", supabaseClient);
+
