@@ -1136,11 +1136,11 @@ function mostrarRelatorioCiclo(index, ciclo) {
                     Voltar ao viveiro
                 </button>
 
-            </div>
-
-        </div>
+           </div>
+    `;
 }
+
 console.log("Supabase conectado:", supabaseClient);
+        
 
- console.log("Supabase conectado:", supabaseClient);
-
+ 
