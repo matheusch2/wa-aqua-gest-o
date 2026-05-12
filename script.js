@@ -3,48 +3,48 @@ const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 let viveiros = [];
 
 function formatarNumeroBR(valor, casas = 0) {
-    return valor.toLocaleString("pt-BR", {
-        minimumFractionDigits: casas,
-        maximumFractionDigits: casas
-    });
+  return valor.toLocaleString("pt-BR", {
+    minimumFractionDigits: casas,
+    maximumFractionDigits: casas,
+  });
 }
 
 function formatarData(data) {
-    if (!data) return "";
+  if (!data) return "";
 
-    const partes = data.split("-");
-    const ano = partes[0];
-    const mes = partes[1];
-    const dia = partes[2];
+  const partes = data.split("-");
+  const ano = partes[0];
+  const mes = partes[1];
+  const dia = partes[2];
 
-    return `${dia}/${mes}/${ano}`;
+  return `${dia}/${mes}/${ano}`;
 }
 
 function formatarPopulacao(input) {
-    let valor = input.value.replace(/\D/g, "");
-    valor = Number(valor).toLocaleString("pt-BR");
+  let valor = input.value.replace(/\D/g, "");
+  valor = Number(valor).toLocaleString("pt-BR");
 
-    if (valor === "0") valor = "";
+  if (valor === "0") valor = "";
 
-    input.value = valor;
+  input.value = valor;
 }
 
 function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
-    if (!dataPovoamento) return 0;
+  if (!dataPovoamento) return 0;
 
-    const inicio = new Date(dataPovoamento);
-    const fim = new Date(dataFinal);
+  const inicio = new Date(dataPovoamento);
+  const fim = new Date(dataFinal);
 
-    const diferenca = fim - inicio;
-    const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24)) + 1;
+  const diferenca = fim - inicio;
+  const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24)) + 1;
 
-    return dias > 0 ? dias : 0;
+  return dias > 0 ? dias : 0;
 }
 
 function mostrarCadastroViveiro() {
-    const area = document.getElementById("area-gestao");
+  const area = document.getElementById("area-gestao");
 
-    area.innerHTML = `
+  area.innerHTML = `
         <label>Nome do viveiro</label>
         <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
 
@@ -68,30 +68,31 @@ function mostrarCadastroViveiro() {
 }
 
 function salvarViveiro() {
-    const nome = document.getElementById("nomeViveiro").value;
-    const data = document.getElementById("dataPovoamento").value;
-    const total = document.getElementById("totalPovoadoGestao").value;
-    const tamanho = document.getElementById("tamanhoViveiro").value;
-    const laboratorio = document.getElementById("laboratorio").value;
+  const nome = document.getElementById("nomeViveiro").value;
+  const data = document.getElementById("dataPovoamento").value;
+  const total = document.getElementById("totalPovoadoGestao").value;
+  const tamanho = document.getElementById("tamanhoViveiro").value;
+  const laboratorio = document.getElementById("laboratorio").value;
 
-    if (!nome || !data || !total || !tamanho || !laboratorio) {
-        document.getElementById("area-gestao").innerHTML += "<p>Preencha todos os campos.</p>";
-        return;
-    }
+  if (!nome || !data || !total || !tamanho || !laboratorio) {
+    document.getElementById("area-gestao").innerHTML +=
+      "<p>Preencha todos os campos.</p>";
+    return;
+  }
 
-    viveiros.push({
-        nome: nome,
-        dataPovoamento: data,
-        totalPovoado: total,
-        tamanho: tamanho,
-        laboratorio: laboratorio,
-        racoes: [],
-        biometrias: []
-    });
+  viveiros.push({
+    nome: nome,
+    dataPovoamento: data,
+    totalPovoado: total,
+    tamanho: tamanho,
+    laboratorio: laboratorio,
+    racoes: [],
+    biometrias: [],
+  });
 
-    const index = viveiros.length - 1;
+  const index = viveiros.length - 1;
 
-    document.getElementById("area-gestao").innerHTML = `
+  document.getElementById("area-gestao").innerHTML = `
         <div class="viveiro-card">
             <div class="viveiro-topo">
                 <h3>${nome}</h3>
@@ -112,12 +113,10 @@ function salvarViveiro() {
 }
 
 function mostrarListaViveiros() {
+  const area = document.getElementById("area-gestao");
 
-    const area = document.getElementById("area-gestao");
-
-    if (viveiros.length === 0) {
-
-        area.innerHTML = `
+  if (viveiros.length === 0) {
+    area.innerHTML = `
             <div class="viveiro-card">
 
                 <div class="viveiro-topo">
@@ -131,19 +130,19 @@ function mostrarListaViveiros() {
             </div>
         `;
 
-        return;
-    }
+    return;
+  }
 
-    const viveirosOrdenados = [...viveiros].sort((a, b) => {
-
-        return a.nome.localeCompare(b.nome, undefined, {
-            numeric: true,
-            sensitivity: "base"
-        });
-
+  const viveirosOrdenados = [...viveiros].sort((a, b) => {
+    return a.nome.localeCompare(b.nome, undefined, {
+      numeric: true,
+      sensitivity: "base",
     });
+  });
 
-    area.innerHTML = viveirosOrdenados.map((viveiro) => `
+  area.innerHTML = viveirosOrdenados
+    .map(
+      (viveiro) => `
 
         <div class="viveiro-card">
 
@@ -185,24 +184,25 @@ function mostrarListaViveiros() {
 
         </div>
 
-    `).join("");
+    `,
+    )
+    .join("");
 }
 function abrirViveiro(index) {
-    const viveiro = viveiros[index];
-    const area = document.getElementById("area-gestao");
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
 
-    const diasCultivo = calcularDiasCultivo(viveiro.dataPovoamento);
+  const diasCultivo = calcularDiasCultivo(viveiro.dataPovoamento);
 
-    const racoes = viveiro.racoes || [];
-    const biometrias = viveiro.biometrias || [];
+  const racoes = viveiro.racoes || [];
+  const biometrias = viveiro.biometrias || [];
 
-    const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
+  const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
 
-    const ultimaBiometria = biometrias.length > 0
-        ? biometrias[biometrias.length - 1].gramatura
-        : "--";
+  const ultimaBiometria =
+    biometrias.length > 0 ? biometrias[biometrias.length - 1].gramatura : "--";
 
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="painel-viveiro">
             <div class="painel-topo">
                 <h2>${viveiro.nome}</h2>
@@ -275,33 +275,41 @@ function abrirViveiro(index) {
 }
 
 function mostrarLancamentoRacao(indexSelecionado = "") {
-    const area = document.getElementById("area-gestao");
+  const area = document.getElementById("area-gestao");
 
-    if (viveiros.length === 0) {
-        area.innerHTML = `
+  if (viveiros.length === 0) {
+    area.innerHTML = `
             <div class="resultado-box">
                 <p>Nenhum viveiro cadastrado</p>
                 <span>Cadastre um viveiro antes de lançar ração.</span>
             </div>
         `;
-        return;
-    }
+    return;
+  }
 
-    const dentroDoViveiro = indexSelecionado !== "";
+  const dentroDoViveiro = indexSelecionado !== "";
 
-    area.innerHTML = `
+  area.innerHTML = `
         <h2>Lançar ração</h2>
 
-        ${dentroDoViveiro ? "" : `
+        ${
+          dentroDoViveiro
+            ? ""
+            : `
             <label>Selecione o viveiro</label>
             <select id="viveiroRacao">
-                ${viveiros.map((viveiro, index) => `
+                ${viveiros
+                  .map(
+                    (viveiro, index) => `
                     <option value="${index}">
                         ${viveiro.nome}
                     </option>
-                `).join("")}
+                `,
+                  )
+                  .join("")}
             </select>
-        `}
+        `
+        }
 
         <label>Data</label>
         <input type="date" id="dataRacao" value="${new Date().toISOString().split("T")[0]}">
@@ -323,40 +331,41 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 }
 
 function salvarLancamentoRacao(indexDireto = "") {
-    const index = indexDireto !== "" 
-        ? indexDireto 
-        : document.getElementById("viveiroRacao").value;
+  const index =
+    indexDireto !== ""
+      ? indexDireto
+      : document.getElementById("viveiroRacao").value;
 
-    const data = document.getElementById("dataRacao").value;
-    const racao = parseFloat(document.getElementById("consumoRacao").value);
+  const data = document.getElementById("dataRacao").value;
+  const racao = parseFloat(document.getElementById("consumoRacao").value);
 
-    if (!data || !racao) {
-        alert("Preencha a data e o consumo de ração.");
-        return;
-    }
+  if (!data || !racao) {
+    alert("Preencha a data e o consumo de ração.");
+    return;
+  }
 
-    if (!viveiros[index].racoes) {
-        viveiros[index].racoes = [];
-    }
+  if (!viveiros[index].racoes) {
+    viveiros[index].racoes = [];
+  }
 
-    viveiros[index].racoes.push({
-        data: data,
-        racao: racao
-    });
+  viveiros[index].racoes.push({
+    data: data,
+    racao: racao,
+  });
 
-    if (typeof salvarDados === "function") {
-        salvarDados();
-    }
+  if (typeof salvarDados === "function") {
+    salvarDados();
+  }
 
-    abrirViveiro(index);
+  abrirViveiro(index);
 }
 
 function abrirBiometria(index) {
-    const viveiro = viveiros[index];
-    const area = document.getElementById("area-gestao");
-    const hoje = new Date().toISOString().split("T")[0];
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
 
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="painel-viveiro">
             <div class="painel-topo">
                 <h2>Biometria - ${viveiro.nome}</h2>
@@ -383,40 +392,42 @@ function abrirBiometria(index) {
 }
 
 function salvarBiometria(index) {
-    const data = document.getElementById("dataBiometria").value;
-    const gramatura = parseFloat(document.getElementById("gramaturaBiometria").value);
+  const data = document.getElementById("dataBiometria").value;
+  const gramatura = parseFloat(
+    document.getElementById("gramaturaBiometria").value,
+  );
 
-    if (!data || !gramatura) {
-        alert("Preencha a data e a gramatura.");
-        return;
-    }
+  if (!data || !gramatura) {
+    alert("Preencha a data e a gramatura.");
+    return;
+  }
 
-    if (!viveiros[index].biometrias) {
-        viveiros[index].biometrias = [];
-    }
+  if (!viveiros[index].biometrias) {
+    viveiros[index].biometrias = [];
+  }
 
-    viveiros[index].biometrias.push({
-        data: data,
-        gramatura: gramatura
-    });
+  viveiros[index].biometrias.push({
+    data: data,
+    gramatura: gramatura,
+  });
 
-    abrirViveiro(index);
+  abrirViveiro(index);
 }
 
 function mostrarHistoricoCultivo(indexSelecionado = "") {
-    const area = document.getElementById("area-gestao");
+  const area = document.getElementById("area-gestao");
 
-    if (viveiros.length === 0) {
-        area.innerHTML = `
+  if (viveiros.length === 0) {
+    area.innerHTML = `
             <div class="resultado-box">
                 <p>Nenhum viveiro cadastrado</p>
                 <span>Cadastre um viveiro para ver o histórico.</span>
             </div>
         `;
-        return;
-    }
+    return;
+  }
 
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="painel-viveiro">
             <div class="painel-topo">
                 <h2>Históricos</h2>
@@ -426,11 +437,15 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
             <select id="viveiroHistorico" onchange="mostrarOpcoesHistorico()">
                 <option value="">Escolha um viveiro</option>
-                ${viveiros.map((viveiro, index) => `
+                ${viveiros
+                  .map(
+                    (viveiro, index) => `
                     <option value="${index}" ${String(index) === String(indexSelecionado) ? "selected" : ""}>
                         ${viveiro.nome}
                     </option>
-                `).join("")}
+                `,
+                  )
+                  .join("")}
             </select>
 
             <div id="opcoes-historico"></div>
@@ -438,24 +453,24 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
         </div>
     `;
 
-    if (indexSelecionado !== "") {
-        mostrarOpcoesHistorico();
-    }
+  if (indexSelecionado !== "") {
+    mostrarOpcoesHistorico();
+  }
 }
 
 function mostrarOpcoesHistorico() {
-    const index = document.getElementById("viveiroHistorico").value;
-    const opcoes = document.getElementById("opcoes-historico");
-    const resultado = document.getElementById("resultado-historico");
+  const index = document.getElementById("viveiroHistorico").value;
+  const opcoes = document.getElementById("opcoes-historico");
+  const resultado = document.getElementById("resultado-historico");
 
-    resultado.innerHTML = "";
+  resultado.innerHTML = "";
 
-    if (index === "") {
-        opcoes.innerHTML = "";
-        return;
-    }
+  if (index === "") {
+    opcoes.innerHTML = "";
+    return;
+  }
 
-    opcoes.innerHTML = `
+  opcoes.innerHTML = `
         <div class="painel-acoes">
             <button class="botao-historico" onclick="abrirHistoricoBiometria()">
                 Biometria
@@ -478,36 +493,36 @@ function mostrarOpcoesHistorico() {
 }
 
 function abrirHistoricoBiometria() {
-    const index = document.getElementById("viveiroHistorico").value;
-    if (index === "") return;
+  const index = document.getElementById("viveiroHistorico").value;
+  if (index === "") return;
 
-    document.getElementById("opcoes-historico").innerHTML = "";
+  document.getElementById("opcoes-historico").innerHTML = "";
 
-    renderizarHistoricoBiometria(index, "resultado-historico", false);
+  renderizarHistoricoBiometria(index, "resultado-historico", false);
 }
 function abrirHistoricoRacao() {
-    const index = document.getElementById("viveiroHistorico").value;
-    if (index === "") return;
+  const index = document.getElementById("viveiroHistorico").value;
+  if (index === "") return;
 
-    document.getElementById("opcoes-historico").innerHTML = "";
+  document.getElementById("opcoes-historico").innerHTML = "";
 
-    renderizarHistoricoRacao(index, "resultado-historico", false);
+  renderizarHistoricoRacao(index, "resultado-historico", false);
 }
 
 function abrirHistoricoDespesca() {
-    const index = document.getElementById("viveiroHistorico").value;
-    if (index === "") return;
+  const index = document.getElementById("viveiroHistorico").value;
+  if (index === "") return;
 
-    document.getElementById("opcoes-historico").innerHTML = "";
+  document.getElementById("opcoes-historico").innerHTML = "";
 
-    renderizarHistoricoDespesca(index, "resultado-historico", false);
+  renderizarHistoricoDespesca(index, "resultado-historico", false);
 }
 
 function mostrarHistoricoDoViveiroDireto(index) {
-    const viveiro = viveiros[index];
-    const area = document.getElementById("area-gestao");
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
 
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="painel-viveiro">
             <div class="painel-topo">
                 <h2>Histórico - ${viveiro.nome}</h2>
@@ -540,21 +555,21 @@ function mostrarHistoricoDoViveiroDireto(index) {
 }
 
 function abrirHistoricoBiometriaDireto(index) {
-    document.getElementById("opcoes-historico").innerHTML = "";
-    renderizarHistoricoBiometria(index, "resultado-historico", true);
+  document.getElementById("opcoes-historico").innerHTML = "";
+  renderizarHistoricoBiometria(index, "resultado-historico", true);
 }
 
 function abrirHistoricoRacaoDireto(index) {
-    document.getElementById("opcoes-historico").innerHTML = "";
-    renderizarHistoricoRacao(index, "resultado-historico", true);
+  document.getElementById("opcoes-historico").innerHTML = "";
+  renderizarHistoricoRacao(index, "resultado-historico", true);
 }
 
 function renderizarHistoricoBiometria(index, elementoId, direto) {
-    const viveiro = viveiros[index];
-    const resultado = document.getElementById(elementoId);
-    const biometrias = viveiro.biometrias || [];
+  const viveiro = viveiros[index];
+  const resultado = document.getElementById(elementoId);
+  const biometrias = viveiro.biometrias || [];
 
-    resultado.innerHTML = `
+  resultado.innerHTML = `
         <h3>Biometria</h3>
 
         <div class="tabela-historico">
@@ -565,38 +580,41 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
             </div>
 
             ${
-                biometrias.length === 0
+              biometrias.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma biometria lançada.</p>`
-                : biometrias.map((item, i) => {
-                    let crescimento = "-";
+                : biometrias
+                    .map((item, i) => {
+                      let crescimento = "-";
 
-                    if (i > 0) {
-                        crescimento = (
+                      if (i > 0) {
+                        crescimento =
+                          (
                             item.gramatura - biometrias[i - 1].gramatura
-                        ).toFixed(1) + " g";
-                    }
+                          ).toFixed(1) + " g";
+                      }
 
-                    return `
+                      return `
                         <div class="linha-historico">
                             <span>${formatarData(item.data)}</span>
                             <span>${formatarNumeroBR(item.gramatura, 1)} g</span>
                             <span>${crescimento}</span>
                         </div>
                     `;
-                }).join("")
+                    })
+                    .join("")
             }
         </div>
     `;
 }
 
 function renderizarHistoricoRacao(index, elementoId, direto) {
-    const viveiro = viveiros[index];
-    const resultado = document.getElementById(elementoId);
-    const racoes = viveiro.racoes || [];
+  const viveiro = viveiros[index];
+  const resultado = document.getElementById(elementoId);
+  const racoes = viveiro.racoes || [];
 
-    const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
+  const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
 
-    resultado.innerHTML = `
+  resultado.innerHTML = `
         <h3>Ração</h3>
 
         <div class="tabela-historico">
@@ -607,15 +625,19 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
             </div>
 
             ${
-                racoes.length === 0
+              racoes.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma ração lançada.</p>`
-                : racoes.map((item) => `
+                : racoes
+                    .map(
+                      (item) => `
                     <div class="linha-historico">
                         <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
                         <span>${formatarData(item.data)}</span>
                         <span>${formatarNumeroBR(item.racao, 1)} kg</span>
                     </div>
-                `).join("")
+                `,
+                    )
+                    .join("")
             }
         </div>
 
@@ -625,32 +647,32 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
         </div>
 
         ${
-             direto
-             ? `<button class="limpar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-             : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-}
+          direto
+            ? `<button class="limpar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
+            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+        }
     `;
 }
 
 function reiniciarCiclo(index) {
-    if (!confirm("Deseja reiniciar o ciclo deste viveiro?")) return;
+  if (!confirm("Deseja reiniciar o ciclo deste viveiro?")) return;
 
-    const viveiro = viveiros[index];
+  const viveiro = viveiros[index];
 
-    viveiro.dataPovoamento = "";
-    viveiro.totalPovoado = "";
-    viveiro.laboratorio = "";
-    viveiro.racoes = [];
-    viveiro.biometrias = [];
+  viveiro.dataPovoamento = "";
+  viveiro.totalPovoado = "";
+  viveiro.laboratorio = "";
+  viveiro.racoes = [];
+  viveiro.biometrias = [];
 
-    mostrarFormularioReinicio(index);
+  mostrarFormularioReinicio(index);
 }
 
 function mostrarFormularioReinicio(index) {
-    const viveiro = viveiros[index];
-    const area = document.getElementById("area-gestao");
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
 
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="painel-viveiro">
             <div class="painel-topo">
                 <h2>${viveiro.nome}</h2>
@@ -673,28 +695,30 @@ function mostrarFormularioReinicio(index) {
 }
 
 function salvarNovoCiclo(index) {
-    viveiros[index].dataPovoamento = document.getElementById("novoPovoamento").value;
-    viveiros[index].totalPovoado = document.getElementById("novoTotal").value;
-    viveiros[index].laboratorio = document.getElementById("novoLaboratorio").value;
+  viveiros[index].dataPovoamento =
+    document.getElementById("novoPovoamento").value;
+  viveiros[index].totalPovoado = document.getElementById("novoTotal").value;
+  viveiros[index].laboratorio =
+    document.getElementById("novoLaboratorio").value;
 
-    abrirViveiro(index);
+  abrirViveiro(index);
 }
 
 function excluirViveiro(index) {
-    viveiros.splice(index, 1);
-    mostrarListaViveiros();
+  viveiros.splice(index, 1);
+  mostrarListaViveiros();
 }
 
 function limparAreaGestao() {
-    document.getElementById("area-gestao").innerHTML = "";
+  document.getElementById("area-gestao").innerHTML = "";
 }
 
 function abrirDespesca(index) {
-    const viveiro = viveiros[index];
-    const area = document.getElementById("area-gestao");
-    const hoje = new Date().toISOString().split("T")[0];
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
 
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="painel-viveiro">
             <div class="painel-topo">
                 <h2>Lançar despesca - ${viveiro.nome}</h2>
@@ -727,39 +751,39 @@ function abrirDespesca(index) {
 }
 
 function salvarDespesca(index) {
-    const data = document.getElementById("dataDespesca").value;
-    const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
-    const pesoMedio = parseFloat(document.getElementById("pesoDespesca").value);
+  const data = document.getElementById("dataDespesca").value;
+  const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
+  const pesoMedio = parseFloat(document.getElementById("pesoDespesca").value);
 
-    if (!data || !quantidadeKg || !pesoMedio) {
-        alert("Preencha a data, os quilos despescados e o peso médio.");
-        return;
-    }
+  if (!data || !quantidadeKg || !pesoMedio) {
+    alert("Preencha a data, os quilos despescados e o peso médio.");
+    return;
+  }
 
-    if (!viveiros[index].despescas) {
-        viveiros[index].despescas = [];
-    }
+  if (!viveiros[index].despescas) {
+    viveiros[index].despescas = [];
+  }
 
-    viveiros[index].despescas.push({
-        data: data,
-        tipo: "Parcial",
-        quantidadeKg: quantidadeKg,
-        pesoMedio: pesoMedio
-    });
+  viveiros[index].despescas.push({
+    data: data,
+    tipo: "Parcial",
+    quantidadeKg: quantidadeKg,
+    pesoMedio: pesoMedio,
+  });
 
-    abrirViveiro(index);
+  abrirViveiro(index);
 }
 
 function renderizarHistoricoDespesca(index, elementoId, direto) {
-    const viveiro = viveiros[index];
-    const resultado = document.getElementById(elementoId);
-    const despescas = viveiro.despescas || [];
+  const viveiro = viveiros[index];
+  const resultado = document.getElementById(elementoId);
+  const despescas = viveiro.despescas || [];
 
-    const totalDespescado = despescas.reduce((total, item) => {
-        return total + item.quantidadeKg;
-    }, 0);
+  const totalDespescado = despescas.reduce((total, item) => {
+    return total + item.quantidadeKg;
+  }, 0);
 
-    resultado.innerHTML = `
+  resultado.innerHTML = `
         <h3>Despesca parcial</h3>
 
         <div class="tabela-historico">
@@ -770,15 +794,19 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
             </div>
 
             ${
-                despescas.length === 0
+              despescas.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
-                : despescas.map((item) => `
+                : despescas
+                    .map(
+                      (item) => `
                     <div class="linha-historico">
                         <span>${formatarData(item.data)}</span>
                         <span>${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
                         <span>${formatarNumeroBR(item.pesoMedio, 1)} g</span>
                     </div>
-                `).join("")
+                `,
+                    )
+                    .join("")
             }
         </div>
 
@@ -788,58 +816,52 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
         </div>
 
        ${
-            direto
-            ? `<button class="limpar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-}
+         direto
+           ? `<button class="limpar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
+           : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+       }
     `;
 }
 
 function abrirHistoricoDespescaDireto(index) {
-    document.getElementById("opcoes-historico").innerHTML = "";
-    renderizarHistoricoDespesca(index, "resultado-historico", true);
+  document.getElementById("opcoes-historico").innerHTML = "";
+  renderizarHistoricoDespesca(index, "resultado-historico", true);
 }
 
 function voltarOpcoesHistorico() {
-    mostrarOpcoesHistorico();
-}      
+  mostrarOpcoesHistorico();
+}
 
 function mostrarHistoricoCiclos() {
+  const area = document.getElementById("area-gestao");
 
-    const area = document.getElementById("area-gestao");
+  let ciclos = [];
 
-    let ciclos = [];
+  viveiros.forEach((viveiro) => {
+    if (viveiro.ciclosFinalizados) {
+      viveiro.ciclosFinalizados.forEach((ciclo) => {
+        ciclos.push({
+          viveiro: viveiro.nome,
+          ciclo: ciclo,
+        });
+      });
+    }
+  });
 
-    viveiros.forEach(viveiro => {
-
-        if (viveiro.ciclosFinalizados) {
-
-            viveiro.ciclosFinalizados.forEach(ciclo => {
-
-                ciclos.push({
-                    viveiro: viveiro.nome,
-                    ciclo: ciclo
-                });
-
-            });
-
-        }
-
-    });
-
-    if (ciclos.length === 0) {
-
-        area.innerHTML = `
+  if (ciclos.length === 0) {
+    area.innerHTML = `
             <div class="resultado-box">
                 <p>Nenhum ciclo encerrado</p>
                 <span>Os ciclos finalizados aparecerão aqui.</span>
             </div>
         `;
 
-        return;
-    }
+    return;
+  }
 
-    area.innerHTML = ciclos.map((item) => `
+  area.innerHTML = ciclos
+    .map(
+      (item) => `
 
         <div class="viveiro-card">
 
@@ -856,14 +878,15 @@ function mostrarHistoricoCiclos() {
 
         </div>
 
-    `).join("");
+    `,
+    )
+    .join("");
 }
 
 function abrirFinanceiro() {
+  const area = document.getElementById("area-gestao");
 
-    const area = document.getElementById("area-gestao");
-
-    area.innerHTML = `
+  area.innerHTML = `
         <div class="resultado-box">
             <p>Financeiro</p>
             <span>Módulo em desenvolvimento.</span>
@@ -872,13 +895,12 @@ function abrirFinanceiro() {
 }
 
 function abrirEncerrarCiclo(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
 
-    const viveiro = viveiros[index];
-    const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
 
-    const hoje = new Date().toISOString().split("T")[0];
-
-    area.innerHTML = `
+  area.innerHTML = `
 
         <div class="painel-viveiro">
 
@@ -923,75 +945,84 @@ function abrirEncerrarCiclo(index) {
     `;
 }
 function salvarEncerramentoCiclo(index) {
-    const viveiro = viveiros[index];
+  const viveiro = viveiros[index];
 
-    const dataEncerramento = document.getElementById("dataEncerramento").value;
-    const producaoFinal = parseFloat(document.getElementById("producaoFinal").value);
-    const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
-    const observacoes = document.getElementById("observacoesCiclo").value;
+  const dataEncerramento = document.getElementById("dataEncerramento").value;
+  const producaoFinal = parseFloat(
+    document.getElementById("producaoFinal").value,
+  );
+  const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
+  const observacoes = document.getElementById("observacoesCiclo").value;
 
-    if (!dataEncerramento || !producaoFinal || !pesoFinal) {
-        alert("Preencha data de encerramento, produção final e peso médio final.");
-        return;
-    }
+  if (!dataEncerramento || !producaoFinal || !pesoFinal) {
+    alert("Preencha data de encerramento, produção final e peso médio final.");
+    return;
+  }
 
-    const racoes = viveiro.racoes || [];
-    const despescas = viveiro.despescas || [];
-    const biometrias = viveiro.biometrias || [];
+  const racoes = viveiro.racoes || [];
+  const despescas = viveiro.despescas || [];
+  const biometrias = viveiro.biometrias || [];
 
-    const racaoConsumida = racoes.reduce((total, item) => total + item.racao, 0);
-    const despescaParcial = despescas.reduce((total, item) => total + item.quantidadeKg, 0);
+  const racaoConsumida = racoes.reduce((total, item) => total + item.racao, 0);
+  const despescaParcial = despescas.reduce(
+    (total, item) => total + item.quantidadeKg,
+    0,
+  );
 
-    const producaoTotal = despescaParcial + producaoFinal;
-    const fca = racaoConsumida / producaoTotal;
-    const produtividade = producaoTotal / parseFloat(viveiro.tamanho);
+  const producaoTotal = despescaParcial + producaoFinal;
+  const fca = racaoConsumida / producaoTotal;
+  const produtividade = producaoTotal / parseFloat(viveiro.tamanho);
 
-    const totalPovoado = parseFloat(String(viveiro.totalPovoado).replace(/\./g, ""));
-    const quantidadeFinal = producaoTotal / (pesoFinal / 1000);
-    const sobrevivencia = (quantidadeFinal / totalPovoado) * 100;
+  const totalPovoado = parseFloat(
+    String(viveiro.totalPovoado).replace(/\./g, ""),
+  );
+  const quantidadeFinal = producaoTotal / (pesoFinal / 1000);
+  const sobrevivencia = (quantidadeFinal / totalPovoado) * 100;
 
-    const diasCultivo = calcularDiasCultivo(viveiro.dataPovoamento, dataEncerramento);
+  const diasCultivo = calcularDiasCultivo(
+    viveiro.dataPovoamento,
+    dataEncerramento,
+  );
 
-    const cicloFinalizado = {
-        nomeViveiro: viveiro.nome,
-        laboratorio: viveiro.laboratorio,
-        tamanho: viveiro.tamanho,
-        totalPovoado: viveiro.totalPovoado,
-        dataPovoamento: viveiro.dataPovoamento,
-        dataEncerramento: dataEncerramento,
-        diasCultivo: diasCultivo,
-        producaoFinal: producaoFinal,
-        despescaParcial: despescaParcial,
-        produtividade: produtividade,
-        producaoTotal: producaoTotal,
-        pesoFinal: pesoFinal,
-        racaoConsumida: racaoConsumida,
-        fca: fca,
-        sobrevivencia: sobrevivencia,
-        biometrias: [...biometrias],
-        racoes: [...racoes],
-        despescas: [...despescas],
-        observacoes: observacoes
-    };
+  const cicloFinalizado = {
+    nomeViveiro: viveiro.nome,
+    laboratorio: viveiro.laboratorio,
+    tamanho: viveiro.tamanho,
+    totalPovoado: viveiro.totalPovoado,
+    dataPovoamento: viveiro.dataPovoamento,
+    dataEncerramento: dataEncerramento,
+    diasCultivo: diasCultivo,
+    producaoFinal: producaoFinal,
+    despescaParcial: despescaParcial,
+    produtividade: produtividade,
+    producaoTotal: producaoTotal,
+    pesoFinal: pesoFinal,
+    racaoConsumida: racaoConsumida,
+    fca: fca,
+    sobrevivencia: sobrevivencia,
+    biometrias: [...biometrias],
+    racoes: [...racoes],
+    despescas: [...despescas],
+    observacoes: observacoes,
+  };
 
-    if (!viveiro.ciclosFinalizados) {
-        viveiro.ciclosFinalizados = [];
-    }
+  if (!viveiro.ciclosFinalizados) {
+    viveiro.ciclosFinalizados = [];
+  }
 
-    viveiro.ciclosFinalizados.push(cicloFinalizado);
+  viveiro.ciclosFinalizados.push(cicloFinalizado);
 
-    if (typeof salvarDados === "function") {
-        salvarDados();
-    }
+  if (typeof salvarDados === "function") {
+    salvarDados();
+  }
 
-    mostrarRelatorioCiclo(index, cicloFinalizado);
+  mostrarRelatorioCiclo(index, cicloFinalizado);
 }
 
 function mostrarRelatorioCiclo(index, ciclo) {
+  const area = document.getElementById("area-gestao");
 
-    const area = document.getElementById("area-gestao");
-
-    area.innerHTML = `
+  area.innerHTML = `
 
         <div class="relatorio-final">
 
@@ -1141,6 +1172,3 @@ function mostrarRelatorioCiclo(index, ciclo) {
 }
 
 console.log("Supabase conectado:", supabaseClient);
-        
-
- 
