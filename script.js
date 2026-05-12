@@ -1186,7 +1186,7 @@ function mostrarRelatorioCiclo(index, ciclo) {
 
             </div>
 
-            <div class="acoes-relatorio">
+                       <div class="acoes-relatorio">
 
                 <button class="botao-painel" onclick="window.print()">
                     Imprimir relatório
@@ -1196,36 +1196,41 @@ function mostrarRelatorioCiclo(index, ciclo) {
                     Voltar ao viveiro
                 </button>
 
-           </async function carregarViveiros() {
-  const { data, error } = await supabaseClient
-    .from("viveiros")
-    .select("*")
-    .order("nome", { ascending: true });
+            </div>
 
-  if (error) {
-    console.log(error);
-    alert("Erro ao carregar viveiros.");
-    return;
-  }
+        </div>
+    `;
+}
 
-  viveiros = data.map((item) => ({
-    id: item.id,
-    nome: item.nome,
-    dataPovoamento: item.data_povoamento,
-    totalPovoado: item.total_povoado,
-    tamanho: item.tamanho,
-    laboratorio: item.laboratorio,
-    racoes: [],
-    biometrias: [],
-    despescas: [],
-    ciclosFinalizados: [],
-  }));
+async function carregarViveiros() {
 
-  console.log("Viveiros carregados:", viveiros);
+    const { data, error } = await supabaseClient
+        .from("viveiros")
+        .select("*")
+        .order("nome", { ascending: true });
+
+    if (error) {
+        console.log(error);
+        alert("Erro ao carregar viveiros.");
+        return;
+    }
+
+    viveiros = data.map((item) => ({
+        id: item.id,
+        nome: item.nome,
+        dataPovoamento: item.data_povoamento,
+        totalPovoado: item.total_povoado,
+        tamanho: item.tamanho,
+        laboratorio: item.laboratorio,
+        racoes: [],
+        biometrias: [],
+        despescas: [],
+        ciclosFinalizados: [],
+    }));
+
+    console.log("Viveiros carregados:", viveiros);
 }
 
 carregarViveiros();
-
-
 
 console.log("Supabase conectado:", supabaseClient);
