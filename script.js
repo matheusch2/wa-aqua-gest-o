@@ -170,8 +170,7 @@ function mostrarListaViveiros() {
   });
 
   area.innerHTML = viveirosOrdenados
-    .map(
-      (viveiro) => `
+  .map((viveiro, index) =>
 
         <div class="viveiro-card">
 
@@ -206,7 +205,7 @@ function mostrarListaViveiros() {
 
             <button
                 class="botao-abrir"
-                onclick="abrirViveiro(viveiros.indexOf(viveiro))"
+                onclick="abrirViveiro(${index})"
             >
                 Abrir viveiro
             </button>
