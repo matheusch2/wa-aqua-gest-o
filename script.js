@@ -68,7 +68,7 @@ function mostrarCadastroViveiro() {
     `;
 }
 
-function salvarViveiro() {
+  async function salvarViveiro() {
   const nome = document.getElementById("nomeViveiro").value;
   const data = document.getElementById("dataPovoamento").value;
   const total = document.getElementById("totalPovoadoGestao").value;
@@ -81,16 +81,24 @@ function salvarViveiro() {
     return;
   }
 
-  viveiros.push({
-    nome: nome,
-    dataPovoamento: data,
-    totalPovoado: total,
-    tamanho: tamanho,
-    laboratorio: laboratorio,
-    racoes: [],
-    biometrias: [],
-  });
+  const novoViveiro = {
+  nome: nome,
+  data_povoamento: data,
+  total_povoado: total,
+  tamanho: tamanho,
+  laboratorio: laboratorio,
+};
 
+const { data: viveiroSalvo, error } = await supabaseClient
+  .from("viveiros")
+  .insert([novoViveiro])
+  .select();
+
+if (error) {
+  console.log(error);
+  alert("Erro ao salvar viveiro.");
+  return;
+}
   const index = viveiros.length - 1;
 
   document.getElementById("area-gestao").innerHTML = `
