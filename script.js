@@ -96,7 +96,7 @@ const { data: viveiroSalvo, error } = await supabaseClient
 
 if (error) {
   console.log(error);
-  alert("Erro ao salvar viveiro.");
+  alert(error.message);
   return;
 }
   const index = viveiros.length - 1;
