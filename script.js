@@ -99,7 +99,27 @@ if (error) {
   alert(error.message);
   return;
 }
-  const index = viveiros.length - 1;
+  const viveiroLocal = {
+  nome: nome,
+  dataPovoamento: data,
+  totalPovoado: total,
+  tamanho: tamanho,
+  laboratorio: laboratorio,
+  racoes: [],
+  biometrias: [],
+  despescas: [],
+  ciclosFinalizados: [],
+};
+
+viveiros.push(viveiroLocal);
+
+const index = viveiros.length - 1;
+
+if (error) {
+  console.log(error);
+  alert(error.message);
+  return;
+}
 
   document.getElementById("area-gestao").innerHTML = `
         <div class="viveiro-card">
