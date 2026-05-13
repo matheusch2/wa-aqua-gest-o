@@ -1037,13 +1037,11 @@ function abrirEncerrarCiclo(index) {
 
     `;
 }
-function salvarEncerramentoCiclo(index) {
+async function salvarEncerramentoCiclo(index) {
   const viveiro = viveiros[index];
 
   const dataEncerramento = document.getElementById("dataEncerramento").value;
-  const producaoFinal = parseFloat(
-    document.getElementById("producaoFinal").value,
-  );
+  const producaoFinal = parseFloat(document.getElementById("producaoFinal").value);
   const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
   const observacoes = document.getElementById("observacoesCiclo").value;
 
@@ -1059,23 +1057,51 @@ function salvarEncerramentoCiclo(index) {
   const racaoConsumida = racoes.reduce((total, item) => total + item.racao, 0);
   const despescaParcial = despescas.reduce(
     (total, item) => total + item.quantidadeKg,
-    0,
+    0
   );
 
   const producaoTotal = despescaParcial + producaoFinal;
   const fca = racaoConsumida / producaoTotal;
   const produtividade = producaoTotal / parseFloat(viveiro.tamanho);
 
-  const totalPovoado = parseFloat(
-    String(viveiro.totalPovoado).replace(/\./g, ""),
-  );
+  const totalPovoado = parseFloat(String(viveiro.totalPovoado).replace(/\./g, ""));
   const quantidadeFinal = producaoTotal / (pesoFinal / 1000);
   const sobrevivencia = (quantidadeFinal / totalPovoado) * 100;
 
   const diasCultivo = calcularDiasCultivo(
     viveiro.dataPovoamento,
-    dataEncerramento,
+    dataEncerramento
   );
+
+  const cicloBanco = {
+    viveiro_id: viveiro.id,
+    nome_viveiro: viveiro.nome,
+    laboratorio: viveiro.laboratorio,
+    tamanho: viveiro.tamanho,
+    total_povoado: viveiro.totalPovoado,
+    data_povoamento: viveiro.dataPovoamento,
+    data_encerramento: dataEncerramento,
+    dias_cultivo: diasCultivo,
+    producao_final: producaoFinal,
+    despesca_parcial: despescaParcial,
+    produtividade: produtividade,
+    producao_total: producaoTotal,
+    peso_final: pesoFinal,
+    racao_consumida: racaoConsumida,
+    fca: fca,
+    sobrevivencia: sobrevivencia,
+    observacoes: observacoes,
+  };
+
+  const { error } = await supabaseClient
+    .from("ciclos")
+    .insert([cicloBanco]);
+
+  if (error) {
+    console.log(error);
+    alert(error.message);
+    return;
+  }
 
   const cicloFinalizado = {
     nomeViveiro: viveiro.nome,
@@ -1105,13 +1131,8 @@ function salvarEncerramentoCiclo(index) {
 
   viveiro.ciclosFinalizados.push(cicloFinalizado);
 
-  if (typeof salvarDados === "function") {
-    salvarDados();
-  }
-
   mostrarRelatorioCiclo(index, cicloFinalizado);
 }
-
 function mostrarRelatorioCiclo(index, ciclo) {
   const area = document.getElementById("area-gestao");
 
