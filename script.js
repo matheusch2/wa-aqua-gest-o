@@ -901,6 +901,17 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
             <p>Total despescado</p>
             <h3>${formatarNumeroBR(totalDespescado, 1)} kg</h3>
         </div>
+    
+    ${
+  direto
+    ? ""
+    : `<button class="limpar"
+         onclick="voltarOpcoesHistorico()">
+         Voltar
+       </button>`
+}
+    
+    
     `;
 }
 
