@@ -1230,11 +1230,12 @@ function mostrarRelatorioCiclo(index, ciclo) {
 async function carregarViveiros() {
 
   const { data: viveirosData, error: erroViveiros } =
-    await supabaseClient
-     .from("viveiros")
-.select("*")
-.order("nome", { ascending: true });
-
+  await supabaseClient
+    .from("viveiros")
+    .select("*")
+    .eq("ativo", true)
+    .order("nome", { ascending: true });
+  
   if (erroViveiros) {
     console.log(erroViveiros);
     alert("Erro ao carregar viveiros.");
@@ -1340,9 +1341,9 @@ async function carregarViveiros() {
 
   console.log("Viveiros carregados:", viveiros);
 
-  mostrarListaViveiros();
-
+    mostrarListaViveiros();
 }
 
 carregarViveiros();
-}
+
+console.log("Supabase conectado:", supabaseClient);
