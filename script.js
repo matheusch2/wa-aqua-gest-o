@@ -1270,10 +1270,9 @@ async function carregarViveiros() {
 
   const { data: viveirosData, error: erroViveiros } =
     await supabaseClient
-      .from("viveiros")
-      .select("*")
-      .eq("ativo", true)
-      .order("nome", { ascending: true });
+     .from("viveiros")
+.select("*")
+.order("nome", { ascending: true });
 
   if (erroViveiros) {
     console.log(erroViveiros);
