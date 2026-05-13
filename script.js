@@ -673,6 +673,12 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                     .join("")
             }
         </div>
+
+        ${
+          direto
+            ? ""
+            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+        }
     `;
 }
 
@@ -901,17 +907,12 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
             <p>Total despescado</p>
             <h3>${formatarNumeroBR(totalDespescado, 1)} kg</h3>
         </div>
-    
-    ${
-  direto
-    ? ""
-    : `<button class="limpar"
-         onclick="voltarOpcoesHistorico()">
-         Voltar
-       </button>`
-}
-    
-    
+
+        ${
+          direto
+            ? ""
+            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+        }
     `;
 }
 
