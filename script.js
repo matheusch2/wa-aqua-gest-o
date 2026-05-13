@@ -170,7 +170,7 @@ function mostrarListaViveiros() {
   });
 
   area.innerHTML = viveirosOrdenados
-  .map((viveiro, index) =>
+.map((viveiro, index) => `
 
         <div class="viveiro-card">
 
