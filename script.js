@@ -87,6 +87,7 @@ function mostrarCadastroViveiro() {
   total_povoado: total,
   tamanho: tamanho,
   laboratorio: laboratorio,
+  ativo: true,
 };
 
 const { data: viveiroSalvo, error } = await supabaseClient
@@ -801,10 +802,8 @@ async function excluirViveiro(index) {
   }
 
   await carregarViveiros();
-  limparAreaGestao();
-
   alert("Viveiro arquivado com sucesso.");
-}
+
 async function salvarDespesca(index) {
   const data = document.getElementById("dataDespesca").value;
   const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
