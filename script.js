@@ -45,6 +45,32 @@ async function sairUsuario() {
   alert("Você saiu da conta.");
 }
 
+function mostrarLogin() {
+  const area = document.getElementById("area-gestao");
+
+  area.innerHTML = `
+    <div class="painel-viveiro">
+      <div class="painel-topo">
+        <h2>Login</h2>
+      </div>
+
+      <label>E-mail</label>
+      <input type="email" id="emailLogin" placeholder="Digite seu e-mail">
+
+      <label>Senha</label>
+      <input type="password" id="senhaLogin" placeholder="Digite sua senha">
+
+      <button class="botao-gestao" onclick="entrarUsuario()">
+        Entrar
+      </button>
+
+      <button class="limpar" onclick="cadastrarUsuario()">
+        Criar conta
+      </button>
+    </div>
+  `;
+}
+
 function formatarNumeroBR(valor, casas = 0) {
   return valor.toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
@@ -1387,6 +1413,6 @@ async function carregarViveiros() {
     mostrarListaViveiros();
 }
 
-carregarViveiros();
+mostrarLogin();
 
 console.log("Supabase conectado:", supabaseClient);
