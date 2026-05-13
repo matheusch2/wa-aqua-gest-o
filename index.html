@@ -2,51 +2,57 @@
 <html>
 <head>
     <link rel="stylesheet" href="style.css">
-  
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-   
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>wa aqua</title>
 </head>
 
 <body>
+
     <div class="topo">
         <h1>WA AQUA GESTÃO</h1>
     </div>
 
     <div id="card-gestao" class="card">
+
         <h2>Gestão do cultivo</h2>
 
-        <div class="botoes-gestao">
+        <div id="menuGestao" class="botoes-gestao">
 
-    <button class="botao-gestao" onclick="mostrarCadastroViveiro()">
-        Cadastrar viveiro
-    </button>
+            <button class="botao-gestao" onclick="mostrarCadastroViveiro()">
+                Cadastrar viveiro
+            </button>
 
-    <button class="botao-gestao" onclick="mostrarListaViveiros()">
-        Ver viveiros
-    </button>
+            <button class="botao-gestao" onclick="mostrarListaViveiros()">
+                Ver viveiros
+            </button>
 
-    <button class="botao-gestao" onclick="mostrarLancamentoRacao()">
-        Lançar ração
-    </button>
+            <button class="botao-gestao" onclick="mostrarLancamentoRacao()">
+                Lançar ração
+            </button>
 
-    <button class="botao-gestao" onclick="mostrarHistoricoCultivo()">
-        Histórico
-    </button>
+            <button class="botao-gestao" onclick="mostrarHistoricoCultivo()">
+                Histórico
+            </button>
 
-    <button class="botao-gestao" onclick="mostrarHistoricoCiclos()">
-        Histórico de ciclos
-    </button>
+            <button class="botao-gestao" onclick="mostrarHistoricoCiclos()">
+                Histórico de ciclos
+            </button>
 
-    <button class="botao-gestao" onclick="abrirFinanceiro()">
-        Financeiro
-    </button>
+            <button class="botao-gestao" onclick="abrirFinanceiro()">
+                Financeiro
+            </button>
 
-</div>
+        </div>
+
         <div id="area-gestao" class="resultado"></div>
+
     </div>
 
     <script src="script.js"></script>
+
 </body>
 </html>
