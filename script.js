@@ -802,8 +802,9 @@ async function excluirViveiro(index) {
   }
 
   await carregarViveiros();
-  alert("Viveiro arquivado com sucesso.");
 
+  alert("Viveiro arquivado com sucesso.");
+}
 async function salvarDespesca(index) {
   const data = document.getElementById("dataDespesca").value;
   const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
