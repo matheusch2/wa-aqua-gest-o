@@ -801,7 +801,6 @@ async function excluirViveiro(index) {
   }
 
   await carregarViveiros();
-
   limparAreaGestao();
 
   alert("Viveiro arquivado com sucesso.");
