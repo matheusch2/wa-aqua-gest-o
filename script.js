@@ -707,12 +707,6 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
             <p>Consumo total</p>
             <h3>${formatarNumeroBR(totalRacao, 1)} kg</h3>
         </div>
-
-        ${
-          direto
-            ? `<button class="limpar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-        }
     `;
 }
 
