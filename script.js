@@ -3,6 +3,48 @@ const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 
+async function cadastrarUsuario() {
+  const email = document.getElementById("emailLogin").value;
+  const senha = document.getElementById("senhaLogin").value;
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: email,
+    password: senha,
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("Cadastro realizado. Verifique o e-mail, se for solicitado.");
+}
+
+async function entrarUsuario() {
+  const email = document.getElementById("emailLogin").value;
+  const senha = document.getElementById("senhaLogin").value;
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: senha,
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  await carregarViveiros();
+  alert("Login realizado com sucesso.");
+}
+
+async function sairUsuario() {
+  await supabaseClient.auth.signOut();
+  viveiros = [];
+  limparAreaGestao();
+  alert("Você saiu da conta.");
+}
+
 function formatarNumeroBR(valor, casas = 0) {
   return valor.toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
