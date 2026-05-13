@@ -1288,10 +1288,12 @@ function mostrarRelatorioCiclo(index, ciclo) {
 }
 
 async function carregarViveiros() {
-  const { data: viveirosData, error: erroViveiros } = await supabaseClient
-    .from("viveiros")
-    .select("*")
-    .order("nome", { ascending: true });
+
+  const { data: viveirosData, error: erroViveiros } =
+    await supabaseClient
+      .from("viveiros")
+      .select("*")
+      .order("nome", { ascending: true });
 
   if (erroViveiros) {
     console.log(erroViveiros);
@@ -1299,9 +1301,10 @@ async function carregarViveiros() {
     return;
   }
 
-  const { data: racoesData, error: erroRacoes } = await supabaseClient
-    .from("racoes")
-    .select("*");
+  const { data: racoesData, error: erroRacoes } =
+    await supabaseClient
+      .from("racoes")
+      .select("*");
 
   if (erroRacoes) {
     console.log(erroRacoes);
@@ -1309,26 +1312,38 @@ async function carregarViveiros() {
     return;
   }
 
-  const { data: biometriasData, error: erroBiometrias } = await supabaseClient
-    .from("biometrias")
-    .select("*");
+  const { data: biometriasData, error: erroBiometrias } =
+    await supabaseClient
+      .from("biometrias")
+      .select("*");
 
   if (erroBiometrias) {
     console.log(erroBiometrias);
     alert("Erro ao carregar biometrias.");
     return;
   }
+
   const { data: despescasData, error: erroDespescas } =
-  await supabaseClient
-    .from("despescas")
-    .select("*");
+    await supabaseClient
+      .from("despescas")
+      .select("*");
 
   if (erroDespescas) {
-  console.log(erroDespescas);
-  alert("Erro ao carregar despescas.");
-  return;
-}
+    console.log(erroDespescas);
+    alert("Erro ao carregar despescas.");
+    return;
+  }
 
+  const { data: ciclosData, error: erroCiclos } =
+    await supabaseClient
+      .from("ciclos")
+      .select("*");
+
+  if (erroCiclos) {
+    console.log(erroCiclos);
+    alert("Erro ao carregar ciclos.");
+    return;
+  }
 
   viveiros = viveirosData.map((item) => ({
     id: item.id,
@@ -1353,15 +1368,34 @@ async function carregarViveiros() {
       })),
 
     despescas: despescasData
-  .filter((despesca) => despesca.viveiro_id === item.id)
-  .map((despesca) => ({
-    data: despesca.data,
-    tipo: "Parcial",
-    quantidadeKg: Number(despesca.quantidade_kg),
-    pesoMedio: Number(despesca.peso_medio),
-  })),
-    
-    ciclosFinalizados: [],
+      .filter((despesca) => despesca.viveiro_id === item.id)
+      .map((despesca) => ({
+        data: despesca.data,
+        tipo: "Parcial",
+        quantidadeKg: Number(despesca.quantidade_kg),
+        pesoMedio: Number(despesca.peso_medio),
+      })),
+
+    ciclosFinalizados: ciclosData
+      .filter((ciclo) => ciclo.viveiro_id === item.id)
+      .map((ciclo) => ({
+        nomeViveiro: ciclo.nome_viveiro,
+        laboratorio: ciclo.laboratorio,
+        tamanho: ciclo.tamanho,
+        totalPovoado: ciclo.total_povoado,
+        dataPovoamento: ciclo.data_povoamento,
+        dataEncerramento: ciclo.data_encerramento,
+        diasCultivo: ciclo.dias_cultivo,
+        producaoFinal: Number(ciclo.producao_final),
+        despescaParcial: Number(ciclo.despesca_parcial),
+        produtividade: Number(ciclo.produtividade),
+        producaoTotal: Number(ciclo.producao_total),
+        pesoFinal: Number(ciclo.peso_final),
+        racaoConsumida: Number(ciclo.racao_consumida),
+        fca: Number(ciclo.fca),
+        sobrevivencia: Number(ciclo.sobrevivencia),
+        observacoes: ciclo.observacoes,
+      })),
   }));
 
   console.log("Viveiros carregados:", viveiros);
