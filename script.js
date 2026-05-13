@@ -206,7 +206,7 @@ function mostrarListaViveiros() {
 
             <button
                 class="botao-abrir"
-                onclick="abrirViveiro(${index})"
+                onclick="abrirViveiro(${viveiros.indexOf(viveiro)})"
             >
                 Abrir viveiro
             </button>
@@ -1261,6 +1261,8 @@ async function carregarViveiros() {
   }));
 
   console.log("Viveiros carregados:", viveiros);
+
+  mostrarListaViveiros();
 }
 
 carregarViveiros();
