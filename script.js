@@ -1257,6 +1257,16 @@ async function carregarViveiros() {
     return;
   }
 
+  const { data: biometriasData, error: erroBiometrias } = await supabaseClient
+    .from("biometrias")
+    .select("*");
+
+  if (erroBiometrias) {
+    console.log(erroBiometrias);
+    alert("Erro ao carregar biometrias.");
+    return;
+  }
+
   viveiros = viveirosData.map((item) => ({
     id: item.id,
     nome: item.nome,
@@ -1272,23 +1282,13 @@ async function carregarViveiros() {
         racao: Number(racao.racao),
       })),
 
-const { data: biometriasData, error: erroBiometrias } =
-  await supabaseClient
-    .from("biometrias")
-    .select("*");
-
-if (erroBiometrias) {
-  console.log(erroBiometrias);
-  alert("Erro ao carregar biometrias.");
-  return;
-}
     biometrias: biometriasData
-  .filter((bio) => bio.viveiro_id === item.id)
-  .map((bio) => ({
-    data: bio.data,
-    gramatura: Number(bio.gramatura),
-  })),
-    
+      .filter((bio) => bio.viveiro_id === item.id)
+      .map((bio) => ({
+        data: bio.data,
+        gramatura: Number(bio.gramatura),
+      })),
+
     despescas: [],
     ciclosFinalizados: [],
   }));
