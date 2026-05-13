@@ -1,4 +1,3 @@
-alert("JS carregou");
 
 const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
