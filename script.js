@@ -34,8 +34,8 @@ async function entrarUsuario() {
     return;
   }
 
-  await carregarViveiros();
   alert("Login realizado com sucesso.");
+location.reload();;
 }
 
 async function sairUsuario() {
@@ -1413,7 +1413,18 @@ async function carregarViveiros() {
 mostrarListaViveiros();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  mostrarLogin();
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const {
+    data: { session },
+  } = await supabaseClient.auth.getSession();
+
+  if (session) {
+    carregarViveiros();
+  } else {
+    mostrarLogin();
+  }
+
   console.log("Supabase conectado:", supabaseClient);
+
 });
