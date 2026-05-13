@@ -34,8 +34,11 @@ async function entrarUsuario() {
     return;
   }
 
+  document.getElementById("menuGestao").style.display = "grid";
+
+  await carregarViveiros();
+
   alert("Login realizado com sucesso.");
-location.reload();;
 }
 
 async function sairUsuario() {
