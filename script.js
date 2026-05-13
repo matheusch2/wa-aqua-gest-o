@@ -1218,34 +1218,46 @@ function mostrarRelatorioCiclo(index, ciclo) {
 }
 
 async function carregarViveiros() {
+  const { data: viveirosData, error: erroViveiros } = await supabaseClient
+    .from("viveiros")
+    .select("*")
+    .order("nome", { ascending: true });
 
-    const { data, error } = await supabaseClient
-        .from("viveiros")
-        .select("*")
-        .order("nome", { ascending: true });
+  if (erroViveiros) {
+    console.log(erroViveiros);
+    alert("Erro ao carregar viveiros.");
+    return;
+  }
 
-    if (error) {
-        console.log(error);
-        alert("Erro ao carregar viveiros.");
-        return;
-    }
+  const { data: racoesData, error: erroRacoes } = await supabaseClient
+    .from("racoes")
+    .select("*");
 
-    viveiros = data.map((item) => ({
-        id: item.id,
-        nome: item.nome,
-        dataPovoamento: item.data_povoamento,
-        totalPovoado: item.total_povoado,
-        tamanho: item.tamanho,
-        laboratorio: item.laboratorio,
-        racoes: [],
-        biometrias: [],
-        despescas: [],
-        ciclosFinalizados: [],
-    }));
+  if (erroRacoes) {
+    console.log(erroRacoes);
+    alert("Erro ao carregar rações.");
+    return;
+  }
 
-    console.log("Viveiros carregados:", viveiros);
+  viveiros = viveirosData.map((item) => ({
+    id: item.id,
+    nome: item.nome,
+    dataPovoamento: item.data_povoamento,
+    totalPovoado: item.total_povoado,
+    tamanho: item.tamanho,
+    laboratorio: item.laboratorio,
+
+    racoes: racoesData
+      .filter((racao) => racao.viveiro_id === item.id)
+      .map((racao) => ({
+        data: racao.data,
+        racao: Number(racao.racao),
+      })),
+
+    biometrias: [],
+    despescas: [],
+    ciclosFinalizados: [],
+  }));
+
+  console.log("Viveiros carregados:", viveiros);
 }
-
-carregarViveiros();
-
-console.log("Supabase conectado:", supabaseClient);
