@@ -1260,10 +1260,9 @@ async function carregarViveiros() {
     ciclosFinalizados: [],
   }));
 
-
-  console.log("Supabase conectado:", supabaseClient);
-
-  carregarViveiros();
-
   console.log("Viveiros carregados:", viveiros);
 }
+
+carregarViveiros();
+
+console.log("Supabase conectado:", supabaseClient);
