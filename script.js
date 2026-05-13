@@ -1341,4 +1341,10 @@ async function carregarViveiros() {
   console.log("Viveiros carregados:", viveiros);
 
   mostrarListaViveiros();
+  
 }
+async function carregarViveiros() {
+  // código da função
+}
+
+carregarViveiros();
