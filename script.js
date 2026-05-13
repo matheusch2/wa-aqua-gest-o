@@ -780,52 +780,32 @@ function salvarNovoCiclo(index) {
   abrirViveiro(index);
 }
 
-function excluirViveiro(index) {
-  viveiros.splice(index, 1);
-  mostrarListaViveiros();
-}
-
-function limparAreaGestao() {
-  document.getElementById("area-gestao").innerHTML = "";
-}
-
-function abrirDespesca(index) {
+async function excluirViveiro(index) {
   const viveiro = viveiros[index];
-  const area = document.getElementById("area-gestao");
-  const hoje = new Date().toISOString().split("T")[0];
 
-  area.innerHTML = `
-        <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>Lançar despesca - ${viveiro.nome}</h2>
-            </div>
+  if (!viveiro) return;
 
-            <label>Data da despesca</label>
-            <input type="date" id="dataDespesca" value="${hoje}">
+  const confirmar = confirm(`Deseja arquivar o viveiro "${viveiro.nome}"?`);
 
-            <label>Total despescado</label>
-            <div class="input-unidade">
-                <input type="number" id="kgDespesca" placeholder="Ex: 500">
-                <span>kg</span>
-            </div>
+  if (!confirmar) return;
 
-            <label>Peso médio</label>
-            <div class="input-unidade">
-                <input type="number" id="pesoDespesca" placeholder="Ex: 10">
-                <span>g</span>
-            </div>
+  const { error } = await supabaseClient
+    .from("viveiros")
+    .update({ ativo: false })
+    .eq("id", viveiro.id);
 
-            <button class="botao-gestao" onclick="salvarDespesca(${index})">
-                Salvar despesca
-            </button>
+  if (error) {
+    console.log(error);
+    alert("Erro ao arquivar viveiro.");
+    return;
+  }
 
-            <button class="limpar" onclick="abrirViveiro(${index})">
-                Voltar
-            </button>
-        </div>
-    `;
+  await carregarViveiros();
+
+  limparAreaGestao();
+
+  alert("Viveiro arquivado com sucesso.");
 }
-
 async function salvarDespesca(index) {
   const data = document.getElementById("dataDespesca").value;
   const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
