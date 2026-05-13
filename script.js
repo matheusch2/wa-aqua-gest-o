@@ -1266,6 +1266,17 @@ async function carregarViveiros() {
     alert("Erro ao carregar biometrias.");
     return;
   }
+  const { data: despescasData, error: erroDespescas } =
+  await supabaseClient
+    .from("despescas")
+    .select("*");
+
+  if (erroDespescas) {
+  console.log(erroDespescas);
+  alert("Erro ao carregar despescas.");
+  return;
+}
+
 
   viveiros = viveirosData.map((item) => ({
     id: item.id,
@@ -1289,7 +1300,15 @@ async function carregarViveiros() {
         gramatura: Number(bio.gramatura),
       })),
 
-    despescas: [],
+    despescas: despescasData
+  .filter((despesca) => despesca.viveiro_id === item.id)
+  .map((despesca) => ({
+    data: despesca.data,
+    tipo: "Parcial",
+    quantidadeKg: Number(despesca.quantidade_kg),
+    pesoMedio: Number(despesca.peso_medio),
+  })),
+    
     ciclosFinalizados: [],
   }));
 
