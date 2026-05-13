@@ -1,4 +1,3 @@
-
 const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -787,7 +786,9 @@ async function excluirViveiro(index) {
 
   if (!viveiro) return;
 
-  const confirmar = confirm(`Deseja arquivar o viveiro "${viveiro.nome}"?`);
+  const confirmar = confirm(
+    `Deseja excluir o viveiro "${viveiro.nome}"?`
+  );
 
   if (!confirmar) return;
 
@@ -798,13 +799,13 @@ async function excluirViveiro(index) {
 
   if (error) {
     console.log(error);
-    alert("Erro ao arquivar viveiro.");
+    alert("Erro ao excluir viveiro.");
     return;
   }
 
   await carregarViveiros();
 
-  alert("Viveiro arquivado com sucesso.");
+  alert("Viveiro excluído com sucesso.");
 }
 
 function renderizarHistoricoDespesca(index, elementoId, direto) {
