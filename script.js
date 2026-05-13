@@ -806,40 +806,6 @@ async function excluirViveiro(index) {
 
   alert("Viveiro arquivado com sucesso.");
 }
-async function carregarViveiros() {
-  console.log("Chamou carregarViveiros");
-
-  const { data: viveirosData, error: erroViveiros } =
-    await supabaseClient
-      .from("viveiros")
-      .select("*")
-      .order("nome", { ascending: true });
-
-  console.log("Erro viveiros:", erroViveiros);
-  console.log("Dados viveiros:", viveirosData);
-
-  if (erroViveiros) {
-    alert("Erro ao carregar viveiros: " + erroViveiros.message);
-    return;
-  }
-
-  viveiros = viveirosData.map((item) => ({
-    id: item.id,
-    nome: item.nome,
-    dataPovoamento: item.data_povoamento,
-    totalPovoado: item.total_povoado,
-    tamanho: item.tamanho,
-    laboratorio: item.laboratorio,
-    racoes: [],
-    biometrias: [],
-    despescas: [],
-    ciclosFinalizados: [],
-  }));
-
-  console.log("Array viveiros montado:", viveiros);
-
-  mostrarListaViveiros();
-}
 
 function renderizarHistoricoDespesca(index, elementoId, direto) {
   const viveiro = viveiros[index];
