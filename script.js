@@ -812,13 +812,30 @@ function abrirDespesca(index) {
     `;
 }
 
-function salvarDespesca(index) {
+async function salvarDespesca(index) {
   const data = document.getElementById("dataDespesca").value;
   const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
   const pesoMedio = parseFloat(document.getElementById("pesoDespesca").value);
 
   if (!data || !quantidadeKg || !pesoMedio) {
     alert("Preencha a data, os quilos despescados e o peso médio.");
+    return;
+  }
+
+  const novaDespesca = {
+    viveiro_id: viveiros[index].id,
+    data: data,
+    quantidade_kg: quantidadeKg,
+    peso_medio: pesoMedio,
+  };
+
+  const { error } = await supabaseClient
+    .from("despescas")
+    .insert([novaDespesca]);
+
+  if (error) {
+    console.log(error);
+    alert(error.message);
     return;
   }
 
