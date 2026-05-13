@@ -585,35 +585,42 @@ function mostrarHistoricoDoViveiroDireto(index) {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-        <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>Histórico - ${viveiro.nome}</h2>
-            </div>
+    <div class="painel-viveiro">
 
-            <div id="opcoes-historico">
-                <div class="painel-acoes">
-                    <button class="botao-historico" onclick="abrirHistoricoBiometriaDireto(${index})">
-                        Biometria
-                    </button>
+      <div class="painel-topo">
+        <h2>Histórico - ${viveiro.nome}</h2>
+      </div>
 
-                    <button class="botao-historico" onclick="abrirHistoricoRacaoDireto(${index})">
-                        Ração
-                    </button>
+      <div id="opcoes-historico">
+        <div class="painel-acoes">
 
-                    <button class="botao-historico" onclick="abrirHistoricoDespescaDireto(${index})">
-                        Despesca parcial
-                    </button>
-                </div>
-            </div>
-            
-            <div id="resultado-historico"></div>
+          <button class="botao-historico"
+            onclick="abrirHistoricoBiometriaDireto(${index})">
+            Biometria
+          </button>
 
-          <button class="botao-voltar" onclick="abrirViveiro(${index})">
-                  Voltar
-           </button>
+          <button class="botao-historico"
+            onclick="abrirHistoricoRacaoDireto(${index})">
+            Ração
+          </button>
+
+          <button class="botao-historico"
+            onclick="abrirHistoricoDespescaDireto(${index})">
+            Despesca parcial
+          </button>
 
         </div>
-    `;
+      </div>
+
+      <div id="resultado-historico"></div>
+
+      <button class="botao-voltar"
+        onclick="abrirViveiro(${index})">
+        Voltar
+      </button>
+
+    </div>
+  `;
 }
 
 function abrirHistoricoBiometriaDireto(index) {
