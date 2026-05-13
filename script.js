@@ -436,10 +436,11 @@ function abrirBiometria(index) {
     `;
 }
 
-function salvarBiometria(index) {
+async function salvarBiometria(index) {
   const data = document.getElementById("dataBiometria").value;
+
   const gramatura = parseFloat(
-    document.getElementById("gramaturaBiometria").value,
+    document.getElementById("gramaturaBiometria").value
   );
 
   if (!data || !gramatura) {
@@ -449,6 +450,22 @@ function salvarBiometria(index) {
 
   if (!viveiros[index].biometrias) {
     viveiros[index].biometrias = [];
+  }
+
+  const novaBiometria = {
+    viveiro_id: viveiros[index].id,
+    data: data,
+    gramatura: gramatura,
+  };
+
+  const { error } = await supabaseClient
+    .from("biometrias")
+    .insert([novaBiometria]);
+
+  if (error) {
+    console.log(error);
+    alert(error.message);
+    return;
   }
 
   viveiros[index].biometrias.push({
@@ -1255,7 +1272,23 @@ async function carregarViveiros() {
         racao: Number(racao.racao),
       })),
 
-    biometrias: [],
+const { data: biometriasData, error: erroBiometrias } =
+  await supabaseClient
+    .from("biometrias")
+    .select("*");
+
+if (erroBiometrias) {
+  console.log(erroBiometrias);
+  alert("Erro ao carregar biometrias.");
+  return;
+}
+    biometrias: biometriasData
+  .filter((bio) => bio.viveiro_id === item.id)
+  .map((bio) => ({
+    data: bio.data,
+    gramatura: Number(bio.gramatura),
+  })),
+    
     despescas: [],
     ciclosFinalizados: [],
   }));
