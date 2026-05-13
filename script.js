@@ -1410,9 +1410,10 @@ async function carregarViveiros() {
 
   console.log("Viveiros carregados:", viveiros);
 
-    mostrarListaViveiros();
+mostrarListaViveiros();
 }
 
-mostrarLogin();
-
-console.log("Supabase conectado:", supabaseClient);
+document.addEventListener("DOMContentLoaded", () => {
+  mostrarLogin();
+  console.log("Supabase conectado:", supabaseClient);
+});
