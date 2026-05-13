@@ -608,9 +608,11 @@ function mostrarHistoricoDoViveiroDireto(index) {
             
             <div id="resultado-historico"></div>
 
-            <button class="botao-voltar" onclick="abrirViveiro(${index})">
-                 Voltar
-            </button>
+           ${
+  direto
+    ? ""
+    : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+}
 
         </div>
     `;
