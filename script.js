@@ -805,45 +805,39 @@ async function excluirViveiro(index) {
 
   alert("Viveiro arquivado com sucesso.");
 }
-async function salvarDespesca(index) {
-  const data = document.getElementById("dataDespesca").value;
-  const quantidadeKg = parseFloat(document.getElementById("kgDespesca").value);
-  const pesoMedio = parseFloat(document.getElementById("pesoDespesca").value);
+async function carregarViveiros() {
+  console.log("Chamou carregarViveiros");
 
-  if (!data || !quantidadeKg || !pesoMedio) {
-    alert("Preencha a data, os quilos despescados e o peso médio.");
+  const { data: viveirosData, error: erroViveiros } =
+    await supabaseClient
+      .from("viveiros")
+      .select("*")
+      .order("nome", { ascending: true });
+
+  console.log("Erro viveiros:", erroViveiros);
+  console.log("Dados viveiros:", viveirosData);
+
+  if (erroViveiros) {
+    alert("Erro ao carregar viveiros: " + erroViveiros.message);
     return;
   }
 
-  const novaDespesca = {
-    viveiro_id: viveiros[index].id,
-    data: data,
-    quantidade_kg: quantidadeKg,
-    peso_medio: pesoMedio,
-  };
+  viveiros = viveirosData.map((item) => ({
+    id: item.id,
+    nome: item.nome,
+    dataPovoamento: item.data_povoamento,
+    totalPovoado: item.total_povoado,
+    tamanho: item.tamanho,
+    laboratorio: item.laboratorio,
+    racoes: [],
+    biometrias: [],
+    despescas: [],
+    ciclosFinalizados: [],
+  }));
 
-  const { error } = await supabaseClient
-    .from("despescas")
-    .insert([novaDespesca]);
+  console.log("Array viveiros montado:", viveiros);
 
-  if (error) {
-    console.log(error);
-    alert(error.message);
-    return;
-  }
-
-  if (!viveiros[index].despescas) {
-    viveiros[index].despescas = [];
-  }
-
-  viveiros[index].despescas.push({
-    data: data,
-    tipo: "Parcial",
-    quantidadeKg: quantidadeKg,
-    pesoMedio: pesoMedio,
-  });
-
-  abrirViveiro(index);
+  mostrarListaViveiros();
 }
 
 function renderizarHistoricoDespesca(index, elementoId, direto) {
