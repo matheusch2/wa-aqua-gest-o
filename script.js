@@ -46,27 +46,46 @@ async function sairUsuario() {
 }
 
 function mostrarLogin() {
+
+  document.getElementById("menuGestao").style.display = "none";
+
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
     <div class="painel-viveiro">
+
       <div class="painel-topo">
         <h2>Login</h2>
       </div>
 
       <label>E-mail</label>
-      <input type="email" id="emailLogin" placeholder="Digite seu e-mail">
+      <input
+        type="email"
+        id="emailLogin"
+        placeholder="Digite seu e-mail"
+      >
 
       <label>Senha</label>
-      <input type="password" id="senhaLogin" placeholder="Digite sua senha">
+      <input
+        type="password"
+        id="senhaLogin"
+        placeholder="Digite sua senha"
+      >
 
-      <button class="botao-gestao" onclick="entrarUsuario()">
+      <button
+        class="botao-gestao"
+        onclick="entrarUsuario()"
+      >
         Entrar
       </button>
 
-      <button class="limpar" onclick="cadastrarUsuario()">
+      <button
+        class="limpar"
+        onclick="cadastrarUsuario()"
+      >
         Criar conta
       </button>
+
     </div>
   `;
 }
