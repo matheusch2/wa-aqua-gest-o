@@ -1293,6 +1293,7 @@ async function carregarViveiros() {
     await supabaseClient
       .from("viveiros")
       .select("*")
+      .eq("ativo", true)
       .order("nome", { ascending: true });
 
   if (erroViveiros) {
@@ -1402,7 +1403,3 @@ async function carregarViveiros() {
 
   mostrarListaViveiros();
 }
-
-carregarViveiros();
-
-console.log("Supabase conectado:", supabaseClient);
