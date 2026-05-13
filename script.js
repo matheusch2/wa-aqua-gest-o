@@ -358,7 +358,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
     `;
 }
 
-function salvarLancamentoRacao(indexDireto = "") {
+  async function salvarLancamentoRacao(indexDireto = "") {
   const index =
     indexDireto !== ""
       ? indexDireto
@@ -376,9 +376,25 @@ function salvarLancamentoRacao(indexDireto = "") {
     viveiros[index].racoes = [];
   }
 
+  const novaRacao = {
+  viveiro_id: viveiros[index].id,
+  data: data,
+  racao: racao,
+  };
+
+  const { error } = await supabaseClient
+  .from("racoes")
+  .insert([novaRacao]);
+
+  if (error) {
+  console.log(error);
+  alert(error.message);
+  return;
+  }
+
   viveiros[index].racoes.push({
-    data: data,
-    racao: racao,
+  data: data,
+  racao: racao,
   });
 
   if (typeof salvarDados === "function") {
@@ -386,7 +402,7 @@ function salvarLancamentoRacao(indexDireto = "") {
   }
 
   abrirViveiro(index);
-}
+  }
 
 function abrirBiometria(index) {
   const viveiro = viveiros[index];
