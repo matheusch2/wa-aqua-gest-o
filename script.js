@@ -1485,10 +1485,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   } = await supabaseClient.auth.getSession();
 
   if (session) {
-    carregarViveiros();
-  } else {
-    mostrarLogin();
-  }
+  document.getElementById("menuGestao").style.display = "grid";
+  carregarViveiros();
+} else {
+  mostrarLogin();
+}
 
   console.log("Supabase conectado:", supabaseClient);
 
