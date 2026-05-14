@@ -93,6 +93,20 @@ function mostrarLogin() {
   `;
 }
 
+async function pegarUsuarioLogado() {
+  const {
+    data: { user },
+    error,
+  } = await supabaseClient.auth.getUser();
+
+  if (error || !user) {
+    alert("Usuário não está logado.");
+    return null;
+  }
+
+  return user;
+}
+
 function formatarNumeroBR(valor, casas = 0) {
   return valor.toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
@@ -164,6 +178,9 @@ function mostrarCadastroViveiro() {
   const total = document.getElementById("totalPovoadoGestao").value;
   const tamanho = document.getElementById("tamanhoViveiro").value;
   const laboratorio = document.getElementById("laboratorio").value;
+  const usuario = await pegarUsuarioLogado();
+
+  if (!usuario) return;
 
   if (!nome || !data || !total || !tamanho || !laboratorio) {
     document.getElementById("area-gestao").innerHTML +=
@@ -178,6 +195,7 @@ function mostrarCadastroViveiro() {
   tamanho: tamanho,
   laboratorio: laboratorio,
   ativo: true,
+  user_id: usuario.id,
 };
 
 const { data: viveiroSalvo, error } = await supabaseClient
@@ -458,6 +476,9 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 
   const data = document.getElementById("dataRacao").value;
   const racao = parseFloat(document.getElementById("consumoRacao").value);
+  const usuario = await pegarUsuarioLogado();
+
+  if (!usuario) return;
 
   if (!data || !racao) {
     alert("Preencha a data e o consumo de ração.");
@@ -472,6 +493,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
   viveiro_id: viveiros[index].id,
   data: data,
   racao: racao,
+  user_id: usuario.id,
   };
 
   const { error } = await supabaseClient
@@ -533,6 +555,10 @@ async function salvarBiometria(index) {
   const gramatura = parseFloat(
     document.getElementById("gramaturaBiometria").value
   );
+  const usuario = await pegarUsuarioLogado();
+
+if (!usuario) return;
+  
 
   if (!data || !gramatura) {
     alert("Preencha a data e a gramatura.");
@@ -547,7 +573,10 @@ async function salvarBiometria(index) {
     viveiro_id: viveiros[index].id,
     data: data,
     gramatura: gramatura,
+    user_id: usuario.id,
   };
+
+  
 
   const { error } = await supabaseClient
     .from("biometrias")
@@ -1075,6 +1104,9 @@ async function salvarEncerramentoCiclo(index) {
   const producaoFinal = parseFloat(document.getElementById("producaoFinal").value);
   const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
   const observacoes = document.getElementById("observacoesCiclo").value;
+  const usuario = await pegarUsuarioLogado();
+
+if (!usuario) return;
 
   if (!dataEncerramento || !producaoFinal || !pesoFinal) {
     alert("Preencha data de encerramento, produção final e peso médio final.");
@@ -1106,6 +1138,7 @@ async function salvarEncerramentoCiclo(index) {
 
   const cicloBanco = {
     viveiro_id: viveiro.id,
+    user_id: usuario.id,
     nome_viveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
     tamanho: viveiro.tamanho,
@@ -1320,11 +1353,16 @@ function mostrarRelatorioCiclo(index, ciclo) {
 
 async function carregarViveiros() {
 
-  const { data: viveirosData, error: erroViveiros } =
+  const usuario = await pegarUsuarioLogado();
+
+if (!usuario) return;
+
+const { data: viveirosData, error: erroViveiros } =
   await supabaseClient
     .from("viveiros")
     .select("*")
     .eq("ativo", true)
+    .eq("user_id", usuario.id)
     .order("nome", { ascending: true });
   
   if (erroViveiros) {
