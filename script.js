@@ -7,7 +7,12 @@ async function cadastrarUsuario() {
   const email = document.getElementById("emailLogin").value;
   const senha = document.getElementById("senhaLogin").value;
 
-  const { data, error } = await supabaseClient.auth.signUp({
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signUp({
     email: email,
     password: senha,
   });
@@ -17,7 +22,7 @@ async function cadastrarUsuario() {
     return;
   }
 
-  alert("Cadastro realizado. Verifique o e-mail, se for solicitado.");
+  alert("Conta criada. Agora faça login.");
 }
 
 async function entrarUsuario() {
