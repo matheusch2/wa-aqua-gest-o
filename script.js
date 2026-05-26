@@ -95,11 +95,10 @@ function mostrarLogin() {
       >
 
       <label>Senha</label>
-      <input
-        type="password"
-        id="senhaLogin"
-        placeholder="Digite sua senha"
-      >
+      <div class="input-senha">
+        <input type="password" id="senhaLogin" placeholder="Digite sua senha">
+        <button class="botao-olho" type="button" onclick="toggleSenha('senhaLogin', this)">👁️</button>
+      </div>
 
       <button
         class="botao-entrar"
@@ -147,18 +146,16 @@ function mostrarCadastro() {
       >
 
       <label>Senha</label>
-      <input
-        type="password"
-        id="senhaCadastro"
-        placeholder="Mínimo 6 caracteres"
-      >
+      <div class="input-senha">
+        <input type="password" id="senhaCadastro" placeholder="Mínimo 6 caracteres">
+        <button class="botao-olho" type="button" onclick="toggleSenha('senhaCadastro', this)">👁️</button>
+      </div>
 
       <label>Confirmar senha</label>
-      <input
-        type="password"
-        id="confirmarSenha"
-        placeholder="Repita a senha"
-      >
+      <div class="input-senha">
+        <input type="password" id="confirmarSenha" placeholder="Repita a senha">
+        <button class="botao-olho" type="button" onclick="toggleSenha('confirmarSenha', this)">👁️</button>
+      </div>
 
       <button
         class="botao-cadastrar"
@@ -250,6 +247,17 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
 }
 
 // ─── FUNÇÕES UTILITÁRIAS (antes ausentes) ───────────────────────────────────
+
+function toggleSenha(inputId, botao) {
+  const input = document.getElementById(inputId);
+  if (input.type === "password") {
+    input.type = "text";
+    botao.textContent = "🙈";
+  } else {
+    input.type = "password";
+    botao.textContent = "👁️";
+  }
+}
 
 function limparAreaGestao() {
   const area = document.getElementById("area-gestao");

@@ -381,6 +381,41 @@ button {
     border-bottom: 2px solid rgb(6,107,99);
 }
 
+.input-senha {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    background: white;
+    overflow: hidden;
+}
+
+.input-senha input {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    outline: none;
+    margin-bottom: 0;
+    width: auto;
+}
+
+.botao-olho {
+    background: none;
+    border: none;
+    border-left: 1px solid #eee;
+    padding: 0 10px;
+    font-size: 16px;
+    cursor: pointer;
+    width: auto;
+    min-width: unset;
+    height: 100%;
+    color: #888;
+    display: flex;
+    align-items: center;
+}
+
 .botao-editar {
     background: none;
     border: none;
