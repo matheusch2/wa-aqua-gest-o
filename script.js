@@ -294,16 +294,24 @@ function limparAreaGestao() {
   area.innerHTML = "";
 }
 
+function esconderMenu() {
+  document.getElementById("menuGestao").style.display = "none";
+}
+
 function voltarMenuGestao() {
+  document.getElementById("menuGestao").style.display = "grid";
   limparAreaGestao();
 }
 
 // ─── VIVEIRO ─────────────────────────────────────────────────────────────────
 
 function mostrarCadastroViveiro() {
+  esconderMenu();
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
+        <h2 style="text-align:center;color:rgb(6,107,99);text-transform:uppercase;font-size:18px;margin:0 0 16px 0">Cadastrar Viveiro</h2>
+
         <label>Nome do viveiro</label>
         <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
 
@@ -323,6 +331,7 @@ function mostrarCadastroViveiro() {
         <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
 
         <button class="botao-gestao" onclick="salvarViveiro()">Salvar viveiro</button>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
     `;
 }
 
@@ -401,23 +410,21 @@ async function salvarViveiro() {
 }
 
 function mostrarListaViveiros() {
+  esconderMenu();
   const area = document.getElementById("area-gestao");
 
   if (viveiros.length === 0) {
     area.innerHTML = `
             <div class="viveiro-card">
-
                 <div class="viveiro-topo">
                     <h3>Nenhum viveiro</h3>
                 </div>
-
                 <div class="viveiro-info">
                     <p>Cadastre um viveiro para começar.</p>
                 </div>
-
             </div>
+            <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
         `;
-
     return;
   }
 
@@ -433,7 +440,6 @@ function mostrarListaViveiros() {
       const indexOriginal = viveiros.indexOf(viveiro);
       return `
         <div class="viveiro-card">
-
           <div class="vc-topo">
             <div class="vc-icone-box">🦐</div>
             <div class="vc-titulo-area">
@@ -444,9 +450,7 @@ function mostrarListaViveiros() {
               🦐 ${viveiro.totalPovoado || "--"} PLs
             </div>
           </div>
-
           <hr class="vc-separador">
-
           <div class="vc-info-lista">
             <div class="vc-info-item">
               <div class="vc-info-icone verde">🗓️</div>
@@ -470,15 +474,13 @@ function mostrarListaViveiros() {
               </div>
             </div>
           </div>
-
           <button class="botao-abrir" onclick="abrirViveiro(${indexOriginal})">
             Abrir viveiro →
           </button>
-
         </div>
       `;
     })
-    .join("");
+    .join("") + `<button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>`;
 }
 
 function abrirViveiro(index) {
@@ -563,6 +565,8 @@ function abrirViveiro(index) {
                     Excluir viveiro
                 </button>
             </div>
+
+            <button class="botao-voltar" onclick="mostrarListaViveiros()">← Voltar</button>
         </div>
     `;
 }
@@ -570,6 +574,7 @@ function abrirViveiro(index) {
 // ─── RAÇÃO ────────────────────────────────────────────────────────────────────
 
 function mostrarLancamentoRacao(indexSelecionado = "") {
+  if (indexSelecionado === "") esconderMenu();
   const area = document.getElementById("area-gestao");
 
   if (viveiros.length === 0) {
@@ -855,6 +860,7 @@ async function salvarDespesca(index) {
 // ─── HISTÓRICO ────────────────────────────────────────────────────────────────
 
 function mostrarHistoricoCultivo(indexSelecionado = "") {
+  esconderMenu();
   const area = document.getElementById("area-gestao");
 
   if (viveiros.length === 0) {
@@ -1381,6 +1387,7 @@ function voltarOpcoesHistorico() {
 }
 
 function mostrarHistoricoCiclos() {
+  esconderMenu();
   const area = document.getElementById("area-gestao");
 
   let ciclos = [];
@@ -1402,36 +1409,32 @@ function mostrarHistoricoCiclos() {
                 <p>Nenhum ciclo encerrado</p>
                 <span>Os ciclos finalizados aparecerão aqui.</span>
             </div>
+            <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
         `;
-
     return;
   }
 
   area.innerHTML = ciclos
     .map(
       (item) => `
-
         <div class="viveiro-card">
-
             <div class="viveiro-topo">
                 <h3>${item.viveiro}</h3>
                 <span>${item.ciclo.producaoTotal} kg</span>
             </div>
-
             <div class="viveiro-info">
                 <p>Povoamento: ${formatarData(item.ciclo.dataPovoamento)}</p>
                 <p>Encerramento: ${formatarData(item.ciclo.dataEncerramento)}</p>
                 <p>Sobrevivência: ${formatarNumeroBR(item.ciclo.sobrevivencia, 1)}%</p>
             </div>
-
         </div>
-
     `,
     )
-    .join("");
+    .join("") + `<button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>`;
 }
 
 function abrirFinanceiro() {
+  esconderMenu();
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
@@ -1439,6 +1442,7 @@ function abrirFinanceiro() {
             <p>Financeiro</p>
             <span>Módulo em desenvolvimento.</span>
         </div>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
     `;
 }
 
