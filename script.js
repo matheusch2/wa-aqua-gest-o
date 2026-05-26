@@ -41,6 +41,11 @@ async function entrarUsuario() {
   const email = document.getElementById("emailLogin").value;
   const senha = document.getElementById("senhaLogin").value;
 
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
+  }
+
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: email,
     password: senha,
@@ -51,11 +56,17 @@ async function entrarUsuario() {
     return;
   }
 
+  // Limpa o formulário de login imediatamente
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="boas-vindas">
+      <p>Carregando...</p>
+    </div>
+  `;
+
   document.getElementById("menuGestao").style.display = "grid";
 
   await carregarViveiros();
-
-  alert("Login realizado com sucesso.");
 }
 
 async function sairUsuario() {

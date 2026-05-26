@@ -534,6 +534,15 @@ button {
     display: none;
 }
 
+/* ─── BOAS VINDAS ────────────────────────────────────────────────────────── */
+
+.boas-vindas {
+    text-align: center;
+    padding: 30px 0;
+    color: #9ca3af;
+    font-size: 15px;
+}
+
 /* ─── LOGIN / CADASTRO ───────────────────────────────────────────────────── */
 
 .titulo-login {
