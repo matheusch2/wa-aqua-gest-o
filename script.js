@@ -1092,8 +1092,9 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
                         <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
                         <span>${formatarData(item.data)}</span>
                         <span>${formatarNumeroBR(item.racao, 1)} kg</span>
-                        <span>
+                        <span style="display:flex;gap:4px;justify-content:flex-end">
                           <button class="botao-editar" onclick="abrirEdicaoRacao(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
+                          <button class="botao-editar" style="color:#dc2626" onclick="excluirRacao(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
                         </span>
                     </div>
                 `,
@@ -1170,6 +1171,32 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
 
   viveiros[viveiroIndex].racoes[racaoIndex].data = novaData;
   viveiros[viveiroIndex].racoes[racaoIndex].racao = novaQtd;
+
+  renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
+}
+
+async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto) {
+  if (!confirm("Excluir este lançamento de ração?")) return;
+
+  const racao = viveiros[viveiroIndex].racoes[racaoIndex];
+
+  if (!racao || !racao.id) {
+    alert("Erro: lançamento sem ID.");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("racoes")
+    .delete()
+    .eq("id", racao.id);
+
+  if (error) {
+    console.log(error);
+    alert("Erro ao excluir lançamento.");
+    return;
+  }
+
+  viveiros[viveiroIndex].racoes.splice(racaoIndex, 1);
 
   renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
 }

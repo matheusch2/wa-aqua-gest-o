@@ -434,7 +434,7 @@ button {
 
 .linha-historico-racao {
     display: grid;
-    grid-template-columns: 0.5fr 1fr 0.9fr 0.4fr;
+    grid-template-columns: 0.5fr 1fr 0.9fr 0.7fr;
     gap: 6px;
     padding: 10px 4px;
     border-bottom: 1px solid #e5e7eb;
