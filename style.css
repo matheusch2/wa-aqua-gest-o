@@ -582,7 +582,7 @@ button {
 
 .botao-entrar {
     width: 100%;
-    padding: 11px;
+    padding: 8px;
     background: rgb(6, 107, 99);
     color: white;
     border: none;
@@ -636,7 +636,7 @@ button {
 
 .botao-criar-conta {
     width: 100%;
-    padding: 11px;
+    padding: 8px;
     background: transparent;
     color: rgb(6, 107, 99);
     border: 2px solid rgb(6, 107, 99);
@@ -652,7 +652,7 @@ button {
 
 .botao-cadastrar {
     width: 100%;
-    padding: 11px;
+    padding: 8px;
     background: rgb(6, 107, 99);
     color: white;
     border: none;
