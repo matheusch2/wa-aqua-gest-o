@@ -438,13 +438,13 @@ function mostrarListaViveiros() {
         <div class="viveiro-card">
 
           <div class="vc-topo">
-            <div class="vc-icone-box">🦐</div>
+            <div class="vc-icone-box"><span class="emoji-verde">🦐</span></div>
             <div class="vc-titulo-area">
               <h3>${viveiro.nome}</h3>
               <span class="vc-badge-cultivo">● Em cultivo</span>
             </div>
             <div class="vc-pls-badge">
-              🦐 ${viveiro.totalPovoado || "--"} PLs
+              <span class="emoji-verde">🦐</span> ${viveiro.totalPovoado || "--"} PLs
             </div>
           </div>
 
@@ -452,7 +452,7 @@ function mostrarListaViveiros() {
 
           <div class="vc-info-lista">
             <div class="vc-info-item">
-              <div class="vc-info-icone verde">📅</div>
+              <div class="vc-info-icone verde">🗓️</div>
               <div>
                 <strong>Povoamento</strong>
                 <p>${formatarData(viveiro.dataPovoamento) || "--"}</p>
@@ -466,7 +466,7 @@ function mostrarListaViveiros() {
               </div>
             </div>
             <div class="vc-info-item">
-              <div class="vc-info-icone roxo">📏</div>
+              <div class="vc-info-icone roxo">📐</div>
               <div>
                 <strong>Tamanho</strong>
                 <p>${viveiro.tamanho || "--"} ha</p>
@@ -1814,8 +1814,6 @@ async function carregarViveiros() {
   }));
 
   console.log("Viveiros carregados:", viveiros);
-
-  mostrarListaViveiros();
 }
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────

@@ -695,8 +695,17 @@ button {
 .botao-sair {
     background: transparent;
     color: #dc2626;
-    border: 2px solid #dc2626;
+    border: none;
     grid-column: 1 / -1;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px;
+    min-height: unset;
+}
+
+.emoji-verde {
+    display: inline-block;
+    filter: sepia(1) saturate(4) hue-rotate(100deg);
 }
 
 .botao-entrar {
