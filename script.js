@@ -85,7 +85,7 @@ function mostrarLogin() {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <h1 class="titulo-login">Entrar</h1>
+      <h1 class="titulo-login">ENTRAR</h1>
 
       <label>E-mail</label>
       <input
@@ -109,7 +109,7 @@ function mostrarLogin() {
 
       <button
         class="link-esqueci"
-        onclick="recuperarSenha()"
+        onclick="mostrarRecuperarSenha()"
       >
         Esqueci minha senha
       </button>
@@ -136,7 +136,7 @@ function mostrarCadastro() {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <h1 class="titulo-login">Criar conta</h1>
+      <h1 class="titulo-login titulo-menor">CRIAR CONTA</h1>
 
       <label>E-mail</label>
       <input
@@ -175,11 +175,44 @@ function mostrarCadastro() {
   `;
 }
 
+function mostrarRecuperarSenha() {
+  const area = document.getElementById("area-gestao");
+
+  area.innerHTML = `
+    <div class="painel-viveiro">
+
+      <h1 class="titulo-login titulo-menor">RECUPERAR SENHA</h1>
+
+      <label>E-mail da sua conta</label>
+      <input
+        type="email"
+        id="emailRecuperacao"
+        placeholder="Digite seu e-mail"
+      >
+
+      <button
+        class="botao-entrar"
+        onclick="recuperarSenha()"
+      >
+        Enviar link de recuperação
+      </button>
+
+      <button
+        class="limpar"
+        onclick="mostrarLogin()"
+      >
+        ← Voltar para o login
+      </button>
+
+    </div>
+  `;
+}
+
 async function recuperarSenha() {
-  const email = document.getElementById("emailLogin").value;
+  const email = document.getElementById("emailRecuperacao").value;
 
   if (!email) {
-    alert("Digite seu e-mail no campo acima para recuperar a senha.");
+    alert("Digite seu e-mail.");
     return;
   }
 
@@ -190,7 +223,8 @@ async function recuperarSenha() {
     return;
   }
 
-  alert("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+  alert("E-mail enviado! Verifique sua caixa de entrada.");
+  mostrarLogin();
 }
 
 async function pegarUsuarioLogado() {
@@ -252,10 +286,10 @@ function toggleSenha(inputId, botao) {
   const input = document.getElementById(inputId);
   if (input.type === "password") {
     input.type = "text";
-    botao.textContent = "🙈";
+    botao.innerHTML = '<span style="text-decoration:line-through">👁</span>';
   } else {
     input.type = "password";
-    botao.textContent = "👁️";
+    botao.innerHTML = "👁";
   }
 }
 

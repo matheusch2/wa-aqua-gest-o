@@ -621,6 +621,10 @@ button {
     margin: 0 0 24px 0;
 }
 
+.titulo-menor {
+    font-size: 22px;
+}
+
 .botao-entrar {
     width: 100%;
     padding: 8px;
