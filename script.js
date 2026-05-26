@@ -645,6 +645,10 @@ async function salvarLancamentoRacao(indexDireto = "") {
     return;
   }
 
+  // Desabilita o botão para evitar duplo clique
+  const botao = document.querySelector(".botao-form");
+  if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
+
   if (!viveiros[index].racoes) {
     viveiros[index].racoes = [];
   }
@@ -723,6 +727,9 @@ async function salvarBiometria(index) {
     alert("Preencha a data e a gramatura.");
     return;
   }
+
+  const botao = document.querySelector(".botao-gestao");
+  if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
 
   if (!viveiros[index].biometrias) {
     viveiros[index].biometrias = [];
@@ -805,6 +812,9 @@ async function salvarDespesca(index) {
     alert("Preencha a data, quantidade e peso médio.");
     return;
   }
+
+  const botao = document.querySelector(".botao-gestao");
+  if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
 
   if (!viveiros[index].despescas) {
     viveiros[index].despescas = [];
