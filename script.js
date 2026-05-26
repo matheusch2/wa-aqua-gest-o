@@ -4,11 +4,22 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 
 async function cadastrarUsuario() {
-  const email = document.getElementById("emailLogin").value;
-  const senha = document.getElementById("senhaLogin").value;
+  const email = document.getElementById("emailCadastro").value;
+  const senha = document.getElementById("senhaCadastro").value;
+  const confirmar = document.getElementById("confirmarSenha").value;
 
-  if (!email || !senha) {
-    alert("Preencha e-mail e senha.");
+  if (!email || !senha || !confirmar) {
+    alert("Preencha todos os campos.");
+    return;
+  }
+
+  if (senha !== confirmar) {
+    alert("As senhas não coincidem.");
+    return;
+  }
+
+  if (senha.length < 6) {
+    alert("A senha deve ter pelo menos 6 caracteres.");
     return;
   }
 
@@ -22,7 +33,8 @@ async function cadastrarUsuario() {
     return;
   }
 
-  alert("Conta criada. Agora faça login.");
+  alert("Conta criada com sucesso! Agora faça login.");
+  mostrarLogin();
 }
 
 async function entrarUsuario() {
@@ -87,11 +99,65 @@ function mostrarLogin() {
         Entrar
       </button>
 
+      <div class="separador-login">
+        <span>Não tem uma conta?</span>
+      </div>
+
       <button
-        class="limpar"
+        class="botao-criar-conta"
+        onclick="mostrarCadastro()"
+      >
+        Criar conta
+      </button>
+
+    </div>
+  `;
+}
+
+function mostrarCadastro() {
+
+  const area = document.getElementById("area-gestao");
+
+  area.innerHTML = `
+    <div class="painel-viveiro">
+
+      <div class="painel-topo">
+        <h2>Criar conta</h2>
+      </div>
+
+      <label>E-mail</label>
+      <input
+        type="email"
+        id="emailCadastro"
+        placeholder="Digite seu e-mail"
+      >
+
+      <label>Senha</label>
+      <input
+        type="password"
+        id="senhaCadastro"
+        placeholder="Mínimo 6 caracteres"
+      >
+
+      <label>Confirmar senha</label>
+      <input
+        type="password"
+        id="confirmarSenha"
+        placeholder="Repita a senha"
+      >
+
+      <button
+        class="botao-gestao"
         onclick="cadastrarUsuario()"
       >
         Criar conta
+      </button>
+
+      <button
+        class="limpar"
+        onclick="mostrarLogin()"
+      >
+        ← Voltar para o login
       </button>
 
     </div>

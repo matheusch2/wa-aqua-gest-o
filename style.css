@@ -534,6 +534,43 @@ button {
     display: none;
 }
 
+.separador-login {
+    display: flex;
+    align-items: center;
+    margin: 18px 0 12px 0;
+    gap: 10px;
+}
+
+.separador-login::before,
+.separador-login::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.separador-login span {
+    color: #9ca3af;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.botao-criar-conta {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: rgb(6, 107, 99);
+    border: 2px solid rgb(6, 107, 99);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.botao-criar-conta:hover {
+    background: rgba(6, 107, 99, 0.06);
+}
+
 /* ─── IMPRESSÃO ──────────────────────────────────────────────────────────────── */
 
 @media print {
