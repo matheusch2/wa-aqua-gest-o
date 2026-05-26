@@ -1821,18 +1821,19 @@ async function carregarViveiros() {
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
 
-  const {
-    data: { session },
-  } = await supabaseClient.auth.getSession();
-
-  if (session) {
-    document.getElementById("menuGestao").style.display = "grid";
-    carregarViveiros();
-  } else {
+    if (session) {
+      document.getElementById("menuGestao").style.display = "grid";
+      await carregarViveiros();
+    } else {
+      mostrarLogin();
+    }
+  } catch (error) {
+    console.log("Erro na inicialização:", error);
     mostrarLogin();
   }
-
-  console.log("Supabase conectado:", supabaseClient);
-
 });
