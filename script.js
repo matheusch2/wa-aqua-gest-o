@@ -970,7 +970,7 @@ function mostrarHistoricoDoViveiroDireto(index) {
     <div class="painel-viveiro">
 
       <div class="painel-topo">
-        <h2>Histórico - ${viveiro.nome}</h2>
+        <h2>${viveiro.nome}</h2>
       </div>
 
       <div id="opcoes-historico">
@@ -1072,13 +1072,13 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
 
   resultado.innerHTML = `
-        <h3>Ração</h3>
+        <h3 class="titulo-secao-historico">RAÇÃO</h3>
 
         <div class="tabela-historico">
             <div class="linha-historico-racao cabecalho">
-                <span>Dia</span>
-                <span>Data</span>
-                <span>Ração</span>
+                <span>DIA</span>
+                <span class="col-centro">DATA</span>
+                <span class="col-centro">RAÇÃO</span>
                 <span></span>
             </div>
 
@@ -1090,11 +1090,11 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
                       (item, i) => `
                     <div class="linha-historico-racao">
                         <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
-                        <span>${formatarData(item.data)}</span>
-                        <span>${formatarNumeroBR(item.racao, 1)} kg</span>
-                        <span style="display:flex;gap:4px;justify-content:flex-end">
+                        <span class="col-centro">${formatarData(item.data)}</span>
+                        <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg</span>
+                        <span class="col-acoes">
                           <button class="botao-editar" onclick="abrirEdicaoRacao(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                          <button class="botao-editar" style="color:#dc2626" onclick="excluirRacao(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                          <button class="botao-editar botao-excluir" onclick="excluirRacao(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
                         </span>
                     </div>
                 `,
@@ -1123,9 +1123,9 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
 
   resultado.innerHTML = `
     <div class="painel-viveiro">
-      <div class="painel-topo">
-        <h2>Editar ração</h2>
-      </div>
+
+      <p class="caption-edicao">${viveiro.nome}</p>
+      <h2 class="titulo-edicao">EDITAR RAÇÃO</h2>
 
       <label>Data</label>
       <input type="date" id="dataEdicaoRacao" value="${racao.data}">

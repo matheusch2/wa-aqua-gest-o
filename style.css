@@ -446,6 +446,52 @@ button {
     font-weight: bold;
     color: rgb(6,107,99);
     border-bottom: 2px solid rgb(6,107,99);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.col-centro {
+    text-align: center;
+}
+
+.col-acoes {
+    display: flex;
+    gap: 2px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.botao-excluir {
+    color: #dc2626;
+}
+
+.titulo-secao-historico {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: 800;
+    color: rgb(6,107,99);
+    letter-spacing: 1px;
+    margin: 0 0 10px 0;
+}
+
+.caption-edicao {
+    text-align: center;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 4px 0;
+}
+
+.titulo-edicao {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 20px;
+    color: #1f2937;
+    font-weight: 900;
+    margin: 0 0 22px 0;
 }
 
 .input-senha {
