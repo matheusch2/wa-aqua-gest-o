@@ -415,72 +415,30 @@ function mostrarListaViveiros() {
 
   if (viveiros.length === 0) {
     area.innerHTML = `
-            <div class="viveiro-card">
-                <div class="viveiro-topo">
-                    <h3>Nenhum viveiro</h3>
-                </div>
-                <div class="viveiro-info">
-                    <p>Cadastre um viveiro para começar.</p>
-                </div>
-            </div>
-            <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
-        `;
+        <p style="text-align:center;color:#9ca3af;padding:20px 0">Nenhum viveiro cadastrado.</p>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+    `;
     return;
   }
 
-  const viveirosOrdenados = [...viveiros].sort((a, b) => {
-    return a.nome.localeCompare(b.nome, undefined, {
-      numeric: true,
-      sensitivity: "base",
-    });
-  });
+  const viveirosOrdenados = [...viveiros].sort((a, b) =>
+    a.nome.localeCompare(b.nome, undefined, { numeric: true, sensitivity: "base" })
+  );
 
-  area.innerHTML = viveirosOrdenados
-    .map((viveiro) => {
-      const indexOriginal = viveiros.indexOf(viveiro);
-      return `
-        <div class="viveiro-card">
-          <div class="vc-topo">
-            <div class="vc-icone-box">🦐</div>
-            <div class="vc-titulo-area">
-              <h3>${viveiro.nome}</h3>
-              <span class="vc-badge-cultivo">● Em cultivo</span>
-            </div>
-            <div class="vc-pls-badge">
-              🦐 ${viveiro.totalPovoado || "--"} PLs
-            </div>
-          </div>
-          <hr class="vc-separador">
-          <div class="vc-info-lista">
-            <div class="vc-info-item">
-              <div class="vc-info-icone verde">🗓️</div>
-              <div>
-                <strong>Povoamento</strong>
-                <p>${formatarData(viveiro.dataPovoamento) || "--"}</p>
-              </div>
-            </div>
-            <div class="vc-info-item">
-              <div class="vc-info-icone azul">🧪</div>
-              <div>
-                <strong>Laboratório</strong>
-                <p>${viveiro.laboratorio || "--"}</p>
-              </div>
-            </div>
-            <div class="vc-info-item">
-              <div class="vc-info-icone roxo">📐</div>
-              <div>
-                <strong>Tamanho</strong>
-                <p>${viveiro.tamanho || "--"} ha</p>
-              </div>
-            </div>
-          </div>
-          <button class="botao-abrir" onclick="abrirViveiro(${indexOriginal})">
-            Abrir viveiro →
-          </button>
-        </div>
-      `;
-    })
-    .join("") + `<button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>`;
+  const itens = viveirosOrdenados.map((viveiro) => {
+    const indexOriginal = viveiros.indexOf(viveiro);
+    return `
+      <div class="item-viveiro" onclick="abrirViveiro(${indexOriginal})">
+        <span>🦐 ${viveiro.nome}</span>
+        <span class="item-viveiro-seta">→</span>
+      </div>
+    `;
+  }).join("");
+
+  area.innerHTML = `
+    <div class="lista-viveiros">${itens}</div>
+    <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+  `;
 }
 
 function abrirViveiro(index) {
@@ -875,9 +833,7 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
   area.innerHTML = `
         <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>Históricos</h2>
-            </div>
+            <h2 style="text-align:center;color:rgb(6,107,99);text-transform:uppercase;font-size:18px;margin:0 0 16px 0">Histórico</h2>
 
             <label>Selecione o viveiro</label>
 
@@ -896,6 +852,8 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
             <div id="opcoes-historico"></div>
             <div id="resultado-historico"></div>
+
+            <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
         </div>
     `;
 
@@ -930,7 +888,7 @@ function mostrarOpcoesHistorico() {
                Despesca parcial
             </button>
 
-            <button class="limpar" onclick="limparAreaGestao()">
+            <button class="limpar" onclick="voltarMenuGestao()">
                 Voltar
             </button>
 
