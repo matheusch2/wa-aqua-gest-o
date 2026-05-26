@@ -611,9 +611,10 @@ async function salvarLancamentoRacao(indexDireto = "") {
     user_id: usuario.id,
   };
 
-  const { error } = await supabaseClient
+  const { data: racaoSalva, error } = await supabaseClient
     .from("racoes")
-    .insert([novaRacao]);
+    .insert([novaRacao])
+    .select();
 
   if (error) {
     console.log(error);
@@ -622,6 +623,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   }
 
   viveiros[index].racoes.push({
+    id: racaoSalva[0].id,
     data: data,
     racao: racao,
   });
@@ -1011,10 +1013,11 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
         <h3>Ração</h3>
 
         <div class="tabela-historico">
-            <div class="linha-historico cabecalho">
+            <div class="linha-historico-racao cabecalho">
                 <span>Dia</span>
                 <span>Data</span>
                 <span>Ração</span>
+                <span></span>
             </div>
 
             ${
@@ -1022,11 +1025,14 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
                 ? `<p class="sobrevivencia-texto">Nenhuma ração lançada.</p>`
                 : racoes
                     .map(
-                      (item) => `
-                    <div class="linha-historico">
+                      (item, i) => `
+                    <div class="linha-historico-racao">
                         <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
                         <span>${formatarData(item.data)}</span>
                         <span>${formatarNumeroBR(item.racao, 1)} kg</span>
+                        <span>
+                          <button class="botao-editar" onclick="abrirEdicaoRacao(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
+                        </span>
                     </div>
                 `,
                     )
@@ -1044,8 +1050,66 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
         ? ""
         : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
     }
-
      `;
+}
+
+function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
+  const viveiro = viveiros[viveiroIndex];
+  const racao = viveiro.racoes[racaoIndex];
+  const resultado = document.getElementById(elementoId);
+
+  resultado.innerHTML = `
+    <div class="painel-viveiro">
+      <div class="painel-topo">
+        <h2>Editar ração</h2>
+      </div>
+
+      <label>Data</label>
+      <input type="date" id="dataEdicaoRacao" value="${racao.data}">
+
+      <label>Consumo de ração</label>
+      <div class="input-unidade">
+        <input type="number" id="qtdEdicaoRacao" value="${racao.racao}" placeholder="Ex: 50">
+        <span>kg</span>
+      </div>
+
+      <button class="botao-gestao" onclick="salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto})">
+        Salvar
+      </button>
+
+      <button class="limpar" onclick="renderizarHistoricoRacao(${viveiroIndex}, '${elementoId}', ${direto})">
+        ← Voltar
+      </button>
+    </div>
+  `;
+}
+
+async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
+  const novaData = document.getElementById("dataEdicaoRacao").value;
+  const novaQtd = parseFloat(document.getElementById("qtdEdicaoRacao").value);
+
+  if (!novaData || !novaQtd) {
+    alert("Preencha a data e a quantidade.");
+    return;
+  }
+
+  const racao = viveiros[viveiroIndex].racoes[racaoIndex];
+
+  const { error } = await supabaseClient
+    .from("racoes")
+    .update({ data: novaData, racao: novaQtd })
+    .eq("id", racao.id);
+
+  if (error) {
+    console.log(error);
+    alert("Erro ao salvar edição.");
+    return;
+  }
+
+  viveiros[viveiroIndex].racoes[racaoIndex].data = novaData;
+  viveiros[viveiroIndex].racoes[racaoIndex].racao = novaQtd;
+
+  renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
 }
 
 // ─── CICLO ───────────────────────────────────────────────────────────────────
@@ -1661,6 +1725,7 @@ async function carregarViveiros() {
     racoes: racoesData
       .filter((racao) => racao.viveiro_id === item.id)
       .map((racao) => ({
+        id: racao.id,
         data: racao.data,
         racao: Number(racao.racao),
       })),

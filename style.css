@@ -365,6 +365,32 @@ button {
     cursor: pointer;
 }
 
+.linha-historico-racao {
+    display: grid;
+    grid-template-columns: 0.5fr 1fr 0.9fr 0.4fr;
+    gap: 6px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    align-items: center;
+}
+
+.linha-historico-racao.cabecalho {
+    font-weight: bold;
+    color: rgb(6,107,99);
+    border-bottom: 2px solid rgb(6,107,99);
+}
+
+.botao-editar {
+    background: none;
+    border: none;
+    padding: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    width: auto;
+    display: inline;
+}
+
 .botao-form {
     width: 220px;
     display: block;
