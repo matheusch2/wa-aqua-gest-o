@@ -72,8 +72,7 @@ async function entrarUsuario() {
 async function sairUsuario() {
   await supabaseClient.auth.signOut();
   viveiros = [];
-  limparAreaGestao();
-  alert("Você saiu da conta.");
+  mostrarLogin();
 }
 
 function mostrarLogin() {
