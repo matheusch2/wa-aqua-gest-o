@@ -409,7 +409,7 @@ async function salvarViveiro() {
     `;
 }
 
-function mostrarListaViveiros() {
+function mostrarListaViveiros(posicao = 0) {
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
@@ -425,18 +425,70 @@ function mostrarListaViveiros() {
     a.nome.localeCompare(b.nome, undefined, { numeric: true, sensitivity: "base" })
   );
 
-  const itens = viveirosOrdenados.map((viveiro) => {
-    const indexOriginal = viveiros.indexOf(viveiro);
-    return `
-      <div class="item-viveiro" onclick="abrirViveiro(${indexOriginal})">
-        <span>🦐 ${viveiro.nome}</span>
-        <span class="item-viveiro-seta">→</span>
-      </div>
-    `;
-  }).join("");
+  const total = viveirosOrdenados.length;
+  const viveiro = viveirosOrdenados[posicao];
+  const indexOriginal = viveiros.indexOf(viveiro);
+
+  const navAnterior = posicao > 0
+    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao - 1})">← Anterior</button>`
+    : `<span></span>`;
+
+  const navProximo = posicao < total - 1
+    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao + 1})">Próximo →</button>`
+    : `<span></span>`;
 
   area.innerHTML = `
-    <div class="lista-viveiros">${itens}</div>
+    <div class="viveiro-card">
+
+      <div class="vc-topo">
+        <div class="vc-icone-box">🦐</div>
+        <div class="vc-titulo-area">
+          <h3>${viveiro.nome}</h3>
+          <span class="vc-badge-cultivo">● Em cultivo</span>
+        </div>
+        <div class="vc-pls-badge">
+          🦐 ${viveiro.totalPovoado || "--"} PLs
+        </div>
+      </div>
+
+      <hr class="vc-separador">
+
+      <div class="vc-info-lista">
+        <div class="vc-info-item">
+          <div class="vc-info-icone verde">🗓️</div>
+          <div>
+            <strong>Povoamento</strong>
+            <p>${formatarData(viveiro.dataPovoamento) || "--"}</p>
+          </div>
+        </div>
+        <div class="vc-info-item">
+          <div class="vc-info-icone azul">🧪</div>
+          <div>
+            <strong>Laboratório</strong>
+            <p>${viveiro.laboratorio || "--"}</p>
+          </div>
+        </div>
+        <div class="vc-info-item">
+          <div class="vc-info-icone roxo">📐</div>
+          <div>
+            <strong>Tamanho</strong>
+            <p>${viveiro.tamanho || "--"} ha</p>
+          </div>
+        </div>
+      </div>
+
+      <button class="botao-abrir" onclick="abrirViveiro(${indexOriginal})">
+        Abrir viveiro →
+      </button>
+
+    </div>
+
+    <div class="nav-viveiros">
+      ${navAnterior}
+      <span class="nav-viveiros-contador">${posicao + 1} / ${total}</span>
+      ${navProximo}
+    </div>
+
     <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
   `;
 }

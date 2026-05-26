@@ -738,41 +738,36 @@ button {
     font-size: 22px;
 }
 
-/* ─── LISTA COMPACTA DE VIVEIROS ─────────────────────────────────────────── */
+/* ─── NAVEGAÇÃO ENTRE VIVEIROS ───────────────────────────────────────────── */
 
-.lista-viveiros {
-    background: white;
-    border-radius: 14px;
-    border: 1px solid #e5e7eb;
-    overflow: hidden;
-    margin-top: 8px;
-}
-
-.item-viveiro {
+.nav-viveiros {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 18px;
-    border-bottom: 1px solid #f3f4f6;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2937;
-    transition: background 0.15s;
+    margin-top: 14px;
+    padding: 0 4px;
 }
 
-.item-viveiro:last-child {
-    border-bottom: none;
-}
-
-.item-viveiro:active {
-    background: #e6f4f1;
-}
-
-.item-viveiro-seta {
+.botao-nav-viveiro {
+    background: transparent;
     color: rgb(6,107,99);
-    font-size: 18px;
+    border: 2px solid rgb(6,107,99);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 14px;
     font-weight: 700;
+    cursor: pointer;
+    width: auto;
+}
+
+.botao-nav-viveiro:active {
+    background: rgba(6,107,99,0.08);
+}
+
+.nav-viveiros-contador {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 600;
 }
 
 .botao-sair {
