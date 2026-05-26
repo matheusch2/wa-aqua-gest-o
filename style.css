@@ -534,10 +534,54 @@ button {
     display: none;
 }
 
+/* ─── LOGIN / CADASTRO ───────────────────────────────────────────────────── */
+
+.titulo-login {
+    text-align: center;
+    font-size: 30px;
+    font-weight: 900;
+    color: rgb(6, 107, 99);
+    letter-spacing: -0.5px;
+    margin: 0 0 24px 0;
+}
+
+.botao-entrar {
+    width: 100%;
+    padding: 11px;
+    background: rgb(6, 107, 99);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.botao-entrar:hover {
+    background: rgb(4, 85, 79);
+}
+
+.link-esqueci {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6b7280;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    padding: 4px;
+}
+
+.link-esqueci:hover {
+    color: rgb(6, 107, 99);
+}
+
 .separador-login {
     display: flex;
     align-items: center;
-    margin: 18px 0 12px 0;
+    margin: 16px 0 12px 0;
     gap: 10px;
 }
 
@@ -557,18 +601,34 @@ button {
 
 .botao-criar-conta {
     width: 100%;
-    padding: 12px;
+    padding: 11px;
     background: transparent;
     color: rgb(6, 107, 99);
     border: 2px solid rgb(6, 107, 99);
     border-radius: 10px;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
 }
 
 .botao-criar-conta:hover {
     background: rgba(6, 107, 99, 0.06);
+}
+
+.botao-cadastrar {
+    width: 100%;
+    padding: 11px;
+    background: rgb(6, 107, 99);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.botao-cadastrar:hover {
+    background: rgb(4, 85, 79);
 }
 
 /* ─── IMPRESSÃO ──────────────────────────────────────────────────────────────── */

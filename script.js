@@ -74,9 +74,7 @@ function mostrarLogin() {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <div class="painel-topo">
-        <h2>Login</h2>
-      </div>
+      <h1 class="titulo-login">Entrar</h1>
 
       <label>E-mail</label>
       <input
@@ -93,10 +91,17 @@ function mostrarLogin() {
       >
 
       <button
-        class="botao-gestao"
+        class="botao-entrar"
         onclick="entrarUsuario()"
       >
         Entrar
+      </button>
+
+      <button
+        class="link-esqueci"
+        onclick="recuperarSenha()"
+      >
+        Esqueci minha senha
       </button>
 
       <div class="separador-login">
@@ -121,9 +126,7 @@ function mostrarCadastro() {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <div class="painel-topo">
-        <h2>Criar conta</h2>
-      </div>
+      <h1 class="titulo-login">Criar conta</h1>
 
       <label>E-mail</label>
       <input
@@ -147,7 +150,7 @@ function mostrarCadastro() {
       >
 
       <button
-        class="botao-gestao"
+        class="botao-cadastrar"
         onclick="cadastrarUsuario()"
       >
         Criar conta
@@ -162,6 +165,24 @@ function mostrarCadastro() {
 
     </div>
   `;
+}
+
+async function recuperarSenha() {
+  const email = document.getElementById("emailLogin").value;
+
+  if (!email) {
+    alert("Digite seu e-mail no campo acima para recuperar a senha.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
 }
 
 async function pegarUsuarioLogado() {
