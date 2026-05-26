@@ -65,6 +65,7 @@ async function entrarUsuario() {
   `;
 
   document.getElementById("menuGestao").style.display = "grid";
+  document.getElementById("botao-sair").style.display = "block";
 
   await carregarViveiros();
 }
@@ -78,6 +79,7 @@ async function sairUsuario() {
 function mostrarLogin() {
 
   document.getElementById("menuGestao").style.display = "none";
+  document.getElementById("botao-sair").style.display = "none";
 
   const area = document.getElementById("area-gestao");
 
@@ -438,13 +440,13 @@ function mostrarListaViveiros() {
         <div class="viveiro-card">
 
           <div class="vc-topo">
-            <div class="vc-icone-box"><span class="emoji-verde">🦐</span></div>
+            <div class="vc-icone-box">🦐</div>
             <div class="vc-titulo-area">
               <h3>${viveiro.nome}</h3>
               <span class="vc-badge-cultivo">● Em cultivo</span>
             </div>
             <div class="vc-pls-badge">
-              <span class="emoji-verde">🦐</span> ${viveiro.totalPovoado || "--"} PLs
+              🦐 ${viveiro.totalPovoado || "--"} PLs
             </div>
           </div>
 
@@ -1870,6 +1872,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (session) {
       document.getElementById("menuGestao").style.display = "grid";
+      document.getElementById("botao-sair").style.display = "block";
       await carregarViveiros();
     } else {
       mostrarLogin();
