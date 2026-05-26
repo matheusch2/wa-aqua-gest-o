@@ -151,6 +151,19 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
   return dias > 0 ? dias : 0;
 }
 
+// ─── FUNÇÕES UTILITÁRIAS (antes ausentes) ───────────────────────────────────
+
+function limparAreaGestao() {
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = "";
+}
+
+function voltarMenuGestao() {
+  limparAreaGestao();
+}
+
+// ─── VIVEIRO ─────────────────────────────────────────────────────────────────
+
 function mostrarCadastroViveiro() {
   const area = document.getElementById("area-gestao");
 
@@ -177,7 +190,7 @@ function mostrarCadastroViveiro() {
     `;
 }
 
-  async function salvarViveiro() {
+async function salvarViveiro() {
   const nome = document.getElementById("nomeViveiro").value;
   const data = document.getElementById("dataPovoamento").value;
   const total = document.getElementById("totalPovoadoGestao").value;
@@ -194,47 +207,42 @@ function mostrarCadastroViveiro() {
   }
 
   const novoViveiro = {
-  nome: nome,
-  data_povoamento: data,
-  total_povoado: total,
-  tamanho: tamanho,
-  laboratorio: laboratorio,
-  ativo: true,
-  user_id: usuario.id,
-};
+    nome: nome,
+    data_povoamento: data,
+    total_povoado: total,
+    tamanho: tamanho,
+    laboratorio: laboratorio,
+    ativo: true,
+    user_id: usuario.id,
+  };
 
-const { data: viveiroSalvo, error } = await supabaseClient
-  .from("viveiros")
-  .insert([novoViveiro])
-  .select();
+  const { data: viveiroSalvo, error } = await supabaseClient
+    .from("viveiros")
+    .insert([novoViveiro])
+    .select();
 
-if (error) {
-  console.log(error);
-  alert(error.message);
-  return;
-}
+  if (error) {
+    console.log(error);
+    alert(error.message);
+    return;
+  }
+
   const viveiroLocal = {
-  id: viveiroSalvo[0].id,
-  nome: nome,
-  dataPovoamento: data,
-  totalPovoado: total,
-  tamanho: tamanho,
-  laboratorio: laboratorio,
-  racoes: [],
-  biometrias: [],
-  despescas: [],
-  ciclosFinalizados: [],
-};
+    id: viveiroSalvo[0].id,
+    nome: nome,
+    dataPovoamento: data,
+    totalPovoado: total,
+    tamanho: tamanho,
+    laboratorio: laboratorio,
+    racoes: [],
+    biometrias: [],
+    despescas: [],
+    ciclosFinalizados: [],
+  };
 
-viveiros.push(viveiroLocal);
+  viveiros.push(viveiroLocal);
 
-const index = viveiros.length - 1;
-
-if (error) {
-  console.log(error);
-  alert(error.message);
-  return;
-}
+  const index = viveiros.length - 1;
 
   document.getElementById("area-gestao").innerHTML = `
         <div class="viveiro-card">
@@ -248,7 +256,7 @@ if (error) {
     <p><strong>Laboratório:</strong> ${laboratorio}</p>
     <p><strong>Tamanho:</strong> ${tamanho} ha</p>
          </div>
-   
+
          <button class="botao-abrir" onclick="abrirViveiro(${index})">
                 Abrir viveiro
             </button>
@@ -284,9 +292,11 @@ function mostrarListaViveiros() {
     });
   });
 
+  // CORREÇÃO: usar o índice real no array original, não o índice do array ordenado
   area.innerHTML = viveirosOrdenados
-.map((viveiro, index) => `
-
+    .map((viveiro) => {
+      const indexOriginal = viveiros.indexOf(viveiro);
+      return `
         <div class="viveiro-card">
 
             <div class="viveiro-topo">
@@ -320,17 +330,17 @@ function mostrarListaViveiros() {
 
             <button
                 class="botao-abrir"
-                onclick="abrirViveiro(${viveiros.indexOf(viveiro)})"
+                onclick="abrirViveiro(${indexOriginal})"
             >
                 Abrir viveiro
             </button>
 
         </div>
-
-    `,
-    )
+      `;
+    })
     .join("");
 }
+
 function abrirViveiro(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
@@ -400,7 +410,7 @@ function abrirViveiro(index) {
                 <button class="botao-painel" onclick="mostrarHistoricoDoViveiroDireto(${index})">
                     Histórico
                 </button>
-      
+
                 <button class="botao-painel botao-alerta" onclick="abrirEncerrarCiclo(${index})">
                     Encerrar ciclo
                 </button>
@@ -416,6 +426,8 @@ function abrirViveiro(index) {
         </div>
     `;
 }
+
+// ─── RAÇÃO ────────────────────────────────────────────────────────────────────
 
 function mostrarLancamentoRacao(indexSelecionado = "") {
   const area = document.getElementById("area-gestao");
@@ -473,7 +485,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
     `;
 }
 
-  async function salvarLancamentoRacao(indexDireto = "") {
+async function salvarLancamentoRacao(indexDireto = "") {
   const index =
     indexDireto !== ""
       ? indexDireto
@@ -495,33 +507,31 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
   }
 
   const novaRacao = {
-  viveiro_id: viveiros[index].id,
-  data: data,
-  racao: racao,
-  user_id: usuario.id,
+    viveiro_id: viveiros[index].id,
+    data: data,
+    racao: racao,
+    user_id: usuario.id,
   };
 
   const { error } = await supabaseClient
-  .from("racoes")
-  .insert([novaRacao]);
+    .from("racoes")
+    .insert([novaRacao]);
 
   if (error) {
-  console.log(error);
-  alert(error.message);
-  return;
+    console.log(error);
+    alert(error.message);
+    return;
   }
 
   viveiros[index].racoes.push({
-  data: data,
-  racao: racao,
+    data: data,
+    racao: racao,
   });
 
-  if (typeof salvarDados === "function") {
-    salvarDados();
-  }
-
   abrirViveiro(index);
-  }
+}
+
+// ─── BIOMETRIA ────────────────────────────────────────────────────────────────
 
 function abrirBiometria(index) {
   const viveiro = viveiros[index];
@@ -562,8 +572,7 @@ async function salvarBiometria(index) {
   );
   const usuario = await pegarUsuarioLogado();
 
-if (!usuario) return;
-  
+  if (!usuario) return;
 
   if (!data || !gramatura) {
     alert("Preencha a data e a gramatura.");
@@ -580,8 +589,6 @@ if (!usuario) return;
     gramatura: gramatura,
     user_id: usuario.id,
   };
-
-  
 
   const { error } = await supabaseClient
     .from("biometrias")
@@ -600,6 +607,93 @@ if (!usuario) return;
 
   abrirViveiro(index);
 }
+
+// ─── DESPESCA ─────────────────────────────────────────────────────────────────
+
+// CORREÇÃO: função abrirDespesca estava faltando
+function abrirDespesca(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
+
+  area.innerHTML = `
+        <div class="painel-viveiro">
+            <div class="painel-topo">
+                <h2>Despesca parcial - ${viveiro.nome}</h2>
+            </div>
+
+            <label>Data da despesca</label>
+            <input type="date" id="dataDespesca" value="${hoje}">
+
+            <label>Quantidade despescada</label>
+            <div class="input-unidade">
+                <input type="number" id="quantidadeDespesca" placeholder="Ex: 500">
+                <span>kg</span>
+            </div>
+
+            <label>Peso médio</label>
+            <div class="input-unidade">
+                <input type="number" id="pesoMedioDespesca" placeholder="Ex: 12">
+                <span>g</span>
+            </div>
+
+            <button class="botao-gestao" onclick="salvarDespesca(${index})">
+                Salvar despesca
+            </button>
+
+            <button class="limpar" onclick="abrirViveiro(${index})">
+                Voltar
+            </button>
+        </div>
+    `;
+}
+
+async function salvarDespesca(index) {
+  const data = document.getElementById("dataDespesca").value;
+  const quantidadeKg = parseFloat(document.getElementById("quantidadeDespesca").value);
+  const pesoMedio = parseFloat(document.getElementById("pesoMedioDespesca").value);
+  const usuario = await pegarUsuarioLogado();
+
+  if (!usuario) return;
+
+  if (!data || !quantidadeKg || !pesoMedio) {
+    alert("Preencha a data, quantidade e peso médio.");
+    return;
+  }
+
+  if (!viveiros[index].despescas) {
+    viveiros[index].despescas = [];
+  }
+
+  const novaDespesca = {
+    viveiro_id: viveiros[index].id,
+    data: data,
+    quantidade_kg: quantidadeKg,
+    peso_medio: pesoMedio,
+    user_id: usuario.id,
+  };
+
+  const { error } = await supabaseClient
+    .from("despescas")
+    .insert([novaDespesca]);
+
+  if (error) {
+    console.log(error);
+    alert(error.message);
+    return;
+  }
+
+  viveiros[index].despescas.push({
+    data: data,
+    tipo: "Parcial",
+    quantidadeKg: quantidadeKg,
+    pesoMedio: pesoMedio,
+  });
+
+  abrirViveiro(index);
+}
+
+// ─── HISTÓRICO ────────────────────────────────────────────────────────────────
 
 function mostrarHistoricoCultivo(indexSelecionado = "") {
   const area = document.getElementById("area-gestao");
@@ -666,11 +760,11 @@ function mostrarOpcoesHistorico() {
             <button class="botao-historico" onclick="abrirHistoricoRacao()">
                 Ração
             </button>
-      
+
             <button class="botao-historico" onclick="abrirHistoricoDespesca()">
                Despesca parcial
             </button>
-            
+
             <button class="limpar" onclick="limparAreaGestao()">
                 Voltar
             </button>
@@ -687,6 +781,7 @@ function abrirHistoricoBiometria() {
 
   renderizarHistoricoBiometria(index, "resultado-historico", false);
 }
+
 function abrirHistoricoRacao() {
   const index = document.getElementById("viveiroHistorico").value;
   if (index === "") return;
@@ -845,26 +940,20 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
             <p>Consumo total</p>
             <h3>${formatarNumeroBR(totalRacao, 1)} kg</h3>
         </div>
-   
+
     ${
-  direto
-    ? ""
-    : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-}
-    
+      direto
+        ? ""
+        : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+    }
+
      `;
 }
 
-function reiniciarCiclo(index) {
+// ─── CICLO ───────────────────────────────────────────────────────────────────
+
+async function reiniciarCiclo(index) {
   if (!confirm("Deseja reiniciar o ciclo deste viveiro?")) return;
-
-  const viveiro = viveiros[index];
-
-  viveiro.dataPovoamento = "";
-  viveiro.totalPovoado = "";
-  viveiro.laboratorio = "";
-  viveiro.racoes = [];
-  viveiro.biometrias = [];
 
   mostrarFormularioReinicio(index);
 }
@@ -895,12 +984,47 @@ function mostrarFormularioReinicio(index) {
     `;
 }
 
-function salvarNovoCiclo(index) {
-  viveiros[index].dataPovoamento =
-    document.getElementById("novoPovoamento").value;
-  viveiros[index].totalPovoado = document.getElementById("novoTotal").value;
-  viveiros[index].laboratorio =
-    document.getElementById("novoLaboratorio").value;
+// CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
+async function salvarNovoCiclo(index) {
+  const novoPovoamento = document.getElementById("novoPovoamento").value;
+  const novoTotal = document.getElementById("novoTotal").value;
+  const novoLaboratorio = document.getElementById("novoLaboratorio").value;
+  const usuario = await pegarUsuarioLogado();
+
+  if (!usuario) return;
+
+  if (!novoPovoamento || !novoTotal || !novoLaboratorio) {
+    alert("Preencha todos os campos.");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("viveiros")
+    .update({
+      data_povoamento: novoPovoamento,
+      total_povoado: novoTotal,
+      laboratorio: novoLaboratorio,
+    })
+    .eq("id", viveiros[index].id);
+
+  if (error) {
+    console.log(error);
+    alert("Erro ao salvar novo ciclo.");
+    return;
+  }
+
+  // Limpar dados do ciclo anterior no banco
+  await supabaseClient.from("racoes").delete().eq("viveiro_id", viveiros[index].id);
+  await supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiros[index].id);
+  await supabaseClient.from("despescas").delete().eq("viveiro_id", viveiros[index].id);
+
+  // Atualizar estado local
+  viveiros[index].dataPovoamento = novoPovoamento;
+  viveiros[index].totalPovoado = novoTotal;
+  viveiros[index].laboratorio = novoLaboratorio;
+  viveiros[index].racoes = [];
+  viveiros[index].biometrias = [];
+  viveiros[index].despescas = [];
 
   abrirViveiro(index);
 }
@@ -1102,6 +1226,7 @@ function abrirEncerrarCiclo(index) {
 
     `;
 }
+
 async function salvarEncerramentoCiclo(index) {
   const viveiro = viveiros[index];
 
@@ -1111,7 +1236,7 @@ async function salvarEncerramentoCiclo(index) {
   const observacoes = document.getElementById("observacoesCiclo").value;
   const usuario = await pegarUsuarioLogado();
 
-if (!usuario) return;
+  if (!usuario) return;
 
   if (!dataEncerramento || !producaoFinal || !pesoFinal) {
     alert("Preencha data de encerramento, produção final e peso médio final.");
@@ -1202,6 +1327,7 @@ if (!usuario) return;
 
   mostrarRelatorioCiclo(index, cicloFinalizado);
 }
+
 function mostrarRelatorioCiclo(index, ciclo) {
   const area = document.getElementById("area-gestao");
 
@@ -1356,30 +1482,33 @@ function mostrarRelatorioCiclo(index, ciclo) {
     `;
 }
 
-async function carregarViveiros() {
+// ─── CARREGAR DADOS ───────────────────────────────────────────────────────────
 
+async function carregarViveiros() {
   const usuario = await pegarUsuarioLogado();
 
-if (!usuario) return;
+  if (!usuario) return;
 
-const { data: viveirosData, error: erroViveiros } =
-  await supabaseClient
-    .from("viveiros")
-    .select("*")
-    .eq("ativo", true)
-    .eq("user_id", usuario.id)
-    .order("nome", { ascending: true });
-  
+  const { data: viveirosData, error: erroViveiros } =
+    await supabaseClient
+      .from("viveiros")
+      .select("*")
+      .eq("ativo", true)
+      .eq("user_id", usuario.id)
+      .order("nome", { ascending: true });
+
   if (erroViveiros) {
     console.log(erroViveiros);
     alert("Erro ao carregar viveiros.");
     return;
   }
 
+  // CORREÇÃO: filtrar por user_id para não carregar dados de outros usuários
   const { data: racoesData, error: erroRacoes } =
     await supabaseClient
       .from("racoes")
-      .select("*");
+      .select("*")
+      .eq("user_id", usuario.id);
 
   if (erroRacoes) {
     console.log(erroRacoes);
@@ -1390,7 +1519,8 @@ const { data: viveirosData, error: erroViveiros } =
   const { data: biometriasData, error: erroBiometrias } =
     await supabaseClient
       .from("biometrias")
-      .select("*");
+      .select("*")
+      .eq("user_id", usuario.id);
 
   if (erroBiometrias) {
     console.log(erroBiometrias);
@@ -1401,7 +1531,8 @@ const { data: viveirosData, error: erroViveiros } =
   const { data: despescasData, error: erroDespescas } =
     await supabaseClient
       .from("despescas")
-      .select("*");
+      .select("*")
+      .eq("user_id", usuario.id);
 
   if (erroDespescas) {
     console.log(erroDespescas);
@@ -1412,7 +1543,8 @@ const { data: viveirosData, error: erroViveiros } =
   const { data: ciclosData, error: erroCiclos } =
     await supabaseClient
       .from("ciclos")
-      .select("*");
+      .select("*")
+      .eq("user_id", usuario.id);
 
   if (erroCiclos) {
     console.log(erroCiclos);
@@ -1475,8 +1607,10 @@ const { data: viveirosData, error: erroViveiros } =
 
   console.log("Viveiros carregados:", viveiros);
 
-mostrarListaViveiros();
+  mostrarListaViveiros();
 }
+
+// ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -1485,11 +1619,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   } = await supabaseClient.auth.getSession();
 
   if (session) {
-  document.getElementById("menuGestao").style.display = "grid";
-  carregarViveiros();
-} else {
-  mostrarLogin();
-}
+    document.getElementById("menuGestao").style.display = "grid";
+    carregarViveiros();
+  } else {
+    mostrarLogin();
+  }
 
   console.log("Supabase conectado:", supabaseClient);
 
