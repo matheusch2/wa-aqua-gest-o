@@ -431,48 +431,52 @@ function mostrarListaViveiros() {
     });
   });
 
-  // CORREÇÃO: usar o índice real no array original, não o índice do array ordenado
   area.innerHTML = viveirosOrdenados
     .map((viveiro) => {
       const indexOriginal = viveiros.indexOf(viveiro);
       return `
         <div class="viveiro-card">
 
-            <div class="viveiro-topo">
-
-                <h3>${viveiro.nome}</h3>
-
-                <span>
-                    ${viveiro.totalPovoado || "--"} PLs
-                </span>
-
+          <div class="vc-topo">
+            <div class="vc-icone-box">🦐</div>
+            <div class="vc-titulo-area">
+              <h3>${viveiro.nome}</h3>
+              <span class="vc-badge-cultivo">● Em cultivo</span>
             </div>
-
-            <div class="viveiro-info">
-
-                <p>
-                    <strong>Povoamento:</strong>
-                    ${formatarData(viveiro.dataPovoamento)}
-                </p>
-
-                <p>
-                    <strong>Laboratório:</strong>
-                    ${viveiro.laboratorio || "--"}
-                </p>
-
-                <p>
-                    <strong>Tamanho:</strong>
-                    ${viveiro.tamanho || "--"} ha
-                </p>
-
+            <div class="vc-pls-badge">
+              🦐 ${viveiro.totalPovoado || "--"} PLs
             </div>
+          </div>
 
-            <button
-                class="botao-abrir"
-                onclick="abrirViveiro(${indexOriginal})"
-            >
-                Abrir viveiro
-            </button>
+          <hr class="vc-separador">
+
+          <div class="vc-info-lista">
+            <div class="vc-info-item">
+              <div class="vc-info-icone verde">📅</div>
+              <div>
+                <strong>Povoamento</strong>
+                <p>${formatarData(viveiro.dataPovoamento) || "--"}</p>
+              </div>
+            </div>
+            <div class="vc-info-item">
+              <div class="vc-info-icone azul">🧪</div>
+              <div>
+                <strong>Laboratório</strong>
+                <p>${viveiro.laboratorio || "--"}</p>
+              </div>
+            </div>
+            <div class="vc-info-item">
+              <div class="vc-info-icone roxo">📏</div>
+              <div>
+                <strong>Tamanho</strong>
+                <p>${viveiro.tamanho || "--"} ha</p>
+              </div>
+            </div>
+          </div>
+
+          <button class="botao-abrir" onclick="abrirViveiro(${indexOriginal})">
+            Abrir viveiro →
+          </button>
 
         </div>
       `;
