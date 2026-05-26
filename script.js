@@ -56,13 +56,8 @@ async function entrarUsuario() {
     return;
   }
 
-  // Limpa o formulário de login imediatamente
-  const area = document.getElementById("area-gestao");
-  area.innerHTML = `
-    <div class="boas-vindas">
-      <p>Carregando...</p>
-    </div>
-  `;
+  // Limpa a tela enquanto carrega
+  document.getElementById("area-gestao").innerHTML = "";
 
   document.getElementById("menuGestao").style.display = "grid";
   document.getElementById("botao-sair").style.display = "block";
@@ -1121,9 +1116,18 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
 function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const viveiro = viveiros[viveiroIndex];
   const racao = viveiro.racoes[racaoIndex];
-  const resultado = document.getElementById(elementoId);
 
-  resultado.innerHTML = `
+  // Quando direto=true, substitui a área inteira para evitar
+  // título duplicado e botão Voltar duplo do histórico externo
+  const alvo = direto
+    ? document.getElementById("area-gestao")
+    : document.getElementById(elementoId);
+
+  const acaoVoltar = direto
+    ? `voltarParaHistoricoRacaoDireto(${viveiroIndex})`
+    : `renderizarHistoricoRacao(${viveiroIndex}, '${elementoId}', ${direto})`;
+
+  alvo.innerHTML = `
     <div class="painel-viveiro">
 
       <p class="caption-edicao">${viveiro.nome}</p>
@@ -1142,11 +1146,16 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
         Salvar
       </button>
 
-      <button class="limpar" onclick="renderizarHistoricoRacao(${viveiroIndex}, '${elementoId}', ${direto})">
+      <button class="limpar" onclick="${acaoVoltar}">
         ← Voltar
       </button>
     </div>
   `;
+}
+
+function voltarParaHistoricoRacaoDireto(viveiroIndex) {
+  mostrarHistoricoDoViveiroDireto(viveiroIndex);
+  abrirHistoricoRacaoDireto(viveiroIndex);
 }
 
 async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
@@ -1174,7 +1183,11 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   viveiros[viveiroIndex].racoes[racaoIndex].data = novaData;
   viveiros[viveiroIndex].racoes[racaoIndex].racao = novaQtd;
 
-  renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
+  if (direto) {
+    voltarParaHistoricoRacaoDireto(viveiroIndex);
+  } else {
+    renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
+  }
 }
 
 async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto) {
