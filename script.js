@@ -645,6 +645,13 @@ async function salvarLancamentoRacao(indexDireto = "") {
     return;
   }
 
+  // Verifica se já existe lançamento nessa data
+  const jaExiste = (viveiros[index].racoes || []).some(r => r.data === data);
+  if (jaExiste) {
+    alert(`Já existe um lançamento de ração em ${formatarData(data)}. Edite o lançamento existente.`);
+    return;
+  }
+
   // Desabilita o botão para evitar duplo clique
   const botao = document.querySelector(".botao-form");
   if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
