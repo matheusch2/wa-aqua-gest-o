@@ -1915,13 +1915,8 @@ function mostrarRelatorioCiclo(index, ciclo) {
 
       <!-- ── HEADER ── -->
       <div class="rel-header">
-        <div class="rel-logo">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </div>
-        <div class="rel-marca">
-          <span class="rel-marca-nome">WA AQUA GESTÃO</span>
-          <span class="rel-marca-sub">Relatório de Ciclo</span>
-        </div>
+        <span class="rel-titulo-principal">Relatório de Ciclo</span>
+        <span class="rel-marca-nome">WA AQUA GESTÃO</span>
       </div>
       <div class="rel-viveiro-badge">${ciclo.nomeViveiro}</div>
       <div class="rel-divider"></div>
@@ -1951,7 +1946,7 @@ function mostrarRelatorioCiclo(index, ciclo) {
           <div class="rel-info-row">
             <div class="rel-info-esq">
               <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>Total povoado</span>
+              <span>Total de PLs</span>
             </div>
             <strong>${Number(ciclo.totalPovoado).toLocaleString("pt-BR")} PLs</strong>
           </div>
@@ -1964,8 +1959,8 @@ function mostrarRelatorioCiclo(index, ciclo) {
           </div>
           <div class="rel-info-row">
             <div class="rel-info-esq">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-              <span>Tamanho</span>
+              <svg viewBox="0 0 24 24"><path d="M3 6l9-4 9 4v6c0 5-4 9-9 10C7 21 3 17 3 12V6z"/></svg>
+              <span>Área do viveiro</span>
             </div>
             <strong>${ciclo.tamanho} ha</strong>
           </div>
@@ -1978,12 +1973,12 @@ function mostrarRelatorioCiclo(index, ciclo) {
         <div class="rel-metricas-grid">
           <div class="rel-metrica-card">
             <span class="rel-metrica-valor">${formatarNumeroBR(ciclo.produtividade, 1)}</span>
-            <span class="rel-metrica-unidade">kg/ha</span>
+            <span class="rel-metrica-unidade">kg / ha</span>
             <span class="rel-metrica-nome">Produtividade</span>
           </div>
           <div class="rel-metrica-card">
             <span class="rel-metrica-valor">${formatarNumeroBR(ciclo.pesoFinal, 1)}</span>
-            <span class="rel-metrica-unidade">g</span>
+            <span class="rel-metrica-unidade">gramas</span>
             <span class="rel-metrica-nome">Peso médio final</span>
           </div>
         </div>
@@ -2010,7 +2005,7 @@ function mostrarRelatorioCiclo(index, ciclo) {
           <div class="rel-info-row">
             <div class="rel-info-esq">
               <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              <span>FCA final</span>
+              <span>FCA</span>
             </div>
             <strong>${formatarNumeroBR(ciclo.fca, 2)}</strong>
           </div>

@@ -870,56 +870,34 @@ button {
     box-shadow: 0 4px 20px rgba(0,0,0,0.07);
 }
 
-/* Header: logo + título */
+/* Header: centralizado */
 .rel-header {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-}
-
-.rel-logo {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #0f766e, #06695f);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.rel-logo svg {
-    width: 22px;
-    height: 22px;
-    stroke: white;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.rel-marca {
-    display: flex;
     flex-direction: column;
-    gap: 1px;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.rel-titulo-principal {
+    font-size: 24px;
+    font-weight: 900;
+    color: #1f2937;
+    letter-spacing: -0.5px;
 }
 
 .rel-marca-nome {
-    font-size: 17px;
-    font-weight: 900;
+    font-size: 13px;
+    font-weight: 700;
     color: #0f766e;
-    letter-spacing: -0.3px;
-}
-
-.rel-marca-sub {
-    font-size: 12px;
-    font-weight: 600;
-    color: #6b7280;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
 }
 
 .rel-viveiro-badge {
-    display: inline-block;
+    display: block;
+    text-align: center;
     background: #e6f4f1;
     color: #0f766e;
     padding: 6px 14px;
@@ -928,6 +906,9 @@ button {
     font-weight: 800;
     margin-bottom: 14px;
     border: 1.5px solid rgba(15,118,110,0.18);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .rel-divider {
@@ -990,11 +971,11 @@ button {
 .relatorio-secao h3 {
     color: #0f766e;
     margin: 0 0 12px;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 800;
-    border-left: 4px solid #0f766e;
-    padding-left: 10px;
-    letter-spacing: 0.2px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
 }
 
 /* Linhas de info compactas */
@@ -1064,7 +1045,7 @@ button {
 }
 
 .rel-metrica-valor {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 900;
     color: #0f766e;
     letter-spacing: -0.5px;
@@ -1072,19 +1053,19 @@ button {
 }
 
 .rel-metrica-unidade {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
-    color: #9ca3af;
-    margin-top: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-top: 3px;
 }
 
 .rel-metrica-nome {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    color: #6b7280;
+    color: #9ca3af;
     margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Sobrevivência: linha full-width */
@@ -1149,19 +1130,19 @@ button {
 }
 
 .rel-hero-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: rgba(255,255,255,0.75);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
 }
 
 .rel-hero-valor {
-    font-size: 42px;
+    font-size: 30px;
     font-weight: 900;
     color: white;
-    letter-spacing: -1.5px;
-    line-height: 1.1;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
 }
 
 .acoes-relatorio {
