@@ -959,6 +959,52 @@ button {
     font-size: 22px;
 }
 
+/* ─── CAMPOS DE FORMULÁRIO COM ÍCONE ────────────────────────────────────────── */
+
+.campo-form {
+    margin-bottom: 14px;
+}
+
+.campo-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.campo-label label {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1f2937;
+    margin: 0;
+}
+
+.campo-icone {
+    width: 22px;
+    height: 22px;
+    stroke: rgb(6, 107, 99);
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.botao-voltar-form {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: transparent;
+    color: rgb(6, 107, 99);
+    border: 2px solid rgb(6, 107, 99);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+}
+
 .login-subtitulo {
     font-size: 14px;
     color: #4b8a85;

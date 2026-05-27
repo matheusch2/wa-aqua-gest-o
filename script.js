@@ -344,29 +344,59 @@ function mostrarCadastroViveiro() {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-        <h2 class="titulo-secao">Cadastrar Viveiro</h2>
+    <h2 class="titulo-secao">Cadastrar Viveiro</h2>
 
+    <div class="campo-form">
+      <div class="campo-label">
+        <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
         <label>Nome do viveiro</label>
-        <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
+      </div>
+      <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
+    </div>
 
+    <div class="campo-form">
+      <div class="campo-label">
+        <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <label>Data de povoamento</label>
-        <input type="date" id="dataPovoamento">
+      </div>
+      <input type="date" id="dataPovoamento">
+    </div>
 
-        <label>Total povoado</label>
-        <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250000" oninput="formatarPopulacao(this)">
+    <div class="campo-form">
+      <div class="campo-label">
+        <svg class="campo-icone" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <label>Total povoado (camarões)</label>
+      </div>
+      <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250000" oninput="formatarPopulacao(this)">
+    </div>
 
+    <div class="campo-form">
+      <div class="campo-label">
+        <svg class="campo-icone" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
         <label>Tamanho do viveiro</label>
-        <div class="input-unidade">
-            <input type="number" id="tamanhoViveiro" placeholder="Ex: 0.5">
-            <span>ha</span>
-        </div>
+      </div>
+      <div class="input-unidade">
+        <input type="number" id="tamanhoViveiro" placeholder="Ex: 0.5">
+        <span>ha</span>
+      </div>
+    </div>
 
-        <label>Laboratório</label>
-        <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
+    <div class="campo-form">
+      <div class="campo-label">
+        <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <label>Laboratório (fornecedor de pós-larva)</label>
+      </div>
+      <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
+    </div>
 
-        <button class="botao-gestao" onclick="salvarViveiro()">Salvar viveiro</button>
-        <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
-    `;
+    <button class="botao-gestao" onclick="salvarViveiro()">
+      <svg class="btn-svg" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Salvar viveiro
+    </button>
+    <button class="botao-voltar-form" onclick="voltarMenuGestao()">
+      ← Voltar
+    </button>
+  `;
 }
 
 async function salvarViveiro() {
