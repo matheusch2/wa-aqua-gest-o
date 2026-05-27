@@ -3,15 +3,17 @@
   align-items: center;
   gap: 10px;
 
-  border: none;
+  border: 1px solid #dcdcdc;
   border-radius: 14px;
 
   padding: 8px 12px;
 
-  background: rgba(6,107,99,.8);
-  color: white;
+  background: white;
+  color: black;
 
   cursor: pointer;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
 }
 
 .lua-emoji {
@@ -25,11 +27,13 @@
 
 .lua-nome {
   font-weight: 600;
+  color: black;
 }
 
 .lua-sub {
   font-size: 12px;
-  opacity: .8;
+  opacity: .7;
+  color: #444;
 }
 
 /* MODAL */
@@ -57,6 +61,8 @@
   padding: 24px;
 
   position: relative;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
 }
 
 .modal-close {
