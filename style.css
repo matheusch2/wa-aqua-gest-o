@@ -1816,71 +1816,88 @@ button {
 /* ─── IMPRESSÃO ──────────────────────────────────────────────────────────────── */
 
 @media print {
-    body {
-        background: white;
+    @page {
+        margin: 0.6cm 0.8cm;
+        size: A4 portrait;
     }
 
+    html, body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Esconde tudo exceto o relatório */
     .topo,
     .botoes-gestao,
     .acoes-relatorio,
     button,
-    .limpar {
+    .limpar,
+    #menuGestao,
+    .toast-sucesso {
         display: none !important;
     }
 
-    .card,
-    .painel-viveiro {
-        width: 100%;
-        max-width: none;
-        box-shadow: none;
-        margin: 0;
-        padding: 10px;
-        border: none;
+    /* Remove o margin-top do container pai */
+    .resultado {
+        margin-top: 0 !important;
     }
 
-    .painel-info {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-
-    .info-box {
-        padding: 8px;
-    }
-
-    .info-box small {
-        font-size: 10px;
-    }
-
-    .info-box strong {
-        font-size: 12px;
-    }
-
-    .resultado-box {
-        box-shadow: none;
-        width: 100%;
-        padding: 8px;
-    }
-
+    /* Relatório ocupa a página inteira */
     .relatorio-final {
-        box-shadow: none;
-        max-width: 100%;
-        margin: 0;
-        border-radius: 0;
-        padding: 16px;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
     }
 
-    .rel-producao-hero {
-        background: #0f766e !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    /* Seções mais compactas para caber em 1 página */
+    .relatorio-secao {
+        margin-top: 10px !important;
+    }
+
+    .rel-header {
+        margin-bottom: 8px !important;
+    }
+
+    .rel-divider {
+        margin-bottom: 8px !important;
+    }
+
+    .rel-periodo {
+        margin-bottom: 0 !important;
+    }
+
+    .rel-info-row {
+        padding: 8px 10px !important;
     }
 
     .rel-metricas-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        gap: 6px !important;
     }
 
-    .acoes-relatorio {
-        display: none !important;
+    .rel-metrica-card {
+        padding: 8px !important;
+    }
+
+    .rel-sobrevivencia {
+        padding: 8px 12px !important;
+    }
+
+    .rel-producao-hero {
+        margin-top: 10px !important;
+        padding: 9px 14px !important;
+        background: #0f766e !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .rel-sobrevivencia {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }
