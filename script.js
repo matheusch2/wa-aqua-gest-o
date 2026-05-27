@@ -902,11 +902,11 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
         <div id="opcoes-historico"></div>
         <div id="resultado-historico"></div>
-        <div style="margin-top:16px">
-          <button class="botao-voltar-form" onclick="voltarMenuGestao()">
-            ← Voltar
-          </button>
-        </div>
+  <div style="margin-top:16px">
+    <button class="botao-voltar-form" onclick="voltarMenuGestao()">
+       ← Voltar
+    </button>
+  </div>
       </div>
     </div>
   `;
