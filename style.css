@@ -977,12 +977,14 @@ button {
 .input-com-icone {
     display: flex;
     align-items: center;
+    gap: 7px;
     border: 1.5px solid #d1d5db;
     border-radius: 10px;
     overflow: hidden;
     margin-bottom: 2px;
     background: white;
     transition: border-color 0.2s;
+    padding-left: 14px;
 }
 
 .input-com-icone:focus-within {
@@ -992,7 +994,7 @@ button {
 .input-com-icone input {
     flex: 1;
     border: none;
-    padding: 13px 10px 13px 6px;
+    padding: 13px 10px 13px 0;
     font-size: 14px;
     background: transparent;
     outline: none;
@@ -1006,7 +1008,7 @@ button {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    margin-left: 14px;
+    margin-left: 0;
     flex-shrink: 0;
 }
 
