@@ -373,6 +373,12 @@ function abrirViveiro(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
 
+  // Se o viveiro não tem ciclo ativo, mostra tela de novo ciclo
+  if (!viveiro.dataPovoamento) {
+    mostrarViveiroSemCiclo(index);
+    return;
+  }
+
   const diasCultivo = calcularDiasCultivo(viveiro.dataPovoamento);
   const racoes = viveiro.racoes || [];
   const biometrias = viveiro.biometrias || [];
@@ -1267,11 +1273,14 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   if (!novaData || !novaQtd) { alert("Preencha a data e a gramatura."); return; }
 
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
   const { error } = await supabaseClient
     .from("biometrias")
     .update({ data: novaData, gramatura: novaQtd })
-    .eq("id", bio.id);
+    .eq("id", bio.id)
+    .eq("user_id", usuario.id);
 
   if (error) { console.log(error); alert("Erro ao salvar."); return; }
 
@@ -1290,8 +1299,10 @@ async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
   if (!confirm("Excluir esta biometria?")) return;
 
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
-  const { error } = await supabaseClient.from("biometrias").delete().eq("id", bio.id);
+  const { error } = await supabaseClient.from("biometrias").delete().eq("id", bio.id).eq("user_id", usuario.id);
 
   if (error) { console.log(error); alert("Erro ao excluir."); return; }
 
@@ -1369,11 +1380,14 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   if (!novaData || !novaQtd || !novoPeso) { alert("Preencha todos os campos."); return; }
 
   const desp = viveiros[viveiroIndex].despescas[despIndex];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
   const { error } = await supabaseClient
     .from("despescas")
     .update({ data: novaData, quantidade_kg: novaQtd, peso_medio: novoPeso })
-    .eq("id", desp.id);
+    .eq("id", desp.id)
+    .eq("user_id", usuario.id);
 
   if (error) { console.log(error); alert("Erro ao salvar."); return; }
 
@@ -1393,8 +1407,10 @@ async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
   if (!confirm("Excluir esta despesca?")) return;
 
   const desp = viveiros[viveiroIndex].despescas[despIndex];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
-  const { error } = await supabaseClient.from("despescas").delete().eq("id", desp.id);
+  const { error } = await supabaseClient.from("despescas").delete().eq("id", desp.id).eq("user_id", usuario.id);
 
   if (error) { console.log(error); alert("Erro ao excluir."); return; }
 
@@ -1417,11 +1433,14 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   }
 
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
   const { error } = await supabaseClient
     .from("racoes")
     .update({ data: novaData, racao: novaQtd })
-    .eq("id", racao.id);
+    .eq("id", racao.id)
+    .eq("user_id", usuario.id);
 
   if (error) {
     console.log(error);
@@ -1894,6 +1913,17 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.biometrias = [];
   viveiro.despescas = [];
 
+  // Zerar campos do ciclo no viveiro (mantém só nome e tamanho)
+  await supabaseClient
+    .from("viveiros")
+    .update({ data_povoamento: null, total_povoado: null, laboratorio: null })
+    .eq("id", viveiro.id)
+    .eq("user_id", usuario.id);
+
+  viveiro.dataPovoamento = null;
+  viveiro.totalPovoado = null;
+  viveiro.laboratorio = null;
+
   const cicloFinalizado = {
     nomeViveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
@@ -1923,6 +1953,33 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.ciclosFinalizados.push(cicloFinalizado);
 
   mostrarRelatorioCiclo(index, cicloFinalizado);
+}
+
+function mostrarViveiroSemCiclo(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo" style="background:rgba(6,107,99,0.07);border-color:rgba(6,107,99,0.15)">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <span class="form-caption">${viveiro.tamanho ? viveiro.tamanho + " ha" : ""}</span>
+        <h2 class="form-titulo">${viveiro.nome}</h2>
+      </div>
+      <div class="viveiro-sem-ciclo-msg">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Nenhum ciclo ativo. Inicie um novo ciclo para começar os lançamentos.</span>
+      </div>
+      <button class="botao-salvar" onclick="mostrarFormularioReinicio(${index})" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Iniciar novo ciclo
+      </button>
+      <div class="separador-ou"><span>ou</span></div>
+      <button class="botao-voltar-form" onclick="mostrarListaViveiros()">← Voltar</button>
+    </div>
+  `;
 }
 
 function mostrarRelatorioCiclo(index, ciclo) {
