@@ -987,35 +987,19 @@ function mostrarHistoricoDoViveiroDireto(index) {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <h2 class="titulo-secao">Histórico - ${abreviarViveiro(viveiro.nome)}</h2>
-
       <div id="opcoes-historico">
+        <h2 class="titulo-secao">Histórico - ${abreviarViveiro(viveiro.nome)}</h2>
+
         <div class="painel-acoes">
-
-          <button class="botao-historico"
-            onclick="abrirHistoricoBiometriaDireto(${index})">
-            Biometria
-          </button>
-
-          <button class="botao-historico"
-            onclick="abrirHistoricoRacaoDireto(${index})">
-            Ração
-          </button>
-
-          <button class="botao-historico"
-            onclick="abrirHistoricoDespescaDireto(${index})">
-            Despesca parcial
-          </button>
-
+          <button class="botao-historico" onclick="abrirHistoricoBiometriaDireto(${index})">Biometria</button>
+          <button class="botao-historico" onclick="abrirHistoricoRacaoDireto(${index})">Ração</button>
+          <button class="botao-historico" onclick="abrirHistoricoDespescaDireto(${index})">Despesca parcial</button>
         </div>
+
+        <button class="botao-voltar" onclick="abrirViveiro(${index})">Voltar</button>
       </div>
 
       <div id="resultado-historico"></div>
-
-      <button class="botao-voltar"
-        onclick="abrirViveiro(${index})">
-        Voltar
-      </button>
 
     </div>
   `;
@@ -1074,7 +1058,7 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
 
         ${
           direto
-            ? ""
+            ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
             : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
         }
     `;
@@ -1126,7 +1110,7 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
 
     ${
       direto
-        ? ""
+        ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
         : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
     }
      `;
@@ -1384,7 +1368,7 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
 
         ${
           direto
-            ? ""
+            ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
             : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
         }
     `;
