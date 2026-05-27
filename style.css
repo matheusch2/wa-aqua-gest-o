@@ -1618,6 +1618,20 @@ button {
     color: #16a34a;
 }
 
+.aviso-reinicio {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+    padding: 11px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.45;
+}
+
 /* ─── IMPRESSÃO ──────────────────────────────────────────────────────────────── */
 
 @media print {

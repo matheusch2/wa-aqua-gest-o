@@ -1468,34 +1468,59 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto) {
 
 // ─── CICLO ───────────────────────────────────────────────────────────────────
 
-async function reiniciarCiclo(index) {
-  if (!confirm("Deseja reiniciar o ciclo deste viveiro?")) return;
-
+function reiniciarCiclo(index) {
   mostrarFormularioReinicio(index);
 }
 
 function mostrarFormularioReinicio(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
 
   area.innerHTML = `
-        <div class="painel-viveiro">
-            <h2 class="titulo-secao">Reiniciar Ciclo - ${abreviarViveiro(viveiro.nome)}</h2>
-
-            <label>Nova data de povoamento</label>
-            <input type="date" id="novoPovoamento">
-
-            <label>Novo total povoado</label>
-            <input type="text" id="novoTotal" oninput="formatarPopulacao(this)">
-
-            <label>Laboratório</label>
-            <input type="text" id="novoLaboratorio">
-
-            <button class="botao-gestao" onclick="salvarNovoCiclo(${index})">
-                Salvar novo ciclo
-            </button>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo" style="background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2)">
+          <svg viewBox="0 0 24 24" style="stroke:#ef4444"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
         </div>
-    `;
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Reiniciar Ciclo</h2>
+      </div>
+      <div class="aviso-reinicio">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#b45309;fill:none;stroke-width:2;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Todo o histórico de ração, biometrias e despescas será <strong>apagado</strong>.</span>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Nova data de povoamento</label>
+          </div>
+          <input type="date" id="novoPovoamento" value="${hoje}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <label>Novo total povoado</label>
+          </div>
+          <input type="text" id="novoTotal" placeholder="Ex: 50.000" oninput="formatarPopulacao(this)">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <label>Laboratório</label>
+          </div>
+          <input type="text" id="novoLaboratorio" placeholder="Nome do laboratório">
+        </div>
+        <button class="botao-salvar botao-alerta" onclick="salvarNovoCiclo(${index})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          Confirmar reinício
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Cancelar</button>
+      </div>
+    </div>
+  `;
 }
 
 // CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
