@@ -364,8 +364,8 @@ function mostrarCadastroViveiro() {
 
     <div class="campo-form">
       <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <label>Total povoado (camarões)</label>
+        <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 8c-2 0-4 1-5 3l-4 6c-1 2-3 3-5 3-2 0-3-1-3-3s1-3 3-3"/><path d="M16 4c0 0-1 2 0 4"/><path d="M19 3c0 0 0 2-1 4"/><path d="M3 17l-1 3M5 18l-1 2"/></svg>
+        <label>Total povoado</label>
       </div>
       <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250000" oninput="formatarPopulacao(this)">
     </div>
@@ -389,8 +389,8 @@ function mostrarCadastroViveiro() {
       <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
     </div>
 
-    <button class="botao-gestao" onclick="salvarViveiro()">
-      <svg class="btn-svg" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    <button class="botao-salvar" onclick="salvarViveiro()">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Salvar viveiro
     </button>
     <button class="botao-voltar-form" onclick="voltarMenuGestao()">

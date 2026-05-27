@@ -990,6 +990,27 @@ button {
     flex-shrink: 0;
 }
 
+.botao-salvar {
+    width: 100%;
+    padding: 13px 16px;
+    background: rgb(6, 107, 99);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.botao-salvar:active {
+    background: rgb(4, 85, 79);
+}
+
 .botao-voltar-form {
     display: block;
     width: 100%;
