@@ -1059,56 +1059,92 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
     `;
 }
 
-function renderizarHistoricoRacao(index, elementoId, direto) {
+function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao = "") {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
   const racoes = viveiro.racoes || [];
 
+  const ITENS_POR_PAGINA = 30;
+  const totalPaginas = Math.max(1, Math.ceil(racoes.length / ITENS_POR_PAGINA));
+  pagina = Math.max(0, Math.min(pagina, totalPaginas - 1));
+
+  const inicio = pagina * ITENS_POR_PAGINA;
+  const racoesPagina = racoes.slice(inicio, inicio + ITENS_POR_PAGINA);
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
 
+  const navAnterior = pagina > 0
+    ? `<button class="botao-nav-viveiro" onclick="renderizarHistoricoRacao(${index},'${elementoId}',${direto},${pagina - 1},'anterior')">← Anterior</button>`
+    : `<span class="botao-nav-viveiro" style="visibility:hidden">← Anterior</span>`;
+
+  const navProximo = pagina < totalPaginas - 1
+    ? `<button class="botao-nav-viveiro" onclick="renderizarHistoricoRacao(${index},'${elementoId}',${direto},${pagina + 1},'proximo')">Próxima →</button>`
+    : `<span class="botao-nav-viveiro" style="visibility:hidden">Próxima →</span>`;
+
   resultado.innerHTML = `
-        <h3 class="titulo-secao">Ração - ${abreviarViveiro(viveiro.nome)}</h3>
+    <h3 class="titulo-secao">Ração - ${abreviarViveiro(viveiro.nome)}</h3>
 
-        <div class="tabela-historico">
-            <div class="linha-historico-racao cabecalho">
-                <span>DIA</span>
-                <span class="col-centro">DATA</span>
-                <span class="col-centro">RAÇÃO</span>
-                <span></span>
-            </div>
+    <div class="tabela-historico">
+      <div class="linha-historico-racao cabecalho">
+        <span>DIA</span>
+        <span class="col-centro">DATA</span>
+        <span class="col-centro">RAÇÃO</span>
+        <span></span>
+      </div>
+      ${racoes.length === 0
+        ? `<p class="sobrevivencia-texto">Nenhuma ração lançada.</p>`
+        : racoesPagina.map((item, i) => {
+            const iReal = inicio + i;
+            return `
+              <div class="linha-historico-racao">
+                <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
+                <span class="col-centro">${formatarData(item.data)}</span>
+                <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg</span>
+                <span class="col-acoes">
+                  <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iReal},'${elementoId}',${direto})">✏️</button>
+                  <button class="botao-editar botao-excluir" onclick="excluirRacao(${index},${iReal},'${elementoId}',${direto})">🗑️</button>
+                </span>
+              </div>`;
+          }).join("")
+      }
+    </div>
 
-            ${
-              racoes.length === 0
-                ? `<p class="sobrevivencia-texto">Nenhuma ração lançada.</p>`
-                : racoes
-                    .map(
-                      (item, i) => `
-                    <div class="linha-historico-racao">
-                        <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
-                        <span class="col-centro">${formatarData(item.data)}</span>
-                        <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg</span>
-                        <span class="col-acoes">
-                          <button class="botao-editar" onclick="abrirEdicaoRacao(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                          <button class="botao-editar botao-excluir" onclick="excluirRacao(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
-                        </span>
-                    </div>
-                `,
-                    )
-                    .join("")
-            }
-        </div>
+    ${totalPaginas > 1 ? `
+      <div class="nav-viveiros">
+        ${navAnterior}
+        <span class="nav-viveiros-contador">Pág. ${pagina + 1} / ${totalPaginas}</span>
+        ${navProximo}
+      </div>
+    ` : ""}
 
-        <div class="resultado-box destaque">
-            <p>Consumo total</p>
-            <h3>${formatarNumeroBR(totalRacao, 1)} kg</h3>
-        </div>
+    <div class="resultado-box destaque">
+      <p>Consumo total</p>
+      <h3>${formatarNumeroBR(totalRacao, 1)} kg</h3>
+    </div>
 
-    ${
-      direto
-        ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-        : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
+    ${direto
+      ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
+      : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
     }
-     `;
+  `;
+
+  // Animação de slide ao trocar página
+  if (direcao) {
+    const tabela = resultado.querySelector(".tabela-historico");
+    if (tabela) tabela.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
+  }
+
+  // Swipe para trocar página
+  if (totalPaginas > 1) {
+    let touchStartX = 0;
+    resultado.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    resultado.addEventListener("touchend", e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0 && pagina < totalPaginas - 1) renderizarHistoricoRacao(index, elementoId, direto, pagina + 1, "proximo");
+        if (diff < 0 && pagina > 0) renderizarHistoricoRacao(index, elementoId, direto, pagina - 1, "anterior");
+      }
+    }, { passive: true });
+  }
 }
 
 function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
