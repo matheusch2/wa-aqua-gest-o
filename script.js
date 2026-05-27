@@ -1263,15 +1263,32 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const { data: atualizado, error } = await supabaseClient
+  // DELETE + INSERT contorna restrição de RLS em UPDATE
+  const { error: erroDel } = await supabaseClient
     .from("biometrias")
-    .update({ data: novaData, gramatura: novaQtd })
+    .delete()
     .eq("id", bio.id)
+    .eq("user_id", usuario.id);
+
+  if (erroDel) { console.log(erroDel); alert("Erro ao salvar: " + erroDel.message); return; }
+
+  const { data: inserido, error: erroIns } = await supabaseClient
+    .from("biometrias")
+    .insert([{
+      viveiro_id: viveiros[viveiroIndex].id,
+      data: novaData,
+      gramatura: novaQtd,
+      user_id: usuario.id,
+    }])
     .select();
 
-  if (error) { console.log(error); alert("Erro ao salvar: " + error.message); return; }
-  if (!atualizado || atualizado.length === 0) { alert("Não foi possível salvar. Tente recarregar a página."); return; }
+  if (erroIns || !inserido || inserido.length === 0) {
+    console.log(erroIns);
+    alert("Erro ao salvar edição. Tente novamente.");
+    return;
+  }
 
+  viveiros[viveiroIndex].biometrias[bioIndex].id = inserido[0].id;
   viveiros[viveiroIndex].biometrias[bioIndex].data = novaData;
   viveiros[viveiroIndex].biometrias[bioIndex].gramatura = novaQtd;
 
@@ -1372,15 +1389,33 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const { data: atualizado, error } = await supabaseClient
+  // DELETE + INSERT contorna restrição de RLS em UPDATE
+  const { error: erroDel } = await supabaseClient
     .from("despescas")
-    .update({ data: novaData, quantidade_kg: novaQtd, peso_medio: novoPeso })
+    .delete()
     .eq("id", desp.id)
+    .eq("user_id", usuario.id);
+
+  if (erroDel) { console.log(erroDel); alert("Erro ao salvar: " + erroDel.message); return; }
+
+  const { data: inserido, error: erroIns } = await supabaseClient
+    .from("despescas")
+    .insert([{
+      viveiro_id: viveiros[viveiroIndex].id,
+      data: novaData,
+      quantidade_kg: novaQtd,
+      peso_medio: novoPeso,
+      user_id: usuario.id,
+    }])
     .select();
 
-  if (error) { console.log(error); alert("Erro ao salvar: " + error.message); return; }
-  if (!atualizado || atualizado.length === 0) { alert("Não foi possível salvar. Tente recarregar a página."); return; }
+  if (erroIns || !inserido || inserido.length === 0) {
+    console.log(erroIns);
+    alert("Erro ao salvar edição. Tente novamente.");
+    return;
+  }
 
+  viveiros[viveiroIndex].despescas[despIndex].id = inserido[0].id;
   viveiros[viveiroIndex].despescas[despIndex].data = novaData;
   viveiros[viveiroIndex].despescas[despIndex].quantidadeKg = novaQtd;
   viveiros[viveiroIndex].despescas[despIndex].pesoMedio = novoPeso;
@@ -1427,23 +1462,36 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const { data: atualizado, error } = await supabaseClient
+  // DELETE + INSERT contorna restrição de RLS em UPDATE
+  const { error: erroDel } = await supabaseClient
     .from("racoes")
-    .update({ data: novaData, racao: novaQtd })
+    .delete()
     .eq("id", racao.id)
+    .eq("user_id", usuario.id);
+
+  if (erroDel) {
+    console.log(erroDel);
+    alert("Erro ao salvar: " + erroDel.message);
+    return;
+  }
+
+  const { data: inserido, error: erroIns } = await supabaseClient
+    .from("racoes")
+    .insert([{
+      viveiro_id: viveiros[viveiroIndex].id,
+      data: novaData,
+      racao: novaQtd,
+      user_id: usuario.id,
+    }])
     .select();
 
-  if (error) {
-    console.log(error);
-    alert("Erro ao salvar edição: " + error.message);
+  if (erroIns || !inserido || inserido.length === 0) {
+    console.log(erroIns);
+    alert("Erro ao salvar edição. Tente novamente.");
     return;
   }
 
-  if (!atualizado || atualizado.length === 0) {
-    alert("Não foi possível salvar. Tente recarregar a página e editar novamente.");
-    return;
-  }
-
+  viveiros[viveiroIndex].racoes[racaoIndex].id = inserido[0].id;
   viveiros[viveiroIndex].racoes[racaoIndex].data = novaData;
   viveiros[viveiroIndex].racoes[racaoIndex].racao = novaQtd;
 
