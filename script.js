@@ -364,7 +364,7 @@ function mostrarCadastroViveiro() {
 
     <div class="campo-form">
       <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 8c-2 0-4 1-5 3l-4 6c-1 2-3 3-5 3-2 0-3-1-3-3s1-3 3-3"/><path d="M16 4c0 0-1 2 0 4"/><path d="M19 3c0 0 0 2-1 4"/><path d="M3 17l-1 3M5 18l-1 2"/></svg>
+        <svg class="campo-icone" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
         <label>Total povoado</label>
       </div>
       <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250000" oninput="formatarPopulacao(this)">
