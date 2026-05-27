@@ -474,60 +474,72 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 
   if (viveiros.length === 0) {
     area.innerHTML = `
-            <div class="resultado-box">
-                <p>Nenhum viveiro cadastrado</p>
-                <span>Cadastre um viveiro antes de lançar ração.</span>
-            </div>
-        `;
+      <div class="resultado-box">
+        <p>Nenhum viveiro cadastrado</p>
+        <span>Cadastre um viveiro antes de lançar ração.</span>
+      </div>
+    `;
     return;
   }
 
   const dentroDoViveiro = indexSelecionado !== "";
+  const hoje = new Date().toISOString().split("T")[0];
 
   area.innerHTML = `
-        <h2 class="titulo-secao">Lançar ração</h2>
-
-        ${
-          dentroDoViveiro
-            ? ""
-            : `
-            <label>Selecione o viveiro</label>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">🌾</div>
+        ${dentroDoViveiro ? `<span class="form-caption">${abreviarViveiro(viveiros[indexSelecionado].nome)}</span>` : ""}
+        <h2 class="form-titulo">LANÇAR RAÇÃO</h2>
+      </div>
+      <div class="form-corpo">
+        ${!dentroDoViveiro ? `
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+              <label>Viveiro</label>
+            </div>
             <select id="viveiroRacao">
-                ${viveiros
-                  .map(
-                    (viveiro, index) => `
-                    <option value="${index}">
-                        ${viveiro.nome}
-                    </option>
-                `,
-                  )
-                  .join("")}
+              ${viveiros.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("")}
             </select>
-        `
-        }
+          </div>
+        ` : ""}
 
-        <label>Data</label>
-        <input type="date" id="dataRacao" value="${new Date().toISOString().split("T")[0]}">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataRacao" value="${hoje}">
+        </div>
 
-        <label>Consumo de ração</label>
-        <div class="input-unidade">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Consumo de ração</label>
+          </div>
+          <div class="campo-input-unidade">
             <input type="number" id="consumoRacao" placeholder="Ex: 50">
-            <span>kg</span>
+            <span class="campo-unidade">kg</span>
+          </div>
         </div>
 
-        <div id="msg-racao-sucesso" style="display:none; align-items:center; gap:10px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:10px; padding:12px 16px; margin-bottom:4px;">
-          <span style="font-size:22px">✅</span>
-          <span style="font-size:14px; font-weight:700; color:#16a34a">Ração lançada com sucesso!</span>
+        <div id="msg-racao-sucesso" class="msg-sucesso-lancamento" style="display:none;">
+          <span class="msg-emoji">✅</span>
+          <span class="msg-texto">Ração lançada com sucesso!</span>
         </div>
 
-        <button class="botao-form" onclick="salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""})">
-            Salvar lançamento
+        <button class="botao-salvar" onclick="salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar lançamento
         </button>
-
-        <button class="botao-voltar" onclick="${dentroDoViveiro ? `abrirViveiro(${indexSelecionado})` : "voltarMenuGestao()"}">
-            Voltar
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="${dentroDoViveiro ? `abrirViveiro(${indexSelecionado})` : "voltarMenuGestao()"}">
+          ← Voltar
         </button>
-    `;
+      </div>
+    </div>
+  `;
 }
 
 async function salvarLancamentoRacao(indexDireto = "") {
@@ -555,8 +567,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
   }
 
   // Desabilita o botão para evitar duplo clique
-  const botao = document.querySelector(".botao-form");
-  if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
 
   if (!viveiros[index].racoes) {
     viveiros[index].racoes = [];
@@ -577,7 +589,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   if (error) {
     console.log(error);
     alert(error.message);
-    if (botao) { botao.disabled = false; botao.textContent = "Salvar"; }
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
     return;
   }
 
@@ -590,7 +602,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   // Mostra mensagem de sucesso e reseta o formulário
   document.getElementById("dataRacao").value = new Date().toISOString().split("T")[0];
   document.getElementById("consumoRacao").value = "";
-  if (botao) { botao.disabled = false; botao.textContent = "Salvar"; }
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
 
   const msgSucesso = document.getElementById("msg-racao-sucesso");
   if (msgSucesso) {
@@ -607,27 +619,45 @@ function abrirBiometria(index) {
   const hoje = new Date().toISOString().split("T")[0];
 
   area.innerHTML = `
-        <div class="painel-viveiro">
-            <h2 class="titulo-secao">Lançar Biometria - ${abreviarViveiro(viveiro.nome)}</h2>
-
-            <label>Data da biometria</label>
-            <input type="date" id="dataBiometria" value="${hoje}">
-
-            <label>Gramatura média</label>
-            <div class="input-unidade">
-                <input type="number" id="gramaturaBiometria" placeholder="Ex: 10">
-                <span>g</span>
-            </div>
-
-            <button class="botao-gestao" onclick="salvarBiometria(${index})">
-                Salvar biometria
-            </button>
-
-            <button class="limpar" onclick="abrirViveiro(${index})">
-                Voltar
-            </button>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
         </div>
-    `;
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">LANÇAR BIOMETRIA</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data da biometria</label>
+          </div>
+          <input type="date" id="dataBiometria" value="${hoje}">
+        </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 13v8"/><path d="M8 17h8"/><path d="M7 5l1.5 5H15.5L17 5"/></svg>
+            <label>Gramatura média</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="gramaturaBiometria" placeholder="Ex: 10">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+
+        <button class="botao-salvar" onclick="salvarBiometria(${index})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar biometria
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">
+          ← Voltar
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 async function salvarBiometria(index) {
@@ -645,8 +675,8 @@ async function salvarBiometria(index) {
     return;
   }
 
-  const botao = document.querySelector(".botao-gestao");
-  if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
 
   if (!viveiros[index].biometrias) {
     viveiros[index].biometrias = [];
@@ -681,40 +711,60 @@ async function salvarBiometria(index) {
 
 // ─── DESPESCA ─────────────────────────────────────────────────────────────────
 
-// CORREÇÃO: função abrirDespesca estava faltando
 function abrirDespesca(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
   const hoje = new Date().toISOString().split("T")[0];
 
   area.innerHTML = `
-        <div class="painel-viveiro">
-            <h2 class="titulo-secao">Lançar Despesca - ${abreviarViveiro(viveiro.nome)}</h2>
-
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">🦐</div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">LANÇAR DESPESCA</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <label>Data da despesca</label>
-            <input type="date" id="dataDespesca" value="${hoje}">
-
-            <label>Quantidade despescada</label>
-            <div class="input-unidade">
-                <input type="number" id="quantidadeDespesca" placeholder="Ex: 500">
-                <span>kg</span>
-            </div>
-
-            <label>Peso médio</label>
-            <div class="input-unidade">
-                <input type="number" id="pesoMedioDespesca" placeholder="Ex: 12">
-                <span>g</span>
-            </div>
-
-            <button class="botao-gestao" onclick="salvarDespesca(${index})">
-                Salvar despesca
-            </button>
-
-            <button class="limpar" onclick="abrirViveiro(${index})">
-                Voltar
-            </button>
+          </div>
+          <input type="date" id="dataDespesca" value="${hoje}">
         </div>
-    `;
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Quantidade despescada</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="quantidadeDespesca" placeholder="Ex: 500">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 13v8"/><path d="M8 17h8"/><path d="M7 5l1.5 5H15.5L17 5"/></svg>
+            <label>Peso médio</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="pesoMedioDespesca" placeholder="Ex: 12">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+
+        <button class="botao-salvar" onclick="salvarDespesca(${index})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar despesca
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">
+          ← Voltar
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 async function salvarDespesca(index) {
@@ -730,8 +780,8 @@ async function salvarDespesca(index) {
     return;
   }
 
-  const botao = document.querySelector(".botao-gestao");
-  if (botao) { botao.disabled = true; botao.textContent = "Salvando..."; }
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
 
   if (!viveiros[index].despescas) {
     viveiros[index].despescas = [];
