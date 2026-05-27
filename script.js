@@ -859,39 +859,45 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
   if (viveiros.length === 0) {
     area.innerHTML = `
-            <div class="resultado-box">
-                <p>Nenhum viveiro cadastrado</p>
-                <span>Cadastre um viveiro para ver o histórico.</span>
-            </div>
-        `;
+      <div class="resultado-box">
+        <p>Nenhum viveiro cadastrado</p>
+        <span>Cadastre um viveiro para ver o histórico.</span>
+      </div>
+    `;
     return;
   }
 
   area.innerHTML = `
-        <div class="painel-viveiro">
-            <h2 class="titulo-secao">Histórico</h2>
-
-            <label>Selecione o viveiro</label>
-
-            <select id="viveiroHistorico" onchange="mostrarOpcoesHistorico()">
-                <option value="">Escolha um viveiro</option>
-                ${viveiros
-                  .map(
-                    (viveiro, index) => `
-                    <option value="${index}" ${String(index) === String(indexSelecionado) ? "selected" : ""}>
-                        ${viveiro.nome}
-                    </option>
-                `,
-                  )
-                  .join("")}
-            </select>
-
-            <div id="opcoes-historico"></div>
-            <div id="resultado-historico"></div>
-
-            <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
-    `;
+        <h2 class="form-titulo">Histórico</h2>
+      </div>
+
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Viveiro</label>
+          </div>
+          <select id="viveiroHistorico" onchange="mostrarOpcoesHistorico()">
+            <option value="">Escolha um viveiro</option>
+            ${viveiros.map((viveiro, index) => `
+              <option value="${index}" ${String(index) === String(indexSelecionado) ? "selected" : ""}>${viveiro.nome}</option>
+            `).join("")}
+          </select>
+        </div>
+
+        <div id="opcoes-historico"></div>
+        <div id="resultado-historico"></div>
+      </div>
+
+      <div class="separador-ou"><span>ou</span></div>
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+    </div>
+  `;
 
   if (indexSelecionado !== "") {
     mostrarOpcoesHistorico();
@@ -911,25 +917,21 @@ function mostrarOpcoesHistorico() {
   }
 
   opcoes.innerHTML = `
-        <div class="painel-acoes">
-            <button class="botao-historico" onclick="abrirHistoricoBiometria()">
-                Biometria
-            </button>
-
-            <button class="botao-historico" onclick="abrirHistoricoRacao()">
-                Ração
-            </button>
-
-            <button class="botao-historico" onclick="abrirHistoricoDespesca()">
-               Despesca parcial
-            </button>
-
-            <button class="limpar" onclick="voltarMenuGestao()">
-                Voltar
-            </button>
-
-            </div>
-    `;
+    <div class="historico-opcoes-grid">
+      <button class="botao-historico-opcao" onclick="abrirHistoricoBiometria()">
+        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+        Biometria
+      </button>
+      <button class="botao-historico-opcao" onclick="abrirHistoricoRacao()">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Ração
+      </button>
+      <button class="botao-historico-opcao" onclick="abrirHistoricoDespesca()">
+        <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
+        Despesca
+      </button>
+    </div>
+  `;
 }
 
 function abrirHistoricoBiometria() {
@@ -964,22 +966,36 @@ function mostrarHistoricoDoViveiroDireto(index) {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-    <div class="painel-viveiro">
-
+    <div class="form-lancamento">
       <div id="opcoes-historico">
-        <h2 class="titulo-secao">Histórico - ${abreviarViveiro(viveiro.nome)}</h2>
-
-        <div class="painel-acoes">
-          <button class="botao-historico" onclick="abrirHistoricoBiometriaDireto(${index})">Biometria</button>
-          <button class="botao-historico" onclick="abrirHistoricoRacaoDireto(${index})">Ração</button>
-          <button class="botao-historico" onclick="abrirHistoricoDespescaDireto(${index})">Despesca parcial</button>
+        <div class="form-topo">
+          <div class="form-icone-circulo">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+          <h2 class="form-titulo">Histórico</h2>
         </div>
 
-        <button class="botao-voltar" onclick="abrirViveiro(${index})">Voltar</button>
+        <div class="historico-opcoes-grid">
+          <button class="botao-historico-opcao" onclick="abrirHistoricoBiometriaDireto(${index})">
+            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+            Biometria
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirHistoricoRacaoDireto(${index})">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Ração
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirHistoricoDespescaDireto(${index})">
+            <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
+            Despesca
+          </button>
+        </div>
+
+        <div class="separador-ou" style="margin-top:14px"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Voltar</button>
       </div>
 
       <div id="resultado-historico"></div>
-
     </div>
   `;
 }
