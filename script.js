@@ -335,19 +335,16 @@ function mostrarListaViveiros(posicao = 0) {
     <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
   `;
 
-  // Swipe para navegar entre viveiros
+  // Swipe para navegar entre viveiros (toda a área)
   let touchStartX = 0;
-  const card = area.querySelector(".viveiro-card");
-  if (card) {
-    card.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    card.addEventListener("touchend", e => {
-      const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1);
-        if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1);
-      }
-    }, { passive: true });
-  }
+  area.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  area.addEventListener("touchend", e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1);
+      if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1);
+    }
+  }, { passive: true });
 }
 
 function abrirViveiro(index) {
