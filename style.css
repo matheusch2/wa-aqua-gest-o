@@ -161,6 +161,7 @@ button {
 .botao-gestao {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     background: rgb(6, 107, 99);
     color: white;
@@ -171,7 +172,7 @@ button {
     font-weight: 600;
     cursor: pointer;
     width: 100%;
-    text-align: left;
+    text-align: center;
     min-height: 62px;
 }
 
