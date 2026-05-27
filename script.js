@@ -575,8 +575,7 @@ function abrirViveiro(index) {
       <div class="viveiro-header">
         <h2 class="viveiro-titulo">${viveiro.nome.toUpperCase()}</h2>
         <div class="viveiro-pls">
-          <div class="pls-numero">${totalFormatado}</div>
-          <div class="pls-label">PLs</div>
+          <div class="pls-numero">${totalFormatado} PLs</div>
         </div>
       </div>
 
