@@ -881,10 +881,11 @@ button {
 }
 
 .rel-titulo-principal {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 900;
     color: #1f2937;
-    letter-spacing: -0.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .rel-marca-nome {
@@ -1035,8 +1036,8 @@ button {
 .rel-metrica-card {
     background: #f8fafc;
     border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 14px 12px;
+    border-radius: 12px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1045,25 +1046,25 @@ button {
 }
 
 .rel-metrica-valor {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 900;
     color: #0f766e;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
     line-height: 1;
 }
 
 .rel-metrica-unidade {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: #6b7280;
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 .rel-metrica-nome {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: #9ca3af;
-    margin-top: 6px;
+    margin-top: 5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -1105,44 +1106,36 @@ button {
     letter-spacing: -0.5px;
 }
 
-/* Hero: Produção final */
+/* Hero: Produção final — faixa fina horizontal */
 .rel-producao-hero {
-    margin-top: 20px;
+    margin-top: 16px;
     background: linear-gradient(135deg, #0f766e 0%, #065f46 100%);
-    border-radius: 18px;
-    padding: 22px 20px;
+    border-radius: 14px;
+    padding: 12px 18px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    text-align: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .rel-producao-hero svg {
-    width: 24px;
-    height: 24px;
-    stroke: rgba(255,255,255,0.6);
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    margin-bottom: 4px;
+    display: none;
 }
 
 .rel-hero-label {
     font-size: 12px;
     font-weight: 700;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.8);
     text-transform: uppercase;
-    letter-spacing: 1.2px;
+    letter-spacing: 0.8px;
 }
 
 .rel-hero-valor {
-    font-size: 30px;
+    font-size: 22px;
     font-weight: 900;
     color: white;
-    letter-spacing: -0.5px;
-    line-height: 1.2;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
 }
 
 .acoes-relatorio {
