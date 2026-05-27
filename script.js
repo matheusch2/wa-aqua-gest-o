@@ -3,74 +3,11 @@ const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 
-async function cadastrarUsuario() {
-  const email = document.getElementById("emailCadastro").value;
-  const senha = document.getElementById("senhaCadastro").value;
-  const confirmar = document.getElementById("confirmarSenha").value;
-
-  if (!email || !senha || !confirmar) {
-    alert("Preencha todos os campos.");
-    return;
-  }
-
-  if (senha !== confirmar) {
-    alert("As senhas não coincidem.");
-    return;
-  }
-
-  if (senha.length < 6) {
-    alert("A senha deve ter pelo menos 6 caracteres.");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.signUp({
-    email: email,
-    password: senha,
-  });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  alert("Conta criada com sucesso! Agora faça login.");
-  mostrarLogin();
-}
-
-async function entrarUsuario() {
-  const email = document.getElementById("emailLogin").value;
-  const senha = document.getElementById("senhaLogin").value;
-
-  if (!email || !senha) {
-    alert("Preencha e-mail e senha.");
-    return;
-  }
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: email,
-    password: senha,
-  });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  // Limpa a tela enquanto carrega
-  document.getElementById("area-gestao").innerHTML = "";
-  document.getElementById("card-gestao").classList.remove("modo-login");
-  document.querySelector(".topo").style.display = "";
-
-  document.getElementById("menuGestao").style.display = "grid";
-
-  await carregarViveiros();
-}
-
 async function sairUsuario() {
   fecharMenuUsuario();
   await supabaseClient.auth.signOut();
   viveiros = [];
-  mostrarLogin();
+  window.location.href = "login.html";
 }
 
 function toggleMenuUsuario() {
@@ -90,164 +27,6 @@ document.addEventListener("click", function(e) {
     fecharMenuUsuario();
   }
 });
-
-function mostrarLogin() {
-
-  document.getElementById("menuGestao").style.display = "none";
-  document.getElementById("card-gestao").classList.add("modo-login");
-  document.querySelector(".topo").style.display = "none";
-
-  const area = document.getElementById("area-gestao");
-
-  area.innerHTML = `
-    <div class="login-wrapper">
-
-      <div class="login-topo">
-        <div class="logo-circulo login-logo">
-          <span class="logo-wa">WA</span>
-          <span class="logo-camarao">🦐</span>
-        </div>
-        <h1 class="titulo-login">ENTRAR</h1>
-        <p class="login-subtitulo">Bem-vindo!</p>
-      </div>
-
-      <div class="login-form-card">
-
-        <label>E-mail</label>
-        <div class="input-com-icone">
-          <svg class="input-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
-          <input type="email" id="emailLogin" placeholder="Digite seu e-mail">
-        </div>
-
-        <label>Senha</label>
-        <div class="input-com-icone">
-          <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input type="password" id="senhaLogin" placeholder="Digite sua senha">
-          <button class="botao-olho" type="button" onclick="toggleSenha('senhaLogin', this)">
-            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-
-        <button class="botao-entrar" onclick="entrarUsuario()">
-          <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          Entrar
-        </button>
-
-        <button class="link-esqueci" onclick="mostrarRecuperarSenha()">
-          Esqueci minha senha
-        </button>
-
-        <div class="separador-login">
-          <span>Não tem uma conta?</span>
-        </div>
-
-        <button class="botao-criar-conta" onclick="mostrarCadastro()">
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          Criar conta
-        </button>
-
-      </div>
-    </div>
-  `;
-}
-
-function mostrarCadastro() {
-
-  const area = document.getElementById("area-gestao");
-
-  area.innerHTML = `
-    <div class="painel-viveiro">
-
-      <h1 class="titulo-login titulo-menor">CRIAR CONTA</h1>
-
-      <label>E-mail</label>
-      <input
-        type="email"
-        id="emailCadastro"
-        placeholder="Digite seu e-mail"
-      >
-
-      <label>Senha</label>
-      <div class="input-senha">
-        <input type="password" id="senhaCadastro" placeholder="Mínimo 6 caracteres">
-        <button class="botao-olho" type="button" onclick="toggleSenha('senhaCadastro', this)">👁️</button>
-      </div>
-
-      <label>Confirmar senha</label>
-      <div class="input-senha">
-        <input type="password" id="confirmarSenha" placeholder="Repita a senha">
-        <button class="botao-olho" type="button" onclick="toggleSenha('confirmarSenha', this)">👁️</button>
-      </div>
-
-      <button
-        class="botao-cadastrar"
-        onclick="cadastrarUsuario()"
-      >
-        Criar conta
-      </button>
-
-      <button
-        class="limpar"
-        onclick="mostrarLogin()"
-      >
-        Voltar para o login
-      </button>
-
-    </div>
-  `;
-}
-
-function mostrarRecuperarSenha() {
-  const area = document.getElementById("area-gestao");
-
-  area.innerHTML = `
-    <div class="painel-viveiro">
-
-      <h1 class="titulo-login titulo-menor">RECUPERAR SENHA</h1>
-
-      <label>E-mail da sua conta</label>
-      <input
-        type="email"
-        id="emailRecuperacao"
-        placeholder="Digite seu e-mail"
-      >
-
-      <button
-        class="botao-entrar"
-        onclick="recuperarSenha()"
-      >
-        Enviar link de recuperação
-      </button>
-
-      <button
-        class="limpar"
-        onclick="mostrarLogin()"
-      >
-        Voltar para o login
-      </button>
-
-    </div>
-  `;
-}
-
-async function recuperarSenha() {
-  const email = document.getElementById("emailRecuperacao").value;
-
-  if (!email) {
-    alert("Digite seu e-mail.");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  alert("E-mail enviado! Verifique sua caixa de entrada.");
-  mostrarLogin();
-}
 
 async function pegarUsuarioLogado() {
   const {
@@ -2175,15 +1954,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     } = await supabaseClient.auth.getSession();
 
     if (session) {
-      document.getElementById("card-gestao").classList.remove("modo-login");
       document.querySelector(".topo").style.display = "";
       document.getElementById("menuGestao").style.display = "grid";
       await carregarViveiros();
     } else {
-      mostrarLogin();
+      window.location.href = "login.html";
     }
   } catch (error) {
     console.log("Erro na inicialização:", error);
-    mostrarLogin();
+    window.location.href = "login.html";
   }
 });
