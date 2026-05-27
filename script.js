@@ -509,7 +509,7 @@ function mostrarListaViveiros(posicao = 0) {
           <span class="vc-badge-cultivo">● Em cultivo</span>
         </div>
         <div class="vc-pls-badge">
-          🦐 ${viveiro.totalPovoado ? Number(viveiro.totalPovoado).toLocaleString("pt-BR") : "--"} PLs
+          🦐 ${viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR") : "--"} PLs
         </div>
       </div>
 
@@ -580,7 +580,7 @@ function abrirViveiro(index) {
   const ultimaBiometria = biometrias.length > 0 ? biometrias[biometrias.length - 1].gramatura : "--";
 
   const totalFormatado = viveiro.totalPovoado
-    ? Number(viveiro.totalPovoado).toLocaleString("pt-BR")
+    ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR")
     : "--";
 
   area.innerHTML = `
