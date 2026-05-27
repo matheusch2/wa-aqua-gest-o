@@ -711,9 +711,7 @@ function abrirBiometria(index) {
 
   area.innerHTML = `
         <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>Biometria - ${viveiro.nome}</h2>
-            </div>
+            <h2 class="titulo-secao">Lançar Biometria - ${viveiro.nome}</h2>
 
             <label>Data da biometria</label>
             <input type="date" id="dataBiometria" value="${hoje}">
@@ -792,9 +790,7 @@ function abrirDespesca(index) {
 
   area.innerHTML = `
         <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>Despesca parcial - ${viveiro.nome}</h2>
-            </div>
+            <h2 class="titulo-secao">Lançar Despesca - ${viveiro.nome}</h2>
 
             <label>Data da despesca</label>
             <input type="date" id="dataDespesca" value="${hoje}">
@@ -985,9 +981,7 @@ function mostrarHistoricoDoViveiroDireto(index) {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <div class="painel-topo">
-        <h2>${viveiro.nome}</h2>
-      </div>
+      <h2 class="titulo-secao">Histórico - ${viveiro.nome}</h2>
 
       <div id="opcoes-historico">
         <div class="painel-acoes">
@@ -1037,7 +1031,7 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
   const biometrias = viveiro.biometrias || [];
 
   resultado.innerHTML = `
-        <h3>Biometria</h3>
+        <h3 class="titulo-secao">Biometria - ${viveiro.nome}</h3>
 
         <div class="tabela-historico">
             <div class="linha-historico cabecalho">
@@ -1088,7 +1082,7 @@ function renderizarHistoricoRacao(index, elementoId, direto) {
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
 
   resultado.innerHTML = `
-        <h3 class="titulo-secao-historico">RAÇÃO</h3>
+        <h3 class="titulo-secao">Ração - ${viveiro.nome}</h3>
 
         <div class="tabela-historico">
             <div class="linha-historico-racao cabecalho">
@@ -1351,7 +1345,7 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
   }, 0);
 
   resultado.innerHTML = `
-        <h3>Despesca parcial</h3>
+        <h3 class="titulo-secao">Despesca - ${viveiro.nome}</h3>
 
         <div class="tabela-historico">
             <div class="linha-historico cabecalho">
