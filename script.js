@@ -247,7 +247,7 @@ async function salvarViveiro() {
   }, 2500);
 }
 
-function mostrarListaViveiros(posicao = 0) {
+function mostrarListaViveiros(posicao = 0, direcao = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
@@ -271,11 +271,11 @@ function mostrarListaViveiros(posicao = 0) {
 
   // Sempre renderiza 3 elementos para o contador ficar sempre centrado
   const navAnterior = posicao > 0
-    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao - 1})">← Anterior</button>`
+    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao - 1}, 'anterior')">← Anterior</button>`
     : `<span class="botao-nav-viveiro" style="visibility:hidden">← Anterior</span>`;
 
   const navProximo = posicao < total - 1
-    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao + 1})">Próximo →</button>`
+    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao + 1}, 'proximo')">Próximo →</button>`
     : `<span class="botao-nav-viveiro" style="visibility:hidden">Próximo →</span>`;
 
   area.innerHTML = `
@@ -341,10 +341,16 @@ function mostrarListaViveiros(posicao = 0) {
   area.addEventListener("touchend", e => {
     const diff = touchStartX - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1);
-      if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1);
+      if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1, "proximo");
+      if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1, "anterior");
     }
   }, { passive: true });
+
+  // Animação de entrada
+  const card = area.querySelector(".viveiro-card");
+  if (card && direcao) {
+    card.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
+  }
 }
 
 function abrirViveiro(index) {

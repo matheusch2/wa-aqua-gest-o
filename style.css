@@ -1176,6 +1176,26 @@ button {
     width: auto;
 }
 
+/* ─── ANIMAÇÃO DE TRANSIÇÃO ENTRE VIVEIROS ───────────────────────────────── */
+
+@keyframes slideEntradaDireita {
+    from { transform: translateX(60px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slideEntradaEsquerda {
+    from { transform: translateX(-60px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+.slide-in-direita {
+    animation: slideEntradaDireita 0.28s ease-out;
+}
+
+.slide-in-esquerda {
+    animation: slideEntradaEsquerda 0.28s ease-out;
+}
+
 .nav-viveiros-contador {
     font-size: 13px;
     color: #9ca3af;
