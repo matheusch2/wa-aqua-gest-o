@@ -992,7 +992,7 @@ button {
 .input-com-icone input {
     flex: 1;
     border: none;
-    padding: 13px 10px;
+    padding: 13px 10px 13px 6px;
     font-size: 14px;
     background: transparent;
     outline: none;
@@ -1006,7 +1006,7 @@ button {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    margin-left: 12px;
+    margin-left: 14px;
     flex-shrink: 0;
 }
 
