@@ -1386,9 +1386,7 @@ function mostrarFormularioReinicio(index) {
 
   area.innerHTML = `
         <div class="painel-viveiro">
-            <div class="painel-topo">
-                <h2>${viveiro.nome}</h2>
-            </div>
+            <h2 class="titulo-secao">Reiniciar Ciclo - ${abreviarViveiro(viveiro.nome)}</h2>
 
             <label>Nova data de povoamento</label>
             <input type="date" id="novoPovoamento">
@@ -1611,9 +1609,7 @@ function abrirEncerrarCiclo(index) {
 
         <div class="painel-viveiro">
 
-            <div class="painel-topo">
-                <h2>Encerrar ciclo - ${viveiro.nome}</h2>
-            </div>
+            <h2 class="titulo-secao">Encerrar Ciclo - ${abreviarViveiro(viveiro.nome)}</h2>
 
             <label>Data de encerramento</label>
             <input type="date" id="dataEncerramento" value="${hoje}">
