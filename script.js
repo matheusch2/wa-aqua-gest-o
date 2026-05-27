@@ -235,23 +235,11 @@ async function salvarViveiro() {
     ciclosFinalizados: [],
   };
 
-  viveiros.push(viveiroLocal);
+  // Recarrega do banco para garantir estado sincronizado
+  await carregarViveiros();
 
-  // Volta pro menu principal com mensagem de sucesso
-  voltarMenuGestao();
-
-  const area = document.getElementById("area-gestao");
-  area.innerHTML = `
-    <div style="text-align:center; padding: 30px 0;">
-      <div style="font-size:48px; margin-bottom:12px">✅</div>
-      <p style="font-size:18px; font-weight:800; color:rgb(6,107,99); margin:0 0 6px 0">Viveiro salvo!</p>
-      <p style="font-size:14px; color:#6b7280; margin:0">${nome} cadastrado com sucesso.</p>
-    </div>
-  `;
-
-  setTimeout(() => {
-    area.innerHTML = "";
-  }, 2500);
+  // Vai pra lista de viveiros com mensagem de sucesso
+  mostrarListaViveiros(0, "", `${nome} cadastrado com sucesso!`);
 }
 
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
@@ -1275,13 +1263,14 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const { error } = await supabaseClient
+  const { data: atualizado, error } = await supabaseClient
     .from("biometrias")
     .update({ data: novaData, gramatura: novaQtd })
     .eq("id", bio.id)
-    .eq("user_id", usuario.id);
+    .select();
 
-  if (error) { console.log(error); alert("Erro ao salvar."); return; }
+  if (error) { console.log(error); alert("Erro ao salvar: " + error.message); return; }
+  if (!atualizado || atualizado.length === 0) { alert("Não foi possível salvar. Tente recarregar a página."); return; }
 
   viveiros[viveiroIndex].biometrias[bioIndex].data = novaData;
   viveiros[viveiroIndex].biometrias[bioIndex].gramatura = novaQtd;
@@ -1383,13 +1372,14 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const { error } = await supabaseClient
+  const { data: atualizado, error } = await supabaseClient
     .from("despescas")
     .update({ data: novaData, quantidade_kg: novaQtd, peso_medio: novoPeso })
     .eq("id", desp.id)
-    .eq("user_id", usuario.id);
+    .select();
 
-  if (error) { console.log(error); alert("Erro ao salvar."); return; }
+  if (error) { console.log(error); alert("Erro ao salvar: " + error.message); return; }
+  if (!atualizado || atualizado.length === 0) { alert("Não foi possível salvar. Tente recarregar a página."); return; }
 
   viveiros[viveiroIndex].despescas[despIndex].data = novaData;
   viveiros[viveiroIndex].despescas[despIndex].quantidadeKg = novaQtd;
@@ -1437,15 +1427,20 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const { error } = await supabaseClient
+  const { data: atualizado, error } = await supabaseClient
     .from("racoes")
     .update({ data: novaData, racao: novaQtd })
     .eq("id", racao.id)
-    .eq("user_id", usuario.id);
+    .select();
 
   if (error) {
     console.log(error);
-    alert("Erro ao salvar edição.");
+    alert("Erro ao salvar edição: " + error.message);
+    return;
+  }
+
+  if (!atualizado || atualizado.length === 0) {
+    alert("Não foi possível salvar. Tente recarregar a página e editar novamente.");
     return;
   }
 
