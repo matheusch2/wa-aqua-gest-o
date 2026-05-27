@@ -915,9 +915,6 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
         <div id="opcoes-historico"></div>
         <div id="resultado-historico"></div>
       </div>
-
-      <div class="separador-ou"><span>ou</span></div>
-      <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
     </div>
   `;
 
@@ -953,6 +950,8 @@ function mostrarOpcoesHistorico() {
         Despesca
       </button>
     </div>
+    <div class="separador-ou" style="margin-top:14px"><span>ou</span></div>
+    <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
   `;
 }
 
@@ -1291,7 +1290,8 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
     mostrarHistoricoDoViveiroDireto(viveiroIndex);
     abrirHistoricoBiometriaDireto(viveiroIndex);
   } else {
-    renderizarHistoricoBiometria(viveiroIndex, elementoId, direto);
+    mostrarHistoricoCultivo(viveiroIndex);
+    abrirHistoricoBiometria();
   }
 }
 
@@ -1399,7 +1399,8 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
     mostrarHistoricoDoViveiroDireto(viveiroIndex);
     abrirHistoricoDespescaDireto(viveiroIndex);
   } else {
-    renderizarHistoricoDespesca(viveiroIndex, elementoId, direto);
+    mostrarHistoricoCultivo(viveiroIndex);
+    abrirHistoricoDespesca();
   }
 }
 
@@ -1454,7 +1455,8 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   if (direto) {
     voltarParaHistoricoRacaoDireto(viveiroIndex);
   } else {
-    renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
+    mostrarHistoricoCultivo(viveiroIndex);
+    abrirHistoricoRacao();
   }
 }
 
