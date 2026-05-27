@@ -8,6 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>WA Aqua gestão</title>
+    <button class="lua-badge" id="luaBadge">
+        <span class="lua-emoji" id="luaEmoji">🌕</span>
+
+        <div class="lua-info">
+            <span class="lua-nome" id="luaNome">Lua Cheia</span>
+            <span class="lua-sub" id="luaSub">carregando...</span>
+        </div>
+    </button>
 </head>
 
 <body>
@@ -83,6 +91,39 @@
     </div>
 
     <script src="script.js"></script>
+    
+    <div class="modal-overlay" id="luaModal">
+      <div class="modal-card">
+    
+        <button class="modal-close" id="fecharLua">✕</button>
+    
+        <div class="modal-lua-emoji" id="modalEmoji">🌕</div>
+    
+        <h3 class="modal-fase" id="modalFase">Lua Cheia</h3>
+    
+        <div class="modal-info">
+    
+          <div class="modal-item">
+            <span class="modal-item-emoji">🌕</span>
+    
+            <div>
+              <span class="modal-item-label">Próxima Lua Cheia</span>
+              <span class="modal-item-valor" id="modalCheia">—</span>
+            </div>
+          </div>
+    
+          <div class="modal-item">
+            <span class="modal-item-emoji">🌑</span>
+    
+            <div>
+              <span class="modal-item-label">Próxima Lua Nova</span>
+              <span class="modal-item-valor" id="modalNova">—</span>
+            </div>
+          </div>
+    
+        </div>
+      </div>
+    </div>
 
 </body>
 </html>
