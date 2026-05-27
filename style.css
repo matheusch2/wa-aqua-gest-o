@@ -31,7 +31,7 @@ body {
 .logo-circulo {
   width: 65px;
   height: 65px;
-  border-radius: 50%;
+  border-radius: 10%;
   overflow: hidden;
 
   display: flex;
@@ -40,8 +40,8 @@ body {
 }
 
 .logo-circulo img {
-  width: 130%;
-  height: 130%;
+  width: 110%;
+  height: 110%;
   object-fit: contain;
 }
 
