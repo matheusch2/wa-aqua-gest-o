@@ -1553,9 +1553,11 @@ async function salvarNovoCiclo(index) {
   }
 
   // Limpar dados do ciclo anterior no banco
-  await supabaseClient.from("racoes").delete().eq("viveiro_id", viveiros[index].id);
-  await supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiros[index].id);
-  await supabaseClient.from("despescas").delete().eq("viveiro_id", viveiros[index].id);
+  await Promise.all([
+    supabaseClient.from("racoes").delete().eq("viveiro_id", viveiros[index].id).eq("user_id", usuario.id),
+    supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiros[index].id).eq("user_id", usuario.id),
+    supabaseClient.from("despescas").delete().eq("viveiro_id", viveiros[index].id).eq("user_id", usuario.id),
+  ]);
 
   // Atualizar estado local
   viveiros[index].dataPovoamento = novoPovoamento;
@@ -1867,9 +1869,16 @@ async function salvarEncerramentoCiclo(index) {
   }
 
   // Apagar todos os lançamentos do ciclo encerrado no banco
-  await supabaseClient.from("racoes").delete().eq("viveiro_id", viveiro.id);
-  await supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiro.id);
-  await supabaseClient.from("despescas").delete().eq("viveiro_id", viveiro.id);
+  const [erroDelRacao, erroDelBio, erroDelDesp] = await Promise.all([
+    supabaseClient.from("racoes").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
+    supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
+    supabaseClient.from("despescas").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
+  ]);
+
+  if (erroDelRacao || erroDelBio || erroDelDesp) {
+    console.error("Erro ao limpar lançamentos:", erroDelRacao || erroDelBio || erroDelDesp);
+    // Continua mesmo assim — o ciclo foi salvo, tentamos limpar o máximo possível
+  }
 
   // Limpar estado local
   viveiro.racoes = [];
