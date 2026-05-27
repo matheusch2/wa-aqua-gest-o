@@ -462,64 +462,106 @@ button {
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
 
-.painel-topo {
+/* ─── VIVEIRO HEADER ─────────────────────────────────────────────────────── */
+
+.viveiro-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
-.painel-topo h2 {
+.viveiro-titulo {
     margin: 0;
     font-size: 26px;
+    font-weight: 900;
     color: #1f2937;
+    letter-spacing: 0.3px;
 }
 
-.painel-topo span {
-    background: rgba(6,107,99,0.10);
-    color: rgb(6,107,99);
-    padding: 8px 12px;
-    border-radius: 0px;
-    font-size: 13px;
-    font-weight: bold;
+.viveiro-pls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(6,107,99,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
 }
+
+.pls-camarao {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.pls-numero {
+    font-size: 16px;
+    font-weight: 800;
+    color: rgb(6,107,99);
+    line-height: 1.1;
+}
+
+.pls-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* ─── INFO BOXES ─────────────────────────────────────────────────────────── */
 
 .painel-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .info-box {
     background: #f8fafc;
-    border-radius: 18px;
-    padding: 18px 12px;
-
+    border-radius: 14px;
+    padding: 12px 10px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    gap: 4px;
+}
 
-    text-align: center;
+.info-box-icone {
+    width: 32px;
+    height: 32px;
+    background: rgba(6,107,99,0.10);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.info-box-icone svg {
+    width: 17px;
+    height: 17px;
+    stroke: rgb(6,107,99);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .info-box small {
     display: block;
-    color: #374151;
-
-    margin-bottom: 10px;
-
-    font-size: 14px;
-    font-weight: 700;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .info-box strong {
-    color: #0f766e;
-
-    font-size: 17px;
-    font-weight: 600;
+    color: #1f2937;
+    font-size: 15px;
+    font-weight: 700;
 }
+
+/* ─── BOTÕES DO PAINEL ───────────────────────────────────────────────────── */
 
 .painel-acoes {
     display: grid;
@@ -531,10 +573,37 @@ button {
     color: white;
     border: none;
     border-radius: 12px;
-    padding: 14px;
+    padding: 15px 16px;
     font-size: 15px;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+}
+
+.botao-painel svg:first-child {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.seta-btn {
+    width: 16px !important;
+    height: 16px !important;
+    margin-left: auto;
+    opacity: 0.7;
+}
+
+.botao-reiniciar {
+    background: #6b7280 !important;
 }
 
 .tabela-historico {
