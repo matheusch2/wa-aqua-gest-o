@@ -768,9 +768,10 @@ async function salvarBiometria(index) {
     user_id: usuario.id,
   };
 
-  const { error } = await supabaseClient
+  const { data: bioSalva, error } = await supabaseClient
     .from("biometrias")
-    .insert([novaBiometria]);
+    .insert([novaBiometria])
+    .select();
 
   if (error) {
     console.log(error);
@@ -779,6 +780,7 @@ async function salvarBiometria(index) {
   }
 
   viveiros[index].biometrias.push({
+    id: bioSalva[0].id,
     data: data,
     gramatura: gramatura,
   });
@@ -852,9 +854,10 @@ async function salvarDespesca(index) {
     user_id: usuario.id,
   };
 
-  const { error } = await supabaseClient
+  const { data: despescaSalva, error } = await supabaseClient
     .from("despescas")
-    .insert([novaDespesca]);
+    .insert([novaDespesca])
+    .select();
 
   if (error) {
     console.log(error);
@@ -863,6 +866,7 @@ async function salvarDespesca(index) {
   }
 
   viveiros[index].despescas.push({
+    id: despescaSalva[0].id,
     data: data,
     tipo: "Parcial",
     quantidadeKg: quantidadeKg,
@@ -1024,10 +1028,11 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
         <h3 class="titulo-secao">Biometria - ${abreviarViveiro(viveiro.nome)}</h3>
 
         <div class="tabela-historico">
-            <div class="linha-historico cabecalho">
-                <span>Data</span>
-                <span>Biometria</span>
-                <span>Crescimento</span>
+            <div class="linha-historico-acoes cabecalho">
+                <span>DATA</span>
+                <span class="col-centro">PESO</span>
+                <span class="col-centro">CRESC.</span>
+                <span></span>
             </div>
 
             ${
@@ -1036,19 +1041,18 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                 : biometrias
                     .map((item, i) => {
                       let crescimento = "-";
-
                       if (i > 0) {
-                        crescimento =
-                          (
-                            item.gramatura - biometrias[i - 1].gramatura
-                          ).toFixed(1) + " g";
+                        crescimento = (item.gramatura - biometrias[i - 1].gramatura).toFixed(1) + " g";
                       }
-
                       return `
-                        <div class="linha-historico">
+                        <div class="linha-historico-acoes">
                             <span>${formatarData(item.data)}</span>
-                            <span>${formatarNumeroBR(item.gramatura, 1)} g</span>
-                            <span>${crescimento}</span>
+                            <span class="col-centro">${formatarNumeroBR(item.gramatura, 1)} g</span>
+                            <span class="col-centro">${crescimento}</span>
+                            <span class="col-acoes">
+                              <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
+                              <button class="botao-editar botao-excluir" onclick="excluirBiometria(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                            </span>
                         </div>
                     `;
                     })
@@ -1154,6 +1158,160 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
       </button>
     </div>
   `;
+}
+
+// ─── EDITAR / EXCLUIR BIOMETRIA ───────────────────────────────────────────────
+
+function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  const viveiro = viveiros[viveiroIndex];
+  const bio = viveiro.biometrias[bioIndex];
+
+  const alvo = direto
+    ? document.getElementById("area-gestao")
+    : document.getElementById(elementoId);
+
+  const acaoVoltar = direto
+    ? `mostrarHistoricoDoViveiroDireto(${viveiroIndex}); abrirHistoricoBiometriaDireto(${viveiroIndex})`
+    : `renderizarHistoricoBiometria(${viveiroIndex}, '${elementoId}', ${direto})`;
+
+  alvo.innerHTML = `
+    <div class="painel-viveiro">
+      <p class="caption-edicao">${viveiro.nome}</p>
+      <h2 class="titulo-edicao">EDITAR BIOMETRIA</h2>
+
+      <label>Data</label>
+      <input type="date" id="dataEdicaoBio" value="${bio.data}">
+
+      <label>Gramatura média</label>
+      <div class="input-unidade">
+        <input type="number" id="qtdEdicaoBio" value="${bio.gramatura}" placeholder="Ex: 10">
+        <span>g</span>
+      </div>
+
+      <button class="botao-gestao" onclick="salvarEdicaoBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto})">Salvar</button>
+      <button class="limpar" onclick="${acaoVoltar}">Voltar</button>
+    </div>
+  `;
+}
+
+async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  const novaData = document.getElementById("dataEdicaoBio").value;
+  const novaQtd = parseFloat(document.getElementById("qtdEdicaoBio").value);
+
+  if (!novaData || !novaQtd) { alert("Preencha a data e a gramatura."); return; }
+
+  const bio = viveiros[viveiroIndex].biometrias[bioIndex];
+
+  const { error } = await supabaseClient
+    .from("biometrias")
+    .update({ data: novaData, gramatura: novaQtd })
+    .eq("id", bio.id);
+
+  if (error) { console.log(error); alert("Erro ao salvar."); return; }
+
+  viveiros[viveiroIndex].biometrias[bioIndex].data = novaData;
+  viveiros[viveiroIndex].biometrias[bioIndex].gramatura = novaQtd;
+
+  if (direto) {
+    mostrarHistoricoDoViveiroDireto(viveiroIndex);
+    abrirHistoricoBiometriaDireto(viveiroIndex);
+  } else {
+    renderizarHistoricoBiometria(viveiroIndex, elementoId, direto);
+  }
+}
+
+async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  if (!confirm("Excluir esta biometria?")) return;
+
+  const bio = viveiros[viveiroIndex].biometrias[bioIndex];
+
+  const { error } = await supabaseClient.from("biometrias").delete().eq("id", bio.id);
+
+  if (error) { console.log(error); alert("Erro ao excluir."); return; }
+
+  viveiros[viveiroIndex].biometrias.splice(bioIndex, 1);
+  renderizarHistoricoBiometria(viveiroIndex, elementoId, direto);
+}
+
+// ─── EDITAR / EXCLUIR DESPESCA ────────────────────────────────────────────────
+
+function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  const viveiro = viveiros[viveiroIndex];
+  const desp = viveiro.despescas[despIndex];
+
+  const alvo = direto
+    ? document.getElementById("area-gestao")
+    : document.getElementById(elementoId);
+
+  const acaoVoltar = direto
+    ? `mostrarHistoricoDoViveiroDireto(${viveiroIndex}); abrirHistoricoDespescaDireto(${viveiroIndex})`
+    : `renderizarHistoricoDespesca(${viveiroIndex}, '${elementoId}', ${direto})`;
+
+  alvo.innerHTML = `
+    <div class="painel-viveiro">
+      <p class="caption-edicao">${viveiro.nome}</p>
+      <h2 class="titulo-edicao">EDITAR DESPESCA</h2>
+
+      <label>Data</label>
+      <input type="date" id="dataEdicaoDesp" value="${desp.data}">
+
+      <label>Quantidade</label>
+      <div class="input-unidade">
+        <input type="number" id="qtdEdicaoDesp" value="${desp.quantidadeKg}" placeholder="Ex: 500">
+        <span>kg</span>
+      </div>
+
+      <label>Peso médio</label>
+      <div class="input-unidade">
+        <input type="number" id="pesoEdicaoDesp" value="${desp.pesoMedio}" placeholder="Ex: 12">
+        <span>g</span>
+      </div>
+
+      <button class="botao-gestao" onclick="salvarEdicaoDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">Salvar</button>
+      <button class="limpar" onclick="${acaoVoltar}">Voltar</button>
+    </div>
+  `;
+}
+
+async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  const novaData = document.getElementById("dataEdicaoDesp").value;
+  const novaQtd = parseFloat(document.getElementById("qtdEdicaoDesp").value);
+  const novoPeso = parseFloat(document.getElementById("pesoEdicaoDesp").value);
+
+  if (!novaData || !novaQtd || !novoPeso) { alert("Preencha todos os campos."); return; }
+
+  const desp = viveiros[viveiroIndex].despescas[despIndex];
+
+  const { error } = await supabaseClient
+    .from("despescas")
+    .update({ data: novaData, quantidade_kg: novaQtd, peso_medio: novoPeso })
+    .eq("id", desp.id);
+
+  if (error) { console.log(error); alert("Erro ao salvar."); return; }
+
+  viveiros[viveiroIndex].despescas[despIndex].data = novaData;
+  viveiros[viveiroIndex].despescas[despIndex].quantidadeKg = novaQtd;
+  viveiros[viveiroIndex].despescas[despIndex].pesoMedio = novoPeso;
+
+  if (direto) {
+    mostrarHistoricoDoViveiroDireto(viveiroIndex);
+    abrirHistoricoDespescaDireto(viveiroIndex);
+  } else {
+    renderizarHistoricoDespesca(viveiroIndex, elementoId, direto);
+  }
+}
+
+async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  if (!confirm("Excluir esta despesca?")) return;
+
+  const desp = viveiros[viveiroIndex].despescas[despIndex];
+
+  const { error } = await supabaseClient.from("despescas").delete().eq("id", desp.id);
+
+  if (error) { console.log(error); alert("Erro ao excluir."); return; }
+
+  viveiros[viveiroIndex].despescas.splice(despIndex, 1);
+  renderizarHistoricoDespesca(viveiroIndex, elementoId, direto);
 }
 
 function voltarParaHistoricoRacaoDireto(viveiroIndex) {
@@ -1338,25 +1496,28 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
         <h3 class="titulo-secao">Despesca - ${abreviarViveiro(viveiro.nome)}</h3>
 
         <div class="tabela-historico">
-            <div class="linha-historico cabecalho">
-                <span>Data</span>
-                <span>Kg</span>
-                <span>Peso</span>
+            <div class="linha-historico-acoes cabecalho">
+                <span>DATA</span>
+                <span class="col-centro">KG</span>
+                <span class="col-centro">PESO</span>
+                <span></span>
             </div>
 
             ${
               despescas.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
                 : despescas
-                    .map(
-                      (item) => `
-                    <div class="linha-historico">
+                    .map((item, i) => `
+                    <div class="linha-historico-acoes">
                         <span>${formatarData(item.data)}</span>
-                        <span>${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
-                        <span>${formatarNumeroBR(item.pesoMedio, 1)} g</span>
+                        <span class="col-centro">${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
+                        <span class="col-centro">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
+                        <span class="col-acoes">
+                          <button class="botao-editar" onclick="abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
+                          <button class="botao-editar botao-excluir" onclick="excluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                        </span>
                     </div>
-                `,
-                    )
+                `)
                     .join("")
             }
         </div>
@@ -1840,6 +2001,7 @@ async function carregarViveiros() {
     biometrias: biometriasData
       .filter((bio) => bio.viveiro_id === item.id)
       .map((bio) => ({
+        id: bio.id,
         data: bio.data,
         gramatura: Number(bio.gramatura),
       })),
@@ -1847,6 +2009,7 @@ async function carregarViveiros() {
     despescas: despescasData
       .filter((despesca) => despesca.viveiro_id === item.id)
       .map((despesca) => ({
+        id: despesca.id,
         data: despesca.data,
         tipo: "Parcial",
         quantidadeKg: Number(despesca.quantidade_kg),

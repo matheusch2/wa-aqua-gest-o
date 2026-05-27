@@ -450,6 +450,24 @@ button {
     letter-spacing: 0.5px;
 }
 
+.linha-historico-acoes {
+    display: grid;
+    grid-template-columns: 0.9fr 0.9fr 0.8fr 0.7fr;
+    gap: 6px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    align-items: center;
+}
+
+.linha-historico-acoes.cabecalho {
+    font-weight: bold;
+    color: rgb(6,107,99);
+    border-bottom: 2px solid rgb(6,107,99);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
 .col-centro {
     text-align: center;
 }
