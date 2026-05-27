@@ -509,7 +509,7 @@ function mostrarListaViveiros(posicao = 0) {
           <span class="vc-badge-cultivo">● Em cultivo</span>
         </div>
         <div class="vc-pls-badge">
-          🦐 ${viveiro.totalPovoado || "--"} PLs
+          🦐 ${viveiro.totalPovoado ? Number(viveiro.totalPovoado).toLocaleString("pt-BR") : "--"} PLs
         </div>
       </div>
 
@@ -553,6 +553,20 @@ function mostrarListaViveiros(posicao = 0) {
 
     <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
   `;
+
+  // Swipe para navegar entre viveiros
+  let touchStartX = 0;
+  const card = area.querySelector(".viveiro-card");
+  if (card) {
+    card.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    card.addEventListener("touchend", e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1);
+        if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1);
+      }
+    }, { passive: true });
+  }
 }
 
 function abrirViveiro(index) {
@@ -2139,6 +2153,13 @@ async function carregarViveiros() {
         observacoes: ciclo.observacoes,
       })),
   }));
+
+  // Ordenar viveiros por número no nome (Viveiro 1, Viveiro 2...)
+  viveiros.sort((a, b) => {
+    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
+    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
+    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
+  });
 
   console.log("Viveiros carregados:", viveiros);
 }
