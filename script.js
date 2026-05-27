@@ -58,6 +58,7 @@ async function entrarUsuario() {
 
   // Limpa a tela enquanto carrega
   document.getElementById("area-gestao").innerHTML = "";
+  document.getElementById("card-gestao").classList.remove("modo-login");
 
   document.getElementById("menuGestao").style.display = "grid";
 
@@ -92,52 +93,58 @@ document.addEventListener("click", function(e) {
 function mostrarLogin() {
 
   document.getElementById("menuGestao").style.display = "none";
+  document.getElementById("card-gestao").classList.add("modo-login");
 
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-    <div class="painel-viveiro">
+    <div class="login-wrapper">
 
-      <h1 class="titulo-login">ENTRAR</h1>
-
-      <label>E-mail</label>
-      <input
-        type="email"
-        id="emailLogin"
-        placeholder="Digite seu e-mail"
-      >
-
-      <label>Senha</label>
-      <div class="input-senha">
-        <input type="password" id="senhaLogin" placeholder="Digite sua senha">
-        <button class="botao-olho" type="button" onclick="toggleSenha('senhaLogin', this)">👁️</button>
+      <div class="login-topo">
+        <div class="logo-circulo login-logo">
+          <span class="logo-wa">WA</span>
+          <span class="logo-camarao">🦐</span>
+        </div>
+        <h1 class="titulo-login">ENTRAR</h1>
+        <p class="login-subtitulo">Bem-vindo!</p>
       </div>
 
-      <button
-        class="botao-entrar"
-        onclick="entrarUsuario()"
-      >
-        Entrar
-      </button>
+      <div class="login-form-card">
 
-      <button
-        class="link-esqueci"
-        onclick="mostrarRecuperarSenha()"
-      >
-        Esqueci minha senha
-      </button>
+        <label>E-mail</label>
+        <div class="input-com-icone">
+          <svg class="input-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
+          <input type="email" id="emailLogin" placeholder="Digite seu e-mail">
+        </div>
 
-      <div class="separador-login">
-        <span>Não tem uma conta?</span>
+        <label>Senha</label>
+        <div class="input-com-icone">
+          <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="senhaLogin" placeholder="Digite sua senha">
+          <button class="botao-olho" type="button" onclick="toggleSenha('senhaLogin', this)">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+
+        <button class="botao-entrar" onclick="entrarUsuario()">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Entrar
+        </button>
+
+        <button class="link-esqueci" onclick="mostrarRecuperarSenha()">
+          Esqueci minha senha
+        </button>
+
+        <div class="separador-login">
+          <span>Não tem uma conta?</span>
+        </div>
+
+        <button class="botao-criar-conta" onclick="mostrarCadastro()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Criar conta
+        </button>
+
       </div>
-
-      <button
-        class="botao-criar-conta"
-        onclick="mostrarCadastro()"
-      >
-        Criar conta
-      </button>
-
     </div>
   `;
 }
@@ -297,12 +304,14 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
 
 function toggleSenha(inputId, botao) {
   const input = document.getElementById(inputId);
+  const svgOlho = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const svgOlhoFechado = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
   if (input.type === "password") {
     input.type = "text";
-    botao.innerHTML = '<span style="text-decoration:line-through">👁</span>';
+    botao.innerHTML = svgOlhoFechado;
   } else {
     input.type = "password";
-    botao.innerHTML = "👁";
+    botao.innerHTML = svgOlho;
   }
 }
 
@@ -2058,6 +2067,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } = await supabaseClient.auth.getSession();
 
     if (session) {
+      document.getElementById("card-gestao").classList.remove("modo-login");
       document.getElementById("menuGestao").style.display = "grid";
       await carregarViveiros();
     } else {

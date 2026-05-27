@@ -689,14 +689,12 @@ button {
 .botao-olho {
     background: none;
     border: none;
-    border-left: 1px solid #eee;
-    padding: 0 10px;
-    font-size: 16px;
+    padding: 0 12px;
     cursor: pointer;
     width: auto;
     min-width: unset;
     height: 100%;
-    color: #888;
+    color: #9ca3af;
     display: flex;
     align-items: center;
 }
@@ -897,17 +895,119 @@ button {
 
 /* ─── LOGIN / CADASTRO ───────────────────────────────────────────────────── */
 
+/* ─── LOGIN ───────────────────────────────────────────────────────────────── */
+
+.card.modo-login {
+    background: linear-gradient(160deg, #ddf2ee 0%, #edfaf7 45%, #e2f5f0 100%);
+    box-shadow: none;
+    padding: 0;
+    overflow: hidden;
+}
+
+.login-wrapper {
+    position: relative;
+    padding: 28px 20px 24px;
+    overflow: hidden;
+}
+
+.login-wrapper::after {
+    content: "🦐";
+    position: absolute;
+    right: -14px;
+    top: 42%;
+    font-size: 110px;
+    opacity: 0.06;
+    pointer-events: none;
+    transform: scaleX(-1);
+}
+
+.login-topo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.login-logo {
+    width: 76px !important;
+    height: 76px !important;
+    border: 2.5px solid rgba(6,107,99,0.45) !important;
+    background: white !important;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 18px rgba(6,107,99,0.14);
+}
+
+.login-logo .logo-wa {
+    color: rgb(6,107,99) !important;
+    font-size: 19px;
+}
+
+.login-logo .logo-camarao {
+    font-size: 21px;
+}
+
 .titulo-login {
     text-align: center;
     font-size: 30px;
     font-weight: 900;
     color: rgb(6, 107, 99);
     letter-spacing: -0.5px;
-    margin: 0 0 24px 0;
+    margin: 0 0 4px 0;
 }
 
 .titulo-menor {
     font-size: 22px;
+}
+
+.login-subtitulo {
+    font-size: 14px;
+    color: #4b8a85;
+    margin: 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+.login-form-card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px 18px 18px;
+    box-shadow: 0 4px 22px rgba(0,0,0,0.08);
+}
+
+.input-com-icone {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 2px;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.input-com-icone:focus-within {
+    border-color: rgb(6,107,99);
+}
+
+.input-com-icone input {
+    flex: 1;
+    border: none;
+    padding: 13px 10px;
+    font-size: 14px;
+    background: transparent;
+    outline: none;
+}
+
+.input-svg {
+    width: 18px;
+    height: 18px;
+    stroke: #9ca3af;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-left: 12px;
+    flex-shrink: 0;
 }
 
 /* ─── NAVEGAÇÃO ENTRE VIVEIROS ───────────────────────────────────────────── */
@@ -965,14 +1065,19 @@ button {
 
 .botao-entrar {
     width: 100%;
-    padding: 8px;
+    padding: 14px;
     background: rgb(6, 107, 99);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: bold;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
 }
 
 .botao-entrar:hover {
@@ -982,18 +1087,21 @@ button {
 .link-esqueci {
     display: block;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 10px;
     font-size: 13px;
-    color: #6b7280;
+    color: rgb(6, 107, 99);
     background: none;
     border: none;
     cursor: pointer;
     width: 100%;
     padding: 4px;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 3px;
 }
 
 .link-esqueci:hover {
-    color: rgb(6, 107, 99);
+    color: rgb(4, 85, 79);
 }
 
 .separador-login {
@@ -1019,14 +1127,18 @@ button {
 
 .botao-criar-conta {
     width: 100%;
-    padding: 8px;
+    padding: 12px;
     background: transparent;
     color: rgb(6, 107, 99);
     border: 2px solid rgb(6, 107, 99);
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .botao-criar-conta:hover {
