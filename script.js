@@ -402,7 +402,7 @@ function mostrarCadastroViveiro() {
 async function salvarViveiro() {
   const nome = document.getElementById("nomeViveiro").value;
   const data = document.getElementById("dataPovoamento").value;
-  const total = document.getElementById("totalPovoadoGestao").value;
+  const total = document.getElementById("totalPovoadoGestao").value.replace(/\D/g, "");
   const tamanho = document.getElementById("tamanhoViveiro").value;
   const laboratorio = document.getElementById("laboratorio").value;
   const usuario = await pegarUsuarioLogado();
@@ -1518,7 +1518,7 @@ function mostrarFormularioReinicio(index) {
 // CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
 async function salvarNovoCiclo(index) {
   const novoPovoamento = document.getElementById("novoPovoamento").value;
-  const novoTotal = document.getElementById("novoTotal").value;
+  const novoTotal = document.getElementById("novoTotal").value.replace(/\D/g, "");
   const novoLaboratorio = document.getElementById("novoLaboratorio").value;
   const usuario = await pegarUsuarioLogado();
 
