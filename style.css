@@ -1358,6 +1358,92 @@ button {
     background: rgb(4, 85, 79);
 }
 
+/* ─── CHIP DE TOTAL ──────────────────────────────────────────────────────────── */
+
+.total-chip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 14px 0 4px;
+}
+
+.total-chip-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #16a34a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.total-chip-valor {
+    font-size: 16px;
+    font-weight: 800;
+    color: #15803d;
+}
+
+/* ─── CARD DE CICLO ENCERRADO ────────────────────────────────────────────────── */
+
+.ciclo-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.ciclo-card-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ciclo-card-nome {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+.ciclo-card-producao {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgb(6,107,99);
+    background: rgba(6,107,99,0.08);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.ciclo-card-infos {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.ciclo-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ciclo-info-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.ciclo-info-valor {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
 /* ─── FORMULÁRIO DE LANÇAMENTO ──────────────────────────────────────────────── */
 
 .form-lancamento {

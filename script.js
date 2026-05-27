@@ -123,58 +123,65 @@ function mostrarCadastroViveiro() {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-    <h2 class="titulo-secao">Cadastrar Viveiro</h2>
-
-    <div class="campo-form">
-      <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
-        <label>Nome do viveiro</label>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+        </div>
+        <h2 class="form-titulo">Cadastrar Viveiro</h2>
       </div>
-      <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Nome do viveiro</label>
+          </div>
+          <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
+        </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data de povoamento</label>
+          </div>
+          <input type="date" id="dataPovoamento">
+        </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+            <label>Total povoado</label>
+          </div>
+          <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250.000" oninput="formatarPopulacao(this)">
+        </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            <label>Tamanho do viveiro</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="tamanhoViveiro" placeholder="Ex: 0.5">
+            <span class="campo-unidade">ha</span>
+          </div>
+        </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <label>Laboratório (fornecedor de pós-larva)</label>
+          </div>
+          <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
+        </div>
+
+        <button class="botao-salvar" onclick="salvarViveiro()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar viveiro
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
     </div>
-
-    <div class="campo-form">
-      <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <label>Data de povoamento</label>
-      </div>
-      <input type="date" id="dataPovoamento">
-    </div>
-
-    <div class="campo-form">
-      <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
-        <label>Total povoado</label>
-      </div>
-      <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250000" oninput="formatarPopulacao(this)">
-    </div>
-
-    <div class="campo-form">
-      <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-        <label>Tamanho do viveiro</label>
-      </div>
-      <div class="input-unidade">
-        <input type="number" id="tamanhoViveiro" placeholder="Ex: 0.5">
-        <span>ha</span>
-      </div>
-    </div>
-
-    <div class="campo-form">
-      <div class="campo-label">
-        <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        <label>Laboratório (fornecedor de pós-larva)</label>
-      </div>
-      <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
-    </div>
-
-    <button class="botao-salvar" onclick="salvarViveiro()">
-      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      Salvar viveiro
-    </button>
-    <button class="botao-voltar-form" onclick="voltarMenuGestao()">
-      ← Voltar
-    </button>
   `;
 }
 
@@ -332,7 +339,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "") {
       ${navProximo}
     </div>
 
-    <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
+    <button class="botao-voltar-form" style="margin-top:4px" onclick="voltarMenuGestao()">← Voltar</button>
   `;
 
   // Swipe para navegar entre viveiros (toda a área)
@@ -1051,11 +1058,7 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
             }
         </div>
 
-        ${
-          direto
-            ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-        }
+    <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
     `;
 }
 
@@ -1116,15 +1119,12 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
       </div>
     ` : ""}
 
-    <div class="resultado-box destaque">
-      <p>Consumo total</p>
-      <h3>${formatarNumeroBR(totalRacao, 1)} kg</h3>
+    <div class="total-chip">
+      <span class="total-chip-label">Consumo total</span>
+      <span class="total-chip-valor">${formatarNumeroBR(totalRacao, 1)} kg</span>
     </div>
 
-    ${direto
-      ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-      : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-    }
+    <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
   `;
 
   // Animação de slide ao trocar página
@@ -1162,27 +1162,39 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
     : `renderizarHistoricoRacao(${viveiroIndex}, '${elementoId}', ${direto})`;
 
   alvo.innerHTML = `
-    <div class="painel-viveiro">
-
-      <p class="caption-edicao">${viveiro.nome}</p>
-      <h2 class="titulo-edicao">EDITAR RAÇÃO</h2>
-
-      <label>Data</label>
-      <input type="date" id="dataEdicaoRacao" value="${racao.data}">
-
-      <label>Consumo de ração</label>
-      <div class="input-unidade">
-        <input type="number" id="qtdEdicaoRacao" value="${racao.racao}" placeholder="Ex: 50">
-        <span>kg</span>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Editar Ração</h2>
       </div>
-
-      <button class="botao-gestao" onclick="salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto})">
-        Salvar
-      </button>
-
-      <button class="limpar" onclick="${acaoVoltar}">
-        Voltar
-      </button>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataEdicaoRacao" value="${racao.data}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Consumo de ração</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="qtdEdicaoRacao" value="${racao.racao}" placeholder="Ex: 50">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <button class="botao-salvar" onclick="salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="${acaoVoltar}">← Voltar</button>
+      </div>
     </div>
   `;
 }
@@ -1202,21 +1214,39 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
     : `renderizarHistoricoBiometria(${viveiroIndex}, '${elementoId}', ${direto})`;
 
   alvo.innerHTML = `
-    <div class="painel-viveiro">
-      <p class="caption-edicao">${viveiro.nome}</p>
-      <h2 class="titulo-edicao">EDITAR BIOMETRIA</h2>
-
-      <label>Data</label>
-      <input type="date" id="dataEdicaoBio" value="${bio.data}">
-
-      <label>Gramatura média</label>
-      <div class="input-unidade">
-        <input type="number" id="qtdEdicaoBio" value="${bio.gramatura}" placeholder="Ex: 10">
-        <span>g</span>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Editar Biometria</h2>
       </div>
-
-      <button class="botao-gestao" onclick="salvarEdicaoBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto})">Salvar</button>
-      <button class="limpar" onclick="${acaoVoltar}">Voltar</button>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataEdicaoBio" value="${bio.data}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+            <label>Gramatura média</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="qtdEdicaoBio" value="${bio.gramatura}" placeholder="Ex: 10">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+        <button class="botao-salvar" onclick="salvarEdicaoBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="${acaoVoltar}">← Voltar</button>
+      </div>
     </div>
   `;
 }
@@ -1275,27 +1305,49 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
     : `renderizarHistoricoDespesca(${viveiroIndex}, '${elementoId}', ${direto})`;
 
   alvo.innerHTML = `
-    <div class="painel-viveiro">
-      <p class="caption-edicao">${viveiro.nome}</p>
-      <h2 class="titulo-edicao">EDITAR DESPESCA</h2>
-
-      <label>Data</label>
-      <input type="date" id="dataEdicaoDesp" value="${desp.data}">
-
-      <label>Quantidade</label>
-      <div class="input-unidade">
-        <input type="number" id="qtdEdicaoDesp" value="${desp.quantidadeKg}" placeholder="Ex: 500">
-        <span>kg</span>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Editar Despesca</h2>
       </div>
-
-      <label>Peso médio</label>
-      <div class="input-unidade">
-        <input type="number" id="pesoEdicaoDesp" value="${desp.pesoMedio}" placeholder="Ex: 12">
-        <span>g</span>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataEdicaoDesp" value="${desp.data}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Quantidade</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="qtdEdicaoDesp" value="${desp.quantidadeKg}" placeholder="Ex: 500">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+            <label>Peso médio</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="pesoEdicaoDesp" value="${desp.pesoMedio}" placeholder="Ex: 12">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+        <button class="botao-salvar" onclick="salvarEdicaoDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="${acaoVoltar}">← Voltar</button>
       </div>
-
-      <button class="botao-gestao" onclick="salvarEdicaoDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">Salvar</button>
-      <button class="limpar" onclick="${acaoVoltar}">Voltar</button>
     </div>
   `;
 }
@@ -1557,16 +1609,12 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
             }
         </div>
 
-        <div class="resultado-box destaque">
-            <p>Total despescado</p>
-            <h3>${formatarNumeroBR(totalDespescado, 1)} kg</h3>
-        </div>
+    <div class="total-chip">
+      <span class="total-chip-label">Total despescado</span>
+      <span class="total-chip-valor">${formatarNumeroBR(totalDespescado, 1)} kg</span>
+    </div>
 
-        ${
-          direto
-            ? `<button class="botao-voltar" onclick="mostrarHistoricoDoViveiroDireto(${index})">Voltar</button>`
-            : `<button class="limpar" onclick="voltarOpcoesHistorico()">Voltar</button>`
-        }
+    <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
     `;
 }
 
@@ -1598,33 +1646,48 @@ function mostrarHistoricoCiclos() {
   });
 
   if (ciclos.length === 0) {
-    area.innerHTML = tituloHtml + `
-            <div class="resultado-box">
-                <p>Nenhum ciclo encerrado</p>
-                <span>Os ciclos finalizados aparecerão aqui.</span>
-            </div>
-            <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
-        `;
+    area.innerHTML = `
+      <div class="form-topo" style="margin-top:8px">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+        <h2 class="form-titulo">Histórico de Ciclos</h2>
+      </div>
+      <p style="text-align:center;color:#9ca3af;padding:16px 0;font-size:14px">Nenhum ciclo encerrado ainda.</p>
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+    `;
     return;
   }
 
-  area.innerHTML = tituloHtml + ciclos
-    .map(
-      (item) => `
-        <div class="viveiro-card">
-            <div class="viveiro-topo">
-                <h3>${item.viveiro}</h3>
-                <span>${item.ciclo.producaoTotal} kg</span>
-            </div>
-            <div class="viveiro-info">
-                <p>Povoamento: ${formatarData(item.ciclo.dataPovoamento)}</p>
-                <p>Encerramento: ${formatarData(item.ciclo.dataEncerramento)}</p>
-                <p>Sobrevivência: ${formatarNumeroBR(item.ciclo.sobrevivencia, 1)}%</p>
-            </div>
+  area.innerHTML = `
+    <div class="form-topo" style="margin-top:8px">
+      <div class="form-icone-circulo">
+        <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </div>
+      <h2 class="form-titulo">Histórico de Ciclos</h2>
+    </div>
+  ` + ciclos.map(item => `
+    <div class="ciclo-card">
+      <div class="ciclo-card-topo">
+        <span class="ciclo-card-nome">${item.viveiro}</span>
+        <span class="ciclo-card-producao">${formatarNumeroBR(item.ciclo.producaoTotal || 0, 1)} kg</span>
+      </div>
+      <div class="ciclo-card-infos">
+        <div class="ciclo-info-item">
+          <span class="ciclo-info-label">Povoamento</span>
+          <span class="ciclo-info-valor">${formatarData(item.ciclo.dataPovoamento)}</span>
         </div>
-    `,
-    )
-    .join("") + `<button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>`;
+        <div class="ciclo-info-item">
+          <span class="ciclo-info-label">Encerramento</span>
+          <span class="ciclo-info-valor">${formatarData(item.ciclo.dataEncerramento)}</span>
+        </div>
+        <div class="ciclo-info-item">
+          <span class="ciclo-info-label">Sobrevivência</span>
+          <span class="ciclo-info-valor">${formatarNumeroBR(item.ciclo.sobrevivencia || 0, 1)}%</span>
+        </div>
+      </div>
+    </div>
+  `).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>`;
 }
 
 function abrirFinanceiro() {
@@ -1632,13 +1695,19 @@ function abrirFinanceiro() {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-        <h2 class="titulo-secao">Financeiro</h2>
-        <div class="resultado-box">
-            <p>Financeiro</p>
-            <span>Módulo em desenvolvimento.</span>
-        </div>
-        <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
-    `;
+    <div class="form-topo" style="margin-top:8px">
+      <div class="form-icone-circulo">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h2 class="form-titulo">Financeiro</h2>
+    </div>
+    <div style="text-align:center;padding:24px 16px;background:#f8fafc;border-radius:14px;border:1px solid #e5e7eb;margin-bottom:12px">
+      <p style="font-size:32px;margin:0 0 8px">🚧</p>
+      <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 4px">Módulo em desenvolvimento</p>
+      <p style="font-size:13px;color:#9ca3af;margin:0">Em breve você poderá registrar custos e receitas do seu cultivo.</p>
+    </div>
+    <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+  `;
 }
 
 function abrirEncerrarCiclo(index) {
@@ -1648,46 +1717,58 @@ function abrirEncerrarCiclo(index) {
   const hoje = new Date().toISOString().split("T")[0];
 
   area.innerHTML = `
-
-        <div class="painel-viveiro">
-
-            <h2 class="titulo-secao">Encerrar Ciclo - ${abreviarViveiro(viveiro.nome)}</h2>
-
-            <label>Data de encerramento</label>
-            <input type="date" id="dataEncerramento" value="${hoje}">
-
-            <label>Produção final</label>
-            <div class="input-unidade">
-                <input type="number" id="producaoFinal" placeholder="Ex: 1000">
-                <span>kg</span>
-            </div>
-
-            <label>Peso médio final</label>
-            <div class="input-unidade">
-                <input type="number" id="pesoFinal" placeholder="Ex: 12">
-                <span>g</span>
-            </div>
-
-            <label>Observações</label>
-            <input type="text" id="observacoesCiclo" placeholder="Opcional">
-
-            <button
-                class="botao-gestao"
-                onclick="salvarEncerramentoCiclo(${index})"
-            >
-                Finalizar ciclo
-            </button>
-
-            <button
-                class="limpar"
-                onclick="abrirViveiro(${index})"
-            >
-                Voltar
-            </button>
-
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         </div>
-
-    `;
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Encerrar Ciclo</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data de encerramento</label>
+          </div>
+          <input type="date" id="dataEncerramento" value="${hoje}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Produção final</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="producaoFinal" placeholder="Ex: 1000">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+            <label>Peso médio final</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="pesoFinal" placeholder="Ex: 12">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <label>Observações</label>
+          </div>
+          <input type="text" id="observacoesCiclo" placeholder="Opcional">
+        </div>
+        <button class="botao-salvar botao-alerta" onclick="salvarEncerramentoCiclo(${index})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Finalizar ciclo
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Voltar</button>
+      </div>
+    </div>
+`;
 }
 
 async function salvarEncerramentoCiclo(index) {
