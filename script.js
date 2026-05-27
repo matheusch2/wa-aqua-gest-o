@@ -164,7 +164,7 @@ function mostrarCadastro() {
         class="limpar"
         onclick="mostrarLogin()"
       >
-        ← Voltar para o login
+        Voltar para o login
       </button>
 
     </div>
@@ -197,7 +197,7 @@ function mostrarRecuperarSenha() {
         class="limpar"
         onclick="mostrarLogin()"
       >
-        ← Voltar para o login
+        Voltar para o login
       </button>
 
     </div>
@@ -331,7 +331,7 @@ function mostrarCadastroViveiro() {
         <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
 
         <button class="botao-gestao" onclick="salvarViveiro()">Salvar viveiro</button>
-        <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
     `;
 }
 
@@ -416,7 +416,7 @@ function mostrarListaViveiros(posicao = 0) {
   if (viveiros.length === 0) {
     area.innerHTML = `
         <p style="text-align:center;color:#9ca3af;padding:20px 0">Nenhum viveiro cadastrado.</p>
-        <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
     `;
     return;
   }
@@ -491,6 +491,8 @@ function mostrarListaViveiros(posicao = 0) {
       <span class="nav-viveiros-contador">${posicao + 1} / ${total}</span>
       ${navProximo}
     </div>
+
+    <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
   `;
 }
 
@@ -577,7 +579,7 @@ function abrirViveiro(index) {
                 </button>
             </div>
 
-            <button class="botao-voltar" onclick="mostrarListaViveiros()">← Voltar</button>
+            <button class="botao-voltar" onclick="mostrarListaViveiros()">Voltar</button>
         </div>
     `;
 }
@@ -906,7 +908,7 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
             <div id="opcoes-historico"></div>
             <div id="resultado-historico"></div>
 
-            <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+            <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
         </div>
     `;
 
@@ -1164,7 +1166,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
       </button>
 
       <button class="limpar" onclick="${acaoVoltar}">
-        ← Voltar
+        Voltar
       </button>
     </div>
   `;
@@ -1421,7 +1423,7 @@ function mostrarHistoricoCiclos() {
                 <p>Nenhum ciclo encerrado</p>
                 <span>Os ciclos finalizados aparecerão aqui.</span>
             </div>
-            <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+            <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
         `;
     return;
   }
@@ -1442,7 +1444,7 @@ function mostrarHistoricoCiclos() {
         </div>
     `,
     )
-    .join("") + `<button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>`;
+    .join("") + `<button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>`;
 }
 
 function abrirFinanceiro() {
@@ -1455,7 +1457,7 @@ function abrirFinanceiro() {
             <p>Financeiro</p>
             <span>Módulo em desenvolvimento.</span>
         </div>
-        <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
     `;
 }
 
