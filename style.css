@@ -481,16 +481,11 @@ button {
 
 .viveiro-pls {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
     background: rgba(6,107,99,0.08);
     border-radius: 12px;
-    padding: 10px 14px;
-}
-
-.pls-camarao {
-    font-size: 24px;
-    line-height: 1;
+    padding: 10px 16px;
 }
 
 .pls-numero {
@@ -521,7 +516,8 @@ button {
     padding: 12px 10px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
     gap: 4px;
 }
 
@@ -579,9 +575,10 @@ button {
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     width: 100%;
-    text-align: left;
+    text-align: center;
 }
 
 .botao-painel svg:first-child {

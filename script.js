@@ -575,11 +575,8 @@ function abrirViveiro(index) {
       <div class="viveiro-header">
         <h2 class="viveiro-titulo">${viveiro.nome.toUpperCase()}</h2>
         <div class="viveiro-pls">
-          <span class="pls-camarao">🦐</span>
-          <div>
-            <div class="pls-numero">${totalFormatado}</div>
-            <div class="pls-label">PLs</div>
-          </div>
+          <div class="pls-numero">${totalFormatado}</div>
+          <div class="pls-label">PLs</div>
         </div>
       </div>
 
@@ -637,43 +634,36 @@ function abrirViveiro(index) {
         <button class="botao-painel" onclick="mostrarLancamentoRacao(${index})">
           <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
           Lançar ração
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <button class="botao-painel" onclick="abrirBiometria(${index})">
-          <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="1"/><line x1="6" y1="7" x2="6" y2="17"/><line x1="10" y1="7" x2="10" y2="12"/><line x1="14" y1="7" x2="14" y2="12"/><line x1="18" y1="7" x2="18" y2="17"/></svg>
           Lançar biometria
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <button class="botao-painel" onclick="abrirDespesca(${index})">
           <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Lançar despesca
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <button class="botao-painel" onclick="mostrarHistoricoDoViveiroDireto(${index})">
-          <svg viewBox="0 0 24 24"><path d="M3 3h6l3 9-4 2.5A17 17 0 0 0 17 21l2.5-4L21 18V12a9 9 0 1 0-9 9"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Histórico
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <button class="botao-painel botao-alerta" onclick="abrirEncerrarCiclo(${index})">
           <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           Encerrar ciclo
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <button class="botao-painel botao-reiniciar" onclick="reiniciarCiclo(${index})">
-          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
           Reiniciar ciclo
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <button class="botao-painel botao-perigo" onclick="excluirViveiro(${index})">
           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           Excluir viveiro
-          <svg class="seta-btn" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
 
