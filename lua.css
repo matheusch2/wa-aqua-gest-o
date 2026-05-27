@@ -1,34 +1,137 @@
 .lua-container {
-  padding: 20px;
-}
+  width: 100%;
+  max-width: 420px;
 
-.lua-card {
-  background: white;
-
-  border-radius: 20px;
-
+  margin: 24px auto;
   padding: 24px;
 
-  margin-top: 14px;
+  border-radius: 28px;
 
-  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.12),
+      rgba(255,255,255,.04)
+    );
 
-  text-align: center;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,.12);
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.08);
+
+  position: relative;
+
+  overflow: hidden;
 }
 
-.lua-emoji {
-  font-size: 70px;
-  margin-bottom: 12px;
+/* brilho decorativo */
+.lua-container::before {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  background: rgba(255,255,255,.08);
+
+  border-radius: 50%;
+
+  top: -80px;
+  right: -80px;
+
+  filter: blur(10px);
 }
 
-.lua-fase {
+.lua-container h2 {
   font-size: 24px;
   font-weight: 700;
 
-  margin-bottom: 10px;
+  color: white;
+
+  margin-bottom: 20px;
+
+  letter-spacing: .5px;
+}
+
+.lua-card {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.12),
+      rgba(255,255,255,.05)
+    );
+
+  border-radius: 24px;
+
+  padding: 28px 22px;
+
+  border: 1px solid rgba(255,255,255,.08);
+
+  box-shadow:
+    0 6px 20px rgba(0,0,0,.12);
+
+  text-align: center;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.lua-card::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      120deg,
+      transparent,
+      rgba(255,255,255,.05),
+      transparent
+    );
+
+  transform: translateX(-100%);
+  animation: brilho 5s infinite;
+}
+
+.lua-emoji {
+  font-size: 82px;
+
+  margin-bottom: 16px;
+
+  filter:
+    drop-shadow(0 0 18px rgba(255,255,255,.25));
+}
+
+.lua-fase {
+  font-size: 28px;
+  font-weight: 700;
+
+  color: white;
+
+  margin-bottom: 14px;
 }
 
 .lua-info {
-  color: #555;
+  color: rgba(255,255,255,.75);
+
+  font-size: 15px;
+
   margin-top: 8px;
+
+  letter-spacing: .3px;
+}
+
+@keyframes brilho {
+
+  100% {
+    transform: translateX(100%);
+  }
 }
