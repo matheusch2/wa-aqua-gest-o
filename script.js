@@ -1866,6 +1866,16 @@ async function salvarEncerramentoCiclo(index) {
     return;
   }
 
+  // Apagar todos os lançamentos do ciclo encerrado no banco
+  await supabaseClient.from("racoes").delete().eq("viveiro_id", viveiro.id);
+  await supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiro.id);
+  await supabaseClient.from("despescas").delete().eq("viveiro_id", viveiro.id);
+
+  // Limpar estado local
+  viveiro.racoes = [];
+  viveiro.biometrias = [];
+  viveiro.despescas = [];
+
   const cicloFinalizado = {
     nomeViveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
