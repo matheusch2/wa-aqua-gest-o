@@ -649,6 +649,11 @@ function abrirBiometria(index) {
           </div>
         </div>
 
+        <div id="msg-bio-sucesso" class="msg-sucesso-lancamento" style="display:none;">
+          <span class="msg-emoji">✅</span>
+          <span class="msg-texto">Biometria lançada com sucesso!</span>
+        </div>
+
         <button class="botao-salvar" onclick="salvarBiometria(${index})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar biometria
@@ -708,7 +713,15 @@ async function salvarBiometria(index) {
     gramatura: gramatura,
   });
 
-  abrirViveiro(index);
+  document.getElementById("dataBiometria").value = new Date().toISOString().split("T")[0];
+  document.getElementById("gramaturaBiometria").value = "";
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+
+  const msgSucesso = document.getElementById("msg-bio-sucesso");
+  if (msgSucesso) {
+    msgSucesso.style.display = "flex";
+    setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
+  }
 }
 
 // ─── DESPESCA ─────────────────────────────────────────────────────────────────
@@ -756,6 +769,11 @@ function abrirDespesca(index) {
             <input type="number" id="pesoMedioDespesca" placeholder="Ex: 12">
             <span class="campo-unidade">g</span>
           </div>
+        </div>
+
+        <div id="msg-despesca-sucesso" class="msg-sucesso-lancamento" style="display:none;">
+          <span class="msg-emoji">✅</span>
+          <span class="msg-texto">Despesca lançada com sucesso!</span>
         </div>
 
         <button class="botao-salvar" onclick="salvarDespesca(${index})">
@@ -818,7 +836,16 @@ async function salvarDespesca(index) {
     pesoMedio: pesoMedio,
   });
 
-  abrirViveiro(index);
+  document.getElementById("dataDespesca").value = new Date().toISOString().split("T")[0];
+  document.getElementById("quantidadeDespesca").value = "";
+  document.getElementById("pesoMedioDespesca").value = "";
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+
+  const msgSucesso = document.getElementById("msg-despesca-sucesso");
+  if (msgSucesso) {
+    msgSucesso.style.display = "flex";
+    setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
+  }
 }
 
 // ─── HISTÓRICO ────────────────────────────────────────────────────────────────
