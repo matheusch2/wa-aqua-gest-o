@@ -2,42 +2,38 @@ async function carregarLua() {
 
   try {
 
-    // pega data atual em timestamp
-    const hoje = Math.floor(Date.now() / 1000);
-
-    // API REAL
     const resposta = await fetch(
-      `https://api.farmsense.net/v1/moonphases/?d=${hoje}`
+      "https://api.met.no/weatherapi/sunrise/3.0/moon?lat=-5.1459&lon=-38.0980&date=" +
+      new Date().toISOString().split("T")[0],
+      {
+        headers: {
+          "User-Agent": "wa-aqua"
+        }
+      }
     );
 
     const dados = await resposta.json();
 
-    const lua = dados[0];
+    const fase = dados.properties.moonphase || "Lua";
 
     let emoji = "🌑";
 
-    // define emoji pela fase
-    if (lua.Phase.includes("New")) {
-      emoji = "🌑";
-    }
-
-    else if (lua.Phase.includes("Waxing")) {
-      emoji = "🌒";
-    }
-
-    else if (lua.Phase.includes("First")) {
-      emoji = "🌓";
-    }
-
-    else if (lua.Phase.includes("Full")) {
+    if (fase.includes("full")) {
       emoji = "🌕";
     }
 
-    else if (lua.Phase.includes("Waning")) {
+    else if (fase.includes("new")) {
+      emoji = "🌑";
+    }
+
+    else if (fase.includes("waxing")) {
+      emoji = "🌒";
+    }
+
+    else if (fase.includes("waning")) {
       emoji = "🌘";
     }
 
-    // renderiza na tela
     document.getElementById("luaCard").innerHTML = `
     
       <div class="lua-emoji">
@@ -45,15 +41,7 @@ async function carregarLua() {
       </div>
 
       <div class="lua-fase">
-        ${lua.Phase}
-      </div>
-
-      <div class="lua-info">
-        Iluminação: ${lua.Illumination}%
-      </div>
-
-      <div class="lua-info">
-        Idade da lua: ${lua.Age} dias
+        ${fase}
       </div>
 
     `;
@@ -62,11 +50,11 @@ async function carregarLua() {
 
   catch (erro) {
 
-    document.getElementById("luaCard").innerHTML = `
-      Erro ao carregar dados lunares.
-    `;
-
     console.error(erro);
+
+    document.getElementById("luaCard").innerHTML = `
+      Erro ao carregar calendário lunar.
+    `;
   }
 }
 
