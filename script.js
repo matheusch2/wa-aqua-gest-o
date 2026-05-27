@@ -640,7 +640,7 @@ function abrirBiometria(index) {
 
         <div class="campo-form">
           <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 13v8"/><path d="M8 17h8"/><path d="M7 5l1.5 5H15.5L17 5"/></svg>
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
             <label>Gramatura média</label>
           </div>
           <div class="campo-input-unidade">
