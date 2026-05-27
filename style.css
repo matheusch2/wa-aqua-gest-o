@@ -1775,6 +1775,32 @@ button {
     color: #16a34a;
 }
 
+.toast-sucesso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #16a34a;
+    animation: slideEntradaDireita 0.25s ease-out;
+}
+
+.toast-sucesso svg {
+    width: 18px;
+    height: 18px;
+    stroke: #16a34a;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
 .aviso-reinicio {
     display: flex;
     align-items: flex-start;

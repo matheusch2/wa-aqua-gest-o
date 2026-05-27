@@ -254,7 +254,7 @@ async function salvarViveiro() {
   }, 2500);
 }
 
-function mostrarListaViveiros(posicao = 0, direcao = "") {
+function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
@@ -341,6 +341,15 @@ function mostrarListaViveiros(posicao = 0, direcao = "") {
 
     <button class="botao-voltar-form" style="margin-top:4px" onclick="voltarMenuGestao()">← Voltar</button>
   `;
+
+  // Mensagem de sucesso (ex: após excluir viveiro)
+  if (msg) {
+    const toast = document.createElement("div");
+    toast.className = "toast-sucesso";
+    toast.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${msg}`;
+    area.prepend(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
 
   // Swipe para navegar entre viveiros (toda a área)
   let touchStartX = 0;
@@ -1594,7 +1603,7 @@ async function excluirViveiro(index) {
 
   await carregarViveiros();
 
-  alert("Viveiro excluído com sucesso.");
+  mostrarListaViveiros(0, "", `Viveiro "${viveiro.nome}" excluído com sucesso.`);
 }
 
 function renderizarHistoricoDespesca(index, elementoId, direto) {
