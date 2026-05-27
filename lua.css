@@ -1,0 +1,72 @@
+.lua-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: none;
+  border-radius: 14px;
+
+  padding: 8px 12px;
+
+  background: rgba(255,255,255,.08);
+  color: white;
+
+  cursor: pointer;
+}
+
+.lua-emoji {
+  font-size: 22px;
+}
+
+.lua-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.lua-nome {
+  font-weight: 600;
+}
+
+.lua-sub {
+  font-size: 12px;
+  opacity: .8;
+}
+
+/* MODAL */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,.6);
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 999;
+}
+
+.modal-card {
+  width: 90%;
+  max-width: 340px;
+
+  background: #fff;
+  border-radius: 20px;
+
+  padding: 24px;
+
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+
+  border: none;
+  background: none;
+
+  font-size: 18px;
+  cursor: pointer;
+}
