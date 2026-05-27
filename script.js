@@ -1901,154 +1901,151 @@ function mostrarRelatorioCiclo(index, ciclo) {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
+    <div class="relatorio-final">
 
-        <div class="relatorio-final">
-
-            <div class="relatorio-header">
-
-                <h1>WA AQUA GESTÃO</h1>
-
-                <h2>Relatório final do ciclo</h2>
-
-                <span>${ciclo.nomeViveiro}</span>
-
-            </div>
-
-            <div class="relatorio-periodo">
-
-                <p>
-                    <strong>Período:</strong>
-                    ${formatarData(ciclo.dataPovoamento)}
-                    →
-                    ${formatarData(ciclo.dataEncerramento)}
-                </p>
-
-                <p>
-                    <strong>Dias de cultivo:</strong>
-                    ${ciclo.diasCultivo} dias
-                </p>
-
-            </div>
-
-            <div class="relatorio-secao">
-
-                <h3>Informações do ciclo</h3>
-
-                <div class="relatorio-grid">
-
-                    <div class="info-box">
-                        <small>Data de povoamento</small>
-                        <strong>${formatarData(ciclo.dataPovoamento)}</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>Total povoado</small>
-                        <strong>${ciclo.totalPovoado} PLs</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>Laboratório</small>
-                        <strong>${ciclo.laboratorio}</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>Tamanho</small>
-                        <strong>${ciclo.tamanho} ha</strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="relatorio-secao">
-
-                <h3>Resultado produtivo</h3>
-
-                <div class="relatorio-grid">
-
-                    <div class="info-box">
-                        <small>Produtividade</small>
-                        <strong>${formatarNumeroBR(ciclo.produtividade, 1)} kg/ha</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>Peso médio final</small>
-                        <strong>${formatarNumeroBR(ciclo.pesoFinal, 1)} g</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>Sobrevivência</small>
-                        <strong>${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="relatorio-secao">
-
-                <h3>Alimentação</h3>
-
-                <div class="relatorio-grid">
-
-                    <div class="info-box">
-                        <small>Ração consumida</small>
-                        <strong>${formatarNumeroBR(ciclo.racaoConsumida, 1)} kg</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>FCA final</small>
-                        <strong>${formatarNumeroBR(ciclo.fca, 2)}</strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="relatorio-secao">
-
-                <h3>Despesca</h3>
-
-                <div class="relatorio-grid">
-
-                    <div class="info-box">
-                        <small>Despesca parcial</small>
-                        <strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <small>Despesca total</small>
-                        <strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="fechamento-ciclo">
-
-                <p>Produção final do ciclo</p>
-
-                <h2>
-                    ${formatarNumeroBR(ciclo.producaoTotal, 1)} kg
-                </h2>
-
-            </div>
-
-                       <div class="acoes-relatorio">
-
-                <button class="botao-painel" onclick="window.print()">
-                    Imprimir relatório
-                </button>
-
-                <button class="limpar" onclick="abrirViveiro(${index})">
-                    Voltar ao viveiro
-                </button>
-
-            </div>
-
+      <!-- ── HEADER ── -->
+      <div class="rel-header">
+        <div class="rel-logo">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
-    `;
+        <div class="rel-marca">
+          <span class="rel-marca-nome">WA AQUA GESTÃO</span>
+          <span class="rel-marca-sub">Relatório de Ciclo</span>
+        </div>
+      </div>
+      <div class="rel-viveiro-badge">${ciclo.nomeViveiro}</div>
+      <div class="rel-divider"></div>
+
+      <!-- ── PERÍODO ── -->
+      <div class="rel-periodo">
+        <div class="rel-periodo-datas">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>${formatarData(ciclo.dataPovoamento)}</span>
+          <span class="rel-seta">→</span>
+          <span>${formatarData(ciclo.dataEncerramento)}</span>
+        </div>
+        <div class="rel-periodo-dias">${ciclo.diasCultivo} dias</div>
+      </div>
+
+      <!-- ── INFORMAÇÕES DO CICLO ── -->
+      <div class="relatorio-secao">
+        <h3>Informações do ciclo</h3>
+        <div class="rel-info-lista">
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Data de povoamento</span>
+            </div>
+            <strong>${formatarData(ciclo.dataPovoamento)}</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Total povoado</span>
+            </div>
+            <strong>${Number(ciclo.totalPovoado).toLocaleString("pt-BR")} PLs</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span>Laboratório</span>
+            </div>
+            <strong>${ciclo.laboratorio}</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              <span>Tamanho</span>
+            </div>
+            <strong>${ciclo.tamanho} ha</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RESULTADO PRODUTIVO ── -->
+      <div class="relatorio-secao">
+        <h3>Resultado produtivo</h3>
+        <div class="rel-metricas-grid">
+          <div class="rel-metrica-card">
+            <span class="rel-metrica-valor">${formatarNumeroBR(ciclo.produtividade, 1)}</span>
+            <span class="rel-metrica-unidade">kg/ha</span>
+            <span class="rel-metrica-nome">Produtividade</span>
+          </div>
+          <div class="rel-metrica-card">
+            <span class="rel-metrica-valor">${formatarNumeroBR(ciclo.pesoFinal, 1)}</span>
+            <span class="rel-metrica-unidade">g</span>
+            <span class="rel-metrica-nome">Peso médio final</span>
+          </div>
+        </div>
+        <div class="rel-sobrevivencia">
+          <div class="rel-sobrev-esq">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Sobrevivência</span>
+          </div>
+          <span class="rel-sobrev-valor">${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</span>
+        </div>
+      </div>
+
+      <!-- ── ALIMENTAÇÃO ── -->
+      <div class="relatorio-secao">
+        <h3>Alimentação</h3>
+        <div class="rel-info-lista">
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3z" rx="2"/><path d="M8 12h8M12 8v8"/></svg>
+              <span>Ração consumida</span>
+            </div>
+            <strong>${formatarNumeroBR(ciclo.racaoConsumida, 1)} kg</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <span>FCA final</span>
+            </div>
+            <strong>${formatarNumeroBR(ciclo.fca, 2)}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DESPESCA ── -->
+      <div class="relatorio-secao">
+        <h3>Despesca</h3>
+        <div class="rel-info-lista">
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span>Despesca parcial</span>
+            </div>
+            <strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span>Despesca total</span>
+            </div>
+            <strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HERO: PRODUÇÃO FINAL ── -->
+      <div class="rel-producao-hero">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span class="rel-hero-label">Produção final do ciclo</span>
+        <span class="rel-hero-valor">${formatarNumeroBR(ciclo.producaoTotal, 1)} kg</span>
+      </div>
+
+      <!-- ── AÇÕES ── -->
+      <div class="acoes-relatorio">
+        <button class="botao-salvar" onclick="window.print()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir relatório
+        </button>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Voltar ao viveiro</button>
+      </div>
+
+    </div>
+  `;
 }
 
 // ─── CARREGAR DADOS ───────────────────────────────────────────────────────────

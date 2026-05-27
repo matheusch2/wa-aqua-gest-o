@@ -857,134 +857,317 @@ button {
     background: #b91c1c;
 }
 
+/* ─── RELATÓRIO REDESIGN ─────────────────────────────────────────────────── */
+
 .relatorio-final {
     background: white;
     width: 100%;
     max-width: 850px;
-    margin: 20px auto;
-    padding: 28px 24px;
+    margin: 8px auto 20px;
+    padding: 24px 20px 20px;
     box-sizing: border-box;
-    border-radius: 18px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
 }
 
-.relatorio-header {
-    text-align: center;
-    margin-bottom: 24px;
-    border-bottom: 2px solid #e5e7eb;
-    padding-bottom: 18px;
+/* Header: logo + título */
+.rel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
 }
 
-.relatorio-header h1 {
-    margin: 0;
-    color: #06695f;
-    font-size: 30px;
+.rel-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0f766e, #06695f);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rel-logo svg {
+    width: 22px;
+    height: 22px;
+    stroke: white;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.rel-marca {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.rel-marca-nome {
+    font-size: 17px;
     font-weight: 900;
+    color: #0f766e;
+    letter-spacing: -0.3px;
 }
 
-.relatorio-header h2 {
-    margin: 10px 0;
-    font-size: 22px;
-    color: #111827;
+.rel-marca-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
 }
 
-.relatorio-header span {
+.rel-viveiro-badge {
     display: inline-block;
-    margin: 8px auto 0;
     background: #e6f4f1;
-    color: #06695f;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
+    color: #0f766e;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 14px;
+    border: 1.5px solid rgba(15,118,110,0.18);
 }
 
-.relatorio-periodo {
-    margin-bottom: 22px;
-    text-align: center;
+.rel-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin-bottom: 16px;
 }
 
-.relatorio-periodo p {
-    margin: 6px 0;
+/* Período */
+.rel-periodo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 4px;
+}
+
+.rel-periodo-datas {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 14px;
+    font-weight: 600;
     color: #374151;
-    font-size: 15px;
 }
 
+.rel-periodo-datas svg {
+    width: 15px;
+    height: 15px;
+    stroke: #6b7280;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    flex-shrink: 0;
+}
+
+.rel-seta {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.rel-periodo-dias {
+    background: #0f766e;
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* Seções */
 .relatorio-secao {
-    margin-top: 24px;
+    margin-top: 20px;
 }
 
 .relatorio-secao h3 {
-    color: #06695f;
-    margin: 0 0 14px;
-    font-size: 20px;
-    border-left: 5px solid #06695f;
+    color: #0f766e;
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 800;
+    border-left: 4px solid #0f766e;
     padding-left: 10px;
+    letter-spacing: 0.2px;
 }
 
-.relatorio-grid {
+/* Linhas de info compactas */
+.rel-info-lista {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.rel-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.rel-info-row:last-child {
+    border-bottom: none;
+}
+
+.rel-info-esq {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.rel-info-esq svg {
+    width: 15px;
+    height: 15px;
+    stroke: #9ca3af;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.rel-info-row strong {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+/* Métricas de resultado produtivo */
+.rel-metricas-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-.relatorio-final .info-box {
+.rel-metrica-card {
     background: #f8fafc;
-    border-radius: 18px;
-    padding: 16px 10px;
-    min-height: 88px;
-
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 12px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-
     text-align: center;
+    border-top: 3px solid #0f766e;
 }
 
-.relatorio-final .info-box small {
-    display: block;
-    color: #374151;
-    margin-bottom: 8px;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.relatorio-final .info-box strong {
+.rel-metrica-valor {
+    font-size: 26px;
+    font-weight: 900;
     color: #0f766e;
-    font-size: 17px;
-    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
 }
 
-.fechamento-ciclo {
-    margin-top: 26px;
-    background: #f8fafc;
-    border: 2px solid #e5e7eb;
-    border-radius: 18px;
-    padding: 22px 18px;
-    text-align: center;
+.rel-metrica-unidade {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.fechamento-ciclo p {
-    margin: 0;
+.rel-metrica-nome {
+    font-size: 12px;
+    font-weight: 600;
     color: #6b7280;
+    margin-top: 6px;
+}
+
+/* Sobrevivência: linha full-width */
+.rel-sobrevivencia {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    border-radius: 14px;
+    padding: 13px 16px;
+}
+
+.rel-sobrev-esq {
+    display: flex;
+    align-items: center;
+    gap: 9px;
     font-size: 14px;
     font-weight: 600;
+    color: #166534;
 }
 
-.fechamento-ciclo h2 {
-    margin: 10px 0 0 0;
-    color: #06695f;
-    font-size: 38px;
+.rel-sobrev-esq svg {
+    width: 16px;
+    height: 16px;
+    stroke: #16a34a;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.rel-sobrev-valor {
+    font-size: 22px;
     font-weight: 900;
-    letter-spacing: -1px;
+    color: #16a34a;
+    letter-spacing: -0.5px;
+}
+
+/* Hero: Produção final */
+.rel-producao-hero {
+    margin-top: 20px;
+    background: linear-gradient(135deg, #0f766e 0%, #065f46 100%);
+    border-radius: 18px;
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.rel-producao-hero svg {
+    width: 24px;
+    height: 24px;
+    stroke: rgba(255,255,255,0.6);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-bottom: 4px;
+}
+
+.rel-hero-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.rel-hero-valor {
+    font-size: 42px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
 }
 
 .acoes-relatorio {
-    margin-top: 24px;
+    margin-top: 18px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 10px;
 }
 
@@ -1683,23 +1866,23 @@ button {
     .relatorio-final {
         box-shadow: none;
         max-width: 100%;
-        margin: 0 auto;
+        margin: 0;
         border-radius: 0;
-        padding: 18px;
+        padding: 16px;
     }
 
-    .relatorio-grid {
+    .rel-producao-hero {
+        background: #0f766e !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .rel-metricas-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        gap: 8px;
     }
 
-    .relatorio-final .info-box {
-        min-height: 70px;
-        padding: 10px;
-    }
-
-    .fechamento-ciclo {
-        margin-top: 20px;
-        padding: 18px;
+    .acoes-relatorio {
+        display: none !important;
     }
 }
