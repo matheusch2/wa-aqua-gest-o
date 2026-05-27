@@ -488,9 +488,11 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
   area.innerHTML = `
     <div class="form-lancamento">
       <div class="form-topo">
-        <div class="form-icone-circulo">🌾</div>
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
         ${dentroDoViveiro ? `<span class="form-caption">${abreviarViveiro(viveiros[indexSelecionado].nome)}</span>` : ""}
-        <h2 class="form-titulo">LANÇAR RAÇÃO</h2>
+        <h2 class="form-titulo">Lançar Ração</h2>
       </div>
       <div class="form-corpo">
         ${!dentroDoViveiro ? `
@@ -625,7 +627,7 @@ function abrirBiometria(index) {
           <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
         </div>
         <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
-        <h2 class="form-titulo">LANÇAR BIOMETRIA</h2>
+        <h2 class="form-titulo">Lançar Biometria</h2>
       </div>
       <div class="form-corpo">
         <div class="campo-form">
@@ -719,9 +721,11 @@ function abrirDespesca(index) {
   area.innerHTML = `
     <div class="form-lancamento">
       <div class="form-topo">
-        <div class="form-icone-circulo">🦐</div>
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
+        </div>
         <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
-        <h2 class="form-titulo">LANÇAR DESPESCA</h2>
+        <h2 class="form-titulo">Lançar Despesca</h2>
       </div>
       <div class="form-corpo">
         <div class="campo-form">
@@ -745,7 +749,7 @@ function abrirDespesca(index) {
 
         <div class="campo-form">
           <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 13v8"/><path d="M8 17h8"/><path d="M7 5l1.5 5H15.5L17 5"/></svg>
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
             <label>Peso médio</label>
           </div>
           <div class="campo-input-unidade">
