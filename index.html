@@ -13,7 +13,30 @@
 <body>
 
     <div class="topo">
-        <h1>WA AQUA GESTÃO</h1>
+        <div class="topo-conteudo">
+            <div class="topo-esquerda">
+                <div class="logo-circulo">
+                    <span class="logo-wa">WA</span>
+                    <span class="logo-camarao">🦐</span>
+                </div>
+                <div class="topo-divisor"></div>
+                <div class="topo-texto">
+                    <h1>WA AQUA GESTÃO</h1>
+                    <p>Gestão inteligente do seu cultivo</p>
+                </div>
+            </div>
+            <div class="topo-direita">
+                <div class="topo-usuario-wrap">
+                    <button class="topo-icone topo-usuario-btn" onclick="toggleMenuUsuario()">
+                        <svg viewBox="0 0 24 24" class="topo-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg viewBox="0 0 24 24" class="topo-svg topo-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div id="menu-usuario" class="dropdown-usuario">
+                        <button class="dropdown-item" onclick="sairUsuario()">Sair da conta</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="card-gestao" class="card">
@@ -54,9 +77,6 @@
 
         <div id="area-gestao" class="resultado"></div>
 
-        <button id="botao-sair" class="botao-sair" onclick="sairUsuario()" style="display:none">
-            Sair da conta
-        </button>
 
     </div>
 

@@ -60,21 +60,38 @@ async function entrarUsuario() {
   document.getElementById("area-gestao").innerHTML = "";
 
   document.getElementById("menuGestao").style.display = "grid";
-  document.getElementById("botao-sair").style.display = "block";
 
   await carregarViveiros();
 }
 
 async function sairUsuario() {
+  fecharMenuUsuario();
   await supabaseClient.auth.signOut();
   viveiros = [];
   mostrarLogin();
 }
 
+function toggleMenuUsuario() {
+  const menu = document.getElementById("menu-usuario");
+  menu.classList.toggle("aberto");
+}
+
+function fecharMenuUsuario() {
+  const menu = document.getElementById("menu-usuario");
+  if (menu) menu.classList.remove("aberto");
+}
+
+// Fecha dropdown ao clicar fora
+document.addEventListener("click", function(e) {
+  const wrap = document.querySelector(".topo-usuario-wrap");
+  if (wrap && !wrap.contains(e.target)) {
+    fecharMenuUsuario();
+  }
+});
+
 function mostrarLogin() {
 
   document.getElementById("menuGestao").style.display = "none";
-  document.getElementById("botao-sair").style.display = "none";
 
   const area = document.getElementById("area-gestao");
 
@@ -2042,7 +2059,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (session) {
       document.getElementById("menuGestao").style.display = "grid";
-      document.getElementById("botao-sair").style.display = "block";
       await carregarViveiros();
     } else {
       mostrarLogin();
