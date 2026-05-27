@@ -740,6 +740,16 @@ button {
 
 /* ─── NAVEGAÇÃO ENTRE VIVEIROS ───────────────────────────────────────────── */
 
+.titulo-secao {
+    text-align: center;
+    color: rgb(6,107,99);
+    text-transform: uppercase;
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0 0 20px 0;
+    letter-spacing: 0.3px;
+}
+
 .nav-viveiros {
     display: flex;
     justify-content: space-between;

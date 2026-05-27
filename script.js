@@ -310,7 +310,7 @@ function mostrarCadastroViveiro() {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-        <h2 style="text-align:center;color:rgb(6,107,99);text-transform:uppercase;font-size:18px;margin:0 0 16px 0">Cadastrar Viveiro</h2>
+        <h2 class="titulo-secao">Cadastrar Viveiro</h2>
 
         <label>Nome do viveiro</label>
         <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
@@ -429,15 +429,18 @@ function mostrarListaViveiros(posicao = 0) {
   const viveiro = viveirosOrdenados[posicao];
   const indexOriginal = viveiros.indexOf(viveiro);
 
+  // Sempre renderiza 3 elementos para o contador ficar sempre centrado
   const navAnterior = posicao > 0
     ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao - 1})">← Anterior</button>`
-    : `<span></span>`;
+    : `<span class="botao-nav-viveiro" style="visibility:hidden">← Anterior</span>`;
 
   const navProximo = posicao < total - 1
     ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao + 1})">Próximo →</button>`
-    : `<span></span>`;
+    : `<span class="botao-nav-viveiro" style="visibility:hidden">Próximo →</span>`;
 
   area.innerHTML = `
+    <h2 class="titulo-secao">Viveiros</h2>
+
     <div class="viveiro-card">
 
       <div class="vc-topo">
@@ -488,8 +491,6 @@ function mostrarListaViveiros(posicao = 0) {
       <span class="nav-viveiros-contador">${posicao + 1} / ${total}</span>
       ${navProximo}
     </div>
-
-    <button class="botao-voltar" onclick="voltarMenuGestao()">← Voltar</button>
   `;
 }
 
@@ -600,7 +601,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
   const dentroDoViveiro = indexSelecionado !== "";
 
   area.innerHTML = `
-        <h2>Lançar ração</h2>
+        <h2 class="titulo-secao">Lançar ração</h2>
 
         ${
           dentroDoViveiro
@@ -885,7 +886,7 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
   area.innerHTML = `
         <div class="painel-viveiro">
-            <h2 style="text-align:center;color:rgb(6,107,99);text-transform:uppercase;font-size:18px;margin:0 0 16px 0">Histórico</h2>
+            <h2 class="titulo-secao">Histórico</h2>
 
             <label>Selecione o viveiro</label>
 
@@ -1399,6 +1400,7 @@ function voltarOpcoesHistorico() {
 function mostrarHistoricoCiclos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
+  const tituloHtml = `<h2 class="titulo-secao">Histórico de Ciclos</h2>`;
 
   let ciclos = [];
 
@@ -1414,7 +1416,7 @@ function mostrarHistoricoCiclos() {
   });
 
   if (ciclos.length === 0) {
-    area.innerHTML = `
+    area.innerHTML = tituloHtml + `
             <div class="resultado-box">
                 <p>Nenhum ciclo encerrado</p>
                 <span>Os ciclos finalizados aparecerão aqui.</span>
@@ -1424,7 +1426,7 @@ function mostrarHistoricoCiclos() {
     return;
   }
 
-  area.innerHTML = ciclos
+  area.innerHTML = tituloHtml + ciclos
     .map(
       (item) => `
         <div class="viveiro-card">
@@ -1448,6 +1450,7 @@ function abrirFinanceiro() {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
+        <h2 class="titulo-secao">Financeiro</h2>
         <div class="resultado-box">
             <p>Financeiro</p>
             <span>Módulo em desenvolvimento.</span>
