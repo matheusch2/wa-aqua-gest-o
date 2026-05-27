@@ -59,6 +59,7 @@ async function entrarUsuario() {
   // Limpa a tela enquanto carrega
   document.getElementById("area-gestao").innerHTML = "";
   document.getElementById("card-gestao").classList.remove("modo-login");
+  document.querySelector(".topo").style.display = "";
 
   document.getElementById("menuGestao").style.display = "grid";
 
@@ -94,6 +95,7 @@ function mostrarLogin() {
 
   document.getElementById("menuGestao").style.display = "none";
   document.getElementById("card-gestao").classList.add("modo-login");
+  document.querySelector(".topo").style.display = "none";
 
   const area = document.getElementById("area-gestao");
 
@@ -2068,6 +2070,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (session) {
       document.getElementById("card-gestao").classList.remove("modo-login");
+      document.querySelector(".topo").style.display = "";
       document.getElementById("menuGestao").style.display = "grid";
       await carregarViveiros();
     } else {
