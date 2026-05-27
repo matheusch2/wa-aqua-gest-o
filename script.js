@@ -692,6 +692,11 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <span>kg</span>
         </div>
 
+        <div id="msg-racao-sucesso" style="display:none; align-items:center; gap:10px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:10px; padding:12px 16px; margin-bottom:4px;">
+          <span style="font-size:22px">✅</span>
+          <span style="font-size:14px; font-weight:700; color:#16a34a">Ração lançada com sucesso!</span>
+        </div>
+
         <button class="botao-form" onclick="salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""})">
             Salvar lançamento
         </button>
@@ -749,6 +754,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   if (error) {
     console.log(error);
     alert(error.message);
+    if (botao) { botao.disabled = false; botao.textContent = "Salvar"; }
     return;
   }
 
@@ -758,7 +764,16 @@ async function salvarLancamentoRacao(indexDireto = "") {
     racao: racao,
   });
 
-  abrirViveiro(index);
+  // Mostra mensagem de sucesso e reseta o formulário
+  document.getElementById("dataRacao").value = new Date().toISOString().split("T")[0];
+  document.getElementById("consumoRacao").value = "";
+  if (botao) { botao.disabled = false; botao.textContent = "Salvar"; }
+
+  const msgSucesso = document.getElementById("msg-racao-sucesso");
+  if (msgSucesso) {
+    msgSucesso.style.display = "flex";
+    setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
+  }
 }
 
 // ─── BIOMETRIA ────────────────────────────────────────────────────────────────
