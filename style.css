@@ -33,6 +33,10 @@ body {
   height: 65px;
   border-radius: 50%;
   overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-circulo img {
