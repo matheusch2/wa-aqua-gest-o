@@ -393,26 +393,21 @@ async function salvarViveiro() {
 
   viveiros.push(viveiroLocal);
 
-  const index = viveiros.length - 1;
+  // Volta pro menu principal com mensagem de sucesso
+  voltarMenuGestao();
 
-  document.getElementById("area-gestao").innerHTML = `
-        <div class="viveiro-card">
-            <div class="viveiro-topo">
-                <h3>${nome}</h3>
-                <span>${total} PLs</span>
-            </div>
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div style="text-align:center; padding: 30px 0;">
+      <div style="font-size:48px; margin-bottom:12px">✅</div>
+      <p style="font-size:18px; font-weight:800; color:rgb(6,107,99); margin:0 0 6px 0">Viveiro salvo!</p>
+      <p style="font-size:14px; color:#6b7280; margin:0">${nome} cadastrado com sucesso.</p>
+    </div>
+  `;
 
-            <div class="viveiro-info">
-    <p><strong>Povoamento:</strong> ${formatarData(data)}</p>
-    <p><strong>Laboratório:</strong> ${laboratorio}</p>
-    <p><strong>Tamanho:</strong> ${tamanho} ha</p>
-         </div>
-
-         <button class="botao-abrir" onclick="abrirViveiro(${index})">
-                Abrir viveiro
-            </button>
-        </div>
-    `;
+  setTimeout(() => {
+    area.innerHTML = "";
+  }, 2500);
 }
 
 function mostrarListaViveiros(posicao = 0) {
