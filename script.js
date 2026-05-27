@@ -719,8 +719,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
     return;
   }
 
-  // Verifica se já existe lançamento nessa data
-  const jaExiste = (viveiros[index].racoes || []).some(r => r.data === data);
+  // Verifica se já existe lançamento nessa data (normaliza formato)
+  const jaExiste = (viveiros[index].racoes || []).some(r => r.data.substring(0, 10) === data);
   if (jaExiste) {
     alert(`Já existe um lançamento de ração em ${formatarData(data)}. Edite o lançamento existente.`);
     return;
@@ -1414,14 +1414,24 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto) {
     return;
   }
 
-  const { error } = await supabaseClient
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const { data: deletado, error } = await supabaseClient
     .from("racoes")
     .delete()
-    .eq("id", racao.id);
+    .eq("id", racao.id)
+    .eq("user_id", usuario.id)
+    .select();
 
   if (error) {
     console.log(error);
     alert("Erro ao excluir lançamento.");
+    return;
+  }
+
+  if (!deletado || deletado.length === 0) {
+    alert("Não foi possível excluir. Verifique sua conexão ou permissão.");
     return;
   }
 
