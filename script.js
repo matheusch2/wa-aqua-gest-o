@@ -480,9 +480,11 @@ function mostrarListaViveiros(posicao = 0) {
     return;
   }
 
-  const viveirosOrdenados = [...viveiros].sort((a, b) =>
-    a.nome.localeCompare(b.nome, undefined, { numeric: true, sensitivity: "base" })
-  );
+  const viveirosOrdenados = [...viveiros].sort((a, b) => {
+    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
+    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
+    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
+  });
 
   const total = viveirosOrdenados.length;
   const viveiro = viveirosOrdenados[posicao];
