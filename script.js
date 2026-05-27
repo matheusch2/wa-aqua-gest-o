@@ -902,9 +902,11 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
         <div id="opcoes-historico"></div>
         <div id="resultado-historico"></div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">
-          ← Voltar
-        </button>
+        <div style="margin-top:16px">
+          <button class="botao-voltar-form" onclick="voltarMenuGestao()">
+            ← Voltar
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -941,8 +943,6 @@ function mostrarOpcoesHistorico() {
         Despesca
       </button>
     </div>
-    <div class="separador-ou" style="margin-top:14px"><span>ou</span></div>
-    <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
   `;
 }
 
