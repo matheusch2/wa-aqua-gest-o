@@ -1,23 +1,32 @@
 async function carregarLua() {
 
+  const luaCard = document.getElementById("luaCard");
+
   try {
 
-    const resposta = await fetch(
-      "https://api.met.no/weatherapi/sunrise/3.0/moon?lat=-5.1459&lon=-38.0980&date=" +
-      new Date().toISOString().split("T")[0],
-      {
-        headers: {
-          "User-Agent": "wa-aqua"
-        }
-      }
-    );
+    // data atual
+    const hoje = new Date();
+
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+    const dia = String(hoje.getDate()).padStart(2, "0");
+
+    // API astronômica real
+    const url =
+      `https://api.met.no/weatherapi/sunrise/3.0/moon` +
+      `?lat=-5.1459&lon=-38.0980&date=${ano}-${mes}-${dia}`;
+
+    const resposta = await fetch(url);
 
     const dados = await resposta.json();
 
-    const fase = dados.properties.moonphase || "Lua";
+    console.log(dados);
+
+    const fase = dados.properties.moonphase;
 
     let emoji = "🌑";
 
+    // DEFINE O EMOJI
     if (fase.includes("full")) {
       emoji = "🌕";
     }
@@ -34,7 +43,12 @@ async function carregarLua() {
       emoji = "🌘";
     }
 
-    document.getElementById("luaCard").innerHTML = `
+    else {
+      emoji = "🌗";
+    }
+
+    // RENDERIZA
+    luaCard.innerHTML = `
     
       <div class="lua-emoji">
         ${emoji}
@@ -42,6 +56,10 @@ async function carregarLua() {
 
       <div class="lua-fase">
         ${fase}
+      </div>
+
+      <div class="lua-info">
+        Calendário lunar atualizado em tempo real
       </div>
 
     `;
@@ -52,8 +70,12 @@ async function carregarLua() {
 
     console.error(erro);
 
-    document.getElementById("luaCard").innerHTML = `
-      Erro ao carregar calendário lunar.
+    luaCard.innerHTML = `
+    
+      <div class="lua-fase">
+        Erro ao carregar dados lunares
+      </div>
+
     `;
   }
 }
