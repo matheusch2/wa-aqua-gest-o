@@ -872,6 +872,10 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
       <div class="resultado-box">
         <p>Nenhum viveiro cadastrado</p>
         <span>Cadastre um viveiro para ver o histórico.</span>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">
+           ← Voltar
+        </button>
+  </div>
       </div>
     `;
     return;
