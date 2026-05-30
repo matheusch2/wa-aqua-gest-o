@@ -1807,12 +1807,31 @@ function mostrarHistoricoCiclos() {
         <button class="ciclo-btn-relatorio" onclick="mostrarRelatorioCiclo(${item.viveiroIndex}, viveiros[${item.viveiroIndex}].ciclosFinalizados[${item.cicloIndex}], 'historico')">
           📋 Ver relatório
         </button>
-        <button class="ciclo-btn-excluir" onclick="excluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">
+        <button class="ciclo-btn-excluir" onclick="confirmarExcluirCiclo(${item.viveiroIndex}, ${item.cicloIndex}, this)">
           🗑️ Excluir
         </button>
       </div>
+      <div id="confirm-excluir-${item.viveiroIndex}-${item.cicloIndex}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626">Excluir este ciclo?</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Esta ação não pode ser desfeita.</p>
+        <div style="display:flex;gap:8px">
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">Sim, excluir</button>
+          <button class="ciclo-btn-relatorio" style="flex:1" onclick="cancelarExcluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">Cancelar</button>
+        </div>
+      </div>
     </div>
   `).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>`;
+}
+
+function confirmarExcluirCiclo(viveiroIndex, cicloIndex, btn) {
+  document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`).style.display = "block";
+  btn.style.display = "none";
+}
+
+function cancelarExcluirCiclo(viveiroIndex, cicloIndex) {
+  const confirm = document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`);
+  confirm.style.display = "none";
+  confirm.previousElementSibling.querySelector(".ciclo-btn-excluir").style.display = "";
 }
 
 async function excluirCiclo(viveiroIndex, cicloIndex) {
