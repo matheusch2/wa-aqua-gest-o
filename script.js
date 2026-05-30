@@ -1749,11 +1749,13 @@ function mostrarHistoricoCiclos() {
 
   let ciclos = [];
 
-  viveiros.forEach((viveiro) => {
+  viveiros.forEach((viveiro, viveiroIndex) => {
     if (viveiro.ciclosFinalizados) {
-      viveiro.ciclosFinalizados.forEach((ciclo) => {
+      viveiro.ciclosFinalizados.forEach((ciclo, cicloIndex) => {
         ciclos.push({
           viveiro: viveiro.nome,
+          viveiroIndex,
+          cicloIndex,
           ciclo: ciclo,
         });
       });
@@ -1801,8 +1803,41 @@ function mostrarHistoricoCiclos() {
           <span class="ciclo-info-valor">${formatarNumeroBR(item.ciclo.sobrevivencia || 0, 1)}%</span>
         </div>
       </div>
+      <div class="ciclo-card-acoes">
+        <button class="ciclo-btn-relatorio" onclick="mostrarRelatorioCiclo(${item.viveiroIndex}, viveiros[${item.viveiroIndex}].ciclosFinalizados[${item.cicloIndex}], 'historico')">
+          📋 Ver relatório
+        </button>
+        <button class="ciclo-btn-excluir" onclick="excluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">
+          🗑️ Excluir
+        </button>
+      </div>
     </div>
   `).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>`;
+}
+
+async function excluirCiclo(viveiroIndex, cicloIndex) {
+  const viveiro = viveiros[viveiroIndex];
+  const ciclo = viveiro.ciclosFinalizados[cicloIndex];
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  if (ciclo.id) {
+    const { error } = await supabaseClient
+      .from("ciclos")
+      .delete()
+      .eq("id", ciclo.id)
+      .eq("user_id", usuario.id);
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao excluir ciclo.");
+      return;
+    }
+  }
+
+  viveiro.ciclosFinalizados.splice(cicloIndex, 1);
+  mostrarHistoricoCiclos();
 }
 
 function abrirFinanceiro() {
@@ -1968,22 +2003,7 @@ async function salvarEncerramentoCiclo(index) {
     // Continua mesmo assim — o ciclo foi salvo, tentamos limpar o máximo possível
   }
 
-  // Limpar estado local
-  viveiro.racoes = [];
-  viveiro.biometrias = [];
-  viveiro.despescas = [];
-
-  // Zerar campos do ciclo no viveiro (mantém só nome e tamanho)
-  await supabaseClient
-    .from("viveiros")
-    .update({ data_povoamento: null, total_povoado: null, laboratorio: null })
-    .eq("id", viveiro.id)
-    .eq("user_id", usuario.id);
-
-  viveiro.dataPovoamento = null;
-  viveiro.totalPovoado = null;
-  viveiro.laboratorio = null;
-
+  // Montar cicloFinalizado ANTES de zerar o viveiro (para preservar dados no objeto local)
   const cicloFinalizado = {
     nomeViveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
@@ -2006,18 +2026,37 @@ async function salvarEncerramentoCiclo(index) {
     observacoes: observacoes,
   };
 
+  // Limpar estado local
+  viveiro.racoes = [];
+  viveiro.biometrias = [];
+  viveiro.despescas = [];
+
+  // Zerar campos do ciclo no viveiro (mantém só nome e tamanho)
+  await supabaseClient
+    .from("viveiros")
+    .update({ data_povoamento: null, total_povoado: null, laboratorio: null })
+    .eq("id", viveiro.id)
+    .eq("user_id", usuario.id);
+
+  viveiro.dataPovoamento = null;
+  viveiro.totalPovoado = null;
+  viveiro.laboratorio = null;
+
   if (!viveiro.ciclosFinalizados) {
     viveiro.ciclosFinalizados = [];
   }
 
   viveiro.ciclosFinalizados.push(cicloFinalizado);
 
-  mostrarRelatorioCiclo(index, cicloFinalizado);
+  mostrarRelatorioCiclo(index, cicloFinalizado, "viveiro");
 }
 
 function mostrarViveiroSemCiclo(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
+  const ultimoCiclo = viveiro.ciclosFinalizados && viveiro.ciclosFinalizados.length > 0
+    ? viveiro.ciclosFinalizados[viveiro.ciclosFinalizados.length - 1]
+    : null;
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -2036,13 +2075,19 @@ function mostrarViveiroSemCiclo(index) {
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Iniciar novo ciclo
       </button>
+      ${ultimoCiclo ? `
+      <div class="separador-ou"><span>ou</span></div>
+      <button class="botao-voltar-form" onclick="mostrarRelatorioCiclo(${index}, viveiros[${index}].ciclosFinalizados[viveiros[${index}].ciclosFinalizados.length - 1], 'viveiro')">
+        📋 Ver relatório do último ciclo
+      </button>
+      ` : ""}
       <div class="separador-ou"><span>ou</span></div>
       <button class="botao-voltar-form" onclick="mostrarListaViveiros()">← Voltar</button>
     </div>
   `;
 }
 
-function mostrarRelatorioCiclo(index, ciclo) {
+function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
@@ -2181,7 +2226,7 @@ function mostrarRelatorioCiclo(index, ciclo) {
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir relatório
         </button>
-        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Voltar ao viveiro</button>
+        <button class="botao-voltar-form" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
       </div>
 
     </div>
@@ -2295,6 +2340,7 @@ async function carregarViveiros() {
     ciclosFinalizados: ciclosData
       .filter((ciclo) => ciclo.viveiro_id === item.id)
       .map((ciclo) => ({
+        id: ciclo.id,
         nomeViveiro: ciclo.nome_viveiro,
         laboratorio: ciclo.laboratorio,
         tamanho: ciclo.tamanho,

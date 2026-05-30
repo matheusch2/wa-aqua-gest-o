@@ -1589,6 +1589,36 @@ button {
     color: #374151;
 }
 
+.ciclo-card-acoes {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.ciclo-btn-relatorio,
+.ciclo-btn-excluir {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    width: auto;
+}
+
+.ciclo-btn-relatorio {
+    background: rgba(6,107,99,0.08);
+    color: rgb(6,107,99);
+}
+
+.ciclo-btn-excluir {
+    background: rgba(220,38,38,0.07);
+    color: #dc2626;
+}
+
 /* ─── FORMULÁRIO DE LANÇAMENTO ──────────────────────────────────────────────── */
 
 .form-lancamento {
