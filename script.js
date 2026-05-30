@@ -282,7 +282,9 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         <div class="vc-icone-box">🦐</div>
         <div class="vc-titulo-area">
           <h3>${viveiro.nome}</h3>
-          <span class="vc-badge-cultivo">● Em cultivo</span>
+          ${viveiro.dataPovoamento
+            ? `<span class="vc-badge-cultivo">● Em cultivo</span>`
+            : `<span class="vc-badge-vazio">● Vazio</span>`}
         </div>
         <div class="vc-pls-badge">
           🦐 ${viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR") : "--"} PLs
@@ -484,6 +486,8 @@ function abrirViveiro(index) {
 function mostrarLancamentoRacao(indexSelecionado = "") {
   if (indexSelecionado === "") esconderMenu();
   const area = document.getElementById("area-gestao");
+  const dentroDoViveiro = indexSelecionado !== "";
+  const viveirosCicloAtivo = viveiros.filter(v => v.dataPovoamento);
 
   if (viveiros.length === 0) {
     area.innerHTML = `
@@ -495,7 +499,25 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
     return;
   }
 
-  const dentroDoViveiro = indexSelecionado !== "";
+  if (!dentroDoViveiro && viveirosCicloAtivo.length === 0) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          <h2 class="form-titulo">Lançar Ração</h2>
+        </div>
+        <div class="viveiro-sem-ciclo-msg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Nenhum viveiro com ciclo ativo. Inicie um ciclo antes de lançar ração.</span>
+        </div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
+    `;
+    return;
+  }
+
   const hoje = new Date().toISOString().split("T")[0];
 
   area.innerHTML = `
@@ -515,7 +537,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
               <label>Viveiro</label>
             </div>
             <select id="viveiroRacao">
-              ${viveiros.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("")}
+              ${viveiros.map((v, i) => v.dataPovoamento ? `<option value="${i}">${v.nome}</option>` : "").join("")}
             </select>
           </div>
         ` : ""}

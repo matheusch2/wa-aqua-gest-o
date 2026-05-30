@@ -369,6 +369,16 @@ button {
     display: inline-block;
 }
 
+.vc-badge-vazio {
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
 .vc-pls-badge {
     background: #e6f4f1;
     color: rgb(6,107,99);
