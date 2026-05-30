@@ -209,6 +209,7 @@ function toggleTema() {
 }
 
 
+async function sairUsuario() {
   fecharMenuUsuario();
   await supabaseClient.auth.signOut();
   viveiros = [];
