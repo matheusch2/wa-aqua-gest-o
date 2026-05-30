@@ -2106,18 +2106,81 @@ function abrirFinanceiro() {
   const area = document.getElementById("area-gestao");
 
   area.innerHTML = `
-    <div class="form-topo" style="margin-top:8px">
-      <div class="form-icone-circulo">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h2 class="form-titulo">Financeiro</h2>
       </div>
-      <h2 class="form-titulo">Financeiro</h2>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Viveiro</label>
+          </div>
+          <select id="viveiroFinanceiro" onchange="mostrarCustosFinanceiro()">
+            <option value="">Todos os viveiros</option>
+            ${viveiros.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("")}
+          </select>
+        </div>
+        <div id="resultado-financeiro"></div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
     </div>
-    <div style="text-align:center;padding:24px 16px;background:#f8fafc;border-radius:14px;border:1px solid #e5e7eb;margin-bottom:12px">
-      <p style="font-size:32px;margin:0 0 8px">🚧</p>
-      <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 4px">Módulo em desenvolvimento</p>
-      <p style="font-size:13px;color:#9ca3af;margin:0">Em breve você poderá registrar custos e receitas do seu cultivo.</p>
+  `;
+
+  mostrarCustosFinanceiro();
+}
+
+function mostrarCustosFinanceiro() {
+  const viveiroIndex = document.getElementById("viveiroFinanceiro").value;
+  const resultado = document.getElementById("resultado-financeiro");
+  const porViveiro = viveiroIndex !== "";
+
+  let custos;
+  if (porViveiro) {
+    const v = viveiros[viveiroIndex];
+    custos = (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }));
+  } else {
+    custos = viveiros.flatMap(v =>
+      (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }))
+    );
+  }
+
+  custos.sort((a, b) => a.data.localeCompare(b.data));
+  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
+
+  if (custos.length === 0) {
+    resultado.innerHTML = `<p class="sobrevivencia-texto" style="margin:16px 0">Nenhum custo lançado${porViveiro ? " para este viveiro" : ""}.<br><small>Lance custos dentro de cada viveiro.</small></p>`;
+    return;
+  }
+
+  resultado.innerHTML = `
+    <div class="tabela-historico" style="margin-bottom:10px">
+      <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"} cabecalho">
+        <span>DATA</span>
+        ${!porViveiro ? `<span class="col-centro">VIVEIRO</span>` : ""}
+        <span class="col-centro">DESCRIÇÃO</span>
+        <span class="col-centro">VALOR</span>
+      </div>
+      ${custos.map(c => `
+        <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"}">
+          <span style="font-size:12px">${formatarData(c.data)}</span>
+          ${!porViveiro ? `<span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>` : ""}
+          <span class="col-centro" style="font-size:12px">
+            <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
+            ${c.nomeProduto}${c.quantidadeG ? ` · ${formatarNumeroBR(c.quantidadeG / 1000, 1)} kg` : ""}
+          </span>
+          <span class="col-centro" style="font-size:12px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
+        </div>
+      `).join("")}
     </div>
-    <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+    <div class="total-chip">
+      <span class="total-chip-label">Total</span>
+      <span class="total-chip-valor">R$ ${formatarNumeroBR(total, 2)}</span>
+    </div>
   `;
 }
 
@@ -2560,7 +2623,7 @@ function abrirCustosInsumos() {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         </div>
-        <h2 class="form-titulo">Custos e Insumos</h2>
+        <h2 class="form-titulo">Insumos</h2>
       </div>
       <div class="form-corpo">
         <div class="historico-opcoes-grid">
@@ -2571,10 +2634,6 @@ function abrirCustosInsumos() {
           <button class="botao-historico-opcao" onclick="abrirVerProdutos()">
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
             Ver produtos
-          </button>
-          <button class="botao-historico-opcao" onclick="abrirHistoricoGeralCustos()">
-            <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
-            Histórico geral
           </button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
@@ -2611,8 +2670,6 @@ function abrirCadastrarProduto() {
             <option value="Ração">Ração</option>
             <option value="Probiótico">Probiótico</option>
             <option value="Calcário">Calcário</option>
-            <option value="Adubo">Adubo</option>
-            <option value="Medicamento">Medicamento</option>
             <option value="Outros">Outros</option>
           </select>
         </div>
@@ -2643,6 +2700,7 @@ function abrirCadastrarProduto() {
           <span class="msg-emoji">✅</span>
           <span class="msg-texto">Produto cadastrado!</span>
         </div>
+        <div id="erro-produto" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:12px"></div>
         <button class="botao-salvar" onclick="salvarProduto()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar produto
@@ -2689,10 +2747,17 @@ async function salvarProduto() {
 
   if (error) {
     if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-    alert("Erro ao salvar produto: " + error.message);
+    const erroEl = document.getElementById("erro-produto");
+    if (erroEl) {
+      erroEl.textContent = error.code === "42P01"
+        ? "Tabela 'produtos' não existe ainda. Crie-a no Supabase conforme instruções."
+        : "Erro ao salvar: " + error.message;
+      erroEl.style.display = "block";
+    }
     return;
   }
 
+  document.getElementById("erro-produto").style.display = "none";
   produtos.push({ id: salvo[0].id, nome, categoria, pesoKg, valorPago, custoPorGrama });
 
   document.getElementById("nomeProduto").value = "";
@@ -2725,7 +2790,10 @@ function abrirVerProdutos() {
                     <span class="produto-nome">${p.nome}</span>
                     <span class="produto-detalhe">${p.categoria} · ${formatarNumeroBR(p.pesoKg, 0)} kg · R$ ${formatarNumeroBR(p.valorPago, 2)} · R$ ${formatarNumeroBR(p.valorPago / p.pesoKg, 2)}/kg</span>
                   </div>
-                  <button class="botao-editar botao-excluir" onclick="confirmarExcluirProduto(${i})">🗑️</button>
+                  <span class="col-acoes">
+                    <button class="botao-editar" onclick="abrirEdicaoProduto(${i})">✏️</button>
+                    <button class="botao-editar botao-excluir" onclick="confirmarExcluirProduto(${i})">🗑️</button>
+                  </span>
                 </div>
               `).join("")}
             </div>`
@@ -2757,6 +2825,97 @@ async function excluirProduto(i) {
   const { error } = await supabaseClient.from("produtos").delete().eq("id", produtos[i].id).eq("user_id", usuario.id);
   if (error) { alert("Erro ao excluir: " + error.message); return; }
   produtos.splice(i, 1);
+  abrirVerProdutos();
+}
+
+function abrirEdicaoProduto(i) {
+  const p = produtos[i];
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <h2 class="form-titulo">Editar Produto</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <label>Nome do produto</label>
+          </div>
+          <input type="text" id="editNomeProduto" value="${p.nome}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <label>Categoria</label>
+          </div>
+          <select id="editCategoriaProduto">
+            <option value="Ração" ${p.categoria === "Ração" ? "selected" : ""}>Ração</option>
+            <option value="Probiótico" ${p.categoria === "Probiótico" ? "selected" : ""}>Probiótico</option>
+            <option value="Calcário" ${p.categoria === "Calcário" ? "selected" : ""}>Calcário</option>
+            <option value="Outros" ${p.categoria === "Outros" ? "selected" : ""}>Outros</option>
+          </select>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Peso do saco / embalagem</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="editPesoKgProduto" value="${p.pesoKg}">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor pago por saco</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="editValorPagoProduto" value="${p.valorPago}" step="0.01">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <button class="botao-salvar" onclick="salvarEdicaoProduto(${i})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirVerProdutos()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarEdicaoProduto(i) {
+  const nome = document.getElementById("editNomeProduto").value.trim();
+  const categoria = document.getElementById("editCategoriaProduto").value;
+  const pesoKg = parseFloat(document.getElementById("editPesoKgProduto").value);
+  const valorPago = parseFloat(document.getElementById("editValorPagoProduto").value);
+
+  if (!nome || !pesoKg || !valorPago) { alert("Preencha todos os campos."); return; }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const custoPorGrama = valorPago / (pesoKg * 1000);
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { error } = await supabaseClient
+    .from("produtos")
+    .update({ nome, categoria, peso_kg: pesoKg, valor_pago: valorPago, custo_por_grama: custoPorGrama })
+    .eq("id", produtos[i].id)
+    .eq("user_id", usuario.id);
+
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+
+  if (error) { alert("Erro ao salvar: " + error.message); return; }
+
+  produtos[i] = { ...produtos[i], nome, categoria, pesoKg, valorPago, custoPorGrama };
   abrirVerProdutos();
 }
 

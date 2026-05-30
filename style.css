@@ -2436,6 +2436,24 @@ body.tema-escuro .nav-viveiros {
     letter-spacing: 0.5px;
 }
 
+.linha-hist-custo-3col {
+    display: grid;
+    grid-template-columns: 0.8fr 1.6fr 1fr;
+    gap: 4px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    align-items: center;
+}
+
+.linha-hist-custo-3col.cabecalho {
+    font-weight: bold;
+    color: rgb(6,107,99);
+    border-bottom: 2px solid rgb(6,107,99);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
 .confirmar-exclusao-custo {
     padding: 10px 12px;
     background: #fef2f2;
@@ -2466,7 +2484,8 @@ body.tema-escuro .custo-por-grama-preview {
     color: #6ee7b7;
 }
 
-body.tema-escuro .linha-hist-custo-geral {
+body.tema-escuro .linha-hist-custo-geral,
+body.tema-escuro .linha-hist-custo-3col {
     background: #1f2937;
     border-color: #374151;
     color: #f3f4f6;
