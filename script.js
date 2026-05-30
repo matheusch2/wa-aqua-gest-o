@@ -1029,7 +1029,7 @@ function abrirHistoricoRacaoDireto(index) {
 function renderizarHistoricoBiometria(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
-  const biometrias = viveiro.biometrias || [];
+  const biometrias = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
 
   resultado.innerHTML = `
         <h3 class="titulo-secao">Biometria - ${abreviarViveiro(viveiro.nome)}</h3>
@@ -1074,7 +1074,7 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
 function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao = "") {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
-  const racoes = viveiro.racoes || [];
+  const racoes = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
 
   const ITENS_POR_PAGINA = 30;
   const totalPaginas = Math.max(1, Math.ceil(racoes.length / ITENS_POR_PAGINA));
@@ -1680,7 +1680,7 @@ async function excluirViveiro(index) {
 function renderizarHistoricoDespesca(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
-  const despescas = viveiro.despescas || [];
+  const despescas = [...(viveiro.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
 
   const totalDespescado = despescas.reduce((total, item) => {
     return total + item.quantidadeKg;
