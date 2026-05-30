@@ -2343,3 +2343,137 @@ body.tema-escuro .viveiro-header {
 body.tema-escuro .nav-viveiros {
     background: #1f2937;
 }
+
+/* ─── CUSTOS E INSUMOS ───────────────────────────────────────────────────────── */
+
+.lista-produtos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.produto-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.produto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.produto-nome {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.produto-detalhe {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.custo-por-grama-preview {
+    background: #ecfdf5;
+    border: 1px solid #6ee7b7;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #065f46;
+    margin-bottom: 14px;
+}
+
+.custo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: white;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.custo-badge-produto {
+    background: rgb(6,107,99);
+}
+
+.custo-badge-outro {
+    background: #6366f1;
+}
+
+.linha-hist-custo-geral {
+    display: grid;
+    grid-template-columns: 0.7fr 0.6fr 1.4fr 0.8fr;
+    gap: 4px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    align-items: center;
+}
+
+.linha-hist-custo-geral.cabecalho {
+    font-weight: bold;
+    color: rgb(6,107,99);
+    border-bottom: 2px solid rgb(6,107,99);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.confirmar-exclusao-custo {
+    padding: 10px 12px;
+    background: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    font-size: 13px;
+    color: #dc2626;
+    width: 100%;
+}
+
+/* Dark mode – custos */
+body.tema-escuro .produto-item {
+    background: #374151;
+    border-color: #4b5563;
+}
+
+body.tema-escuro .produto-nome {
+    color: #f3f4f6;
+}
+
+body.tema-escuro .produto-detalhe {
+    color: #9ca3af;
+}
+
+body.tema-escuro .custo-por-grama-preview {
+    background: #064e3b;
+    border-color: #065f46;
+    color: #6ee7b7;
+}
+
+body.tema-escuro .linha-hist-custo-geral {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f3f4f6;
+}
+
+body.tema-escuro .confirmar-exclusao-custo {
+    background: #450a0a;
+    border-color: #dc2626;
+    color: #fca5a5;
+}

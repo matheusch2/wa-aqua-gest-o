@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
+let produtos = [];
 
 async function toggleMenuUsuario() {
   const menu = document.getElementById("menu-usuario");
@@ -667,6 +668,11 @@ function abrirViveiro(index) {
           Lançar despesca
         </button>
 
+        <button class="botao-painel" onclick="abrirLancarCusto(${index})">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Lançar custo
+        </button>
+
         <button class="botao-painel" onclick="mostrarHistoricoDoViveiroDireto(${index})">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Histórico
@@ -1180,6 +1186,10 @@ function mostrarOpcoesHistorico() {
         <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
         Despesca
       </button>
+      <button class="botao-historico-opcao" onclick="abrirHistoricoCustos()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Custos
+      </button>
     </div>
   `;
 }
@@ -1244,6 +1254,10 @@ function mostrarHistoricoDoViveiroDireto(index) {
           <button class="botao-historico-opcao" onclick="abrirHistoricoDespescaDireto(${index})">
             <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
             Despesca
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirHistoricoCustosDireto(${index})">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Custos
           </button>
         </div>
 
@@ -2476,6 +2490,45 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
         </div>
       </div>
 
+      <!-- ── CUSTOS DO CICLO ── -->
+      ${(() => {
+        const custosCiclo = (viveiros[index]?.custos || []).filter(c =>
+          ciclo.dataPovoamento && ciclo.dataEncerramento &&
+          c.data >= ciclo.dataPovoamento && c.data <= ciclo.dataEncerramento
+        );
+        const totalProdutos = custosCiclo.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
+        const totalOutros = custosCiclo.filter(c => c.tipo === "outro").reduce((s, c) => s + Number(c.valor), 0);
+        const totalCustos = totalProdutos + totalOutros;
+        if (totalCustos === 0) return "";
+        return `
+      <div class="relatorio-secao">
+        <h3>Custos do ciclo</h3>
+        <div class="rel-info-lista">
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <span>Insumos</span>
+            </div>
+            <strong>R$ ${formatarNumeroBR(totalProdutos, 2)}</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Outros custos</span>
+            </div>
+            <strong>R$ ${formatarNumeroBR(totalOutros, 2)}</strong>
+          </div>
+          <div class="rel-info-row">
+            <div class="rel-info-esq">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span><strong>Total de custos</strong></span>
+            </div>
+            <strong>R$ ${formatarNumeroBR(totalCustos, 2)}</strong>
+          </div>
+        </div>
+      </div>`;
+      })()}
+
       <!-- ── HERO: PRODUÇÃO FINAL ── -->
       <div class="rel-producao-hero">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
@@ -2492,6 +2545,607 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
         <button class="botao-voltar-form" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
       </div>
 
+    </div>
+  `;
+}
+
+// ─── CUSTOS E INSUMOS ─────────────────────────────────────────────────────────
+
+function abrirCustosInsumos() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <h2 class="form-titulo">Custos e Insumos</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="historico-opcoes-grid">
+          <button class="botao-historico-opcao" onclick="abrirCadastrarProduto()">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Cadastrar produto
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirVerProdutos()">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            Ver produtos
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirHistoricoGeralCustos()">
+            <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+            Histórico geral
+          </button>
+        </div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirCadastrarProduto() {
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <h2 class="form-titulo">Cadastrar Produto</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <label>Nome do produto</label>
+          </div>
+          <input type="text" id="nomeProduto" placeholder="Ex: Ração Aqua Prime 35%">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <label>Categoria</label>
+          </div>
+          <select id="categoriaProduto">
+            <option value="Ração">Ração</option>
+            <option value="Probiótico">Probiótico</option>
+            <option value="Calcário">Calcário</option>
+            <option value="Adubo">Adubo</option>
+            <option value="Medicamento">Medicamento</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Peso do saco / embalagem</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="pesoKgProduto" placeholder="Ex: 25">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor pago por saco</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="valorPagoProduto" placeholder="Ex: 85.00" step="0.01" oninput="calcularPreviaKg()">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <div id="previa-custo-kg" class="custo-por-grama-preview" style="display:none">
+          Custo por kg: <strong id="previa-custo-kg-valor">—</strong>
+        </div>
+        <div id="msg-produto-sucesso" class="msg-sucesso-lancamento" style="display:none;">
+          <span class="msg-emoji">✅</span>
+          <span class="msg-texto">Produto cadastrado!</span>
+        </div>
+        <button class="botao-salvar" onclick="salvarProduto()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar produto
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirCustosInsumos()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function calcularPreviaKg() {
+  const peso = parseFloat(document.getElementById("pesoKgProduto").value);
+  const valor = parseFloat(document.getElementById("valorPagoProduto").value);
+  const div = document.getElementById("previa-custo-kg");
+  const el = document.getElementById("previa-custo-kg-valor");
+  if (peso > 0 && valor > 0) {
+    el.textContent = `R$ ${formatarNumeroBR(valor / peso, 2)} / kg`;
+    div.style.display = "block";
+  } else {
+    div.style.display = "none";
+  }
+}
+
+async function salvarProduto() {
+  const nome = document.getElementById("nomeProduto").value.trim();
+  const categoria = document.getElementById("categoriaProduto").value;
+  const pesoKg = parseFloat(document.getElementById("pesoKgProduto").value);
+  const valorPago = parseFloat(document.getElementById("valorPagoProduto").value);
+
+  if (!nome || !pesoKg || !valorPago) { alert("Preencha todos os campos."); return; }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const custoPorGrama = valorPago / (pesoKg * 1000);
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { data: salvo, error } = await supabaseClient
+    .from("produtos")
+    .insert([{ user_id: usuario.id, nome, categoria, peso_kg: pesoKg, valor_pago: valorPago, custo_por_grama: custoPorGrama }])
+    .select();
+
+  if (error) {
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    alert("Erro ao salvar produto: " + error.message);
+    return;
+  }
+
+  produtos.push({ id: salvo[0].id, nome, categoria, pesoKg, valorPago, custoPorGrama });
+
+  document.getElementById("nomeProduto").value = "";
+  document.getElementById("pesoKgProduto").value = "";
+  document.getElementById("valorPagoProduto").value = "";
+  document.getElementById("previa-custo-kg").style.display = "none";
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+
+  const msg = document.getElementById("msg-produto-sucesso");
+  if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
+}
+
+function abrirVerProdutos() {
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        </div>
+        <h2 class="form-titulo">Produtos cadastrados</h2>
+      </div>
+      <div class="form-corpo">
+        ${produtos.length === 0
+          ? `<p class="sobrevivencia-texto">Nenhum produto cadastrado.</p>`
+          : `<div class="lista-produtos">
+              ${produtos.map((p, i) => `
+                <div class="produto-item" id="produto-item-${i}">
+                  <div class="produto-info">
+                    <span class="produto-nome">${p.nome}</span>
+                    <span class="produto-detalhe">${p.categoria} · ${formatarNumeroBR(p.pesoKg, 0)} kg · R$ ${formatarNumeroBR(p.valorPago, 2)} · R$ ${formatarNumeroBR(p.valorPago / p.pesoKg, 2)}/kg</span>
+                  </div>
+                  <button class="botao-editar botao-excluir" onclick="confirmarExcluirProduto(${i})">🗑️</button>
+                </div>
+              `).join("")}
+            </div>`
+        }
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirCustosInsumos()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function confirmarExcluirProduto(i) {
+  const item = document.getElementById(`produto-item-${i}`);
+  if (!item) return;
+  item.innerHTML = `
+    <div class="confirmar-exclusao-custo">
+      <span>Excluir <strong>${produtos[i].nome}</strong>?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirProduto(${i})">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirVerProdutos()">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function excluirProduto(i) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+  const { error } = await supabaseClient.from("produtos").delete().eq("id", produtos[i].id).eq("user_id", usuario.id);
+  if (error) { alert("Erro ao excluir: " + error.message); return; }
+  produtos.splice(i, 1);
+  abrirVerProdutos();
+}
+
+function abrirLancarCusto(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Lançar Custo</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="historico-opcoes-grid">
+          <button class="botao-historico-opcao" onclick="abrirLancarCustoProduto(${index})">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Produto cadastrado
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirLancarOutroCusto(${index})">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Outro custo
+          </button>
+        </div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirLancarCustoProduto(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
+
+  if (produtos.length === 0) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <h2 class="form-titulo">Lançar Produto</h2>
+        </div>
+        <div class="form-corpo">
+          <div class="viveiro-sem-ciclo-msg">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Nenhum produto cadastrado. Vá em Custos e Insumos → Cadastrar produto primeiro.</span>
+          </div>
+          <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})">← Voltar</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Lançar Produto</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataCustoProduto" value="${hoje}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <label>Produto</label>
+          </div>
+          <select id="selectProduto" onchange="atualizarPreviaCusto()">
+            <option value="">Escolha um produto</option>
+            ${produtos.map((p, i) => `<option value="${i}">${p.nome} (${p.categoria})</option>`).join("")}
+          </select>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Quantidade utilizada</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="qtdCustoProduto" placeholder="Ex: 25" step="0.1" oninput="atualizarPreviaCusto()">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
+          Valor calculado: <strong id="previa-custo-valor">—</strong>
+        </div>
+        <div id="msg-custo-produto-sucesso" class="msg-sucesso-lancamento" style="display:none;">
+          <span class="msg-emoji">✅</span>
+          <span class="msg-texto">Custo lançado!</span>
+        </div>
+        <button class="botao-salvar" onclick="salvarCustoProduto(${index})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar lançamento
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function atualizarPreviaCusto() {
+  const prodIndex = document.getElementById("selectProduto")?.value;
+  const qtdKg = parseFloat(document.getElementById("qtdCustoProduto")?.value);
+  const div = document.getElementById("previa-custo-produto");
+  const el = document.getElementById("previa-custo-valor");
+  if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdKg) && qtdKg > 0) {
+    const prod = produtos[prodIndex];
+    if (prod) {
+      el.textContent = `R$ ${formatarNumeroBR((prod.valorPago / prod.pesoKg) * qtdKg, 2)}`;
+      div.style.display = "block";
+      return;
+    }
+  }
+  if (div) div.style.display = "none";
+}
+
+async function salvarCustoProduto(index) {
+  const data = document.getElementById("dataCustoProduto").value;
+  const prodIndex = document.getElementById("selectProduto").value;
+  const qtdKg = parseFloat(document.getElementById("qtdCustoProduto").value);
+
+  if (!data || prodIndex === "" || isNaN(qtdKg) || qtdKg <= 0) { alert("Preencha todos os campos."); return; }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const prod = produtos[prodIndex];
+  const valor = (prod.valorPago / prod.pesoKg) * qtdKg;
+  const quantidadeG = qtdKg * 1000;
+
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { data: salvo, error } = await supabaseClient
+    .from("custos")
+    .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto", produto_id: prod.id, nome_produto: prod.nome, quantidade_g: quantidadeG, valor, categoria: prod.categoria, data }])
+    .select();
+
+  if (error) {
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    alert("Erro ao salvar: " + error.message);
+    return;
+  }
+
+  if (!viveiros[index].custos) viveiros[index].custos = [];
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: prod.id, nomeProduto: prod.nome, quantidadeG, valor, categoria: prod.categoria, data, observacao: null });
+
+  document.getElementById("dataCustoProduto").value = new Date().toISOString().split("T")[0];
+  document.getElementById("selectProduto").value = "";
+  document.getElementById("qtdCustoProduto").value = "";
+  document.getElementById("previa-custo-produto").style.display = "none";
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+
+  const msg = document.getElementById("msg-custo-produto-sucesso");
+  if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
+}
+
+function abrirLancarOutroCusto(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const hoje = new Date().toISOString().split("T")[0];
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Outro Custo</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataOutroCusto" value="${hoje}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <label>Categoria</label>
+          </div>
+          <select id="categoriaOutroCusto">
+            <option value="Energia">Energia</option>
+            <option value="Mão de obra">Mão de obra</option>
+            <option value="Manutenção">Manutenção</option>
+            <option value="Frete">Frete</option>
+            <option value="Equipamento">Equipamento</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <label>Descrição</label>
+          </div>
+          <input type="text" id="descricaoOutroCusto" placeholder="Ex: Energia do mês">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="valorOutroCusto" placeholder="Ex: 350.00" step="0.01">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <div id="msg-outro-custo-sucesso" class="msg-sucesso-lancamento" style="display:none;">
+          <span class="msg-emoji">✅</span>
+          <span class="msg-texto">Custo lançado!</span>
+        </div>
+        <button class="botao-salvar" onclick="salvarOutroCusto(${index})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar lançamento
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarOutroCusto(index) {
+  const data = document.getElementById("dataOutroCusto").value;
+  const categoria = document.getElementById("categoriaOutroCusto").value;
+  const descricao = document.getElementById("descricaoOutroCusto").value.trim();
+  const valor = parseFloat(document.getElementById("valorOutroCusto").value);
+
+  if (!data || !descricao || isNaN(valor) || valor <= 0) { alert("Preencha todos os campos."); return; }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { data: salvo, error } = await supabaseClient
+    .from("custos")
+    .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "outro", nome_produto: descricao, valor, categoria, data }])
+    .select();
+
+  if (error) {
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    alert("Erro ao salvar: " + error.message);
+    return;
+  }
+
+  if (!viveiros[index].custos) viveiros[index].custos = [];
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor, categoria, data, observacao: null });
+
+  document.getElementById("dataOutroCusto").value = new Date().toISOString().split("T")[0];
+  document.getElementById("descricaoOutroCusto").value = "";
+  document.getElementById("valorOutroCusto").value = "";
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+
+  const msg = document.getElementById("msg-outro-custo-sucesso");
+  if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
+}
+
+function abrirHistoricoCustosDireto(index) {
+  document.getElementById("opcoes-historico").innerHTML = "";
+  renderizarHistoricoCustos(index, "resultado-historico", true);
+}
+
+function abrirHistoricoCustos() {
+  const index = document.getElementById("viveiroHistorico").value;
+  if (index === "") return;
+  document.getElementById("opcoes-historico").innerHTML = "";
+  const voltarFixo = document.getElementById("voltar-menu-historico");
+  if (voltarFixo) voltarFixo.style.display = "none";
+  renderizarHistoricoCustos(index, "resultado-historico", false);
+}
+
+function renderizarHistoricoCustos(index, elementoId, direto) {
+  const viveiro = viveiros[index];
+  const resultado = document.getElementById(elementoId);
+  const custos = [...(viveiro.custos || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0);
+
+  resultado.innerHTML = `
+    <h3 class="titulo-secao">Custos - ${abreviarViveiro(viveiro.nome)}</h3>
+    <div class="tabela-historico">
+      <div class="linha-historico-acoes cabecalho">
+        <span>DATA</span>
+        <span class="col-centro">DESCRIÇÃO</span>
+        <span class="col-centro">VALOR</span>
+        <span></span>
+      </div>
+      ${custos.length === 0
+        ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
+        : custos.map((c, i) => `
+            <div class="linha-historico-acoes">
+              <span>${formatarData(c.data)}</span>
+              <span class="col-centro" style="font-size:12px">
+                <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
+                ${c.nomeProduto}${c.quantidadeG ? ` · ${formatarNumeroBR(c.quantidadeG / 1000, 1)} kg` : ""}
+              </span>
+              <span class="col-centro">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
+              <span class="col-acoes">
+                <button class="botao-editar botao-excluir" onclick="excluirCusto(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+              </span>
+            </div>
+          `).join("")
+      }
+    </div>
+    <div class="total-chip">
+      <span class="total-chip-label">Total de custos</span>
+      <span class="total-chip-valor">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
+    </div>
+    <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
+  `;
+}
+
+async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+  const custo = viveiros[viveiroIndex].custos[custoIndex];
+  const { error } = await supabaseClient.from("custos").delete().eq("id", custo.id).eq("user_id", usuario.id);
+  if (error) { alert("Erro ao excluir: " + error.message); return; }
+  viveiros[viveiroIndex].custos.splice(custoIndex, 1);
+  renderizarHistoricoCustos(viveiroIndex, elementoId, direto);
+}
+
+function abrirHistoricoGeralCustos() {
+  const area = document.getElementById("area-gestao");
+
+  const todosCustos = viveiros.flatMap(v =>
+    (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }))
+  ).sort((a, b) => a.data.localeCompare(b.data));
+
+  const totalGeral = todosCustos.reduce((s, c) => s + Number(c.valor), 0);
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+        </div>
+        <h2 class="form-titulo">Histórico geral de custos</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="tabela-historico">
+          <div class="linha-hist-custo-geral cabecalho">
+            <span>DATA</span>
+            <span class="col-centro">VIVEIRO</span>
+            <span class="col-centro">DESCRIÇÃO</span>
+            <span class="col-centro">VALOR</span>
+          </div>
+          ${todosCustos.length === 0
+            ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
+            : todosCustos.map(c => `
+                <div class="linha-hist-custo-geral">
+                  <span style="font-size:12px">${formatarData(c.data)}</span>
+                  <span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>
+                  <span class="col-centro" style="font-size:12px">
+                    <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
+                    ${c.nomeProduto}
+                  </span>
+                  <span class="col-centro" style="font-size:12px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
+                </div>
+              `).join("")
+          }
+        </div>
+        ${totalGeral > 0 ? `
+          <div class="total-chip">
+            <span class="total-chip-label">Total geral</span>
+            <span class="total-chip-valor">R$ ${formatarNumeroBR(totalGeral, 2)}</span>
+          </div>
+        ` : ""}
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirCustosInsumos()">← Voltar</button>
+      </div>
     </div>
   `;
 }
@@ -2566,6 +3220,22 @@ async function carregarViveiros() {
     return;
   }
 
+  // Carregar produtos (gracioso se a tabela não existir ainda)
+  const { data: produtosData, error: erroProdutos } = await supabaseClient
+    .from("produtos").select("*").eq("user_id", usuario.id);
+  if (!erroProdutos && produtosData) {
+    produtos = produtosData.map(p => ({
+      id: p.id, nome: p.nome, categoria: p.categoria,
+      pesoKg: Number(p.peso_kg), valorPago: Number(p.valor_pago),
+      custoPorGrama: Number(p.custo_por_grama),
+    }));
+  }
+
+  // Carregar custos (gracioso se a tabela não existir ainda)
+  const { data: custosData } = await supabaseClient
+    .from("custos").select("*").eq("user_id", usuario.id);
+  const custosArr = custosData || [];
+
   viveiros = viveirosData.map((item) => ({
     id: item.id,
     nome: item.nome,
@@ -2620,6 +3290,20 @@ async function carregarViveiros() {
         fca: Number(ciclo.fca),
         sobrevivencia: Number(ciclo.sobrevivencia),
         observacoes: ciclo.observacoes,
+      })),
+
+    custos: custosArr
+      .filter(c => c.viveiro_id === item.id)
+      .map(c => ({
+        id: c.id,
+        tipo: c.tipo,
+        produtoId: c.produto_id,
+        nomeProduto: c.nome_produto,
+        quantidadeG: c.quantidade_g ? Number(c.quantidade_g) : null,
+        valor: Number(c.valor),
+        categoria: c.categoria,
+        data: c.data,
+        observacao: c.observacao,
       })),
   }));
 
