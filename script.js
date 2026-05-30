@@ -3,17 +3,219 @@ const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 
-async function sairUsuario() {
+async function toggleMenuUsuario() {
+  const menu = document.getElementById("menu-usuario");
+  if (menu.classList.contains("aberto")) {
+    fecharMenuUsuario();
+    return;
+  }
+
+  // Carregar dados do usuário
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return;
+
+  const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "Usuário";
+  const email = user.email || "";
+  const fotoUrl = user.user_metadata?.avatar_url || null;
+
+  document.getElementById("menu-usuario-nome").textContent = nome;
+  document.getElementById("menu-usuario-email").textContent = email;
+
+  // Avatar no menu
+  const avatarMenu = document.getElementById("menu-avatar");
+  if (fotoUrl) {
+    avatarMenu.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    avatarMenu.innerHTML = `<span class="menu-avatar-iniciais">${iniciais}</span>`;
+  }
+
+  // Avatar no topo
+  const avatarTopo = document.getElementById("avatar-topo");
+  if (fotoUrl) {
+    avatarTopo.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${iniciais || "?"}</span>`;
+  }
+
+  // Tema
+  const temaDark = document.body.classList.contains("tema-escuro");
+  document.getElementById("tema-toggle").querySelector(".menu-tema-bolinha").style.left = temaDark ? "21px" : "3px";
+
+  // Fechar foto opcoes
+  document.getElementById("menu-foto-opcoes").style.display = "none";
+
+  menu.classList.add("aberto");
+}
+
+function abrirOpcoesFoto() {
+  const opcoes = document.getElementById("menu-foto-opcoes");
+  opcoes.style.display = opcoes.style.display === "none" ? "flex" : "none";
+}
+
+async function uploadFotoPerfil(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Comprimir para 80x80 JPEG
+  const canvas = document.createElement("canvas");
+  canvas.width = 80; canvas.height = 80;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = async () => {
+    const ctx = canvas.getContext("2d");
+    const size = Math.min(img.width, img.height);
+    const x = (img.width - size) / 2;
+    const y = (img.height - size) / 2;
+    ctx.drawImage(img, x, y, size, size, 0, 0, 80, 80);
+    URL.revokeObjectURL(url);
+
+    const base64 = canvas.toDataURL("image/jpeg", 0.5);
+
+    const { error } = await supabaseClient.auth.updateUser({
+      data: { avatar_url: base64 }
+    });
+
+    if (error) { alert("Erro ao salvar foto."); return; }
+
+    // Atualizar UI
+    document.getElementById("menu-avatar").innerHTML =
+      `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    document.getElementById("avatar-topo").innerHTML =
+      `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    document.getElementById("menu-foto-opcoes").style.display = "none";
+  };
+  img.src = url;
+}
+
+async function excluirFotoPerfil() {
+  const { error } = await supabaseClient.auth.updateUser({ data: { avatar_url: null } });
+  if (error) { alert("Erro ao excluir foto."); return; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "?";
+  const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+
+  document.getElementById("menu-avatar").innerHTML = `<span class="menu-avatar-iniciais">${iniciais}</span>`;
+  document.getElementById("avatar-topo").innerHTML = `<span class="avatar-topo-iniciais">${iniciais}</span>`;
+  document.getElementById("menu-foto-opcoes").style.display = "none";
+}
+
+function abrirPerfilUsuario() {
+  fecharMenuUsuario();
+  supabaseClient.auth.getUser().then(({ data: { user } }) => {
+    const nome = user?.user_metadata?.nome || "";
+    const area = document.getElementById("area-gestao");
+    esconderMenu();
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <h2 class="form-titulo">Perfil</h2>
+        </div>
+        <div class="form-corpo">
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <label>Nome da fazenda</label>
+            </div>
+            <input type="text" id="inputNomePerfil" placeholder="Ex: Fazenda São João" value="${nome}">
+          </div>
+          <button class="botao-salvar" onclick="salvarNomePerfil()">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Salvar
+          </button>
+          <div class="separador-ou"><span>ou</span></div>
+          <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+async function salvarNomePerfil() {
+  const nome = document.getElementById("inputNomePerfil").value.trim();
+  if (!nome) { alert("Digite um nome."); return; }
+
+  const { error } = await supabaseClient.auth.updateUser({ data: { nome } });
+  if (error) { alert("Erro ao salvar."); return; }
+
+  voltarMenuGestao();
+}
+
+function abrirSegurancaUsuario() {
+  fecharMenuUsuario();
+  const area = document.getElementById("area-gestao");
+  esconderMenu();
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h2 class="form-titulo">Segurança</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <label>Nova senha</label>
+          </div>
+          <input type="password" id="inputNovaSenha" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <label>Confirmar nova senha</label>
+          </div>
+          <input type="password" id="inputConfirmarSenha" placeholder="Repita a nova senha">
+        </div>
+        <button class="botao-salvar" onclick="salvarSenha()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar nova senha
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarSenha() {
+  const nova = document.getElementById("inputNovaSenha").value;
+  const confirmar = document.getElementById("inputConfirmarSenha").value;
+
+  if (!nova || nova.length < 6) { alert("A senha deve ter no mínimo 6 caracteres."); return; }
+  if (nova !== confirmar) { alert("As senhas não coincidem."); return; }
+
+  const { error } = await supabaseClient.auth.updateUser({ password: nova });
+  if (error) { alert("Erro ao alterar senha: " + error.message); return; }
+
+  alert("Senha alterada com sucesso!");
+  voltarMenuGestao();
+}
+
+function toggleTema() {
+  document.body.classList.toggle("tema-escuro");
+  const escuro = document.body.classList.contains("tema-escuro");
+  localStorage.setItem("tema", escuro ? "escuro" : "claro");
+  const bolinha = document.querySelector("#tema-toggle .menu-tema-bolinha");
+  if (bolinha) bolinha.style.left = escuro ? "21px" : "3px";
+  document.querySelector(".menu-tema-toggle") &&
+    (document.querySelector(".menu-tema-toggle").style.background = escuro ? "rgb(6,107,99)" : "");
+}
+
+
   fecharMenuUsuario();
   await supabaseClient.auth.signOut();
   viveiros = [];
   window.location.href = "login.html";
 }
 
-function toggleMenuUsuario() {
-  const menu = document.getElementById("menu-usuario");
-  menu.classList.toggle("aberto");
-}
+
 
 function fecharMenuUsuario() {
   const menu = document.getElementById("menu-usuario");
@@ -2433,6 +2635,10 @@ async function carregarViveiros() {
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (localStorage.getItem("tema") === "escuro") {
+    document.body.classList.add("tema-escuro");
+  }
+
   try {
     const {
       data: { session },
@@ -2447,6 +2653,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
       await carregarViveiros();
+
+      // Atualizar avatar no topo
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const fotoUrl = user.user_metadata?.avatar_url;
+        const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "?";
+        const avatarTopo = document.getElementById("avatar-topo");
+        if (fotoUrl) {
+          avatarTopo.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        } else {
+          const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+          avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${iniciais || "?"}</span>`;
+        }
+      }
+
       document.getElementById("area-gestao").innerHTML = "";
       document.getElementById("menuGestao").style.display = "grid";
     } else {
