@@ -586,7 +586,23 @@ function abrirViveiro(index) {
   const racoes = viveiro.racoes || [];
   const biometrias = viveiro.biometrias || [];
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
-  const ultimaBiometria = biometrias.length > 0 ? biometrias[biometrias.length - 1].gramatura : "--";
+  const totalCustos = (viveiro.custos || []).reduce((s, c) => s + Number(c.valor), 0);
+
+  // Última biometria e média de crescimento
+  const biosSorted = [...biometrias].sort((a, b) => a.data.localeCompare(b.data));
+  const ultimaBiometria = biosSorted.length > 0 ? biosSorted[biosSorted.length - 1].gramatura : "--";
+  let mediaCrescimento = "--";
+  if (biosSorted.length >= 2) {
+    const taxas = [];
+    for (let i = 1; i < biosSorted.length; i++) {
+      const dias = Math.round((new Date(biosSorted[i].data) - new Date(biosSorted[i - 1].data)) / 86400000);
+      if (dias > 0) taxas.push((biosSorted[i].gramatura - biosSorted[i - 1].gramatura) / dias);
+    }
+    if (taxas.length > 0) {
+      const mediaGDia = taxas.reduce((s, v) => s + v, 0) / taxas.length;
+      mediaCrescimento = formatarNumeroBR(mediaGDia * 7, 2) + " g/sem";
+    }
+  }
 
   const totalFormatado = viveiro.totalPovoado
     ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR")
@@ -645,10 +661,26 @@ function abrirViveiro(index) {
 
         <div class="info-box">
           <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <small>Custo parcial</small>
+          <strong>${totalCustos > 0 ? "R$ " + formatarNumeroBR(totalCustos, 2) : "--"}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
           </div>
           <small>Última biometria</small>
           <strong>${ultimaBiometria} g</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <small>Média de crescimento</small>
+          <strong>${mediaCrescimento}</strong>
         </div>
       </div>
 
@@ -2180,6 +2212,29 @@ function mostrarCustosFinanceiro() {
     <div class="total-chip">
       <span class="total-chip-label">Total</span>
       <span class="total-chip-valor">R$ ${formatarNumeroBR(total, 2)}</span>
+    </div>
+  `;
+}
+
+function abrirEstoque() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8m-9 4h4"/></svg>
+        </div>
+        <h2 class="form-titulo">Estoque</h2>
+      </div>
+      <div class="form-corpo">
+        <div style="text-align:center;padding:24px 16px;background:#f8fafc;border-radius:14px;border:1px solid #e5e7eb;margin-bottom:12px">
+          <p style="font-size:32px;margin:0 0 8px">🚧</p>
+          <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 4px">Em desenvolvimento</p>
+          <p style="font-size:13px;color:#9ca3af;margin:0">Em breve você poderá controlar o estoque dos seus insumos.</p>
+        </div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
     </div>
   `;
 }
