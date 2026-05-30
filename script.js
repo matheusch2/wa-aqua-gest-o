@@ -107,6 +107,15 @@ function limparAreaGestao() {
   area.innerHTML = "";
 }
 
+function posicaoNaLista(index) {
+  const ordenados = [...viveiros].sort((a, b) => {
+    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
+    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
+    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
+  });
+  return Math.max(0, ordenados.indexOf(viveiros[index]));
+}
+
 function esconderMenu() {
   document.getElementById("menuGestao").style.display = "none";
 }
@@ -476,7 +485,7 @@ function abrirViveiro(index) {
         </button>
       </div>
 
-      <button class="botao-voltar-form" onclick="mostrarListaViveiros()">← Voltar</button>
+      <button class="botao-voltar-form" onclick="mostrarListaViveiros(posicaoNaLista(${index}))">← Voltar</button>
     </div>
   `;
 }
@@ -2129,7 +2138,7 @@ function mostrarViveiroSemCiclo(index) {
       </button>
       ` : ""}
 
-      <button class="botao-voltar-form" onclick="mostrarListaViveiros()" style="margin-top:8px">← Voltar</button>
+      <button class="botao-voltar-form" onclick="mostrarListaViveiros(posicaoNaLista(${index}))" style="margin-top:8px">← Voltar</button>
     </div>
   `;
 }
