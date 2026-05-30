@@ -906,7 +906,7 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
 
         <div id="opcoes-historico"></div>
         <div id="resultado-historico"></div>
-  <div style="margin-top:16px">
+  <div id="voltar-menu-historico" style="margin-top:16px">
     <button class="botao-voltar-form" onclick="voltarMenuGestao()">
        ← Voltar
     </button>
@@ -955,6 +955,8 @@ function abrirHistoricoBiometria() {
   if (index === "") return;
 
   document.getElementById("opcoes-historico").innerHTML = "";
+  const voltarFixo = document.getElementById("voltar-menu-historico");
+  if (voltarFixo) voltarFixo.style.display = "none";
 
   renderizarHistoricoBiometria(index, "resultado-historico", false);
 }
@@ -964,6 +966,8 @@ function abrirHistoricoRacao() {
   if (index === "") return;
 
   document.getElementById("opcoes-historico").innerHTML = "";
+  const voltarFixo = document.getElementById("voltar-menu-historico");
+  if (voltarFixo) voltarFixo.style.display = "none";
 
   renderizarHistoricoRacao(index, "resultado-historico", false);
 }
@@ -973,6 +977,8 @@ function abrirHistoricoDespesca() {
   if (index === "") return;
 
   document.getElementById("opcoes-historico").innerHTML = "";
+  const voltarFixo = document.getElementById("voltar-menu-historico");
+  if (voltarFixo) voltarFixo.style.display = "none";
 
   renderizarHistoricoDespesca(index, "resultado-historico", false);
 }
@@ -1732,6 +1738,8 @@ function abrirHistoricoDespescaDireto(index) {
 
 function voltarOpcoesHistorico() {
   mostrarOpcoesHistorico();
+  const voltarFixo = document.getElementById("voltar-menu-historico");
+  if (voltarFixo) voltarFixo.style.display = "";
 }
 
 function mostrarHistoricoCiclos() {
