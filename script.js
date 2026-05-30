@@ -2399,8 +2399,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (session) {
       document.querySelector(".topo").style.display = "";
-      document.getElementById("menuGestao").style.display = "grid";
+      document.getElementById("area-gestao").innerHTML = `
+        <div style="text-align:center;padding:40px 16px;color:#9ca3af">
+          <svg viewBox="0 0 24 24" style="width:32px;height:32px;stroke:#d1d5db;fill:none;stroke-width:2;margin-bottom:12px;display:block;margin-inline:auto"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          <p style="margin:0;font-size:14px">Carregando...</p>
+        </div>
+      `;
       await carregarViveiros();
+      document.getElementById("area-gestao").innerHTML = "";
+      document.getElementById("menuGestao").style.display = "grid";
     } else {
       window.location.href = "login.html";
     }
