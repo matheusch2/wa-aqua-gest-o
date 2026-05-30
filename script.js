@@ -1683,12 +1683,6 @@ async function excluirViveiro(index) {
 
   if (!viveiro) return;
 
-  const confirmar = confirm(
-    `Deseja excluir o viveiro "${viveiro.nome}"?`
-  );
-
-  if (!confirmar) return;
-
   const { error } = await supabaseClient
     .from("viveiros")
     .update({ ativo: false })
@@ -2095,9 +2089,7 @@ async function salvarEncerramentoCiclo(index) {
 function mostrarViveiroSemCiclo(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
-  const ultimoCiclo = viveiro.ciclosFinalizados && viveiro.ciclosFinalizados.length > 0
-    ? viveiro.ciclosFinalizados[viveiro.ciclosFinalizados.length - 1]
-    : null;
+  const temCicloAnterior = viveiro.ciclosFinalizados && viveiro.ciclosFinalizados.length > 0;
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -2112,20 +2104,38 @@ function mostrarViveiroSemCiclo(index) {
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span>Nenhum ciclo ativo. Inicie um novo ciclo para começar os lançamentos.</span>
       </div>
+
       <button class="botao-salvar" onclick="mostrarFormularioReinicio(${index})" style="margin-top:4px">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Iniciar novo ciclo
       </button>
-      ${ultimoCiclo ? `
-      <div class="separador-ou"><span>ou</span></div>
-      <button class="botao-voltar-form" onclick="mostrarRelatorioCiclo(${index}, viveiros[${index}].ciclosFinalizados[viveiros[${index}].ciclosFinalizados.length - 1], 'viveiro')">
+
+      <button class="botao-voltar-form botao-perigo-outline" onclick="mostrarConfirmExcluirViveiro(${index})" style="margin-top:8px">
+        🗑️ Excluir viveiro
+      </button>
+
+      <div id="confirm-excluir-viveiro-${index}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#dc2626">Excluir "${viveiro.nome}"?</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Todos os ciclos e dados deste viveiro serão removidos.</p>
+        <div style="display:flex;gap:8px">
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index})">Sim, excluir</button>
+          <button class="ciclo-btn-relatorio" style="flex:1" onclick="mostrarViveiroSemCiclo(${index})">Cancelar</button>
+        </div>
+      </div>
+
+      ${temCicloAnterior ? `
+      <button class="botao-voltar-form" onclick="mostrarRelatorioCiclo(${index}, viveiros[${index}].ciclosFinalizados[viveiros[${index}].ciclosFinalizados.length - 1], 'viveiro')" style="margin-top:8px">
         📋 Ver relatório do último ciclo
       </button>
       ` : ""}
-      <div class="separador-ou"><span>ou</span></div>
-      <button class="botao-voltar-form" onclick="mostrarListaViveiros()">← Voltar</button>
+
+      <button class="botao-voltar-form" onclick="mostrarListaViveiros()" style="margin-top:8px">← Voltar</button>
     </div>
   `;
+}
+
+function mostrarConfirmExcluirViveiro(index) {
+  document.getElementById(`confirm-excluir-viveiro-${index}`).style.display = "block";
 }
 
 function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {

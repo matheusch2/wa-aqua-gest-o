@@ -857,6 +857,16 @@ button {
     background: #b91c1c;
 }
 
+.botao-perigo-outline {
+    background: transparent;
+    color: #dc2626;
+    border: 1.5px solid #dc2626;
+}
+
+.botao-perigo-outline:hover {
+    background: #fef2f2;
+}
+
 /* ─── RELATÓRIO REDESIGN ─────────────────────────────────────────────────── */
 
 .relatorio-final {
