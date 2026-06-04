@@ -1195,6 +1195,51 @@ async function salvarLancamentoRacao(indexDireto = "") {
     tipoRacaoId: tipoRacaoId,
   });
 
+  // Se tem tipo de ração selecionado, acumula o custo no viveiro
+  if (tipoRacao) {
+    const custoNovo = tipoRacao.custoPorKg * racao;
+    const qtdNova = racao * 1000;
+    if (!viveiros[index].custos) viveiros[index].custos = [];
+    const custoExistente = viveiros[index].custos.find(
+      c => c.tipo === "produto" && c.produtoId === tipoRacao.id
+    );
+    if (custoExistente) {
+      const novoValor = custoExistente.valor + custoNovo;
+      const novaQtd = (custoExistente.quantidadeG || 0) + qtdNova;
+      await supabaseClient.from("custos")
+        .update({ valor: novoValor, quantidade_g: novaQtd })
+        .eq("id", custoExistente.id).eq("user_id", usuario.id);
+      custoExistente.valor = novoValor;
+      custoExistente.quantidadeG = novaQtd;
+    } else {
+      const { data: salvoCusto } = await supabaseClient.from("custos")
+        .insert([{
+          user_id: usuario.id,
+          viveiro_id: viveiros[index].id,
+          tipo: "produto",
+          produto_id: tipoRacao.id,
+          nome_produto: tipoRacao.nome,
+          quantidade_g: qtdNova,
+          valor: custoNovo,
+          categoria: "Ração",
+          data: data,
+        }]).select();
+      if (salvoCusto) {
+        viveiros[index].custos.push({
+          id: salvoCusto[0].id,
+          tipo: "produto",
+          produtoId: tipoRacao.id,
+          nomeProduto: tipoRacao.nome,
+          quantidadeG: qtdNova,
+          valor: custoNovo,
+          categoria: "Ração",
+          data: data,
+          observacao: null,
+        });
+      }
+    }
+  }
+
   // Mostra mensagem de sucesso e reseta o formulário
   document.getElementById("dataRacao").value = new Date().toISOString().split("T")[0];
   document.getElementById("consumoRacao").value = "";
