@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
-let produtos = [];
+let produtos = []; let tiposRacao = [];
 
 async function toggleMenuUsuario() {
   const menu = document.getElementById("menu-usuario");
@@ -745,6 +745,279 @@ function abrirViveiro(index) {
   `;
 }
 
+// ─── RAÇÕES CATÁLOGO ──────────────────────────────────────────────────────────
+
+function abrirRacoesCatalogo() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <h2 class="form-titulo">Rações</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="historico-opcoes-grid">
+          <button class="botao-historico-opcao" onclick="abrirCadastrarTipoRacao()">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Cadastrar ração
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirVerTiposRacao()">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Ver rações
+          </button>
+        </div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirCadastrarTipoRacao() {
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <h2 class="form-titulo">Cadastrar Ração</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Nome da ração</label>
+          </div>
+          <input type="text" id="nomeTipoRacao" placeholder="Ex: Samaria Start T1">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Peso do saco</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="pesoSacoRacao" value="30" step="0.1" oninput="calcularPreviaSacoRacao()">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor do saco</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="valorSacoRacao" placeholder="Ex: 120,00" onblur="formatarMoedaBlur(this); calcularPreviaSacoRacao()">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <div id="previa-saco-racao" class="custo-por-grama-preview" style="display:none">
+          Custo por kg: <strong id="previa-saco-racao-valor">—</strong>
+        </div>
+        <button class="botao-salvar" onclick="salvarTipoRacao()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirRacoesCatalogo()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function calcularPreviaSacoRacao() {
+  const peso = parseFloat(document.getElementById("pesoSacoRacao")?.value);
+  const valor = parseMoedaBR(document.getElementById("valorSacoRacao")?.value);
+  const div = document.getElementById("previa-saco-racao");
+  const el = document.getElementById("previa-saco-racao-valor");
+  if (div && el && peso > 0 && valor > 0) {
+    el.textContent = `R$ ${formatarNumeroBR(valor / peso, 2)}/kg`;
+    div.style.display = "block";
+  } else if (div) {
+    div.style.display = "none";
+  }
+}
+
+async function salvarTipoRacao() {
+  const nome = document.getElementById("nomeTipoRacao").value.trim();
+  const pesoSacoKg = parseFloat(document.getElementById("pesoSacoRacao").value);
+  const valorSaco = parseMoedaBR(document.getElementById("valorSacoRacao").value);
+
+  if (!nome || !pesoSacoKg || !valorSaco) { alert("Preencha todos os campos."); return; }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const custoPorKg = valorSaco / pesoSacoKg;
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { data: salvo, error } = await supabaseClient
+    .from("tipos_racao")
+    .insert([{ user_id: usuario.id, nome, peso_saco_kg: pesoSacoKg, valor_saco: valorSaco, custo_por_kg: custoPorKg }])
+    .select();
+
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  if (error) { alert("Erro ao salvar: " + error.message); return; }
+
+  tiposRacao.push({ id: salvo[0].id, nome, pesoSacoKg, valorSaco, custoPorKg });
+  abrirVerTiposRacao();
+}
+
+function abrirVerTiposRacao() {
+  const area = document.getElementById("area-gestao");
+
+  if (tiposRacao.length === 0) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          <h2 class="form-titulo">Rações Cadastradas</h2>
+        </div>
+        <div class="form-corpo">
+          <div class="viveiro-sem-ciclo-msg">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Nenhuma ração cadastrada ainda.</span>
+          </div>
+          <button class="botao-voltar-form" onclick="abrirRacoesCatalogo()">← Voltar</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <h2 class="form-titulo">Rações Cadastradas</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="lista-produtos">
+          ${tiposRacao.map((t, i) => `
+            <div class="produto-item" id="tipo-racao-item-${i}">
+              <div class="produto-info">
+                <span class="produto-nome">${t.nome}</span>
+                <span class="produto-detalhe">${formatarNumeroBR(t.pesoSacoKg, 0)} kg/saco · R$ ${formatarNumeroBR(t.valorSaco, 2)}/saco · R$ ${formatarNumeroBR(t.custoPorKg, 2)}/kg</span>
+              </div>
+              <span class="col-acoes">
+                <button class="botao-editar" onclick="abrirEdicaoTipoRacao(${i})">✏️</button>
+                <button class="botao-editar botao-excluir" onclick="confirmarExcluirTipoRacao(${i})">🗑️</button>
+              </span>
+            </div>
+          `).join("")}
+        </div>
+        <button class="botao-voltar-form" onclick="abrirRacoesCatalogo()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function confirmarExcluirTipoRacao(i) {
+  const item = document.getElementById(`tipo-racao-item-${i}`);
+  if (!item) return;
+  item.innerHTML = `
+    <div class="confirmar-exclusao-custo">
+      <span>Excluir <strong>${tiposRacao[i].nome}</strong>?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirTipoRacao(${i})">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirVerTiposRacao()">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function excluirTipoRacao(i) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+  const { error } = await supabaseClient.from("tipos_racao").delete().eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
+  if (error) { alert("Erro ao excluir: " + error.message); return; }
+  tiposRacao.splice(i, 1);
+  abrirVerTiposRacao();
+}
+
+function abrirEdicaoTipoRacao(i) {
+  const t = tiposRacao[i];
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <h2 class="form-titulo">Editar Ração</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Nome da ração</label>
+          </div>
+          <input type="text" id="editNomeTipoRacao" value="${t.nome}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Peso do saco</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" id="editPesoSacoRacao" value="${t.pesoSacoKg}" step="0.1">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor do saco</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="editValorSacoRacao" value="${t.valorSaco.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2})}" onblur="formatarMoedaBlur(this)">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <button class="botao-salvar" onclick="salvarEdicaoTipoRacao(${i})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirVerTiposRacao()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarEdicaoTipoRacao(i) {
+  const nome = document.getElementById("editNomeTipoRacao").value.trim();
+  const pesoSacoKg = parseFloat(document.getElementById("editPesoSacoRacao").value);
+  const valorSaco = parseMoedaBR(document.getElementById("editValorSacoRacao").value);
+
+  if (!nome || !pesoSacoKg || !valorSaco) { alert("Preencha todos os campos."); return; }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const custoPorKg = valorSaco / pesoSacoKg;
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { error } = await supabaseClient.from("tipos_racao")
+    .update({ nome, peso_saco_kg: pesoSacoKg, valor_saco: valorSaco, custo_por_kg: custoPorKg })
+    .eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
+
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  if (error) { alert("Erro ao salvar: " + error.message); return; }
+
+  tiposRacao[i] = { ...tiposRacao[i], nome, pesoSacoKg, valorSaco, custoPorKg };
+  abrirVerTiposRacao();
+}
+
 // ─── RAÇÃO ────────────────────────────────────────────────────────────────────
 
 function mostrarLancamentoRacao(indexSelecionado = "") {
@@ -814,6 +1087,18 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           <input type="date" id="dataRacao" value="${hoje}">
         </div>
 
+        ${tiposRacao.length > 0 ? `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Tipo de ração</label>
+          </div>
+          <select id="tipoRacaoSelect">
+            <option value="">— Não especificado —</option>
+            ${tiposRacao.map((t, i) => `<option value="${i}">${t.nome}</option>`).join("")}
+          </select>
+        </div>
+        ` : ""}
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -875,11 +1160,19 @@ async function salvarLancamentoRacao(indexDireto = "") {
     viveiros[index].racoes = [];
   }
 
+  const tipoRacaoIdx = document.getElementById("tipoRacaoSelect")?.value;
+  const tipoRacao = (tipoRacaoIdx !== "" && tipoRacaoIdx !== undefined && tipoRacaoIdx !== null)
+    ? tiposRacao[tipoRacaoIdx] : null;
+  const nomeRacao = tipoRacao ? tipoRacao.nome : null;
+  const tipoRacaoId = tipoRacao ? tipoRacao.id : null;
+
   const novaRacao = {
     viveiro_id: viveiros[index].id,
     data: data,
     racao: racao,
     user_id: usuario.id,
+    nome_racao: nomeRacao,
+    tipo_racao_id: tipoRacaoId,
   };
 
   const { data: racaoSalva, error } = await supabaseClient
@@ -898,6 +1191,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
     id: racaoSalva[0].id,
     data: data,
     racao: racao,
+    nomeRacao: nomeRacao,
+    tipoRacaoId: tipoRacaoId,
   });
 
   // Mostra mensagem de sucesso e reseta o formulário
@@ -3446,6 +3741,18 @@ async function carregarViveiros() {
     }));
   }
 
+  // Carregar tipos de ração (gracioso se a tabela não existir ainda)
+  const { data: tiposRacaoData } = await supabaseClient
+    .from("tipos_racao").select("*").eq("user_id", usuario.id);
+  if (tiposRacaoData) {
+    tiposRacao = tiposRacaoData.map(t => ({
+      id: t.id, nome: t.nome,
+      pesoSacoKg: Number(t.peso_saco_kg),
+      valorSaco: Number(t.valor_saco),
+      custoPorKg: Number(t.custo_por_kg),
+    }));
+  }
+
   // Carregar custos (gracioso se a tabela não existir ainda)
   const { data: custosData } = await supabaseClient
     .from("custos").select("*").eq("user_id", usuario.id);
@@ -3465,6 +3772,8 @@ async function carregarViveiros() {
         id: racao.id,
         data: racao.data,
         racao: Number(racao.racao),
+        nomeRacao: racao.nome_racao || null,
+        tipoRacaoId: racao.tipo_racao_id || null,
       })),
 
     biometrias: biometriasData
