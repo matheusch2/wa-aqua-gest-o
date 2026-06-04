@@ -253,6 +253,20 @@ function formatarNumeroBR(valor, casas = 0) {
   });
 }
 
+function parseMoedaBR(str) {
+  if (!str) return 0;
+  return parseFloat(String(str).replace(/\./g, "").replace(",", ".")) || 0;
+}
+
+function formatarMoedaBlur(input) {
+  let v = input.value.trim();
+  if (!v) return;
+  if (v.includes(",")) { v = v.replace(/\./g, "").replace(",", "."); }
+  const n = parseFloat(v);
+  if (isNaN(n)) { input.value = ""; return; }
+  input.value = n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function formatarData(data) {
   if (!data) return "";
 
@@ -2714,7 +2728,7 @@ function abrirCadastrarProduto() {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             <label>Nome do produto</label>
           </div>
-          <input type="text" id="nomeProduto" placeholder="Ex: Ração Aqua Prime 35%">
+          <input type="text" id="nomeProduto" placeholder="Ex: Ração">
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -2744,7 +2758,7 @@ function abrirCadastrarProduto() {
             <label>Valor pago por saco</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="valorPagoProduto" placeholder="Ex: 85.00" step="0.01" oninput="calcularPreviaKg()">
+            <input type="text" inputmode="decimal" id="valorPagoProduto" placeholder="Ex: 85,00" onblur="formatarMoedaBlur(this); calcularPreviaKg()">
             <span class="campo-unidade">R$</span>
           </div>
         </div>
@@ -2769,7 +2783,7 @@ function abrirCadastrarProduto() {
 
 function calcularPreviaKg() {
   const peso = parseFloat(document.getElementById("pesoKgProduto").value);
-  const valor = parseFloat(document.getElementById("valorPagoProduto").value);
+  const valor = parseMoedaBR(document.getElementById("valorPagoProduto").value);
   const div = document.getElementById("previa-custo-kg");
   const el = document.getElementById("previa-custo-kg-valor");
   if (peso > 0 && valor > 0) {
@@ -2784,7 +2798,7 @@ async function salvarProduto() {
   const nome = document.getElementById("nomeProduto").value.trim();
   const categoria = document.getElementById("categoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("pesoKgProduto").value);
-  const valorPago = parseFloat(document.getElementById("valorPagoProduto").value);
+  const valorPago = parseMoedaBR(document.getElementById("valorPagoProduto").value);
 
   if (!nome || !pesoKg || !valorPago) { alert("Preencha todos os campos."); return; }
 
@@ -2930,7 +2944,7 @@ function abrirEdicaoProduto(i) {
             <label>Valor pago por saco</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="editValorPagoProduto" value="${p.valorPago}" step="0.01">
+            <input type="text" inputmode="decimal" id="editValorPagoProduto" value="${p.valorPago ? p.valorPago.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2}) : ''}" onblur="formatarMoedaBlur(this)">
             <span class="campo-unidade">R$</span>
           </div>
         </div>
@@ -2949,7 +2963,7 @@ async function salvarEdicaoProduto(i) {
   const nome = document.getElementById("editNomeProduto").value.trim();
   const categoria = document.getElementById("editCategoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("editPesoKgProduto").value);
-  const valorPago = parseFloat(document.getElementById("editValorPagoProduto").value);
+  const valorPago = parseMoedaBR(document.getElementById("editValorPagoProduto").value);
 
   if (!nome || !pesoKg || !valorPago) { alert("Preencha todos os campos."); return; }
 
@@ -3191,7 +3205,7 @@ function abrirLancarOutroCusto(index) {
             <label>Valor</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="valorOutroCusto" placeholder="Ex: 350.00" step="0.01">
+            <input type="text" inputmode="decimal" id="valorOutroCusto" placeholder="Ex: 350,00" onblur="formatarMoedaBlur(this)">
             <span class="campo-unidade">R$</span>
           </div>
         </div>
@@ -3214,7 +3228,7 @@ async function salvarOutroCusto(index) {
   const data = document.getElementById("dataOutroCusto").value;
   const categoria = document.getElementById("categoriaOutroCusto").value;
   const descricao = document.getElementById("descricaoOutroCusto").value.trim();
-  const valor = parseFloat(document.getElementById("valorOutroCusto").value);
+  const valor = parseMoedaBR(document.getElementById("valorOutroCusto").value);
 
   if (!data || !descricao || isNaN(valor) || valor <= 0) { alert("Preencha todos os campos."); return; }
 
