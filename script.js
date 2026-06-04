@@ -1705,7 +1705,7 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
               <div class="linha-historico-racao">
                 <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
                 <span class="col-centro">${formatarData(item.data)}</span>
-                <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg</span>
+                <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${item.nomeRacao}</small>` : ""}</span>
                 <span class="col-acoes">
                   <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iReal},'${elementoId}',${direto})">✏️</button>
                   <button class="botao-editar botao-excluir" onclick="excluirRacao(${index},${iReal},'${elementoId}',${direto})">🗑️</button>
