@@ -1800,8 +1800,6 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const viveiro = viveiros[viveiroIndex];
   const racao = viveiro.racoes[racaoIndex];
 
-  // Quando direto=true, substitui a área inteira para evitar
-  // título duplicado e botão Voltar duplo do histórico externo
   const alvo = direto
     ? document.getElementById("area-gestao")
     : document.getElementById(elementoId);
@@ -1809,6 +1807,9 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const acaoVoltar = direto
     ? `voltarParaHistoricoRacaoDireto(${viveiroIndex})`
     : `renderizarHistoricoRacao(${viveiroIndex}, '${elementoId}', ${direto})`;
+
+  const tipoAtualIdx = racao.tipoRacaoId
+    ? tiposRacao.findIndex(t => t.id === racao.tipoRacaoId) : -1;
 
   alvo.innerHTML = `
     <div class="form-lancamento">
@@ -1827,6 +1828,18 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
           </div>
           <input type="date" id="dataEdicaoRacao" value="${racao.data}">
         </div>
+        ${tiposRacao.length > 0 ? `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <label>Tipo de ração</label>
+          </div>
+          <select id="tipoRacaoEdicaoSelect">
+            <option value="">— Não especificado —</option>
+            ${tiposRacao.map((t, i) => `<option value="${i}" ${i === tipoAtualIdx ? "selected" : ""}>${t.nome}</option>`).join("")}
+          </select>
+        </div>
+        ` : ""}
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -2109,18 +2122,17 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
+  const novoTipoIdx = document.getElementById("tipoRacaoEdicaoSelect")?.value;
+  const novoTipo = (novoTipoIdx !== "" && novoTipoIdx !== undefined)
+    ? tiposRacao[novoTipoIdx] : null;
+  const velhoTipo = racao.tipoRacaoId
+    ? tiposRacao.find(t => t.id === racao.tipoRacaoId) || null : null;
+
   // DELETE + INSERT contorna restrição de RLS em UPDATE
   const { error: erroDel } = await supabaseClient
-    .from("racoes")
-    .delete()
-    .eq("id", racao.id)
-    .eq("user_id", usuario.id);
+    .from("racoes").delete().eq("id", racao.id).eq("user_id", usuario.id);
 
-  if (erroDel) {
-    console.log(erroDel);
-    alert("Erro ao salvar: " + erroDel.message);
-    return;
-  }
+  if (erroDel) { alert("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("racoes")
@@ -2129,24 +2141,75 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
       data: novaData,
       racao: novaQtd,
       user_id: usuario.id,
+      nome_racao: novoTipo ? novoTipo.nome : null,
+      tipo_racao_id: novoTipo ? novoTipo.id : null,
     }])
     .select();
 
   if (erroIns || !inserido || inserido.length === 0) {
-    console.log(erroIns);
     alert("Erro ao salvar edição. Tente novamente.");
     return;
   }
 
-  viveiros[viveiroIndex].racoes[racaoIndex].id = inserido[0].id;
-  viveiros[viveiroIndex].racoes[racaoIndex].data = novaData;
-  viveiros[viveiroIndex].racoes[racaoIndex].racao = novaQtd;
+  // Ajustar custos: desfaz custo antigo, aplica novo
+  await ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, racao.racao, novoTipo, novaQtd, novaData, usuario);
+
+  viveiros[viveiroIndex].racoes[racaoIndex] = {
+    id: inserido[0].id, data: novaData, racao: novaQtd,
+    nomeRacao: novoTipo ? novoTipo.nome : null,
+    tipoRacaoId: novoTipo ? novoTipo.id : null,
+  };
 
   if (direto) {
     voltarParaHistoricoRacaoDireto(viveiroIndex);
   } else {
     mostrarHistoricoCultivo(viveiroIndex);
     abrirHistoricoRacao();
+  }
+}
+
+async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTipo, novaQtd, data, usuario) {
+  if (!viveiros[viveiroIndex].custos) viveiros[viveiroIndex].custos = [];
+  const custos = viveiros[viveiroIndex].custos;
+
+  // Subtrai custo do tipo antigo
+  if (velhoTipo) {
+    const entry = custos.find(c => c.tipo === "produto" && c.produtoId === velhoTipo.id);
+    if (entry) {
+      const novoValor = Math.max(0, entry.valor - velhoTipo.custoPorKg * velhaQtd);
+      const novaQtdG = Math.max(0, (entry.quantidadeG || 0) - velhaQtd * 1000);
+      if (novoValor < 0.01) {
+        await supabaseClient.from("custos").delete().eq("id", entry.id).eq("user_id", usuario.id);
+        custos.splice(custos.indexOf(entry), 1);
+      } else {
+        await supabaseClient.from("custos").update({ valor: novoValor, quantidade_g: novaQtdG }).eq("id", entry.id).eq("user_id", usuario.id);
+        entry.valor = novoValor;
+        entry.quantidadeG = novaQtdG;
+      }
+    }
+  }
+
+  // Adiciona custo do tipo novo
+  if (novoTipo) {
+    const custoNovo = novoTipo.custoPorKg * novaQtd;
+    const qtdNovaG = novaQtd * 1000;
+    const entry = custos.find(c => c.tipo === "produto" && c.produtoId === novoTipo.id);
+    if (entry) {
+      const novoValor = entry.valor + custoNovo;
+      const novaQtdG = (entry.quantidadeG || 0) + qtdNovaG;
+      await supabaseClient.from("custos").update({ valor: novoValor, quantidade_g: novaQtdG }).eq("id", entry.id).eq("user_id", usuario.id);
+      entry.valor = novoValor;
+      entry.quantidadeG = novaQtdG;
+    } else {
+      const { data: salvoCusto } = await supabaseClient.from("custos").insert([{
+        user_id: usuario.id, viveiro_id: viveiros[viveiroIndex].id,
+        tipo: "produto", produto_id: novoTipo.id, nome_produto: novoTipo.nome,
+        quantidade_g: qtdNovaG, valor: custoNovo, categoria: "Ração", data: data,
+      }]).select();
+      if (salvoCusto) {
+        custos.push({ id: salvoCusto[0].id, tipo: "produto", produtoId: novoTipo.id, nomeProduto: novoTipo.nome, quantidadeG: qtdNovaG, valor: custoNovo, categoria: "Ração", data, observacao: null });
+      }
+    }
   }
 }
 
