@@ -3183,14 +3183,22 @@ function abrirLancarOutroCusto(index) {
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             <label>Categoria</label>
           </div>
-          <select id="categoriaOutroCusto">
+          <select id="categoriaOutroCusto" onchange="toggleCategoriaCustom()">
             <option value="Energia">Energia</option>
             <option value="Mão de obra">Mão de obra</option>
             <option value="Manutenção">Manutenção</option>
             <option value="Frete">Frete</option>
             <option value="Equipamento">Equipamento</option>
             <option value="Outros">Outros</option>
+            <option value="__custom__">＋ Personalizado...</option>
           </select>
+        </div>
+        <div id="campo-categoria-custom" class="campo-form" style="display:none">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <label>Nome da categoria</label>
+          </div>
+          <input type="text" id="categoriaCustomOutroCusto" placeholder="Ex: Análise de água, Técnico...">
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -3224,9 +3232,26 @@ function abrirLancarOutroCusto(index) {
   `;
 }
 
+function toggleCategoriaCustom() {
+  const sel = document.getElementById("categoriaOutroCusto");
+  const campo = document.getElementById("campo-categoria-custom");
+  const input = document.getElementById("categoriaCustomOutroCusto");
+  if (sel.value === "__custom__") {
+    campo.style.display = "block";
+    input.focus();
+  } else {
+    campo.style.display = "none";
+    input.value = "";
+  }
+}
+
 async function salvarOutroCusto(index) {
   const data = document.getElementById("dataOutroCusto").value;
-  const categoria = document.getElementById("categoriaOutroCusto").value;
+  const selCategoria = document.getElementById("categoriaOutroCusto").value;
+  const categoria = selCategoria === "__custom__"
+    ? document.getElementById("categoriaCustomOutroCusto").value.trim()
+    : selCategoria;
+  if (!categoria) { alert("Digite o nome da categoria personalizada."); return; }
   const descricao = document.getElementById("descricaoOutroCusto").value.trim();
   const valor = parseMoedaBR(document.getElementById("valorOutroCusto").value);
 
@@ -3253,6 +3278,9 @@ async function salvarOutroCusto(index) {
   viveiros[index].custos.push({ id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor, categoria, data, observacao: null });
 
   document.getElementById("dataOutroCusto").value = new Date().toISOString().split("T")[0];
+  document.getElementById("categoriaOutroCusto").value = "Energia";
+  document.getElementById("campo-categoria-custom").style.display = "none";
+  document.getElementById("categoriaCustomOutroCusto").value = "";
   document.getElementById("descricaoOutroCusto").value = "";
   document.getElementById("valorOutroCusto").value = "";
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
