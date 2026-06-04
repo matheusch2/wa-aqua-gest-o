@@ -2217,7 +2217,7 @@ function mostrarCustosFinanceiro() {
           ${!porViveiro ? `<span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>` : ""}
           <span class="col-centro" style="font-size:12px">
             <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
-            ${c.nomeProduto}${c.quantidadeG ? ` · ${formatarNumeroBR(c.quantidadeG / 1000, 1)} kg` : ""}
+            ${c.nomeProduto}${c.quantidadeG ? ` · ${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}` : ""}
           </span>
           <span class="col-centro" style="font-size:12px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
         </div>
@@ -3077,8 +3077,8 @@ function abrirLancarCustoProduto(index) {
             <label>Quantidade utilizada</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="qtdCustoProduto" placeholder="Ex: 25" step="0.1" oninput="atualizarPreviaCusto()">
-            <span class="campo-unidade">kg</span>
+            <input type="number" id="qtdCustoProduto" placeholder="Ex: 300" step="1" oninput="atualizarPreviaCusto()">
+            <span class="campo-unidade">g</span>
           </div>
         </div>
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
@@ -3101,13 +3101,13 @@ function abrirLancarCustoProduto(index) {
 
 function atualizarPreviaCusto() {
   const prodIndex = document.getElementById("selectProduto")?.value;
-  const qtdKg = parseFloat(document.getElementById("qtdCustoProduto")?.value);
+  const qtdG = parseFloat(document.getElementById("qtdCustoProduto")?.value);
   const div = document.getElementById("previa-custo-produto");
   const el = document.getElementById("previa-custo-valor");
-  if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdKg) && qtdKg > 0) {
+  if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdG) && qtdG > 0) {
     const prod = produtos[prodIndex];
     if (prod) {
-      el.textContent = `R$ ${formatarNumeroBR((prod.valorPago / prod.pesoKg) * qtdKg, 2)}`;
+      el.textContent = `R$ ${formatarNumeroBR(prod.custoPorGrama * qtdG, 2)}`;
       div.style.display = "block";
       return;
     }
@@ -3118,16 +3118,16 @@ function atualizarPreviaCusto() {
 async function salvarCustoProduto(index) {
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
-  const qtdKg = parseFloat(document.getElementById("qtdCustoProduto").value);
+  const qtdG = parseFloat(document.getElementById("qtdCustoProduto").value);
 
-  if (!data || prodIndex === "" || isNaN(qtdKg) || qtdKg <= 0) { alert("Preencha todos os campos."); return; }
+  if (!data || prodIndex === "" || isNaN(qtdG) || qtdG <= 0) { alert("Preencha todos os campos."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
   const prod = produtos[prodIndex];
-  const valor = (prod.valorPago / prod.pesoKg) * qtdKg;
-  const quantidadeG = qtdKg * 1000;
+  const quantidadeG = qtdG;
+  const valor = prod.custoPorGrama * quantidadeG;
 
   const botao = document.querySelector(".botao-salvar");
   if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
@@ -3297,7 +3297,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
               <span>${formatarData(c.data)}</span>
               <span class="col-centro" style="font-size:12px">
                 <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
-                ${c.nomeProduto}${c.quantidadeG ? ` · ${formatarNumeroBR(c.quantidadeG / 1000, 1)} kg` : ""}
+                ${c.nomeProduto}${c.quantidadeG ? ` · ${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}` : ""}
               </span>
               <span class="col-centro">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
               <span class="col-acoes">
