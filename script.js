@@ -817,6 +817,7 @@ function abrirCadastrarTipoRacao() {
         <div id="previa-saco-racao" class="custo-por-grama-preview" style="display:none">
           Custo por kg: <strong id="previa-saco-racao-valor">—</strong>
         </div>
+        <div id="erro-tipo-racao" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;font-size:13px;color:#b91c1c;margin-bottom:4px"></div>
         <button class="botao-salvar" onclick="salvarTipoRacao()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
@@ -841,12 +842,21 @@ function calcularPreviaSacoRacao() {
   }
 }
 
+function mostrarErroTipoRacao(msg) {
+  const el = document.getElementById("erro-tipo-racao");
+  if (el) { el.textContent = msg; el.style.display = "block"; }
+}
+
 async function salvarTipoRacao() {
   const nome = document.getElementById("nomeTipoRacao").value.trim();
   const pesoSacoKg = parseFloat(document.getElementById("pesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("valorSacoRacao").value);
+  const erroEl = document.getElementById("erro-tipo-racao");
+  if (erroEl) erroEl.style.display = "none";
 
-  if (!nome || !pesoSacoKg || !valorSaco) { alert("Preencha todos os campos."); return; }
+  if (!nome) { mostrarErroTipoRacao("Digite o nome da ração."); return; }
+  if (!pesoSacoKg || pesoSacoKg <= 0) { mostrarErroTipoRacao("Digite o peso do saco."); return; }
+  if (!valorSaco || valorSaco <= 0) { mostrarErroTipoRacao("Digite o valor do saco."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -861,7 +871,14 @@ async function salvarTipoRacao() {
     .select();
 
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-  if (error) { alert("Erro ao salvar: " + error.message); return; }
+  if (error) {
+    mostrarErroTipoRacao(
+      error.code === "42P01"
+        ? "Tabela 'tipos_racao' não existe. Execute o SQL no Supabase primeiro."
+        : "Erro ao salvar: " + error.message
+    );
+    return;
+  }
 
   tiposRacao.push({ id: salvo[0].id, nome, pesoSacoKg, valorSaco, custoPorKg });
   abrirVerTiposRacao();
