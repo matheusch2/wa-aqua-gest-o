@@ -1157,8 +1157,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   if (!usuario) return;
 
-  if (!data || !racao) {
-    alert("Preencha a data e o consumo de ração.");
+  if (!data || isNaN(racao) || racao < 0) {
+    alert("Preencha a data e a quantidade (pode ser 0 para dia sem ração).");
     return;
   }
 
@@ -2130,8 +2130,8 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   const novaData = document.getElementById("dataEdicaoRacao").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoRacao").value);
 
-  if (!novaData || !novaQtd) {
-    alert("Preencha a data e a quantidade.");
+  if (!novaData || isNaN(novaQtd) || novaQtd < 0) {
+    alert("Preencha a data e a quantidade (pode ser 0).");
     return;
   }
 
