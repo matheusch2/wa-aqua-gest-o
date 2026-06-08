@@ -2549,18 +2549,29 @@ async function excluirCiclo(viveiroIndex, cicloIndex) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  if (ciclo.id) {
-    const { error } = await supabaseClient
-      .from("ciclos")
-      .delete()
-      .eq("id", ciclo.id)
-      .eq("user_id", usuario.id);
+  if (!ciclo.id) {
+    viveiro.ciclosFinalizados.splice(cicloIndex, 1);
+    mostrarHistoricoCiclos();
+    return;
+  }
 
-    if (error) {
-      console.log(error);
-      alert("Erro ao excluir ciclo.");
-      return;
-    }
+  const { data: deletado, error } = await supabaseClient
+    .from("ciclos")
+    .delete()
+    .eq("id", ciclo.id)
+    .eq("user_id", usuario.id)
+    .select();
+
+  if (error) {
+    const div = document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`);
+    if (div) div.innerHTML = `<p style="color:#dc2626;font-size:13px;margin:0">Erro: ${error.message}</p>`;
+    return;
+  }
+
+  if (!deletado || deletado.length === 0) {
+    const div = document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`);
+    if (div) div.innerHTML = `<p style="color:#dc2626;font-size:13px;margin:0">Não foi possível excluir. Verifique as permissões no Supabase (RLS da tabela ciclos).</p>`;
+    return;
   }
 
   viveiro.ciclosFinalizados.splice(cicloIndex, 1);
