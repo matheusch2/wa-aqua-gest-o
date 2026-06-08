@@ -1212,13 +1212,13 @@ async function salvarLancamentoRacao(indexDireto = "") {
     tipoRacaoId: tipoRacaoId,
   });
 
-  // Se tem tipo de ração selecionado, acumula o custo no viveiro
-  if (tipoRacao) {
+  // Acumula custo de ração num único registro "Ração" por viveiro
+  if (tipoRacao && racao > 0) {
     const custoNovo = tipoRacao.custoPorKg * racao;
     const qtdNova = racao * 1000;
     if (!viveiros[index].custos) viveiros[index].custos = [];
     const custoExistente = viveiros[index].custos.find(
-      c => c.tipo === "produto" && c.produtoId === tipoRacao.id
+      c => c.categoria === "Ração" && c.nomeProduto === "Ração"
     );
     if (custoExistente) {
       const novoValor = custoExistente.valor + custoNovo;
@@ -1234,8 +1234,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
           user_id: usuario.id,
           viveiro_id: viveiros[index].id,
           tipo: "produto",
-          produto_id: tipoRacao.id,
-          nome_produto: tipoRacao.nome,
+          produto_id: null,
+          nome_produto: "Ração",
           quantidade_g: qtdNova,
           valor: custoNovo,
           categoria: "Ração",
@@ -1245,8 +1245,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
         viveiros[index].custos.push({
           id: salvoCusto[0].id,
           tipo: "produto",
-          produtoId: tipoRacao.id,
-          nomeProduto: tipoRacao.nome,
+          produtoId: null,
+          nomeProduto: "Ração",
           quantidadeG: qtdNova,
           valor: custoNovo,
           categoria: "Ração",
@@ -2188,44 +2188,33 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
 async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTipo, novaQtd, data, usuario) {
   if (!viveiros[viveiroIndex].custos) viveiros[viveiroIndex].custos = [];
   const custos = viveiros[viveiroIndex].custos;
+  const entry = custos.find(c => c.categoria === "Ração" && c.nomeProduto === "Ração");
 
-  // Subtrai custo do tipo antigo
-  if (velhoTipo) {
-    const entry = custos.find(c => c.tipo === "produto" && c.produtoId === velhoTipo.id);
-    if (entry) {
-      const novoValor = Math.max(0, entry.valor - velhoTipo.custoPorKg * velhaQtd);
-      const novaQtdG = Math.max(0, (entry.quantidadeG || 0) - velhaQtd * 1000);
-      if (novoValor < 0.01) {
-        await supabaseClient.from("custos").delete().eq("id", entry.id).eq("user_id", usuario.id);
-        custos.splice(custos.indexOf(entry), 1);
-      } else {
-        await supabaseClient.from("custos").update({ valor: novoValor, quantidade_g: novaQtdG }).eq("id", entry.id).eq("user_id", usuario.id);
-        entry.valor = novoValor;
-        entry.quantidadeG = novaQtdG;
-      }
-    }
-  }
+  // Calcula diferença líquida no custo de ração
+  const custoVelho = velhoTipo ? velhoTipo.custoPorKg * velhaQtd : 0;
+  const custoNovo  = novoTipo  ? novoTipo.custoPorKg  * novaQtd  : 0;
+  const diffValor  = custoNovo - custoVelho;
+  const diffQtdG   = (novoTipo ? novaQtd * 1000 : 0) - (velhoTipo ? velhaQtd * 1000 : 0);
 
-  // Adiciona custo do tipo novo
-  if (novoTipo) {
-    const custoNovo = novoTipo.custoPorKg * novaQtd;
-    const qtdNovaG = novaQtd * 1000;
-    const entry = custos.find(c => c.tipo === "produto" && c.produtoId === novoTipo.id);
-    if (entry) {
-      const novoValor = entry.valor + custoNovo;
-      const novaQtdG = (entry.quantidadeG || 0) + qtdNovaG;
+  if (entry) {
+    const novoValor = Math.max(0, entry.valor + diffValor);
+    const novaQtdG  = Math.max(0, (entry.quantidadeG || 0) + diffQtdG);
+    if (novoValor < 0.01) {
+      await supabaseClient.from("custos").delete().eq("id", entry.id).eq("user_id", usuario.id);
+      custos.splice(custos.indexOf(entry), 1);
+    } else {
       await supabaseClient.from("custos").update({ valor: novoValor, quantidade_g: novaQtdG }).eq("id", entry.id).eq("user_id", usuario.id);
       entry.valor = novoValor;
       entry.quantidadeG = novaQtdG;
-    } else {
-      const { data: salvoCusto } = await supabaseClient.from("custos").insert([{
-        user_id: usuario.id, viveiro_id: viveiros[viveiroIndex].id,
-        tipo: "produto", produto_id: novoTipo.id, nome_produto: novoTipo.nome,
-        quantidade_g: qtdNovaG, valor: custoNovo, categoria: "Ração", data: data,
-      }]).select();
-      if (salvoCusto) {
-        custos.push({ id: salvoCusto[0].id, tipo: "produto", produtoId: novoTipo.id, nomeProduto: novoTipo.nome, quantidadeG: qtdNovaG, valor: custoNovo, categoria: "Ração", data, observacao: null });
-      }
+    }
+  } else if (custoNovo > 0) {
+    const { data: salvoCusto } = await supabaseClient.from("custos").insert([{
+      user_id: usuario.id, viveiro_id: viveiros[viveiroIndex].id,
+      tipo: "produto", produto_id: null, nome_produto: "Ração",
+      quantidade_g: novaQtd * 1000, valor: custoNovo, categoria: "Ração", data: data,
+    }]).select();
+    if (salvoCusto) {
+      custos.push({ id: salvoCusto[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: novaQtd * 1000, valor: custoNovo, categoria: "Ração", data, observacao: null });
     }
   }
 }
