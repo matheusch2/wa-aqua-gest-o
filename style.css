@@ -2396,26 +2396,25 @@ body.tema-escuro .nav-viveiros {
     margin-bottom: 14px;
 }
 
-.custo-badge {
+.botao-imprimir-custos {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 800;
-    color: white;
-    margin-right: 4px;
-    flex-shrink: 0;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #f0fdf4;
+    color: rgb(6,107,99);
+    border: 1px solid rgb(6,107,99);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
-.custo-badge-produto {
-    background: rgb(6,107,99);
-}
-
-.custo-badge-outro {
-    background: #6366f1;
+body.tema-escuro .botao-imprimir-custos {
+    background: #1f2937;
+    color: #34d399;
+    border-color: #34d399;
 }
 
 .linha-hist-custo-geral {

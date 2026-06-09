@@ -2663,11 +2663,10 @@ function mostrarCustosFinanceiro() {
         <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"}">
           <span style="font-size:12px">${formatarData(c.data)}</span>
           ${!porViveiro ? `<span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>` : ""}
-          <span class="col-centro" style="font-size:12px">
-            <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
-            ${c.nomeProduto}${c.quantidadeG ? ` · ${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}` : ""}
+          <span class="col-centro" style="font-size:13px;font-weight:500">
+            ${c.nomeProduto}${c.quantidadeG ? `<br><small style="font-size:10px;opacity:0.6">${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}</small>` : ""}
           </span>
-          <span class="col-centro" style="font-size:12px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
+          <span class="col-centro" style="font-size:13px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
         </div>
       `).join("")}
     </div>
@@ -3717,7 +3716,10 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0);
 
   resultado.innerHTML = `
-    <h3 class="titulo-secao">Custos - ${abreviarViveiro(viveiro.nome)}</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:6px">
+      <h3 class="titulo-secao" style="margin:0">Custos - ${abreviarViveiro(viveiro.nome)}</h3>
+      ${custos.length > 0 ? `<button class="botao-imprimir-custos" onclick="imprimirCustos(${index})">🖨️ Imprimir</button>` : ""}
+    </div>
     <div class="tabela-historico">
       <div class="linha-historico-acoes cabecalho">
         <span>DATA</span>
@@ -3727,19 +3729,22 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
       </div>
       ${custos.length === 0
         ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
-        : custos.map((c, i) => `
+        : custos.map((item) => {
+            const iOriginal = viveiro.custos.findIndex(c => c.id === item.id);
+            const qtdTxt = item.quantidadeG
+              ? `<br><small style="font-size:10px;opacity:0.6">${item.quantidadeG >= 1000 ? formatarNumeroBR(item.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(item.quantidadeG, 0) + " g"}</small>`
+              : "";
+            return `
             <div class="linha-historico-acoes">
-              <span>${formatarData(c.data)}</span>
-              <span class="col-centro" style="font-size:12px">
-                <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
-                ${c.nomeProduto}${c.quantidadeG ? ` · ${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}` : ""}
-              </span>
-              <span class="col-centro">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
+              <span style="font-size:12px">${formatarData(item.data)}</span>
+              <span class="col-centro" style="font-size:13px;font-weight:500">${item.nomeProduto}${qtdTxt}</span>
+              <span class="col-centro" style="font-size:13px">R$&nbsp;${formatarNumeroBR(item.valor, 2)}</span>
               <span class="col-acoes">
-                <button class="botao-editar botao-excluir" onclick="excluirCusto(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                <button class="botao-editar" onclick="abrirEdicaoCusto(${index},${iOriginal},'${elementoId}',${direto})">✏️</button>
+                <button class="botao-editar botao-excluir" onclick="excluirCusto(${index},${iOriginal},'${elementoId}',${direto})">🗑️</button>
               </span>
-            </div>
-          `).join("")
+            </div>`;
+          }).join("")
       }
     </div>
     <div class="total-chip">
@@ -3748,6 +3753,131 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     </div>
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
   `;
+}
+
+function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
+  salvarScroll();
+  const custo = viveiros[viveiroIndex].custos[custoIndex];
+  const resultado = document.getElementById(elementoId);
+  const acaoVoltar = `renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${direto}); restaurarScroll()`;
+
+  resultado.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h2 class="form-titulo">Editar Custo</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="dataEdicaoCusto" value="${custo.data}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <label>Descrição</label>
+          </div>
+          <input type="text" id="nomeEdicaoCusto" value="${custo.nomeProduto}" placeholder="Ex: Ração, Pós larva...">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor (R$)</label>
+          </div>
+          <input type="text" inputmode="decimal" id="valorEdicaoCusto"
+            value="${Number(custo.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2})}"
+            onblur="formatarMoedaBlur(this)">
+        </div>
+        <button class="botao-salvar" onclick="salvarEdicaoCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="${acaoVoltar}">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
+  const novaData = document.getElementById("dataEdicaoCusto").value;
+  const novoNome = document.getElementById("nomeEdicaoCusto").value.trim();
+  const novoValor = parseMoedaBR(document.getElementById("valorEdicaoCusto").value);
+
+  if (!novaData || !novoNome || isNaN(novoValor) || novoValor < 0) {
+    alert("Preencha todos os campos corretamente.");
+    return;
+  }
+
+  const custo = viveiros[viveiroIndex].custos[custoIndex];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
+  const { error } = await supabaseClient.from("custos")
+    .update({ data: novaData, nome_produto: novoNome, valor: novoValor, categoria: novoNome })
+    .eq("id", custo.id).eq("user_id", usuario.id);
+
+  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  if (error) { alert("Erro ao salvar: " + error.message); return; }
+
+  viveiros[viveiroIndex].custos[custoIndex].data = novaData;
+  viveiros[viveiroIndex].custos[custoIndex].nomeProduto = novoNome;
+  viveiros[viveiroIndex].custos[custoIndex].valor = novoValor;
+
+  renderizarHistoricoCustos(viveiroIndex, elementoId, direto);
+  restaurarScroll();
+}
+
+function imprimirCustos(viveiroIndex) {
+  const viveiro = viveiros[viveiroIndex];
+  const custos = [...(viveiro.custos || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
+
+  const linhas = custos.map(c => {
+    const qtd = c.quantidadeG
+      ? ` (${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"})`
+      : "";
+    return `<tr><td>${formatarData(c.data)}</td><td>${c.nomeProduto}${qtd}</td><td>R$ ${formatarNumeroBR(c.valor, 2)}</td></tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custos - ${viveiro.nome}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:24px;color:#222;max-width:700px;margin:0 auto}
+    h1{font-size:18px;color:#066b63;margin:0 0 2px}
+    .sub{font-size:12px;color:#666;margin:0 0 20px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#066b63;color:#fff;padding:9px 12px;text-align:left}
+    th:last-child{text-align:right}
+    td{padding:8px 12px;border-bottom:1px solid #e5e7eb}
+    td:last-child{text-align:right;font-weight:600}
+    tr:nth-child(even) td{background:#f6fafa}
+    .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63}
+    @media print{body{padding:0}}
+  </style></head><body>
+  <h1>Relatório de Custos — ${viveiro.nome}</h1>
+  <p class="sub">Emitido em ${new Date().toLocaleDateString("pt-BR")}</p>
+  <table>
+    <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
+    <tbody>
+      ${linhas}
+      <tr class="total-row"><td colspan="2">TOTAL</td><td>R$ ${formatarNumeroBR(total, 2)}</td></tr>
+    </tbody>
+  </table>
+  </body></html>`;
+
+  const janela = window.open("", "_blank");
+  if (!janela) { alert("Permita pop-ups para imprimir."); return; }
+  janela.document.write(html);
+  janela.document.close();
+  janela.onload = () => { janela.print(); };
 }
 
 async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
@@ -3791,10 +3921,7 @@ function abrirHistoricoGeralCustos() {
                 <div class="linha-hist-custo-geral">
                   <span style="font-size:12px">${formatarData(c.data)}</span>
                   <span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>
-                  <span class="col-centro" style="font-size:12px">
-                    <span class="custo-badge custo-badge-${c.tipo}">${c.tipo === "produto" ? "P" : "O"}</span>
-                    ${c.nomeProduto}
-                  </span>
+                  <span class="col-centro" style="font-size:13px;font-weight:500">${c.nomeProduto}</span>
                   <span class="col-centro" style="font-size:12px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
                 </div>
               `).join("")
