@@ -3,6 +3,9 @@ const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 let produtos = []; let tiposRacao = [];
+let _scrollSalvo = 0;
+function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
+function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
 
 async function toggleMenuUsuario() {
   const menu = document.getElementById("menu-usuario");
@@ -1616,7 +1619,7 @@ function abrirHistoricoBiometria() {
   renderizarHistoricoBiometria(index, "resultado-historico", false);
 }
 
-function abrirHistoricoRacao() {
+function abrirHistoricoRacao(pagina = 0) {
   const index = document.getElementById("viveiroHistorico").value;
   if (index === "") return;
 
@@ -1624,7 +1627,7 @@ function abrirHistoricoRacao() {
   const voltarFixo = document.getElementById("voltar-menu-historico");
   if (voltarFixo) voltarFixo.style.display = "none";
 
-  renderizarHistoricoRacao(index, "resultado-historico", false);
+  renderizarHistoricoRacao(index, "resultado-historico", false, pagina);
 }
 
 function abrirHistoricoDespesca() {
@@ -1686,9 +1689,9 @@ function abrirHistoricoBiometriaDireto(index) {
   renderizarHistoricoBiometria(index, "resultado-historico", true);
 }
 
-function abrirHistoricoRacaoDireto(index) {
+function abrirHistoricoRacaoDireto(index, pagina = 0) {
   document.getElementById("opcoes-historico").innerHTML = "";
-  renderizarHistoricoRacao(index, "resultado-historico", true);
+  renderizarHistoricoRacao(index, "resultado-historico", true, pagina);
 }
 
 function renderizarHistoricoBiometria(index, elementoId, direto) {
@@ -1777,8 +1780,8 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
                 <span class="col-centro">${formatarData(item.data)}</span>
                 <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${item.nomeRacao}</small>` : ""}</span>
                 <span class="col-acoes">
-                  <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto})">✏️</button>
-                  <button class="botao-editar botao-excluir" onclick="excluirRacao(${index},${iOriginal},'${elementoId}',${direto})">🗑️</button>
+                  <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">✏️</button>
+                  <button class="botao-editar botao-excluir" onclick="excluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">🗑️</button>
                 </span>
               </div>`;
           }).join("")
@@ -1821,7 +1824,8 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
   }
 }
 
-function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
+function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAtual = 0) {
+  salvarScroll();
   const viveiro = viveiros[viveiroIndex];
   const racao = viveiro.racoes[racaoIndex];
 
@@ -1830,8 +1834,8 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
     : document.getElementById(elementoId);
 
   const acaoVoltar = direto
-    ? `voltarParaHistoricoRacaoDireto(${viveiroIndex})`
-    : `renderizarHistoricoRacao(${viveiroIndex}, '${elementoId}', ${direto})`;
+    ? `voltarParaHistoricoRacaoDireto(${viveiroIndex},${paginaAtual})`
+    : `renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${paginaAtual}); restaurarScroll()`;
 
   const tipoAtualIdx = racao.tipoRacaoId
     ? tiposRacao.findIndex(t => t.id === racao.tipoRacaoId) : -1;
@@ -1875,7 +1879,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
             <span class="campo-unidade">kg</span>
           </div>
         </div>
-        <button class="botao-salvar" onclick="salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto})">
+        <button class="botao-salvar" onclick="salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto}, ${paginaAtual})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
@@ -1889,6 +1893,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
 // ─── EDITAR / EXCLUIR BIOMETRIA ───────────────────────────────────────────────
 
 function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  salvarScroll();
   const viveiro = viveiros[viveiroIndex];
   const bio = viveiro.biometrias[bioIndex];
 
@@ -1984,6 +1989,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
     mostrarHistoricoCultivo(viveiroIndex);
     abrirHistoricoBiometria();
   }
+  restaurarScroll();
 }
 
 async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
@@ -1999,11 +2005,13 @@ async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
 
   viveiros[viveiroIndex].biometrias.splice(bioIndex, 1);
   renderizarHistoricoBiometria(viveiroIndex, elementoId, direto);
+  restaurarScroll();
 }
 
 // ─── EDITAR / EXCLUIR DESPESCA ────────────────────────────────────────────────
 
 function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  salvarScroll();
   const viveiro = viveiros[viveiroIndex];
   const desp = viveiro.despescas[despIndex];
 
@@ -2112,6 +2120,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
     mostrarHistoricoCultivo(viveiroIndex);
     abrirHistoricoDespesca();
   }
+  restaurarScroll();
 }
 
 async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
@@ -2127,14 +2136,16 @@ async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
 
   viveiros[viveiroIndex].despescas.splice(despIndex, 1);
   renderizarHistoricoDespesca(viveiroIndex, elementoId, direto);
+  restaurarScroll();
 }
 
-function voltarParaHistoricoRacaoDireto(viveiroIndex) {
+function voltarParaHistoricoRacaoDireto(viveiroIndex, paginaAtual = 0) {
   mostrarHistoricoDoViveiroDireto(viveiroIndex);
-  abrirHistoricoRacaoDireto(viveiroIndex);
+  abrirHistoricoRacaoDireto(viveiroIndex, paginaAtual);
+  restaurarScroll();
 }
 
-async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
+async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAtual = 0) {
   const novaData = document.getElementById("dataEdicaoRacao").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoRacao").value);
 
@@ -2186,11 +2197,12 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto) {
   };
 
   if (direto) {
-    voltarParaHistoricoRacaoDireto(viveiroIndex);
+    voltarParaHistoricoRacaoDireto(viveiroIndex, paginaAtual);
   } else {
     mostrarHistoricoCultivo(viveiroIndex);
-    abrirHistoricoRacao();
+    abrirHistoricoRacao(paginaAtual);
   }
+  restaurarScroll();
 }
 
 async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTipo, novaQtd, data, usuario) {
@@ -2227,7 +2239,7 @@ async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTi
   }
 }
 
-async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto) {
+async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0) {
   if (!confirm("Excluir este lançamento de ração?")) return;
 
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
@@ -2260,7 +2272,9 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto) {
 
   viveiros[viveiroIndex].racoes.splice(racaoIndex, 1);
 
-  renderizarHistoricoRacao(viveiroIndex, elementoId, direto);
+  const paginaAjustada = Math.min(pagina, Math.max(0, Math.ceil((viveiros[viveiroIndex].racoes.length) / 30) - 1));
+  renderizarHistoricoRacao(viveiroIndex, elementoId, direto, paginaAjustada);
+  restaurarScroll();
 }
 
 // ─── CICLO ───────────────────────────────────────────────────────────────────
