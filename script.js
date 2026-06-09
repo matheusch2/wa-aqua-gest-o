@@ -3851,8 +3851,7 @@ function imprimirCustos(viveiroIndex) {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custos - ${viveiro.nome}</title>
   <style>
     body{font-family:Arial,sans-serif;padding:24px;color:#222;max-width:700px;margin:0 auto}
-    h1{font-size:18px;color:#066b63;margin:0 0 2px}
-    .sub{font-size:12px;color:#666;margin:0 0 20px}
+    h1{font-size:20px;color:#066b63;margin:0 0 20px;text-align:center}
     table{width:100%;border-collapse:collapse;font-size:13px}
     th{background:#066b63;color:#fff;padding:9px 12px;text-align:left}
     th:last-child{text-align:right}
@@ -3862,8 +3861,7 @@ function imprimirCustos(viveiroIndex) {
     .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63}
     @media print{body{padding:0}}
   </style></head><body>
-  <h1>Relatório de Custos — ${viveiro.nome}</h1>
-  <p class="sub">Emitido em ${new Date().toLocaleDateString("pt-BR")}</p>
+  <h1>Custos — ${viveiro.nome}</h1>
   <table>
     <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
     <tbody>
