@@ -2664,7 +2664,7 @@ function mostrarCustosFinanceiro() {
           <span style="font-size:12px">${formatarData(c.data)}</span>
           ${!porViveiro ? `<span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>` : ""}
           <span class="col-centro" style="font-size:13px;font-weight:500">
-            ${c.nomeProduto}${c.quantidadeG ? `<br><small style="font-size:10px;opacity:0.6">${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}</small>` : ""}
+            ${c.nomeProduto}${(c.quantidadeG && c.categoria !== "Ração") ? `<br><small style="font-size:10px;opacity:0.6">${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}</small>` : ""}
           </span>
           <span class="col-centro" style="font-size:13px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
         </div>
@@ -3731,7 +3731,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
         ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
         : custos.map((item) => {
             const iOriginal = viveiro.custos.findIndex(c => c.id === item.id);
-            const qtdTxt = item.quantidadeG
+            const qtdTxt = (item.quantidadeG && item.categoria !== "Ração")
               ? `<br><small style="font-size:10px;opacity:0.6">${item.quantidadeG >= 1000 ? formatarNumeroBR(item.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(item.quantidadeG, 0) + " g"}</small>`
               : "";
             return `
@@ -3842,7 +3842,7 @@ function imprimirCustos(viveiroIndex) {
   const total = custos.reduce((s, c) => s + Number(c.valor), 0);
 
   const linhas = custos.map(c => {
-    const qtd = c.quantidadeG
+    const qtd = (c.quantidadeG && c.categoria !== "Ração")
       ? ` (${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"})`
       : "";
     return `<tr><td>${formatarData(c.data)}</td><td>${c.nomeProduto}${qtd}</td><td>R$ ${formatarNumeroBR(c.valor, 2)}</td></tr>`;
