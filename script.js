@@ -806,10 +806,19 @@ function abrirViveiro(index) {
           Reiniciar ciclo
         </button>
 
-        <button class="botao-painel botao-perigo" onclick="excluirViveiro(${index})">
+        <button class="botao-painel botao-perigo" onclick="confirmarExcluirViveiro(${index})">
           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           Excluir viveiro
         </button>
+      </div>
+
+      <div id="confirmar-excluir-viveiro-${index}" style="display:none;margin:0 16px 16px;background:#fff5f5;border:1px solid #fca5a5;border-radius:12px;padding:14px 16px">
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#dc2626">Excluir "${viveiro.nome}"?</p>
+        <p style="margin:0 0 12px;font-size:12px;color:#7f1d1d">Todos os dados deste viveiro serão desativados. É possível recuperar pelo suporte.</p>
+        <div style="display:flex;gap:8px">
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index})">Sim, excluir</button>
+          <button class="ciclo-btn-relatorio" style="flex:1" onclick="document.getElementById('confirmar-excluir-viveiro-${index}').style.display='none'">Cancelar</button>
+        </div>
       </div>
 
       <button class="botao-voltar-form" onclick="mostrarListaViveiros(posicaoNaLista(${index}))">← Voltar</button>
@@ -2448,6 +2457,11 @@ async function salvarNovoCiclo(index) {
   viveiros[index].despescas = [];
 
   abrirViveiro(index);
+}
+
+function confirmarExcluirViveiro(index) {
+  const painel = document.getElementById(`confirmar-excluir-viveiro-${index}`);
+  if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
 }
 
 async function excluirViveiro(index) {
