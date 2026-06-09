@@ -6,6 +6,35 @@ let produtos = []; let tiposRacao = [];
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
+
+// ── Tabela de taxas de alimentação WA Aqua ──────────────────────────────────
+const _TABELA_TAXA = [
+  {peso:1,taxa:8.00},{peso:2,taxa:8.00},{peso:3,taxa:7.00},{peso:4,taxa:6.50},
+  {peso:5,taxa:5.50},{peso:6,taxa:5.10},{peso:7,taxa:4.44},{peso:8,taxa:4.22},
+  {peso:9,taxa:4.04},{peso:10,taxa:3.88},{peso:11,taxa:3.74},{peso:12,taxa:3.62},
+  {peso:13,taxa:3.51},{peso:14,taxa:3.42},{peso:15,taxa:2.92},{peso:16,taxa:2.88},
+  {peso:17,taxa:2.79},{peso:18,taxa:2.65},{peso:19,taxa:2.57},{peso:20,taxa:2.39},
+  {peso:21,taxa:1.80},{peso:22,taxa:1.60},{peso:23,taxa:1.50},{peso:24,taxa:1.40},
+  {peso:25,taxa:1.50},{peso:26,taxa:1.30},{peso:27,taxa:1.30},{peso:28,taxa:1.30},
+  {peso:29,taxa:1.30},{peso:30,taxa:1.30},
+];
+function _obterTaxa(peso) {
+  if (peso < 1 || peso > 30) return null;
+  for (const item of _TABELA_TAXA) { if (peso === item.peso) return item.taxa; }
+  for (let i = 0; i < _TABELA_TAXA.length - 1; i++) {
+    const a = _TABELA_TAXA[i], b = _TABELA_TAXA[i + 1];
+    if (peso > a.peso && peso < b.peso)
+      return a.taxa + (b.taxa - a.taxa) * (peso - a.peso) / (b.peso - a.peso);
+  }
+  return null;
+}
+function _calcularBiomassa(populacao, consumoKg, pesoG) {
+  const taxa = _obterTaxa(pesoG);
+  if (!taxa || !consumoKg || consumoKg <= 0) return null;
+  const biomassa   = consumoKg / (taxa / 100);
+  const quantidade = biomassa / (pesoG / 1000);
+  return { biomassa, quantidade: Math.round(quantidade), sobrevivencia: (quantidade / populacao) * 100 };
+}
 let _swipeViveirosAbort = null;
 
 async function toggleMenuUsuario() {
@@ -627,6 +656,24 @@ function abrirViveiro(index) {
     }
   }
 
+  // Sobrevivência estimada e FCI estimado
+  const racoesSorted = [...racoes].sort((a, b) => a.data.localeCompare(b.data));
+  const ultimaRacaoNaoZero = [...racoesSorted].reverse().find(r => r.racao > 0);
+  const populacaoNum = viveiro.totalPovoado
+    ? Number(String(viveiro.totalPovoado).replace(/\./g, ""))
+    : null;
+  const pesoUltimaBio = biosSorted.length > 0 ? biosSorted[biosSorted.length - 1].gramatura : null;
+
+  let sobrevivenciaEstimada = "--";
+  let fciEstimado = "--";
+  if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
+    const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
+    if (res && res.biomassa > 0) {
+      sobrevivenciaEstimada = formatarNumeroBR(res.sobrevivencia, 1) + " %";
+      if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / res.biomassa, 2);
+    }
+  }
+
   const totalFormatado = viveiro.totalPovoado
     ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR")
     : "--";
@@ -704,6 +751,22 @@ function abrirViveiro(index) {
           </div>
           <small>Média de crescimento</small>
           <strong>${mediaCrescimento}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <small>Sobrevivência est.</small>
+          <strong>${sobrevivenciaEstimada}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <small>FCI estimado</small>
+          <strong>${fciEstimado}</strong>
         </div>
       </div>
 
