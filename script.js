@@ -1122,10 +1122,12 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <label>Consumo de ração</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="consumoRacao" placeholder="Ex: 50">
+            <input type="number" id="consumoRacao" placeholder="Ex: 50" oninput="document.getElementById('msg-racao-erro')&&(document.getElementById('msg-racao-erro').style.display='none')">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
+
+        <div id="msg-racao-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
 
         <div id="msg-racao-sucesso" class="msg-sucesso-lancamento" style="display:none;">
           <span class="msg-emoji">✅</span>
@@ -1157,15 +1159,22 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   if (!usuario) return;
 
+  const erroDiv = document.getElementById("msg-racao-erro");
+  function mostrarErroRacao(msg) {
+    if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; }
+    const botaoSalvar = document.querySelector(".botao-salvar");
+    if (botaoSalvar) { botaoSalvar.disabled = false; botaoSalvar.style.opacity = ""; }
+  }
+
   if (!data || isNaN(racao) || racao < 0) {
-    alert("Preencha a data e a quantidade (pode ser 0 para dia sem ração).");
+    mostrarErroRacao("Preencha a data e a quantidade (pode ser 0 para dia sem ração).");
     return;
   }
 
   // Verifica se já existe lançamento nessa data (normaliza formato)
   const jaExiste = (viveiros[index].racoes || []).some(r => r.data.substring(0, 10) === data);
   if (jaExiste) {
-    alert(`Já existe um lançamento de ração em ${formatarData(data)}. Edite o lançamento existente.`);
+    mostrarErroRacao(`Já existe um lançamento em ${formatarData(data)}. Edite o lançamento existente.`);
     return;
   }
 
@@ -1199,8 +1208,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   if (error) {
     console.log(error);
-    alert(error.message);
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    mostrarErroRacao("Erro ao salvar: " + error.message);
     return;
   }
 
