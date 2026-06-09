@@ -6,6 +6,7 @@ let produtos = []; let tiposRacao = [];
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
+let _swipeViveirosAbort = null;
 
 async function toggleMenuUsuario() {
   const menu = document.getElementById("menu-usuario");
@@ -571,16 +572,21 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     setTimeout(() => toast.remove(), 3000);
   }
 
-  // Swipe para navegar entre viveiros (toda a área)
+  // Swipe para navegar entre viveiros — cancela listeners anteriores antes de registrar novos
+  if (_swipeViveirosAbort) _swipeViveirosAbort.abort();
+  _swipeViveirosAbort = new AbortController();
+  const _swipeSig = _swipeViveirosAbort.signal;
   let touchStartX = 0;
-  area.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  area.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true, signal: _swipeSig });
   area.addEventListener("touchend", e => {
+    // Só swipa se ainda estiver na tela de lista de viveiros
+    if (!area.querySelector(".viveiro-card")) return;
     const diff = touchStartX - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
       if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1, "proximo");
       if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1, "anterior");
     }
-  }, { passive: true });
+  }, { passive: true, signal: _swipeSig });
 
   // Animação de entrada
   const card = area.querySelector(".viveiro-card");
