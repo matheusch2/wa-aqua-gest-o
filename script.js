@@ -2724,11 +2724,11 @@ function abrirMenuFinanceiro() {
       </div>
       <div class="form-corpo">
         <button class="botao-submenu-financeiro" onclick="abrirFinanceiro()">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="rgb(6,107,99)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Relatório financeiro
         </button>
         <button class="botao-submenu-financeiro botao-submenu-boleto" onclick="abrirBoletos()">
-          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           Boletos a vencer
         </button>
         <div class="separador-ou"><span>ou</span></div>
