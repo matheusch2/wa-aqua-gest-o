@@ -2676,20 +2676,23 @@ async function excluirCiclo(viveiroIndex, cicloIndex) {
 
 // ─── BOLETOS A VENCER ─────────────────────────────────────────────────────────
 
-function _statusBoleto(dia) {
+function _statusBoleto(dataCompra, prazoDias) {
   const hoje = new Date();
-  const dueThisMonth = new Date(hoje.getFullYear(), hoje.getMonth(), dia);
   const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  const diff = Math.round((dueThisMonth - hojeZerado) / 86400000);
-  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), label: `Vencido há ${Math.abs(diff)}d` };
-  if (diff === 0) return { tipo: "hoje", dias: 0, label: "Vence hoje!" };
-  if (diff <= 10) return { tipo: "proximo", dias: diff, label: `Vence em ${diff}d` };
-  return { tipo: "ok", dias: diff, label: `Dia ${dia}` };
+  const [ano, mes, dia] = dataCompra.split("-").map(Number);
+  const venc = new Date(ano, mes - 1, dia);
+  venc.setDate(venc.getDate() + prazoDias);
+  const diff = Math.round((venc - hojeZerado) / 86400000);
+  const dataFmt = venc.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), label: `Vencido há ${Math.abs(diff)}d`, dataFmt };
+  if (diff === 0) return { tipo: "hoje", dias: 0, label: "Vence hoje!", dataFmt };
+  if (diff <= 10) return { tipo: "proximo", dias: diff, label: `Vence em ${diff}d`, dataFmt };
+  return { tipo: "ok", dias: diff, label: `Vence ${dataFmt}`, dataFmt };
 }
 
 function verificarBoletosVencendo() {
   if (!boletos.length) return;
-  const alertas = boletos.filter(b => _statusBoleto(b.diaVencimento).tipo !== "ok");
+  const alertas = boletos.filter(b => _statusBoleto(b.dataCompra, b.prazoDias).tipo !== "ok");
   if (!alertas.length) return;
   const area = document.getElementById("area-gestao");
   const existente = document.getElementById("banner-boletos-alerta");
@@ -2743,13 +2746,13 @@ function abrirBoletos() {
   const area = document.getElementById("area-gestao");
 
   const itens = boletos.map((b, i) => {
-    const st = _statusBoleto(b.diaVencimento);
+    const st = _statusBoleto(b.dataCompra, b.prazoDias);
     const badge = `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
     return `
       <div class="boleto-item">
         <div class="boleto-item-info">
           <strong>${b.nome}</strong>
-          <small>${b.fornecedor} · Todo dia ${b.diaVencimento}</small>
+          <small>${b.fornecedor} · Prazo ${b.prazoDias}d · Vence ${st.dataFmt}</small>
         </div>
         <div class="boleto-item-dir">
           ${badge}
@@ -2817,9 +2820,16 @@ function abrirFormBoleto(index) {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <label>Dia de vencimento (todo mês)</label>
+            <label>Data da compra</label>
           </div>
-          <input type="number" id="boleto-dia" placeholder="Ex: 15" min="1" max="31" value="${b ? b.diaVencimento : ""}">
+          <input type="date" id="boleto-data" value="${b ? b.dataCompra : ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <label>Prazo (dias)</label>
+          </div>
+          <input type="number" id="boleto-prazo" placeholder="Ex: 60" min="1" value="${b ? b.prazoDias : ""}">
         </div>
         <div id="msg-boleto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center"></div>
         <button class="botao-salvar" onclick="salvarBoleto(${editando ? index : "null"})">${editando ? "Salvar alterações" : "Adicionar"}</button>
@@ -2833,7 +2843,8 @@ function abrirFormBoleto(index) {
 async function salvarBoleto(index) {
   const nome = document.getElementById("boleto-nome").value.trim();
   const fornecedor = document.getElementById("boleto-fornecedor").value.trim();
-  const dia = parseInt(document.getElementById("boleto-dia").value);
+  const dataCompra = document.getElementById("boleto-data").value;
+  const prazoDias = parseInt(document.getElementById("boleto-prazo").value);
   const erroDiv = document.getElementById("msg-boleto-erro");
 
   function mostrarErroBoleto(msg) {
@@ -2842,7 +2853,8 @@ async function salvarBoleto(index) {
 
   if (!nome) return mostrarErroBoleto("Informe o nome do boleto.");
   if (!fornecedor) return mostrarErroBoleto("Informe o fornecedor.");
-  if (!dia || dia < 1 || dia > 31) return mostrarErroBoleto("Informe um dia válido (1 a 31).");
+  if (!dataCompra) return mostrarErroBoleto("Informe a data da compra.");
+  if (!prazoDias || prazoDias < 1) return mostrarErroBoleto("Informe o prazo em dias.");
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -2851,16 +2863,16 @@ async function salvarBoleto(index) {
 
   if (editando) {
     const { error } = await supabaseClient.from("boletos").update({
-      nome, fornecedor, dia_vencimento: dia,
+      nome, fornecedor, data_compra: dataCompra, prazo_dias: prazoDias,
     }).eq("id", boletos[index].id);
     if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
-    boletos[index] = { ...boletos[index], nome, fornecedor, diaVencimento: dia };
+    boletos[index] = { ...boletos[index], nome, fornecedor, dataCompra, prazoDias };
   } else {
     const { data, error } = await supabaseClient.from("boletos").insert({
-      user_id: usuario.id, nome, fornecedor, dia_vencimento: dia,
+      user_id: usuario.id, nome, fornecedor, data_compra: dataCompra, prazo_dias: prazoDias,
     }).select().single();
     if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
-    boletos.push({ id: data.id, nome, fornecedor, diaVencimento: dia });
+    boletos.push({ id: data.id, nome, fornecedor, dataCompra, prazoDias });
   }
 
   abrirBoletos();
@@ -4324,7 +4336,8 @@ async function carregarViveiros() {
     id: b.id,
     nome: b.nome,
     fornecedor: b.fornecedor,
-    diaVencimento: Number(b.dia_vencimento),
+    dataCompra: b.data_compra,
+    prazoDias: Number(b.prazo_dias),
   }));
 
   // Carregar custos (gracioso se a tabela não existir ainda)
