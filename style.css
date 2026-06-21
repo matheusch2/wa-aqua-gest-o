@@ -1723,10 +1723,12 @@ button {
 }
 
 .campo-form input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
     cursor: pointer;
     text-align: left;
     height: 46px;
-    line-height: 46px;
+    line-height: 1;
 }
 
 .campo-form input:focus,
