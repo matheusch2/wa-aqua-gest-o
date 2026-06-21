@@ -3,6 +3,7 @@ const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 let produtos = []; let tiposRacao = [];
+let boletos = [];
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
@@ -374,6 +375,7 @@ function esconderMenu() {
 function voltarMenuGestao() {
   document.getElementById("menuGestao").style.display = "grid";
   limparAreaGestao();
+  verificarBoletosVencendo();
 }
 
 // ─── VIVEIRO ─────────────────────────────────────────────────────────────────
@@ -2672,6 +2674,213 @@ async function excluirCiclo(viveiroIndex, cicloIndex) {
   mostrarHistoricoCiclos();
 }
 
+// ─── BOLETOS A VENCER ─────────────────────────────────────────────────────────
+
+function _statusBoleto(dia) {
+  const hoje = new Date();
+  const dueThisMonth = new Date(hoje.getFullYear(), hoje.getMonth(), dia);
+  const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const diff = Math.round((dueThisMonth - hojeZerado) / 86400000);
+  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), label: `Vencido há ${Math.abs(diff)}d` };
+  if (diff === 0) return { tipo: "hoje", dias: 0, label: "Vence hoje!" };
+  if (diff <= 10) return { tipo: "proximo", dias: diff, label: `Vence em ${diff}d` };
+  return { tipo: "ok", dias: diff, label: `Dia ${dia}` };
+}
+
+function verificarBoletosVencendo() {
+  if (!boletos.length) return;
+  const alertas = boletos.filter(b => _statusBoleto(b.diaVencimento).tipo !== "ok");
+  if (!alertas.length) return;
+  const area = document.getElementById("area-gestao");
+  const existente = document.getElementById("banner-boletos-alerta");
+  if (existente) existente.remove();
+  const div = document.createElement("div");
+  div.id = "banner-boletos-alerta";
+  div.innerHTML = `
+    <div class="boleto-banner" onclick="abrirMenuFinanceiro()">
+      <div class="boleto-banner-icone">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="boleto-banner-texto">
+        <strong>${alertas.length} boleto${alertas.length > 1 ? "s" : ""} ${alertas.length > 1 ? "precisam" : "precisa"} de atenção</strong>
+        <span>${alertas.map(a => a.nome).join(", ")}</span>
+      </div>
+      <span class="boleto-banner-seta">›</span>
+    </div>
+  `;
+  area.insertBefore(div, area.firstChild);
+}
+
+function abrirMenuFinanceiro() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h2 class="form-titulo">Financeiro</h2>
+      </div>
+      <div class="form-corpo">
+        <button class="botao-submenu-financeiro" onclick="abrirFinanceiro()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Relatório financeiro
+        </button>
+        <button class="botao-submenu-financeiro botao-submenu-boleto" onclick="abrirBoletos()">
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Boletos a vencer
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirBoletos() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+
+  const itens = boletos.map((b, i) => {
+    const st = _statusBoleto(b.diaVencimento);
+    const badge = `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
+    return `
+      <div class="boleto-item">
+        <div class="boleto-item-info">
+          <strong>${b.nome}</strong>
+          <small>${b.fornecedor} · Todo dia ${b.diaVencimento}</small>
+        </div>
+        <div class="boleto-item-dir">
+          ${badge}
+          <button class="botao-icone-acao" onclick="abrirFormBoleto(${i})">✏️</button>
+          <button class="botao-icone-acao" onclick="confirmarExcluirBoleto(${i})">🗑️</button>
+        </div>
+        <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
+          <span>Excluir este boleto?</span>
+          <button onclick="excluirBoleto(${i})" style="background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:8px;cursor:pointer;font-weight:600">Excluir</button>
+          <button onclick="document.getElementById('confirmar-excluir-boleto-${i}').style.display='none'" style="background:#e5e7eb;color:#374151;border:none;padding:4px 12px;border-radius:8px;cursor:pointer">Cancelar</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h2 class="form-titulo">Boletos a vencer</h2>
+      </div>
+      <div class="form-corpo">
+        ${boletos.length === 0
+          ? `<p style="text-align:center;color:#6b7280;font-size:14px;margin:16px 0">Nenhum boleto cadastrado.<br><small>Adicione para receber alertas de vencimento.</small></p>`
+          : `<div class="boleto-lista">${itens}</div>`
+        }
+        <button class="botao-salvar" style="margin-top:${boletos.length ? 12 : 4}px" onclick="abrirFormBoleto()">+ Adicionar boleto</button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirMenuFinanceiro()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirFormBoleto(index) {
+  const area = document.getElementById("area-gestao");
+  const editando = index !== null && index !== undefined;
+  const b = editando ? boletos[index] : null;
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h2 class="form-titulo">${editando ? "Editar boleto" : "Novo boleto"}</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <label>Nome do boleto</label>
+          </div>
+          <input type="text" id="boleto-nome" placeholder="Ex: Ração ABC" value="${b ? b.nome : ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <label>Fornecedor</label>
+          </div>
+          <input type="text" id="boleto-fornecedor" placeholder="Ex: Loja do João" value="${b ? b.fornecedor : ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Dia de vencimento (todo mês)</label>
+          </div>
+          <input type="number" id="boleto-dia" placeholder="Ex: 15" min="1" max="31" value="${b ? b.diaVencimento : ""}">
+        </div>
+        <div id="msg-boleto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center"></div>
+        <button class="botao-salvar" onclick="salvarBoleto(${editando ? index : "null"})">${editando ? "Salvar alterações" : "Adicionar"}</button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirBoletos()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarBoleto(index) {
+  const nome = document.getElementById("boleto-nome").value.trim();
+  const fornecedor = document.getElementById("boleto-fornecedor").value.trim();
+  const dia = parseInt(document.getElementById("boleto-dia").value);
+  const erroDiv = document.getElementById("msg-boleto-erro");
+
+  function mostrarErroBoleto(msg) {
+    if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; }
+  }
+
+  if (!nome) return mostrarErroBoleto("Informe o nome do boleto.");
+  if (!fornecedor) return mostrarErroBoleto("Informe o fornecedor.");
+  if (!dia || dia < 1 || dia > 31) return mostrarErroBoleto("Informe um dia válido (1 a 31).");
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  const editando = index !== null && index !== undefined && index !== "null";
+
+  if (editando) {
+    const { error } = await supabaseClient.from("boletos").update({
+      nome, fornecedor, dia_vencimento: dia,
+    }).eq("id", boletos[index].id);
+    if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
+    boletos[index] = { ...boletos[index], nome, fornecedor, diaVencimento: dia };
+  } else {
+    const { data, error } = await supabaseClient.from("boletos").insert({
+      user_id: usuario.id, nome, fornecedor, dia_vencimento: dia,
+    }).select().single();
+    if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
+    boletos.push({ id: data.id, nome, fornecedor, diaVencimento: dia });
+  }
+
+  abrirBoletos();
+}
+
+async function excluirBoleto(index) {
+  const { error } = await supabaseClient.from("boletos")
+    .update({ ativo: false }).eq("id", boletos[index].id);
+  if (error) { console.error(error); return; }
+  boletos.splice(index, 1);
+  abrirBoletos();
+}
+
+function confirmarExcluirBoleto(index) {
+  const painel = document.getElementById(`confirmar-excluir-boleto-${index}`);
+  if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
+}
+
+// ─── FINANCEIRO ───────────────────────────────────────────────────────────────
+
 function abrirFinanceiro() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -2697,7 +2906,7 @@ function abrirFinanceiro() {
         </div>
         <div id="resultado-financeiro"></div>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+        <button class="botao-voltar-form" onclick="abrirMenuFinanceiro()">← Voltar</button>
       </div>
     </div>
   `;
@@ -4108,6 +4317,16 @@ async function carregarViveiros() {
     }));
   }
 
+  // Carregar boletos a vencer
+  const { data: boletosData } = await supabaseClient
+    .from("boletos").select("*").eq("user_id", usuario.id).eq("ativo", true);
+  boletos = (boletosData || []).map(b => ({
+    id: b.id,
+    nome: b.nome,
+    fornecedor: b.fornecedor,
+    diaVencimento: Number(b.dia_vencimento),
+  }));
+
   // Carregar custos (gracioso se a tabela não existir ainda)
   const { data: custosData } = await supabaseClient
     .from("custos").select("*").eq("user_id", usuario.id);
@@ -4234,6 +4453,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       document.getElementById("area-gestao").innerHTML = "";
       document.getElementById("menuGestao").style.display = "grid";
+      verificarBoletosVencendo();
     } else {
       window.location.href = "login.html";
     }
