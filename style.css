@@ -1697,10 +1697,11 @@ button {
 }
 
 .form-corpo {
-    background: #f8fafc;
+    background: #eef2f0;
     border-radius: 16px;
-    padding: 20px 16px 16px;
-    border: 1px solid #e5e7eb;
+    padding: 16px;
+    border: 1.5px solid #d1e4df;
+    overflow: hidden;
 }
 
 .campo-form input[type="text"],
