@@ -1725,6 +1725,8 @@ button {
 .campo-form input[type="date"] {
     cursor: pointer;
     text-align: left;
+    height: 46px;
+    line-height: 46px;
 }
 
 .campo-form input:focus,
