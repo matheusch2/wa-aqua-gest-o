@@ -1778,6 +1778,29 @@ button {
     flex-shrink: 0;
 }
 
+.campo-unidade-select {
+    padding: 0 10px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-left: 1.5px solid #d1d5db;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: center;
+    min-width: 52px;
+}
+
+.campo-unidade-select:focus {
+    background: #e5e7eb;
+}
+
 .separador-ou {
     display: flex;
     align-items: center;

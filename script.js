@@ -3944,8 +3944,11 @@ function abrirLancarCustoProduto(index) {
             <label>Quantidade utilizada</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="qtdCustoProduto" placeholder="Ex: 300" step="1" oninput="atualizarPreviaCusto()">
-            <span class="campo-unidade">g</span>
+            <input type="number" id="qtdCustoProduto" placeholder="Ex: 300" step="any" oninput="atualizarPreviaCusto()">
+            <select id="unidadeCustoProduto" class="campo-unidade-select" onchange="atualizarPreviaCusto()">
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+            </select>
           </div>
         </div>
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
@@ -3968,12 +3971,14 @@ function abrirLancarCustoProduto(index) {
 
 function atualizarPreviaCusto() {
   const prodIndex = document.getElementById("selectProduto")?.value;
-  const qtdG = parseFloat(document.getElementById("qtdCustoProduto")?.value);
+  const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto")?.value);
+  const unidade = document.getElementById("unidadeCustoProduto")?.value || "g";
   const div = document.getElementById("previa-custo-produto");
   const el = document.getElementById("previa-custo-valor");
-  if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdG) && qtdG > 0) {
+  if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdRaw) && qtdRaw > 0) {
     const prod = produtos[prodIndex];
     if (prod) {
+      const qtdG = unidade === "kg" ? qtdRaw * 1000 : qtdRaw;
       el.textContent = `R$ ${formatarNumeroBR(prod.custoPorGrama * qtdG, 2)}`;
       div.style.display = "block";
       return;
@@ -3985,15 +3990,16 @@ function atualizarPreviaCusto() {
 async function salvarCustoProduto(index) {
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
-  const qtdG = parseFloat(document.getElementById("qtdCustoProduto").value);
+  const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto").value);
+  const unidade = document.getElementById("unidadeCustoProduto")?.value || "g";
 
-  if (!data || prodIndex === "" || isNaN(qtdG) || qtdG <= 0) { alert("Preencha todos os campos."); return; }
+  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { alert("Preencha todos os campos."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
   const prod = produtos[prodIndex];
-  const quantidadeG = qtdG;
+  const quantidadeG = unidade === "kg" ? qtdRaw * 1000 : qtdRaw;
   const valor = prod.custoPorGrama * quantidadeG;
 
   const botao = document.querySelector(".botao-salvar");
