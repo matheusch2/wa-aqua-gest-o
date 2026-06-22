@@ -3944,7 +3944,7 @@ function abrirLancarCustoProduto(index) {
             <label>Quantidade utilizada</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="qtdCustoProduto" placeholder="Ex: 300" step="any" oninput="atualizarPreviaCusto()">
+            <input type="number" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
             <select id="unidadeCustoProduto" class="campo-unidade-select" onchange="atualizarPreviaCusto()">
               <option value="g">g</option>
               <option value="kg">kg</option>
