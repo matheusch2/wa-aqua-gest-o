@@ -2750,16 +2750,21 @@ function abrirBoletos() {
     const badge = `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
     return `
       <div class="boleto-item">
-        <div class="boleto-item-info">
-          <strong>${b.nome}</strong>
-          <small>${b.fornecedor} · Prazo ${b.prazoDias}d · Vence ${st.dataFmt}</small>
-          ${b.valor ? `<span style="font-size:14px;font-weight:700;color:rgb(6,107,99)">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
+        <div class="boleto-item-topo">
+          <div class="boleto-item-info">
+            <strong>${b.nome}</strong>
+            <small>${b.fornecedor} · Prazo ${b.prazoDias}d</small>
+            ${b.valor ? `<span class="boleto-valor">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
+          </div>
+          <div class="boleto-item-acoes">
+            ${badge}
+            <div style="display:flex;gap:4px;justify-content:flex-end">
+              <button class="botao-icone-acao" onclick="abrirFormBoleto(${i})">✏️</button>
+              <button class="botao-icone-acao" onclick="confirmarExcluirBoleto(${i})">🗑️</button>
+            </div>
+          </div>
         </div>
-        <div class="boleto-item-dir">
-          ${badge}
-          <button class="botao-icone-acao" onclick="abrirFormBoleto(${i})">✏️</button>
-          <button class="botao-icone-acao" onclick="confirmarExcluirBoleto(${i})">🗑️</button>
-        </div>
+        <small style="color:#9ca3af;font-size:11px">Vence ${st.dataFmt}</small>
         <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
           <span>Excluir este boleto?</span>
           <button onclick="excluirBoleto(${i})" style="background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:8px;cursor:pointer;font-weight:600">Excluir</button>
