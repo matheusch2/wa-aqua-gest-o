@@ -1751,7 +1751,7 @@ button {
 }
 
 .campo-input-unidade input {
-    flex: 1;
+    flex: 1 !important;
     border: none !important;
     padding: 12px 14px !important;
     font-size: 15px !important;
@@ -1759,7 +1759,8 @@ button {
     background: transparent;
     outline: none;
     margin-bottom: 0 !important;
-    width: auto;
+    width: 0 !important;
+    min-width: 0 !important;
     border-radius: 0 !important;
     font-family: Arial, sans-serif;
     transition: none !important;
