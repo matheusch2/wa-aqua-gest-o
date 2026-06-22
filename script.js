@@ -302,6 +302,44 @@ function formatarMoedaBlur(input) {
   input.value = n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function _formatarMoedaInput(input) {
+  const pos = input.selectionStart;
+  const oldLen = input.value.length;
+  let v = input.value.replace(/[^\d,]/g, "");
+  const partes = v.split(",");
+  if (partes.length > 2) v = partes[0] + "," + partes.slice(1).join("");
+  const [intParte, decParte] = v.split(",");
+  const intFmt = (intParte || "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  input.value = decParte !== undefined ? intFmt + "," + decParte : intFmt;
+  const diff = input.value.length - oldLen;
+  try { input.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
+}
+
+function _attachFormatacao(input) {
+  if (input._fmtAtached) return;
+  input._fmtAtached = true;
+  input.addEventListener("input", () => _formatarMoedaInput(input));
+  input.addEventListener("blur", () => formatarMoedaBlur(input));
+}
+
+(function() {
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        const inputs = node.querySelectorAll
+          ? node.querySelectorAll('input[inputmode="decimal"]')
+          : [];
+        inputs.forEach(_attachFormatacao);
+        if (node.matches && node.matches('input[inputmode="decimal"]')) _attachFormatacao(node);
+      });
+    });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+
 function formatarData(data) {
   if (!data) return "";
 
@@ -2882,7 +2920,7 @@ function abrirFormBoleto(index) {
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             <label>Valor (R$)</label>
           </div>
-          <input type="number" id="boleto-valor" placeholder="Ex: 1500,00" min="0" step="0.01" value="${b && b.valor ? b.valor : ""}">
+          <input type="text" inputmode="decimal" id="boleto-valor" placeholder="Ex: 1.500,00" value="${b && b.valor ? b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}">
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -2911,7 +2949,7 @@ async function salvarBoleto(index) {
   const nome = document.getElementById("boleto-nome").value.trim();
   const fornecedor = document.getElementById("boleto-fornecedor").value.trim();
   const valorRaw = document.getElementById("boleto-valor").value;
-  const valor = valorRaw ? parseFloat(valorRaw) : null;
+  const valor = valorRaw ? parseMoedaBR(valorRaw) : null;
   const dataCompra = document.getElementById("boleto-data").value;
   const prazoDias = parseInt(document.getElementById("boleto-prazo").value);
   const erroDiv = document.getElementById("msg-boleto-erro");
