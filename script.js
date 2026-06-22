@@ -2805,9 +2805,11 @@ function abrirBoletos() {
         </div>
         <small style="color:#9ca3af;font-size:11px">Vence ${st.dataFmt}</small>
         <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
-          <span>Excluir este boleto?</span>
-          <button onclick="event.stopPropagation();excluirBoleto(${i})" style="background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:8px;cursor:pointer;font-weight:600">Excluir</button>
-          <button onclick="event.stopPropagation();document.getElementById('confirmar-excluir-boleto-${i}').style.display='none'" style="background:#e5e7eb;color:#374151;border:none;padding:4px 12px;border-radius:8px;cursor:pointer">Cancelar</button>
+          <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
+          <div class="confirmar-boleto-botoes">
+            <button class="confirmar-boleto-btn-cancelar" onclick="event.stopPropagation();document.getElementById('confirmar-excluir-boleto-${i}').style.display='none'">Cancelar</button>
+            <button class="confirmar-boleto-btn-excluir" onclick="event.stopPropagation();excluirBoleto(${i})">Excluir</button>
+          </div>
         </div>
       </div>
     `;

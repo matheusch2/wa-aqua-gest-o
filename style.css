@@ -2809,15 +2809,44 @@ body.tema-escuro .confirmar-exclusao-custo {
 }
 
 .painel-confirmar-boleto {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
     border-top: 1px solid #f3f4f6;
+}
+
+.confirmar-boleto-pergunta {
+    margin: 0 0 10px;
     font-size: 13px;
+    font-weight: 600;
     color: #374151;
+    text-align: center;
+}
+
+.confirmar-boleto-botoes {
+    display: flex;
+    gap: 8px;
+}
+
+.confirmar-boleto-btn-cancelar,
+.confirmar-boleto-btn-excluir {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+}
+
+.confirmar-boleto-btn-cancelar {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.confirmar-boleto-btn-excluir {
+    background: #ef4444;
+    color: white;
 }
 
 /* boleto detalhe */
