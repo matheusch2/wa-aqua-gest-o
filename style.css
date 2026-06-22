@@ -2469,6 +2469,56 @@ body.tema-escuro .botao-imprimir-custos {
     width: 100%;
 }
 
+/* Toggle Detalhado / Por tipo */
+.financeiro-toggle {
+    display: flex;
+    gap: 6px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 12px;
+}
+
+.financeiro-toggle-btn {
+    flex: 1;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.financeiro-toggle-btn.ativo {
+    background: white;
+    color: rgb(6,107,99);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.linha-hist-resumo {
+    display: grid;
+    grid-template-columns: 1.6fr 0.5fr 0.9fr;
+    gap: 4px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    align-items: center;
+}
+
+.linha-hist-resumo.cabecalho {
+    font-weight: bold;
+    color: rgb(6,107,99);
+    border-bottom: 2px solid rgb(6,107,99);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.col-direita {
+    text-align: right;
+}
+
 /* Dark mode – custos */
 body.tema-escuro .produto-item {
     background: #374151;
@@ -2490,10 +2540,22 @@ body.tema-escuro .custo-por-grama-preview {
 }
 
 body.tema-escuro .linha-hist-custo-geral,
-body.tema-escuro .linha-hist-custo-3col {
+body.tema-escuro .linha-hist-custo-3col,
+body.tema-escuro .linha-hist-resumo {
     background: #1f2937;
     border-color: #374151;
     color: #f3f4f6;
+}
+
+body.tema-escuro .financeiro-toggle {
+    background: #374151;
+}
+body.tema-escuro .financeiro-toggle-btn {
+    color: #9ca3af;
+}
+body.tema-escuro .financeiro-toggle-btn.ativo {
+    background: #1f2937;
+    color: #34d399;
 }
 
 body.tema-escuro .confirmar-exclusao-custo {

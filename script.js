@@ -4,6 +4,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 let produtos = []; let tiposRacao = [];
 let boletos = [];
+let _financeiroModo = "detalhado";
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
@@ -3017,7 +3018,50 @@ function mostrarCustosFinanceiro() {
     return;
   }
 
+  const seletor = `
+    <div class="financeiro-toggle">
+      <button class="financeiro-toggle-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" onclick="_financeiroModo='detalhado';mostrarCustosFinanceiro()">Detalhado</button>
+      <button class="financeiro-toggle-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" onclick="_financeiroModo='resumido';mostrarCustosFinanceiro()">Por tipo</button>
+    </div>
+  `;
+
+  if (_financeiroModo === "resumido") {
+    // Agrupar por descrição (nome do produto/categoria)
+    const grupos = {};
+    custos.forEach(c => {
+      const chave = c.nomeProduto || c.categoria || "Outros";
+      if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0 };
+      grupos[chave].total += Number(c.valor);
+      grupos[chave].qtd += 1;
+    });
+    const listaGrupos = Object.values(grupos).sort((a, b) => b.total - a.total);
+
+    resultado.innerHTML = `
+      ${seletor}
+      <div class="tabela-historico" style="margin-bottom:10px">
+        <div class="linha-hist-resumo cabecalho">
+          <span>DESCRIÇÃO</span>
+          <span class="col-centro">QTD</span>
+          <span class="col-direita">TOTAL</span>
+        </div>
+        ${listaGrupos.map(g => `
+          <div class="linha-hist-resumo">
+            <span style="font-size:13px;font-weight:500">${g.nome}</span>
+            <span class="col-centro" style="font-size:13px">${g.qtd}x</span>
+            <span class="col-direita" style="font-size:13px;font-weight:600">R$&nbsp;${formatarNumeroBR(g.total, 2)}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="total-chip">
+        <span class="total-chip-label">Total</span>
+        <span class="total-chip-valor">R$ ${formatarNumeroBR(total, 2)}</span>
+      </div>
+    `;
+    return;
+  }
+
   resultado.innerHTML = `
+    ${seletor}
     <div class="tabela-historico" style="margin-bottom:10px">
       <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"} cabecalho">
         <span>DATA</span>
