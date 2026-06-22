@@ -2749,7 +2749,7 @@ function abrirBoletos() {
     const st = _statusBoleto(b.dataCompra, b.prazoDias);
     const badge = `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
     return `
-      <div class="boleto-item">
+      <div class="boleto-item" onclick="verDetalhesBoleto(${i})" style="cursor:pointer">
         <div class="boleto-item-topo">
           <div class="boleto-item-info">
             <strong>${b.nome}</strong>
@@ -2759,16 +2759,16 @@ function abrirBoletos() {
           <div class="boleto-item-acoes">
             ${badge}
             <div style="display:flex;gap:4px;justify-content:flex-end">
-              <button class="botao-icone-acao" onclick="abrirFormBoleto(${i})">✏️</button>
-              <button class="botao-icone-acao" onclick="confirmarExcluirBoleto(${i})">🗑️</button>
+              <button class="botao-icone-acao" onclick="event.stopPropagation();abrirFormBoleto(${i})">✏️</button>
+              <button class="botao-icone-acao" onclick="event.stopPropagation();confirmarExcluirBoleto(${i})">🗑️</button>
             </div>
           </div>
         </div>
         <small style="color:#9ca3af;font-size:11px">Vence ${st.dataFmt}</small>
         <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
           <span>Excluir este boleto?</span>
-          <button onclick="excluirBoleto(${i})" style="background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:8px;cursor:pointer;font-weight:600">Excluir</button>
-          <button onclick="document.getElementById('confirmar-excluir-boleto-${i}').style.display='none'" style="background:#e5e7eb;color:#374151;border:none;padding:4px 12px;border-radius:8px;cursor:pointer">Cancelar</button>
+          <button onclick="event.stopPropagation();excluirBoleto(${i})" style="background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:8px;cursor:pointer;font-weight:600">Excluir</button>
+          <button onclick="event.stopPropagation();document.getElementById('confirmar-excluir-boleto-${i}').style.display='none'" style="background:#e5e7eb;color:#374151;border:none;padding:4px 12px;border-radius:8px;cursor:pointer">Cancelar</button>
         </div>
       </div>
     `;
@@ -2790,6 +2790,59 @@ function abrirBoletos() {
         <button class="botao-salvar" style="margin-top:${boletos.length ? 12 : 4}px" onclick="abrirFormBoleto()">+ Adicionar boleto</button>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="abrirMenuFinanceiro()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+function verDetalhesBoleto(index) {
+  const area = document.getElementById("area-gestao");
+  const b = boletos[index];
+  const st = _statusBoleto(b.dataCompra, b.prazoDias);
+
+  const [ano, mes, dia] = b.dataCompra.split("-").map(Number);
+  const dataCompraFmt = new Date(ano, mes - 1, dia).toLocaleDateString("pt-BR");
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h2 class="form-titulo">${b.nome}</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="boleto-detalhe-status">
+          <span class="boleto-badge boleto-badge-${st.tipo}" style="font-size:13px;padding:6px 14px">${st.label}</span>
+        </div>
+        <div class="boleto-detalhe-grid">
+          <div class="boleto-detalhe-linha">
+            <span class="boleto-detalhe-label">Fornecedor</span>
+            <span class="boleto-detalhe-valor">${b.fornecedor}</span>
+          </div>
+          <div class="boleto-detalhe-linha">
+            <span class="boleto-detalhe-label">Data da compra</span>
+            <span class="boleto-detalhe-valor">${dataCompraFmt}</span>
+          </div>
+          <div class="boleto-detalhe-linha">
+            <span class="boleto-detalhe-label">Prazo</span>
+            <span class="boleto-detalhe-valor">${b.prazoDias} dias</span>
+          </div>
+          <div class="boleto-detalhe-linha">
+            <span class="boleto-detalhe-label">Vencimento</span>
+            <span class="boleto-detalhe-valor">${st.dataFmt}</span>
+          </div>
+          ${b.valor ? `
+          <div class="boleto-detalhe-linha boleto-detalhe-destaque">
+            <span class="boleto-detalhe-label">Valor</span>
+            <span class="boleto-detalhe-valor" style="font-size:18px;font-weight:700;color:rgb(6,107,99)">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+          </div>` : ""}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
+        </div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirBoletos()">← Voltar</button>
       </div>
     </div>
   `;
