@@ -328,10 +328,10 @@ function _attachFormatacao(input) {
       m.addedNodes.forEach(node => {
         if (node.nodeType !== 1) return;
         const inputs = node.querySelectorAll
-          ? node.querySelectorAll('input[inputmode="decimal"]')
+          ? node.querySelectorAll('input[type="text"][inputmode="decimal"]')
           : [];
         inputs.forEach(_attachFormatacao);
-        if (node.matches && node.matches('input[inputmode="decimal"]')) _attachFormatacao(node);
+        if (node.matches && node.matches('input[type="text"][inputmode="decimal"]')) _attachFormatacao(node);
       });
     });
   });
