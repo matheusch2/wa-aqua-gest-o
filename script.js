@@ -2753,6 +2753,7 @@ function abrirBoletos() {
         <div class="boleto-item-info">
           <strong>${b.nome}</strong>
           <small>${b.fornecedor} · Prazo ${b.prazoDias}d · Vence ${st.dataFmt}</small>
+          ${b.valor ? `<span style="font-size:14px;font-weight:700;color:rgb(6,107,99)">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
         </div>
         <div class="boleto-item-dir">
           ${badge}
@@ -2819,6 +2820,13 @@ function abrirFormBoleto(index) {
         </div>
         <div class="campo-form">
           <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor (R$)</label>
+          </div>
+          <input type="number" id="boleto-valor" placeholder="Ex: 1500,00" min="0" step="0.01" value="${b && b.valor ? b.valor : ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <label>Data da compra</label>
           </div>
@@ -2843,6 +2851,8 @@ function abrirFormBoleto(index) {
 async function salvarBoleto(index) {
   const nome = document.getElementById("boleto-nome").value.trim();
   const fornecedor = document.getElementById("boleto-fornecedor").value.trim();
+  const valorRaw = document.getElementById("boleto-valor").value;
+  const valor = valorRaw ? parseFloat(valorRaw) : null;
   const dataCompra = document.getElementById("boleto-data").value;
   const prazoDias = parseInt(document.getElementById("boleto-prazo").value);
   const erroDiv = document.getElementById("msg-boleto-erro");
@@ -2863,16 +2873,16 @@ async function salvarBoleto(index) {
 
   if (editando) {
     const { error } = await supabaseClient.from("boletos").update({
-      nome, fornecedor, data_compra: dataCompra, prazo_dias: prazoDias,
+      nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
     }).eq("id", boletos[index].id);
     if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
-    boletos[index] = { ...boletos[index], nome, fornecedor, dataCompra, prazoDias };
+    boletos[index] = { ...boletos[index], nome, fornecedor, valor, dataCompra, prazoDias };
   } else {
     const { data, error } = await supabaseClient.from("boletos").insert({
-      user_id: usuario.id, nome, fornecedor, data_compra: dataCompra, prazo_dias: prazoDias,
+      user_id: usuario.id, nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
     }).select().single();
     if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
-    boletos.push({ id: data.id, nome, fornecedor, dataCompra, prazoDias });
+    boletos.push({ id: data.id, nome, fornecedor, valor, dataCompra, prazoDias });
   }
 
   abrirBoletos();
@@ -4338,6 +4348,7 @@ async function carregarViveiros() {
     fornecedor: b.fornecedor,
     dataCompra: b.data_compra,
     prazoDias: Number(b.prazo_dias),
+    valor: b.valor ? Number(b.valor) : null,
   }));
 
   // Carregar custos (gracioso se a tabela não existir ainda)
