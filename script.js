@@ -3010,7 +3010,17 @@ function mostrarCustosFinanceiro() {
     );
   }
 
-  custos.sort((a, b) => a.data.localeCompare(b.data));
+  // Para "por tipo": agrupa por descrição → viveiro → data
+  const custosResumo = [...custos].sort((a, b) => a.data.localeCompare(b.data));
+  const custosDetalhado = [...custos].sort((a, b) => {
+    const nomeA = (a.nomeProduto || a.categoria || "").toLowerCase();
+    const nomeB = (b.nomeProduto || b.categoria || "").toLowerCase();
+    if (nomeA !== nomeB) return nomeA.localeCompare(nomeB, "pt-BR");
+    const vA = (a.viveiroNome || "").toLowerCase();
+    const vB = (b.viveiroNome || "").toLowerCase();
+    if (vA !== vB) return vA.localeCompare(vB, "pt-BR");
+    return a.data.localeCompare(b.data);
+  });
   const total = custos.reduce((s, c) => s + Number(c.valor), 0);
 
   if (custos.length === 0) {
@@ -3069,7 +3079,7 @@ function mostrarCustosFinanceiro() {
         <span class="col-centro">DESCRIÇÃO</span>
         <span class="col-centro">VALOR</span>
       </div>
-      ${custos.map(c => `
+      ${custosDetalhado.map(c => `
         <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"}">
           <span style="font-size:12px">${formatarData(c.data)}</span>
           ${!porViveiro ? `<span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>` : ""}
