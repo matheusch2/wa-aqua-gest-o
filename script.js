@@ -3942,14 +3942,12 @@ function abrirLancarCustoProduto(index) {
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <label>Quantidade utilizada</label>
+            <div class="unidade-toggle">
+              <button type="button" class="unidade-btn ativo" id="btnUnidadeG" onclick="selecionarUnidade('g')">g</button>
+              <button type="button" class="unidade-btn" id="btnUnidadeKg" onclick="selecionarUnidade('kg')">kg</button>
+            </div>
           </div>
-          <div class="campo-input-unidade">
-            <input type="number" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
-            <select id="unidadeCustoProduto" class="campo-unidade-select" onchange="atualizarPreviaCusto()">
-              <option value="g">g</option>
-              <option value="kg">kg</option>
-            </select>
-          </div>
+          <input type="number" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
         </div>
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
           Valor calculado: <strong id="previa-custo-valor">—</strong>
@@ -3969,16 +3967,24 @@ function abrirLancarCustoProduto(index) {
   `;
 }
 
+let _unidadeCusto = "g";
+
+function selecionarUnidade(u) {
+  _unidadeCusto = u;
+  document.getElementById("btnUnidadeG")?.classList.toggle("ativo", u === "g");
+  document.getElementById("btnUnidadeKg")?.classList.toggle("ativo", u === "kg");
+  atualizarPreviaCusto();
+}
+
 function atualizarPreviaCusto() {
   const prodIndex = document.getElementById("selectProduto")?.value;
   const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto")?.value);
-  const unidade = document.getElementById("unidadeCustoProduto")?.value || "g";
   const div = document.getElementById("previa-custo-produto");
   const el = document.getElementById("previa-custo-valor");
   if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdRaw) && qtdRaw > 0) {
     const prod = produtos[prodIndex];
     if (prod) {
-      const qtdG = unidade === "kg" ? qtdRaw * 1000 : qtdRaw;
+      const qtdG = _unidadeCusto === "kg" ? qtdRaw * 1000 : qtdRaw;
       el.textContent = `R$ ${formatarNumeroBR(prod.custoPorGrama * qtdG, 2)}`;
       div.style.display = "block";
       return;
@@ -3991,7 +3997,6 @@ async function salvarCustoProduto(index) {
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
   const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto").value);
-  const unidade = document.getElementById("unidadeCustoProduto")?.value || "g";
 
   if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { alert("Preencha todos os campos."); return; }
 
@@ -3999,7 +4004,7 @@ async function salvarCustoProduto(index) {
   if (!usuario) return;
 
   const prod = produtos[prodIndex];
-  const quantidadeG = unidade === "kg" ? qtdRaw * 1000 : qtdRaw;
+  const quantidadeG = _unidadeCusto === "kg" ? qtdRaw * 1000 : qtdRaw;
   const valor = prod.custoPorGrama * quantidadeG;
 
   const botao = document.querySelector(".botao-salvar");
