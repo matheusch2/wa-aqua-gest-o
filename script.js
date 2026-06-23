@@ -3066,6 +3066,28 @@ function abrirBoletos() {
     `;
   }).join("");
 
+  // Resumo: total a pagar (não pagos) e, se houver, total vencido
+  const naoPagos = boletos.filter(b => !b.pago);
+  const totalAPagar = naoPagos.reduce((s, b) => s + (b.valor || 0), 0);
+  const vencidos = naoPagos.filter(b => _statusBoleto(b.dataCompra, b.prazoDias).tipo === "vencido");
+  const totalVencido = vencidos.reduce((s, b) => s + (b.valor || 0), 0);
+
+  const resumoHtml = naoPagos.length === 0 ? "" : `
+    <div class="boleto-resumo">
+      <div class="boleto-resumo-bloco">
+        <span class="boleto-resumo-label">A pagar</span>
+        <span class="boleto-resumo-valor">R$ ${formatarNumeroBR(totalAPagar, 2)}</span>
+        <span class="boleto-resumo-sub">${naoPagos.length} boleto${naoPagos.length > 1 ? "s" : ""}</span>
+      </div>
+      ${totalVencido > 0 ? `
+      <div class="boleto-resumo-bloco vencido">
+        <span class="boleto-resumo-label">Vencido</span>
+        <span class="boleto-resumo-valor">R$ ${formatarNumeroBR(totalVencido, 2)}</span>
+        <span class="boleto-resumo-sub">${vencidos.length} boleto${vencidos.length > 1 ? "s" : ""}</span>
+      </div>` : ""}
+    </div>
+  `;
+
   area.innerHTML = `
     <div class="form-lancamento">
       <div class="form-topo">
@@ -3077,7 +3099,7 @@ function abrirBoletos() {
       <div class="form-corpo">
         ${boletos.length === 0
           ? `<p style="text-align:center;color:#6b7280;font-size:14px;margin:16px 0">Nenhum boleto cadastrado.<br><small>Adicione para receber alertas de vencimento.</small></p>`
-          : `<div class="boleto-lista">${itens}</div>`
+          : resumoHtml + `<div class="boleto-lista">${itens}</div>`
         }
         <button class="botao-salvar" style="margin-top:${boletos.length ? 12 : 4}px" onclick="abrirFormBoleto()">+ Adicionar boleto</button>
         <div class="separador-ou"><span>ou</span></div>
