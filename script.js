@@ -1108,7 +1108,7 @@ async function excluirTipoRacao(i) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
   const { error } = await supabaseClient.from("tipos_racao").delete().eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
-  if (error) { alert("Erro ao excluir: " + error.message); return; }
+  if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
   tiposRacao.splice(i, 1);
   abrirVerTiposRacao();
 }
@@ -1152,6 +1152,7 @@ function abrirEdicaoTipoRacao(i) {
             <span class="campo-unidade">R$</span>
           </div>
         </div>
+        <div id="erro-edit-tipo-racao" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;font-size:13px;color:#b91c1c;margin-bottom:4px"></div>
         <button class="botao-salvar" onclick="salvarEdicaoTipoRacao(${i})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
@@ -1167,8 +1168,11 @@ async function salvarEdicaoTipoRacao(i) {
   const nome = document.getElementById("editNomeTipoRacao").value.trim();
   const pesoSacoKg = parseFloat(document.getElementById("editPesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("editValorSacoRacao").value);
+  const erroEl = document.getElementById("erro-edit-tipo-racao");
+  function _erroEdit(msg) { if (erroEl) { erroEl.textContent = msg; erroEl.style.display = "block"; } }
+  if (erroEl) erroEl.style.display = "none";
 
-  if (!nome || !pesoSacoKg || !valorSaco) { alert("Preencha todos os campos."); return; }
+  if (!nome || !pesoSacoKg || !valorSaco) { _erroEdit("Preencha todos os campos."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -1182,7 +1186,7 @@ async function salvarEdicaoTipoRacao(i) {
     .eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
 
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-  if (error) { alert("Erro ao salvar: " + error.message); return; }
+  if (error) { _erroEdit("Erro ao salvar: " + error.message); return; }
 
   tiposRacao[i] = { ...tiposRacao[i], nome, pesoSacoKg, valorSaco, custoPorKg };
   abrirVerTiposRacao();
@@ -1532,7 +1536,8 @@ async function salvarBiometria(index) {
 
   if (error) {
     console.log(error);
-    alert(error.message);
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    mostrarErroBio("Erro ao salvar: " + error.message);
     return;
   }
 
@@ -1600,6 +1605,8 @@ function abrirDespesca(index) {
           </div>
         </div>
 
+        <div id="msg-despesca-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
+
         <div id="msg-despesca-sucesso" class="msg-sucesso-lancamento" style="display:none;">
           <span class="msg-emoji">✅</span>
           <span class="msg-texto">Despesca lançada com sucesso!</span>
@@ -1626,8 +1633,14 @@ async function salvarDespesca(index) {
 
   if (!usuario) return;
 
+  const erroDespesca = document.getElementById("msg-despesca-erro");
+  function mostrarErroDespesca(msg) {
+    if (erroDespesca) { erroDespesca.textContent = msg; erroDespesca.style.display = "block"; }
+  }
+  if (erroDespesca) erroDespesca.style.display = "none";
+
   if (!data || !quantidadeKg || !pesoMedio) {
-    alert("Preencha a data, quantidade e peso médio.");
+    mostrarErroDespesca("Preencha a data, quantidade e peso médio.");
     return;
   }
 
@@ -1653,7 +1666,8 @@ async function salvarDespesca(index) {
 
   if (error) {
     console.log(error);
-    alert(error.message);
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    mostrarErroDespesca("Erro ao salvar: " + error.message);
     return;
   }
 
