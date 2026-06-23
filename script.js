@@ -90,6 +90,22 @@ function abrirOpcoesFoto() {
   opcoes.style.display = opcoes.style.display === "none" ? "flex" : "none";
 }
 
+function _toastErro(msg) {
+  const el = document.createElement("div");
+  el.style.cssText = "position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:#dc2626;z-index:9999;max-width:90vw;text-align:center;pointer-events:none";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function _toastSucesso(msg) {
+  const el = document.createElement("div");
+  el.style.cssText = "position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:#16a34a;z-index:9999;max-width:90vw;text-align:center;pointer-events:none";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
 async function uploadFotoPerfil(input) {
   const file = input.files[0];
   if (!file) return;
@@ -113,7 +129,7 @@ async function uploadFotoPerfil(input) {
       data: { avatar_url: base64 }
     });
 
-    if (error) { alert("Erro ao salvar foto."); return; }
+    if (error) { _toastErro("Erro ao salvar foto."); return; }
 
     // Atualizar UI
     document.getElementById("menu-avatar").innerHTML =
@@ -127,7 +143,7 @@ async function uploadFotoPerfil(input) {
 
 async function excluirFotoPerfil() {
   const { error } = await supabaseClient.auth.updateUser({ data: { avatar_url: null } });
-  if (error) { alert("Erro ao excluir foto."); return; }
+  if (error) { _toastErro("Erro ao excluir foto."); return; }
 
   const { data: { user } } = await supabaseClient.auth.getUser();
   const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "?";
@@ -160,6 +176,7 @@ function abrirPerfilUsuario() {
             </div>
             <input type="text" id="inputNomePerfil" placeholder="Ex: Fazenda São João" value="${nome}">
           </div>
+          <div id="msg-perfil-erro" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
           <button class="botao-salvar" onclick="salvarNomePerfil()">
             <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             Salvar
@@ -174,10 +191,14 @@ function abrirPerfilUsuario() {
 
 async function salvarNomePerfil() {
   const nome = document.getElementById("inputNomePerfil").value.trim();
-  if (!nome) { alert("Digite um nome."); return; }
+  const msgErro = document.getElementById("msg-perfil-erro");
+  function _erroPerfil(msg) { if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; } }
+  if (msgErro) msgErro.style.display = "none";
+
+  if (!nome) { _erroPerfil("Digite um nome para a fazenda."); return; }
 
   const { error } = await supabaseClient.auth.updateUser({ data: { nome } });
-  if (error) { alert("Erro ao salvar."); return; }
+  if (error) { _erroPerfil("Erro ao salvar. Tente novamente."); return; }
 
   voltarMenuGestao();
 }
@@ -209,6 +230,7 @@ function abrirSegurancaUsuario() {
           </div>
           <input type="password" id="inputConfirmarSenha" placeholder="Repita a nova senha">
         </div>
+        <div id="msg-senha-erro" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar" onclick="salvarSenha()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar nova senha
@@ -223,14 +245,17 @@ function abrirSegurancaUsuario() {
 async function salvarSenha() {
   const nova = document.getElementById("inputNovaSenha").value;
   const confirmar = document.getElementById("inputConfirmarSenha").value;
+  const msgErro = document.getElementById("msg-senha-erro");
+  function _erroSenha(msg) { if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; } }
+  if (msgErro) msgErro.style.display = "none";
 
-  if (!nova || nova.length < 6) { alert("A senha deve ter no mínimo 6 caracteres."); return; }
-  if (nova !== confirmar) { alert("As senhas não coincidem."); return; }
+  if (!nova || nova.length < 6) { _erroSenha("A senha deve ter no mínimo 6 caracteres."); return; }
+  if (nova !== confirmar) { _erroSenha("As senhas não coincidem."); return; }
 
   const { error } = await supabaseClient.auth.updateUser({ password: nova });
-  if (error) { alert("Erro ao alterar senha: " + error.message); return; }
+  if (error) { _erroSenha("Erro ao alterar senha: " + error.message); return; }
 
-  alert("Senha alterada com sucesso!");
+  _toastSucesso("Senha alterada com sucesso!");
   voltarMenuGestao();
 }
 
@@ -408,7 +433,7 @@ function posicaoNaLista(index) {
     const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
     return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
   });
-  return Math.max(0, ordenados.indexOf(viveiros[index]));
+  return Math.max(0, ordenados.findIndex(v => v.id === viveiros[index].id));
 }
 
 function esconderMenu() {
@@ -651,11 +676,13 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   _swipeViveirosAbort = new AbortController();
   const _swipeSig = _swipeViveirosAbort.signal;
   let touchStartX = 0;
-  area.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true, signal: _swipeSig });
+  area.addEventListener("touchstart", e => { touchStartX = e.touches?.[0]?.clientX ?? 0; }, { passive: true, signal: _swipeSig });
   area.addEventListener("touchend", e => {
     // Só swipa se ainda estiver na tela de lista de viveiros
     if (!area.querySelector(".viveiro-card")) return;
-    const diff = touchStartX - e.changedTouches[0].clientX;
+    const endX = e.changedTouches?.[0]?.clientX;
+    if (endX == null) return;
+    const diff = touchStartX - endX;
     if (Math.abs(diff) > 50) {
       if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1, "proximo");
       if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1, "anterior");
