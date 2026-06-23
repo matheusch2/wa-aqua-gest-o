@@ -3912,8 +3912,13 @@ async function salvarProduto() {
   const categoria = document.getElementById("categoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("pesoKgProduto").value);
   const valorPago = parseMoedaBR(document.getElementById("valorPagoProduto").value);
+  const erroProd = document.getElementById("erro-produto");
 
-  if (!nome || !pesoKg || !valorPago) { alert("Preencha todos os campos."); return; }
+  if (!nome || !pesoKg || !valorPago) {
+    if (erroProd) { erroProd.textContent = "Preencha todos os campos."; erroProd.style.display = "block"; }
+    return;
+  }
+  if (erroProd) erroProd.style.display = "none";
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -4005,7 +4010,7 @@ async function excluirProduto(i) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
   const { error } = await supabaseClient.from("produtos").delete().eq("id", produtos[i].id).eq("user_id", usuario.id);
-  if (error) { alert("Erro ao excluir: " + error.message); return; }
+  if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
   produtos.splice(i, 1);
   abrirVerProdutos();
 }
@@ -4061,6 +4066,7 @@ function abrirEdicaoProduto(i) {
             <span class="campo-unidade">R$</span>
           </div>
         </div>
+        <div id="erro-edit-produto" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:4px"></div>
         <button class="botao-salvar" onclick="salvarEdicaoProduto(${i})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
@@ -4077,8 +4083,11 @@ async function salvarEdicaoProduto(i) {
   const categoria = document.getElementById("editCategoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("editPesoKgProduto").value);
   const valorPago = parseMoedaBR(document.getElementById("editValorPagoProduto").value);
+  const erroEditProd = document.getElementById("erro-edit-produto");
+  function _erroEditProd(msg) { if (erroEditProd) { erroEditProd.textContent = msg; erroEditProd.style.display = "block"; } }
+  if (erroEditProd) erroEditProd.style.display = "none";
 
-  if (!nome || !pesoKg || !valorPago) { alert("Preencha todos os campos."); return; }
+  if (!nome || !pesoKg || !valorPago) { _erroEditProd("Preencha todos os campos."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -4095,7 +4104,7 @@ async function salvarEdicaoProduto(i) {
 
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
 
-  if (error) { alert("Erro ao salvar: " + error.message); return; }
+  if (error) { _erroEditProd("Erro ao salvar: " + error.message); return; }
 
   produtos[i] = { ...produtos[i], nome, categoria, pesoKg, valorPago, custoPorGrama };
   abrirVerProdutos();
@@ -4198,6 +4207,7 @@ function abrirLancarCustoProduto(index) {
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
           Valor calculado: <strong id="previa-custo-valor">—</strong>
         </div>
+        <div id="msg-custo-produto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <div id="msg-custo-produto-sucesso" class="msg-sucesso-lancamento" style="display:none;">
           <span class="msg-emoji">✅</span>
           <span class="msg-texto">Custo lançado!</span>
@@ -4243,8 +4253,11 @@ async function salvarCustoProduto(index) {
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
   const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto").value);
+  const erroCustoProd = document.getElementById("msg-custo-produto-erro");
+  function _erroCustoProd(msg) { if (erroCustoProd) { erroCustoProd.textContent = msg; erroCustoProd.style.display = "block"; } }
+  if (erroCustoProd) erroCustoProd.style.display = "none";
 
-  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { alert("Preencha todos os campos."); return; }
+  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { _erroCustoProd("Preencha todos os campos."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -4263,7 +4276,7 @@ async function salvarCustoProduto(index) {
 
   if (error) {
     if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-    alert("Erro ao salvar: " + error.message);
+    _erroCustoProd("Erro ao salvar: " + error.message);
     return;
   }
 
@@ -4319,6 +4332,7 @@ function abrirLancarOutroCusto(index) {
             <span class="campo-unidade">R$</span>
           </div>
         </div>
+        <div id="msg-outro-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <div id="msg-outro-custo-sucesso" class="msg-sucesso-lancamento" style="display:none;">
           <span class="msg-emoji">✅</span>
           <span class="msg-texto">Custo lançado!</span>
@@ -4337,11 +4351,15 @@ function abrirLancarOutroCusto(index) {
 async function salvarOutroCusto(index) {
   const data = document.getElementById("dataOutroCusto").value;
   const descricao = document.getElementById("nomeOutroCusto").value.trim();
-  if (!descricao) { alert("Digite o nome do custo."); return; }
+  const erroOutro = document.getElementById("msg-outro-custo-erro");
+  function _erroOutro(msg) { if (erroOutro) { erroOutro.textContent = msg; erroOutro.style.display = "block"; } }
+  if (erroOutro) erroOutro.style.display = "none";
+
+  if (!descricao) { _erroOutro("Digite o nome do custo."); return; }
   const categoria = descricao;
   const valor = parseMoedaBR(document.getElementById("valorOutroCusto").value);
 
-  if (!data || isNaN(valor) || valor <= 0) { alert("Preencha todos os campos."); return; }
+  if (!data || isNaN(valor) || valor <= 0) { _erroOutro("Preencha todos os campos."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -4356,7 +4374,7 @@ async function salvarOutroCusto(index) {
 
   if (error) {
     if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-    alert("Erro ao salvar: " + error.message);
+    _erroOutro("Erro ao salvar: " + error.message);
     return;
   }
 
@@ -4412,13 +4430,13 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
               ? `<br><small style="font-size:10px;opacity:0.6">${item.quantidadeG >= 1000 ? formatarNumeroBR(item.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(item.quantidadeG, 0) + " g"}</small>`
               : "";
             return `
-            <div class="linha-historico-acoes">
+            <div class="linha-historico-acoes" id="custo-row-${index}-${iOriginal}">
               <span style="font-size:12px">${formatarData(item.data)}</span>
               <span class="col-centro" style="font-size:13px;font-weight:500">${item.nomeProduto}${qtdTxt}</span>
               <span class="col-centro" style="font-size:13px">R$&nbsp;${formatarNumeroBR(item.valor, 2)}</span>
               <span class="col-acoes">
                 <button class="botao-editar" onclick="abrirEdicaoCusto(${index},${iOriginal},'${elementoId}',${direto})">✏️</button>
-                <button class="botao-editar botao-excluir" onclick="excluirCusto(${index},${iOriginal},'${elementoId}',${direto})">🗑️</button>
+                <button class="botao-editar botao-excluir" onclick="confirmarExcluirCusto(${index},${iOriginal},'${elementoId}',${direto})">🗑️</button>
               </span>
             </div>`;
           }).join("")
@@ -4470,6 +4488,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
             value="${Number(custo.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2})}"
             onblur="formatarMoedaBlur(this)">
         </div>
+        <div id="msg-edit-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar" onclick="salvarEdicaoCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
@@ -4485,9 +4504,12 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
   const novaData = document.getElementById("dataEdicaoCusto").value;
   const novoNome = document.getElementById("nomeEdicaoCusto").value.trim();
   const novoValor = parseMoedaBR(document.getElementById("valorEdicaoCusto").value);
+  const erroEditCusto = document.getElementById("msg-edit-custo-erro");
+  function _erroEditCusto(msg) { if (erroEditCusto) { erroEditCusto.textContent = msg; erroEditCusto.style.display = "block"; } }
+  if (erroEditCusto) erroEditCusto.style.display = "none";
 
   if (!novaData || !novoNome || isNaN(novoValor) || novoValor < 0) {
-    alert("Preencha todos os campos corretamente.");
+    _erroEditCusto("Preencha todos os campos corretamente.");
     return;
   }
 
@@ -4503,7 +4525,7 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
     .eq("id", custo.id).eq("user_id", usuario.id);
 
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-  if (error) { alert("Erro ao salvar: " + error.message); return; }
+  if (error) { _erroEditCusto("Erro ao salvar: " + error.message); return; }
 
   viveiros[viveiroIndex].custos[custoIndex].data = novaData;
   viveiros[viveiroIndex].custos[custoIndex].nomeProduto = novoNome;
@@ -4549,10 +4571,24 @@ function imprimirCustos(viveiroIndex) {
   </body></html>`;
 
   const janela = window.open("", "_blank");
-  if (!janela) { alert("Permita pop-ups para imprimir."); return; }
+  if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
   janela.document.write(html);
   janela.document.close();
   janela.onload = () => { janela.print(); };
+}
+
+function confirmarExcluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
+  const row = document.getElementById(`custo-row-${viveiroIndex}-${custoIndex}`);
+  if (!row) return;
+  row.innerHTML = `
+    <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
+      <span>Excluir este custo?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto})">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${direto})">Cancelar</button>
+      </div>
+    </div>
+  `;
 }
 
 async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
@@ -4560,7 +4596,7 @@ async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
   if (!usuario) return;
   const custo = viveiros[viveiroIndex].custos[custoIndex];
   const { error } = await supabaseClient.from("custos").delete().eq("id", custo.id).eq("user_id", usuario.id);
-  if (error) { alert("Erro ao excluir: " + error.message); return; }
+  if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
   viveiros[viveiroIndex].custos.splice(custoIndex, 1);
   renderizarHistoricoCustos(viveiroIndex, elementoId, direto);
 }
