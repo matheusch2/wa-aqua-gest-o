@@ -2794,6 +2794,22 @@ body.tema-escuro .confirmar-exclusao-custo {
     border: 1px solid #fecaca;
 }
 
+.boleto-badge-pago {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #86efac;
+}
+
+.boleto-item-pago {
+    opacity: 0.6;
+    background: #f9fafb;
+}
+
+.boleto-item-pago .boleto-item-info strong {
+    text-decoration: line-through;
+    text-decoration-color: #9ca3af;
+}
+
 .botao-icone-acao {
     background: none;
     border: none;
@@ -2938,6 +2954,7 @@ body.tema-escuro .boleto-item-info strong { color: #f9fafb; }
 body.tema-escuro .boleto-item-info small { color: #9ca3af; }
 body.tema-escuro .boleto-valor { color: #34d399; }
 body.tema-escuro .painel-confirmar-boleto { border-top-color: #374151; color: #d1d5db; }
+body.tema-escuro .boleto-item-pago { background: #111827; }
 
 /* ─── CURVA DE CRESCIMENTO ───────────────────────────────────────────────────── */
 

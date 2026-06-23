@@ -2960,15 +2960,15 @@ function _statusBoleto(dataCompra, prazoDias) {
   venc.setDate(venc.getDate() + prazoDias);
   const diff = Math.round((venc - hojeZerado) / 86400000);
   const dataFmt = venc.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), label: `Vencido há ${Math.abs(diff)}d`, dataFmt };
-  if (diff === 0) return { tipo: "hoje", dias: 0, label: "Vence hoje!", dataFmt };
-  if (diff <= 10) return { tipo: "proximo", dias: diff, label: `Vence em ${diff}d`, dataFmt };
-  return { tipo: "ok", dias: diff, label: `Vence ${dataFmt}`, dataFmt };
+  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), diff, label: `Vencido há ${Math.abs(diff)}d`, dataFmt };
+  if (diff === 0) return { tipo: "hoje", dias: 0, diff, label: "Vence hoje!", dataFmt };
+  if (diff <= 10) return { tipo: "proximo", dias: diff, diff, label: `Vence em ${diff}d`, dataFmt };
+  return { tipo: "ok", dias: diff, diff, label: `Vence ${dataFmt}`, dataFmt };
 }
 
 function verificarBoletosVencendo() {
   if (!boletos.length) return;
-  const alertas = boletos.filter(b => _statusBoleto(b.dataCompra, b.prazoDias).tipo !== "ok");
+  const alertas = boletos.filter(b => !b.pago && _statusBoleto(b.dataCompra, b.prazoDias).tipo !== "ok");
   if (!alertas.length) return;
   const area = document.getElementById("area-gestao");
   const existente = document.getElementById("banner-boletos-alerta");
@@ -3021,11 +3021,23 @@ function abrirBoletos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
-  const itens = boletos.map((b, i) => {
-    const st = _statusBoleto(b.dataCompra, b.prazoDias);
-    const badge = `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
+  // Mantém o índice original e ordena: não pagos por urgência (vencendo primeiro), pagos no fim
+  const ordenados = boletos
+    .map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }))
+    .sort((x, y) => {
+      if (!!x.b.pago !== !!y.b.pago) return x.b.pago ? 1 : -1;
+      return x.st.diff - y.st.diff;
+    });
+
+  const itens = ordenados.map(({ b, i, st }) => {
+    const badge = b.pago
+      ? `<span class="boleto-badge boleto-badge-pago">✓ Pago</span>`
+      : `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
+    const toggleBtn = b.pago
+      ? `<button class="botao-icone-acao" title="Desfazer pagamento" onclick="event.stopPropagation();desmarcarBoletoPago(${i})">↩️</button>`
+      : `<button class="botao-icone-acao" title="Marcar como pago" onclick="event.stopPropagation();marcarBoletoPago(${i})">✅</button>`;
     return `
-      <div class="boleto-item" onclick="verDetalhesBoleto(${i})" style="cursor:pointer">
+      <div class="boleto-item${b.pago ? " boleto-item-pago" : ""}" onclick="verDetalhesBoleto(${i})" style="cursor:pointer">
         <div class="boleto-item-topo">
           <div class="boleto-item-info">
             <strong>${b.nome}</strong>
@@ -3035,12 +3047,13 @@ function abrirBoletos() {
           <div class="boleto-item-acoes">
             ${badge}
             <div style="display:flex;gap:4px;justify-content:flex-end">
+              ${toggleBtn}
               <button class="botao-icone-acao" onclick="event.stopPropagation();abrirFormBoleto(${i})">✏️</button>
               <button class="botao-icone-acao" onclick="event.stopPropagation();confirmarExcluirBoleto(${i})">🗑️</button>
             </div>
           </div>
         </div>
-        <small style="color:#9ca3af;font-size:11px">Vence ${st.dataFmt}</small>
+        <small style="color:#9ca3af;font-size:11px">${b.pago ? `Pago${b.dataPagamento ? " em " + formatarData(b.dataPagamento) : ""}` : "Vence " + st.dataFmt}</small>
         <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
           <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
           <div class="confirmar-boleto-botoes">
@@ -3091,7 +3104,9 @@ function verDetalhesBoleto(index) {
       </div>
       <div class="form-corpo">
         <div class="boleto-detalhe-status">
-          <span class="boleto-badge boleto-badge-${st.tipo}" style="font-size:13px;padding:6px 14px">${st.label}</span>
+          ${b.pago
+            ? `<span class="boleto-badge boleto-badge-pago" style="font-size:13px;padding:6px 14px">✓ Pago</span>`
+            : `<span class="boleto-badge boleto-badge-${st.tipo}" style="font-size:13px;padding:6px 14px">${st.label}</span>`}
         </div>
         <div class="boleto-detalhe-grid">
           <div class="boleto-detalhe-linha">
@@ -3110,13 +3125,21 @@ function verDetalhesBoleto(index) {
             <span class="boleto-detalhe-label">Vencimento</span>
             <span class="boleto-detalhe-valor">${st.dataFmt}</span>
           </div>
+          ${b.pago && b.dataPagamento ? `
+          <div class="boleto-detalhe-linha">
+            <span class="boleto-detalhe-label">Pago em</span>
+            <span class="boleto-detalhe-valor">${formatarData(b.dataPagamento)}</span>
+          </div>` : ""}
           ${b.valor ? `
           <div class="boleto-detalhe-linha boleto-detalhe-destaque">
             <span class="boleto-detalhe-label">Valor</span>
             <span class="boleto-detalhe-valor" style="font-size:18px;font-weight:700;color:rgb(6,107,99)">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
           </div>` : ""}
         </div>
-        <div style="display:flex;gap:10px;margin-top:16px">
+        ${b.pago
+          ? `<button class="botao-salvar" style="margin-top:16px;background:#6b7280" onclick="desmarcarBoletoPago(${index}, true)">↩️ Desfazer pagamento</button>`
+          : `<button class="botao-salvar" style="margin-top:16px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✅ Marcar como pago</button>`}
+        <div style="display:flex;gap:10px;margin-top:10px">
           <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
@@ -3230,6 +3253,26 @@ async function excluirBoleto(index) {
   if (error) { console.error(error); return; }
   boletos.splice(index, 1);
   abrirBoletos();
+}
+
+async function marcarBoletoPago(index, voltarDetalhe) {
+  const hoje = new Date().toISOString().split("T")[0];
+  const { error } = await supabaseClient.from("boletos")
+    .update({ pago: true, data_pagamento: hoje }).eq("id", boletos[index].id);
+  if (error) { console.error(error); _toastErro("Erro ao marcar como pago."); return; }
+  boletos[index].pago = true;
+  boletos[index].dataPagamento = hoje;
+  _toastSucesso("Boleto marcado como pago.");
+  if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
+}
+
+async function desmarcarBoletoPago(index, voltarDetalhe) {
+  const { error } = await supabaseClient.from("boletos")
+    .update({ pago: false, data_pagamento: null }).eq("id", boletos[index].id);
+  if (error) { console.error(error); _toastErro("Erro ao desfazer."); return; }
+  boletos[index].pago = false;
+  boletos[index].dataPagamento = null;
+  if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
 }
 
 function confirmarExcluirBoleto(index) {
@@ -4799,6 +4842,8 @@ async function carregarViveiros() {
     dataCompra: b.data_compra,
     prazoDias: Number(b.prazo_dias),
     valor: b.valor ? Number(b.valor) : null,
+    pago: !!b.pago,
+    dataPagamento: b.data_pagamento || null,
   }));
 
   // Carregar custos (gracioso se a tabela não existir ainda)
