@@ -288,6 +288,10 @@ function formatarNumeroBR(valor, casas = 0) {
   });
 }
 
+function fmtG(v) {
+  return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
 function parseMoedaBR(str) {
   if (!str) return 0;
   return parseFloat(String(str).replace(/\./g, "").replace(",", ".")) || 0;
@@ -683,7 +687,7 @@ function abrirViveiro(index) {
 
   // Última biometria e média de crescimento
   const biosSorted = [...biometrias].sort((a, b) => a.data.localeCompare(b.data));
-  const ultimaBiometria = biosSorted.length > 0 ? biosSorted[biosSorted.length - 1].gramatura : "--";
+  const ultimaBiometria = biosSorted.length > 0 ? fmtG(biosSorted[biosSorted.length - 1].gramatura) : "--";
   let mediaCrescimento = "--";
   if (biosSorted.length >= 2) {
     const taxas = [];
@@ -1848,12 +1852,12 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                     .map((item, i) => {
                       let crescimento = "-";
                       if (i > 0) {
-                        crescimento = (item.gramatura - biometrias[i - 1].gramatura).toFixed(1) + " g";
+                        crescimento = fmtG(item.gramatura - biometrias[i - 1].gramatura) + " g";
                       }
                       return `
                         <div class="linha-historico-acoes">
                             <span>${formatarData(item.data)}</span>
-                            <span class="col-centro">${formatarNumeroBR(item.gramatura, 1)} g</span>
+                            <span class="col-centro">${fmtG(item.gramatura)} g</span>
                             <span class="col-centro">${crescimento}</span>
                             <span class="col-acoes">
                               <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
@@ -2059,7 +2063,7 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
             <label>Gramatura média</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="qtdEdicaoBio" value="${bio.gramatura}" placeholder="Ex: 10,5">
+            <input type="text" inputmode="decimal" id="qtdEdicaoBio" value="${fmtG(bio.gramatura)}" placeholder="Ex: 10,5">
             <span class="campo-unidade">g</span>
           </div>
         </div>
