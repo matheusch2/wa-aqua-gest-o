@@ -3256,10 +3256,13 @@ async function excluirBoleto(index) {
 }
 
 async function marcarBoletoPago(index, voltarDetalhe) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
   const hoje = new Date().toISOString().split("T")[0];
   const { error } = await supabaseClient.from("boletos")
-    .update({ pago: true, data_pagamento: hoje }).eq("id", boletos[index].id);
-  if (error) { console.error(error); _toastErro("Erro ao marcar como pago."); return; }
+    .update({ pago: true, data_pagamento: hoje })
+    .eq("id", boletos[index].id).eq("user_id", usuario.id);
+  if (error) { console.error(error); _toastErro("Erro ao marcar como pago: " + error.message); return; }
   boletos[index].pago = true;
   boletos[index].dataPagamento = hoje;
   _toastSucesso("Boleto marcado como pago.");
@@ -3267,9 +3270,12 @@ async function marcarBoletoPago(index, voltarDetalhe) {
 }
 
 async function desmarcarBoletoPago(index, voltarDetalhe) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
   const { error } = await supabaseClient.from("boletos")
-    .update({ pago: false, data_pagamento: null }).eq("id", boletos[index].id);
-  if (error) { console.error(error); _toastErro("Erro ao desfazer."); return; }
+    .update({ pago: false, data_pagamento: null })
+    .eq("id", boletos[index].id).eq("user_id", usuario.id);
+  if (error) { console.error(error); _toastErro("Erro ao desfazer: " + error.message); return; }
   boletos[index].pago = false;
   boletos[index].dataPagamento = null;
   if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
