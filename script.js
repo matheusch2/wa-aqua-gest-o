@@ -1430,14 +1430,15 @@ function abrirBiometria(index) {
             <label>Gramatura média</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="gramaturaBiometria" placeholder="Ex: 10">
+            <input type="text" inputmode="decimal" id="gramaturaBiometria" placeholder="Ex: 10,5">
             <span class="campo-unidade">g</span>
           </div>
         </div>
 
+        <div id="msg-bio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <div id="msg-bio-sucesso" class="msg-sucesso-lancamento" style="display:none;">
           <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Biometria lançada com sucesso!</span>
+          <span class="msg-texto">Biometria lançada!</span>
         </div>
 
         <button class="botao-salvar" onclick="salvarBiometria(${index})">
@@ -1455,18 +1456,29 @@ function abrirBiometria(index) {
 
 async function salvarBiometria(index) {
   const data = document.getElementById("dataBiometria").value;
+  const gramaturaRaw = document.getElementById("gramaturaBiometria").value.trim().replace(",", ".");
+  const gramatura = parseFloat(gramaturaRaw);
+  const msgErro = document.getElementById("msg-bio-erro");
 
-  const gramatura = parseFloat(
-    document.getElementById("gramaturaBiometria").value
-  );
-  const usuario = await pegarUsuarioLogado();
+  function mostrarErroBio(msg) {
+    if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; }
+  }
 
-  if (!usuario) return;
+  if (msgErro) msgErro.style.display = "none";
 
-  if (!data || !gramatura) {
-    alert("Preencha a data e a gramatura.");
+  if (!data || !gramatura || isNaN(gramatura)) {
+    mostrarErroBio("Preencha a data e a gramatura.");
     return;
   }
+
+  const dataDuplicada = (viveiros[index].biometrias || []).some(b => b.data === data);
+  if (dataDuplicada) {
+    mostrarErroBio("Já existe uma biometria nessa data. Edite ou exclua a existente.");
+    return;
+  }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
   const botao = document.querySelector(".botao-salvar");
   if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
@@ -2047,7 +2059,7 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
             <label>Gramatura média</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="qtdEdicaoBio" value="${bio.gramatura}" placeholder="Ex: 10">
+            <input type="text" inputmode="decimal" id="qtdEdicaoBio" value="${bio.gramatura}" placeholder="Ex: 10,5">
             <span class="campo-unidade">g</span>
           </div>
         </div>
@@ -2064,9 +2076,9 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
 
 async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
   const novaData = document.getElementById("dataEdicaoBio").value;
-  const novaQtd = parseFloat(document.getElementById("qtdEdicaoBio").value);
+  const novaQtd = parseFloat(document.getElementById("qtdEdicaoBio").value.replace(",", "."));
 
-  if (!novaData || !novaQtd) { alert("Preencha a data e a gramatura."); return; }
+  if (!novaData || !novaQtd || isNaN(novaQtd)) { alert("Preencha a data e a gramatura."); return; }
 
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
   const usuario = await pegarUsuarioLogado();
