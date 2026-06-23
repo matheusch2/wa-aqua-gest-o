@@ -339,7 +339,8 @@ function parseMoedaBR(str) {
 function formatarMoedaBlur(input) {
   let v = input.value.trim();
   if (!v) return;
-  if (v.includes(",")) { v = v.replace(/\./g, "").replace(",", "."); }
+  // pt-BR: ponto é separador de milhar, vírgula é decimal (sempre)
+  v = v.replace(/\./g, "").replace(",", ".");
   const n = parseFloat(v);
   if (isNaN(n)) { input.value = ""; return; }
   input.value = n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
