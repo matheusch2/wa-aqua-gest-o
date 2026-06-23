@@ -403,14 +403,22 @@ function formatarPopulacao(input) {
   input.value = valor;
 }
 
+// Converte "YYYY-MM-DD" (ou Date) para um Date à meia-noite LOCAL,
+// evitando o deslocamento de fuso de new Date("YYYY-MM-DD") (que é UTC).
+function _parseDataLocal(d) {
+  if (d instanceof Date) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const [ano, mes, dia] = String(d).split("T")[0].split("-").map(Number);
+  return new Date(ano, (mes || 1) - 1, dia || 1);
+}
+
 function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
   if (!dataPovoamento) return 0;
 
-  const inicio = new Date(dataPovoamento);
-  const fim = new Date(dataFinal);
+  const inicio = _parseDataLocal(dataPovoamento);
+  const fim = _parseDataLocal(dataFinal);
 
   const diferenca = fim - inicio;
-  const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24)) + 1;
+  const dias = Math.round(diferenca / 86400000) + 1;
 
   return dias > 0 ? dias : 0;
 }
@@ -738,7 +746,7 @@ function abrirViveiro(index) {
   if (biosSorted.length >= 2) {
     const taxas = [];
     for (let i = 1; i < biosSorted.length; i++) {
-      const dias = Math.round((new Date(biosSorted[i].data) - new Date(biosSorted[i - 1].data)) / 86400000);
+      const dias = Math.round((_parseDataLocal(biosSorted[i].data) - _parseDataLocal(biosSorted[i - 1].data)) / 86400000);
       if (dias > 0) taxas.push((biosSorted[i].gramatura - biosSorted[i - 1].gramatura) / dias);
     }
     if (taxas.length > 0) {
@@ -2242,6 +2250,14 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
 
   if (!novaData || !novaQtd || isNaN(novaQtd)) { _toastErro("Preencha a data e a gramatura."); return; }
 
+  // Impede duas biometrias na mesma data (ignora a própria que está sendo editada)
+  const dataDuplicada = (viveiros[viveiroIndex].biometrias || [])
+    .some((b, idx) => idx !== bioIndex && b.data === novaData);
+  if (dataDuplicada) {
+    _toastErro("Já existe uma biometria nessa data. Edite ou exclua a existente.");
+    return;
+  }
+
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -2684,6 +2700,9 @@ async function salvarNovoCiclo(index) {
     return;
   }
 
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
   const { error } = await supabaseClient
     .from("viveiros")
     .update({
@@ -2695,6 +2714,7 @@ async function salvarNovoCiclo(index) {
 
   if (error) {
     console.log(error);
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
     mostrarErroReinicio("Erro ao salvar novo ciclo.");
     return;
   }
@@ -3461,6 +3481,9 @@ async function salvarEncerramentoCiclo(index) {
     return;
   }
 
+  const botao = document.querySelector(".botao-salvar");
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
   const racoes = viveiro.racoes || [];
   const despescas = viveiro.despescas || [];
   const biometrias = viveiro.biometrias || [];
@@ -3472,12 +3495,15 @@ async function salvarEncerramentoCiclo(index) {
   );
 
   const producaoTotal = despescaParcial + producaoFinal;
-  const fca = racaoConsumida / producaoTotal;
-  const produtividade = producaoTotal / parseFloat(viveiro.tamanho);
+  const fca = producaoTotal > 0 ? racaoConsumida / producaoTotal : 0;
+
+  // Protege contra tamanho/total povoado ausentes (evita Infinity/NaN no relatório)
+  const tamanhoNum = parseFloat(viveiro.tamanho);
+  const produtividade = tamanhoNum > 0 ? producaoTotal / tamanhoNum : 0;
 
   const totalPovoado = parseFloat(String(viveiro.totalPovoado).replace(/\./g, ""));
-  const quantidadeFinal = producaoTotal / (pesoFinal / 1000);
-  const sobrevivencia = (quantidadeFinal / totalPovoado) * 100;
+  const quantidadeFinal = pesoFinal > 0 ? producaoTotal / (pesoFinal / 1000) : 0;
+  const sobrevivencia = totalPovoado > 0 ? (quantidadeFinal / totalPovoado) * 100 : 0;
 
   const diasCultivo = calcularDiasCultivo(
     viveiro.dataPovoamento,
@@ -3511,6 +3537,7 @@ async function salvarEncerramentoCiclo(index) {
 
   if (error) {
     console.log(error);
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
     mostrarErroEncerrar("Erro ao encerrar ciclo: " + error.message);
     return;
   }
