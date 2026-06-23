@@ -23,6 +23,14 @@
             else mostrarLogin();
         });
 
+        function msgLogin(texto, tipo) {
+            const el = document.getElementById("msg-login");
+            if (!el) return;
+            el.textContent = texto;
+            el.style.display = "block";
+            el.style.color = tipo === "ok" ? "#16a34a" : "#dc2626";
+        }
+
         function toggleSenha(inputId, botao) {
             const input = document.getElementById(inputId);
             const svgOlho = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
@@ -65,6 +73,7 @@
                             <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                             Entrar
                         </button>
+                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         <button class="link-esqueci" onclick="mostrarRecuperarSenha()">Esqueci minha senha</button>
                         <div class="separador-login"><span>Não tem uma conta?</span></div>
                         <button class="botao-criar-conta" onclick="mostrarCadastro()">
@@ -109,6 +118,7 @@
                             </button>
                         </div>
                         <button class="botao-entrar" onclick="cadastrarUsuario()">Criar conta</button>
+                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         <button class="botao-voltar-form" onclick="mostrarLogin()">← Voltar para o login</button>
                     </div>
                 </div>
@@ -132,6 +142,7 @@
                             <input type="email" id="emailRecuperacao" placeholder="Digite seu e-mail">
                         </div>
                         <button class="botao-entrar" onclick="recuperarSenha()">Enviar link de recuperação</button>
+                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         <button class="botao-voltar-form" onclick="mostrarLogin()">← Voltar para o login</button>
                     </div>
                 </div>
@@ -141,9 +152,9 @@
         async function entrarUsuario() {
             const email = document.getElementById("emailLogin").value;
             const senha = document.getElementById("senhaLogin").value;
-            if (!email || !senha) { alert("Preencha e-mail e senha."); return; }
+            if (!email || !senha) { msgLogin("Preencha e-mail e senha."); return; }
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-            if (error) { alert(error.message); return; }
+            if (error) { msgLogin("E-mail ou senha incorretos."); return; }
             window.location.href = "index.html";
         }
 
@@ -151,22 +162,22 @@
             const email = document.getElementById("emailCadastro").value;
             const senha = document.getElementById("senhaCadastro").value;
             const confirmar = document.getElementById("confirmarSenha").value;
-            if (!email || !senha || !confirmar) { alert("Preencha todos os campos."); return; }
-            if (senha !== confirmar) { alert("As senhas não coincidem."); return; }
-            if (senha.length < 6) { alert("A senha deve ter pelo menos 6 caracteres."); return; }
+            if (!email || !senha || !confirmar) { msgLogin("Preencha todos os campos."); return; }
+            if (senha !== confirmar) { msgLogin("As senhas não coincidem."); return; }
+            if (senha.length < 6) { msgLogin("A senha deve ter pelo menos 6 caracteres."); return; }
             const { error } = await supabaseClient.auth.signUp({ email, password: senha });
-            if (error) { alert(error.message); return; }
-            alert("Conta criada! Agora faça login.");
+            if (error) { msgLogin(error.message); return; }
             mostrarLogin();
+            msgLogin("Conta criada! Agora faça login.", "ok");
         }
 
         async function recuperarSenha() {
             const email = document.getElementById("emailRecuperacao").value;
-            if (!email) { alert("Digite seu e-mail."); return; }
+            if (!email) { msgLogin("Digite seu e-mail."); return; }
             const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-            if (error) { alert(error.message); return; }
-            alert("E-mail enviado! Verifique sua caixa de entrada.");
+            if (error) { msgLogin(error.message); return; }
             mostrarLogin();
+            msgLogin("E-mail enviado! Verifique sua caixa de entrada.", "ok");
         }
     </script>
 

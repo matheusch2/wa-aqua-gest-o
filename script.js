@@ -300,11 +300,24 @@ async function pegarUsuarioLogado() {
   } = await supabaseClient.auth.getUser();
 
   if (error || !user) {
-    alert("Usuário não está logado.");
+    _toastErro("Sua sessão expirou. Faça login novamente.");
     return null;
   }
 
   return user;
+}
+
+function _erroCarregamento(msg) {
+  const area = document.getElementById("area-gestao");
+  if (!area) return;
+  area.innerHTML = `
+    <div class="resultado-box" style="text-align:center;padding:28px 16px">
+      <p style="font-size:30px;margin:0 0 8px">⚠️</p>
+      <p style="font-weight:600;color:#dc2626;margin:0 0 4px">${msg}</p>
+      <p style="font-size:13px;color:#9ca3af;margin:0 0 16px">Verifique sua conexão e tente novamente.</p>
+      <button class="botao-salvar" style="max-width:220px;margin:0 auto" onclick="location.reload()">Recarregar</button>
+    </div>
+  `;
 }
 
 function formatarNumeroBR(valor, casas = 0) {
@@ -505,6 +518,7 @@ function mostrarCadastroViveiro() {
           <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
         </div>
 
+        <div id="msg-viveiro-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar" onclick="salvarViveiro()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar viveiro
@@ -522,15 +536,19 @@ async function salvarViveiro() {
   const total = document.getElementById("totalPovoadoGestao").value.replace(/\D/g, "");
   const tamanho = document.getElementById("tamanhoViveiro").value;
   const laboratorio = document.getElementById("laboratorio").value;
-  const usuario = await pegarUsuarioLogado();
-
-  if (!usuario) return;
+  const erroViveiro = document.getElementById("msg-viveiro-erro");
+  function mostrarErroViveiro(msg) {
+    if (erroViveiro) { erroViveiro.textContent = msg; erroViveiro.style.display = "block"; }
+  }
+  if (erroViveiro) erroViveiro.style.display = "none";
 
   if (!nome || !data || !total || !tamanho || !laboratorio) {
-    document.getElementById("area-gestao").innerHTML +=
-      "<p>Preencha todos os campos.</p>";
+    mostrarErroViveiro("Preencha todos os campos.");
     return;
   }
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
 
   const novoViveiro = {
     nome: nome,
@@ -549,7 +567,7 @@ async function salvarViveiro() {
 
   if (error) {
     console.log(error);
-    alert(error.message);
+    mostrarErroViveiro("Erro ao salvar: " + error.message);
     return;
   }
 
@@ -4668,7 +4686,7 @@ async function carregarViveiros() {
 
   if (erroViveiros) {
     console.log(erroViveiros);
-    alert("Erro ao carregar viveiros.");
+    _erroCarregamento("Erro ao carregar viveiros.");
     return;
   }
 
@@ -4681,7 +4699,7 @@ async function carregarViveiros() {
 
   if (erroRacoes) {
     console.log(erroRacoes);
-    alert("Erro ao carregar rações.");
+    _erroCarregamento("Erro ao carregar rações.");
     return;
   }
 
@@ -4693,7 +4711,7 @@ async function carregarViveiros() {
 
   if (erroBiometrias) {
     console.log(erroBiometrias);
-    alert("Erro ao carregar biometrias.");
+    _erroCarregamento("Erro ao carregar biometrias.");
     return;
   }
 
@@ -4705,7 +4723,7 @@ async function carregarViveiros() {
 
   if (erroDespescas) {
     console.log(erroDespescas);
-    alert("Erro ao carregar despescas.");
+    _erroCarregamento("Erro ao carregar despescas.");
     return;
   }
 
@@ -4717,7 +4735,7 @@ async function carregarViveiros() {
 
   if (erroCiclos) {
     console.log(erroCiclos);
-    alert("Erro ao carregar ciclos.");
+    _erroCarregamento("Erro ao carregar ciclos.");
     return;
   }
 
