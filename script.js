@@ -2634,6 +2634,7 @@ function mostrarFormularioReinicio(index) {
           </div>
           <input type="text" id="novoLaboratorio" placeholder="Nome do laboratório">
         </div>
+        <div id="msg-reinicio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar botao-alerta" onclick="salvarNovoCiclo(${index})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
           Confirmar reinício
@@ -2654,8 +2655,14 @@ async function salvarNovoCiclo(index) {
 
   if (!usuario) return;
 
+  const erroReinicio = document.getElementById("msg-reinicio-erro");
+  function mostrarErroReinicio(msg) {
+    if (erroReinicio) { erroReinicio.textContent = msg; erroReinicio.style.display = "block"; }
+  }
+  if (erroReinicio) erroReinicio.style.display = "none";
+
   if (!novoPovoamento || !novoTotal || !novoLaboratorio) {
-    alert("Preencha todos os campos.");
+    mostrarErroReinicio("Preencha todos os campos.");
     return;
   }
 
@@ -2670,7 +2677,7 @@ async function salvarNovoCiclo(index) {
 
   if (error) {
     console.log(error);
-    alert("Erro ao salvar novo ciclo.");
+    mostrarErroReinicio("Erro ao salvar novo ciclo.");
     return;
   }
 
@@ -2709,7 +2716,7 @@ async function excluirViveiro(index) {
 
   if (error) {
     console.log(error);
-    alert("Erro ao excluir viveiro.");
+    _toastErro("Erro ao excluir viveiro.");
     return;
   }
 
@@ -3402,6 +3409,7 @@ function abrirEncerrarCiclo(index) {
           </div>
           <input type="text" id="observacoesCiclo" placeholder="Opcional">
         </div>
+        <div id="msg-encerrar-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar botao-alerta" onclick="salvarEncerramentoCiclo(${index})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           Finalizar ciclo
@@ -3424,8 +3432,14 @@ async function salvarEncerramentoCiclo(index) {
 
   if (!usuario) return;
 
+  const erroEncerrar = document.getElementById("msg-encerrar-erro");
+  function mostrarErroEncerrar(msg) {
+    if (erroEncerrar) { erroEncerrar.textContent = msg; erroEncerrar.style.display = "block"; }
+  }
+  if (erroEncerrar) erroEncerrar.style.display = "none";
+
   if (!dataEncerramento || !producaoFinal || !pesoFinal) {
-    alert("Preencha data de encerramento, produção final e peso médio final.");
+    mostrarErroEncerrar("Preencha data de encerramento, produção final e peso médio final.");
     return;
   }
 
@@ -3479,7 +3493,7 @@ async function salvarEncerramentoCiclo(index) {
 
   if (error) {
     console.log(error);
-    alert(error.message);
+    mostrarErroEncerrar("Erro ao encerrar ciclo: " + error.message);
     return;
   }
 
