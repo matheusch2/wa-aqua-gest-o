@@ -38,6 +38,7 @@ function _calcularBiomassa(populacao, consumoKg, pesoG) {
   return { biomassa, quantidade: Math.round(quantidade), sobrevivencia: (quantidade / populacao) * 100 };
 }
 let _swipeViveirosAbort = null;
+let _swipeRacaoAbort = null;
 
 async function toggleMenuUsuario() {
   const menu = document.getElementById("menu-usuario");
@@ -1896,13 +1897,13 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                         crescimento = fmtG(item.gramatura - biometrias[i - 1].gramatura) + " g";
                       }
                       return `
-                        <div class="linha-historico-acoes">
+                        <div class="linha-historico-acoes" id="bio-row-${index}-${i}">
                             <span>${formatarData(item.data)}</span>
                             <span class="col-centro">${fmtG(item.gramatura)} g</span>
                             <span class="col-centro">${crescimento}</span>
                             <span class="col-acoes">
                               <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                              <button class="botao-editar botao-excluir" onclick="excluirBiometria(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                              <button class="botao-editar botao-excluir" onclick="confirmarExcluirBiometria(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
                             </span>
                         </div>
                     `;
@@ -1935,7 +1936,7 @@ function verCurvaCrescimento(index, direto) {
   });
   const pesos = biometrias.map(b => b.gramatura);
 
-  const area = document.getElementById(direto ? "resultado-historico" : "resultado-historico") || document.getElementById("area-gestao");
+  const area = document.getElementById("resultado-historico") || document.getElementById("area-gestao");
 
   area.innerHTML = `
     <h3 class="titulo-secao">Curva de crescimento — ${abreviarViveiro(viveiro.nome)}</h3>
@@ -2044,13 +2045,13 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
         : racoesPagina.map((item) => {
             const iOriginal = viveiro.racoes.findIndex(r => r.id === item.id);
             return `
-              <div class="linha-historico-racao">
+              <div class="linha-historico-racao" id="racao-row-${index}-${iOriginal}">
                 <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
                 <span class="col-centro">${formatarData(item.data)}</span>
                 <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${item.nomeRacao}</small>` : ""}</span>
                 <span class="col-acoes">
                   <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">✏️</button>
-                  <button class="botao-editar botao-excluir" onclick="excluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">🗑️</button>
+                  <button class="botao-editar botao-excluir" onclick="confirmarExcluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">🗑️</button>
                 </span>
               </div>`;
           }).join("")
@@ -2079,17 +2080,22 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     if (tabela) tabela.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
   }
 
-  // Swipe para trocar página
+  // Swipe para trocar página — cancela listeners anteriores para não acumular
+  if (_swipeRacaoAbort) _swipeRacaoAbort.abort();
   if (totalPaginas > 1) {
+    _swipeRacaoAbort = new AbortController();
+    const _sig = _swipeRacaoAbort.signal;
     let touchStartX = 0;
-    resultado.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    resultado.addEventListener("touchstart", e => { touchStartX = e.touches?.[0]?.clientX ?? 0; }, { passive: true, signal: _sig });
     resultado.addEventListener("touchend", e => {
-      const diff = touchStartX - e.changedTouches[0].clientX;
+      const endX = e.changedTouches?.[0]?.clientX;
+      if (endX == null) return;
+      const diff = touchStartX - endX;
       if (Math.abs(diff) > 50) {
         if (diff > 0 && pagina < totalPaginas - 1) renderizarHistoricoRacao(index, elementoId, direto, pagina + 1, "proximo");
         if (diff < 0 && pagina > 0) renderizarHistoricoRacao(index, elementoId, direto, pagina - 1, "anterior");
       }
-    }, { passive: true });
+    }, { passive: true, signal: _sig });
   }
 }
 
@@ -2216,7 +2222,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   const novaData = document.getElementById("dataEdicaoBio").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoBio").value.replace(",", "."));
 
-  if (!novaData || !novaQtd || isNaN(novaQtd)) { alert("Preencha a data e a gramatura."); return; }
+  if (!novaData || !novaQtd || isNaN(novaQtd)) { _toastErro("Preencha a data e a gramatura."); return; }
 
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
   const usuario = await pegarUsuarioLogado();
@@ -2229,7 +2235,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
     .eq("id", bio.id)
     .eq("user_id", usuario.id);
 
-  if (erroDel) { console.log(erroDel); alert("Erro ao salvar: " + erroDel.message); return; }
+  if (erroDel) { console.log(erroDel); _toastErro("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("biometrias")
@@ -2243,7 +2249,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
 
   if (erroIns || !inserido || inserido.length === 0) {
     console.log(erroIns);
-    alert("Erro ao salvar edição. Tente novamente.");
+    _toastErro("Erro ao salvar edição. Tente novamente.");
     return;
   }
 
@@ -2261,16 +2267,28 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   restaurarScroll();
 }
 
-async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
-  if (!confirm("Excluir esta biometria?")) return;
+function confirmarExcluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  const row = document.getElementById(`bio-row-${viveiroIndex}-${bioIndex}`);
+  if (!row) return;
+  row.innerHTML = `
+    <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
+      <span>Excluir esta biometria?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto})">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoBiometria(${viveiroIndex}, '${elementoId}', ${direto})">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
 
+async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
   const { error } = await supabaseClient.from("biometrias").delete().eq("id", bio.id).eq("user_id", usuario.id);
 
-  if (error) { console.log(error); alert("Erro ao excluir."); return; }
+  if (error) { console.log(error); _toastErro("Erro ao excluir."); return; }
 
   viveiros[viveiroIndex].biometrias.splice(bioIndex, 1);
   renderizarHistoricoBiometria(viveiroIndex, elementoId, direto);
@@ -2345,7 +2363,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoDesp").value);
   const novoPeso = parseFloat(document.getElementById("pesoEdicaoDesp").value);
 
-  if (!novaData || !novaQtd || !novoPeso) { alert("Preencha todos os campos."); return; }
+  if (!novaData || !novaQtd || !novoPeso) { _toastErro("Preencha todos os campos."); return; }
 
   const desp = viveiros[viveiroIndex].despescas[despIndex];
   const usuario = await pegarUsuarioLogado();
@@ -2358,7 +2376,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
     .eq("id", desp.id)
     .eq("user_id", usuario.id);
 
-  if (erroDel) { console.log(erroDel); alert("Erro ao salvar: " + erroDel.message); return; }
+  if (erroDel) { console.log(erroDel); _toastErro("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("despescas")
@@ -2373,7 +2391,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
 
   if (erroIns || !inserido || inserido.length === 0) {
     console.log(erroIns);
-    alert("Erro ao salvar edição. Tente novamente.");
+    _toastErro("Erro ao salvar edição. Tente novamente.");
     return;
   }
 
@@ -2392,16 +2410,28 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   restaurarScroll();
 }
 
-async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
-  if (!confirm("Excluir esta despesca?")) return;
+function confirmarExcluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  const row = document.getElementById(`desp-row-${viveiroIndex}-${despIndex}`);
+  if (!row) return;
+  row.innerHTML = `
+    <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
+      <span>Excluir esta despesca?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoDespesca(${viveiroIndex}, '${elementoId}', ${direto})">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
 
+async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
   const desp = viveiros[viveiroIndex].despescas[despIndex];
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
   const { error } = await supabaseClient.from("despescas").delete().eq("id", desp.id).eq("user_id", usuario.id);
 
-  if (error) { console.log(error); alert("Erro ao excluir."); return; }
+  if (error) { console.log(error); _toastErro("Erro ao excluir."); return; }
 
   viveiros[viveiroIndex].despescas.splice(despIndex, 1);
   renderizarHistoricoDespesca(viveiroIndex, elementoId, direto);
@@ -2419,7 +2449,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoRacao").value);
 
   if (!novaData || isNaN(novaQtd) || novaQtd < 0) {
-    alert("Preencha a data e a quantidade (pode ser 0).");
+    _toastErro("Preencha a data e a quantidade (pode ser 0).");
     return;
   }
 
@@ -2437,7 +2467,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   const { error: erroDel } = await supabaseClient
     .from("racoes").delete().eq("id", racao.id).eq("user_id", usuario.id);
 
-  if (erroDel) { alert("Erro ao salvar: " + erroDel.message); return; }
+  if (erroDel) { _toastErro("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("racoes")
@@ -2452,7 +2482,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     .select();
 
   if (erroIns || !inserido || inserido.length === 0) {
-    alert("Erro ao salvar edição. Tente novamente.");
+    _toastErro("Erro ao salvar edição. Tente novamente.");
     return;
   }
 
@@ -2508,13 +2538,25 @@ async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTi
   }
 }
 
-async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0) {
-  if (!confirm("Excluir este lançamento de ração?")) return;
+function confirmarExcluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0) {
+  const row = document.getElementById(`racao-row-${viveiroIndex}-${racaoIndex}`);
+  if (!row) return;
+  row.innerHTML = `
+    <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
+      <span>Excluir este lançamento de ração?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirRacao(${viveiroIndex},${racaoIndex},'${elementoId}',${direto},${pagina})">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${pagina})">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
 
+async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0) {
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
 
   if (!racao || !racao.id) {
-    alert("Erro: lançamento sem ID.");
+    _toastErro("Erro: lançamento sem ID.");
     return;
   }
 
@@ -2530,12 +2572,12 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
 
   if (error) {
     console.log(error);
-    alert("Erro ao excluir lançamento.");
+    _toastErro("Erro ao excluir lançamento.");
     return;
   }
 
   if (!deletado || deletado.length === 0) {
-    alert("Não foi possível excluir. Verifique sua conexão ou permissão.");
+    _toastErro("Não foi possível excluir. Verifique sua conexão ou permissão.");
     return;
   }
 
@@ -2701,13 +2743,13 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
                 : despescas
                     .map((item, i) => `
-                    <div class="linha-historico-acoes">
+                    <div class="linha-historico-acoes" id="desp-row-${index}-${i}">
                         <span>${formatarData(item.data)}</span>
                         <span class="col-centro">${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
                         <span class="col-centro">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
                         <span class="col-acoes">
                           <button class="botao-editar" onclick="abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                          <button class="botao-editar botao-excluir" onclick="excluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                          <button class="botao-editar botao-excluir" onclick="confirmarExcluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
                         </span>
                     </div>
                 `)
