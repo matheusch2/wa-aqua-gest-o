@@ -2938,3 +2938,86 @@ body.tema-escuro .boleto-item-info strong { color: #f9fafb; }
 body.tema-escuro .boleto-item-info small { color: #9ca3af; }
 body.tema-escuro .boleto-valor { color: #34d399; }
 body.tema-escuro .painel-confirmar-boleto { border-top-color: #374151; color: #d1d5db; }
+
+/* ─── CURVA DE CRESCIMENTO ───────────────────────────────────────────────────── */
+
+.botao-curva-crescimento {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f0fdf4, #e6f4f1);
+    color: rgb(6,107,99);
+    border: 1.5px solid #a7f3d0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: Arial, sans-serif;
+    justify-content: center;
+}
+
+.botao-curva-crescimento:active {
+    background: #dcfce7;
+}
+
+.grafico-container {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px 8px 8px;
+    margin-bottom: 12px;
+}
+
+.grafico-resumo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.grafico-resumo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.grafico-resumo-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgb(6,107,99);
+}
+
+.grafico-resumo-peso {
+    font-size: 13px;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.grafico-cresc {
+    color: #16a34a;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+body.tema-escuro .grafico-container {
+    background: #1f2937;
+    border-color: #374151;
+}
+body.tema-escuro .grafico-resumo-item {
+    background: #374151;
+    border-color: #4b5563;
+}
+body.tema-escuro .grafico-resumo-peso { color: #f9fafb; }
+body.tema-escuro .botao-curva-crescimento {
+    background: #064e3b;
+    color: #34d399;
+    border-color: #065f46;
+}

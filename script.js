@@ -1870,8 +1870,101 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
             }
         </div>
 
+    ${biometrias.length >= 2 ? `
+    <button class="botao-curva-crescimento" onclick="verCurvaCrescimento(${index}, ${direto})">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Ver curva de crescimento
+    </button>` : ""}
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
     `;
+}
+
+function verCurvaCrescimento(index, direto) {
+  const viveiro = viveiros[index];
+  const biometrias = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const dataPovoamento = viveiro.dataPovoamento ? new Date(viveiro.dataPovoamento + "T00:00:00") : null;
+
+  const labels = biometrias.map(b => {
+    if (dataPovoamento) {
+      const dataBio = new Date(b.data + "T00:00:00");
+      const diff = Math.round((dataBio - dataPovoamento) / 86400000);
+      return `D${diff}`;
+    }
+    return formatarData(b.data);
+  });
+  const pesos = biometrias.map(b => b.gramatura);
+
+  const area = document.getElementById(direto ? "resultado-historico" : "resultado-historico") || document.getElementById("area-gestao");
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Curva de crescimento — ${abreviarViveiro(viveiro.nome)}</h3>
+    <div class="grafico-container">
+      <canvas id="canvas-crescimento"></canvas>
+    </div>
+    <div class="grafico-resumo">
+      ${biometrias.map((b, i) => {
+        const cresc = i > 0 ? ` <span class="grafico-cresc">+${fmtG(b.gramatura - biometrias[i-1].gramatura)}g</span>` : "";
+        return `<div class="grafico-resumo-item">
+          <span class="grafico-resumo-label">${labels[i]}</span>
+          <span class="grafico-resumo-peso">${fmtG(b.gramatura)} g${cresc}</span>
+        </div>`;
+      }).join("")}
+    </div>
+    <button class="botao-voltar-form" style="margin-top:12px" onclick="renderizarHistoricoBiometria(${index},'resultado-historico',${direto})">← Voltar</button>
+  `;
+
+  setTimeout(() => {
+    const canvas = document.getElementById("canvas-crescimento");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Peso (g)",
+          data: pesos,
+          borderColor: "rgb(6,107,99)",
+          backgroundColor: "rgba(6,107,99,0.08)",
+          pointBackgroundColor: "rgb(6,107,99)",
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          tension: 0.3,
+          fill: true,
+          borderWidth: 2.5,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${fmtG(ctx.parsed.y)} g`,
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: "Dia de cultivo", color: "#6b7280", font: { size: 12 } },
+            grid: { color: "rgba(0,0,0,0.05)" },
+            ticks: { color: "#6b7280", font: { size: 11 } }
+          },
+          y: {
+            title: { display: true, text: "Peso (g)", color: "#6b7280", font: { size: 12 } },
+            grid: { color: "rgba(0,0,0,0.05)" },
+            ticks: {
+              color: "#6b7280",
+              font: { size: 11 },
+              callback: v => fmtG(v) + " g"
+            },
+            beginAtZero: false,
+          }
+        }
+      }
+    });
+  }, 50);
 }
 
 function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao = "") {
