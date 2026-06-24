@@ -3011,6 +3011,10 @@ function abrirMenuFinanceiro() {
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           Boletos a vencer
         </button>
+        <button class="botao-submenu-financeiro botao-submenu-cadastro-boleto" onclick="abrirFormBoleto()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="9.5" y1="17.5" x2="14.5" y2="17.5"/></svg>
+          Cadastrar boleto
+        </button>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
       </div>
@@ -3039,22 +3043,16 @@ function abrirBoletos() {
       : `<button class="botao-icone-acao" title="Marcar como pago" onclick="event.stopPropagation();marcarBoletoPago(${i})">✅</button>`;
     return `
       <div class="boleto-item${b.pago ? " boleto-item-pago" : ""}" onclick="verDetalhesBoleto(${i})" style="cursor:pointer">
-        <div class="boleto-item-topo">
-          <div class="boleto-item-info">
-            <strong>${b.nome}</strong>
-            <small>${b.fornecedor} · Prazo ${b.prazoDias}d</small>
-            ${b.valor ? `<span class="boleto-valor">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
-          </div>
-          <div class="boleto-item-acoes">
-            ${badge}
-            <div style="display:flex;gap:4px;justify-content:flex-end">
-              ${toggleBtn}
-              <button class="botao-icone-acao" onclick="event.stopPropagation();abrirFormBoleto(${i})">✏️</button>
-              <button class="botao-icone-acao" onclick="event.stopPropagation();confirmarExcluirBoleto(${i})">🗑️</button>
-            </div>
+        <div class="boleto-item-linha">
+          <span class="boleto-item-nome">${b.nome}</span>
+          ${b.valor ? `<span class="boleto-valor-slim">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
+          ${badge}
+          <div class="boleto-item-btns" onclick="event.stopPropagation()">
+            ${toggleBtn}
+            <button class="botao-icone-acao" onclick="abrirFormBoleto(${i})">✏️</button>
+            <button class="botao-icone-acao" onclick="confirmarExcluirBoleto(${i})">🗑️</button>
           </div>
         </div>
-        <small style="color:#9ca3af;font-size:11px">${b.pago ? `Pago${b.dataPagamento ? " em " + formatarData(b.dataPagamento) : ""}` : "Vence " + st.dataFmt}</small>
         <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
           <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
           <div class="confirmar-boleto-botoes">
@@ -3073,18 +3071,9 @@ function abrirBoletos() {
   const totalVencido = vencidos.reduce((s, b) => s + (b.valor || 0), 0);
 
   const resumoHtml = naoPagos.length === 0 ? "" : `
-    <div class="boleto-resumo">
-      <div class="boleto-resumo-bloco">
-        <span class="boleto-resumo-label">A pagar</span>
-        <span class="boleto-resumo-valor">R$ ${formatarNumeroBR(totalAPagar, 2)}</span>
-        <span class="boleto-resumo-sub">${naoPagos.length} boleto${naoPagos.length > 1 ? "s" : ""}</span>
-      </div>
-      ${totalVencido > 0 ? `
-      <div class="boleto-resumo-bloco vencido">
-        <span class="boleto-resumo-label">Vencido</span>
-        <span class="boleto-resumo-valor">R$ ${formatarNumeroBR(totalVencido, 2)}</span>
-        <span class="boleto-resumo-sub">${vencidos.length} boleto${vencidos.length > 1 ? "s" : ""}</span>
-      </div>` : ""}
+    <div class="boleto-resumo-bar">
+      <span class="boleto-resumo-chip">${naoPagos.length} boleto${naoPagos.length > 1 ? "s" : ""} · <strong>R$ ${formatarNumeroBR(totalAPagar, 2)}</strong></span>
+      ${totalVencido > 0 ? `<span class="boleto-resumo-chip vencido">⚠️ <strong>R$ ${formatarNumeroBR(totalVencido, 2)}</strong> vencido${vencidos.length > 1 ? "s" : ""}</span>` : ""}
     </div>
   `;
 
