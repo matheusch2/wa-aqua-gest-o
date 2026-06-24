@@ -3088,19 +3088,23 @@ function abrirBoletos(filtro) {
         <div class="bt-chips">
           <div class="bt-chip">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <div><div class="bt-chip-val">${naoPagos.length}</div><div class="bt-chip-lbl">ativos</div></div>
+            <div class="bt-chip-val">${naoPagos.length}</div>
+            <div class="bt-chip-lbl">ativos</div>
           </div>
           <div class="bt-chip">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <div><div class="bt-chip-val" style="font-size:11px">R$ ${formatarNumeroBR(valorTotal, 2)}</div><div class="bt-chip-lbl">valor total</div></div>
+            <div class="bt-chip-val" style="font-size:11px;font-weight:800">R$ ${formatarNumeroBR(valorTotal, 2)}</div>
+            <div class="bt-chip-lbl">total</div>
           </div>
           <div class="bt-chip bt-chip-warn">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <div><div class="bt-chip-val">${qtdVencendo}</div><div class="bt-chip-lbl">vencendo</div></div>
+            <div class="bt-chip-val">${qtdVencendo}</div>
+            <div class="bt-chip-lbl">vencendo</div>
           </div>
           <div class="bt-chip bt-chip-danger">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div><div class="bt-chip-val">${qtdVencidos}</div><div class="bt-chip-lbl">vencidos</div></div>
+            <div class="bt-chip-val">${qtdVencidos}</div>
+            <div class="bt-chip-lbl">vencidos</div>
           </div>
         </div>
         <div class="bt-abas">
