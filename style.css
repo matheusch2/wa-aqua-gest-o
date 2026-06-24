@@ -3398,10 +3398,11 @@ body.tema-escuro .botao-curva-crescimento {
 }
 
 .proj-barra-fundo {
-    height: 8px;
+    height: 10px;
     background: #e5e7eb;
     border-radius: 99px;
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
 }
 
 .proj-barra-preench {
@@ -3409,6 +3410,20 @@ body.tema-escuro .botao-curva-crescimento {
     background: linear-gradient(90deg, rgb(6,107,99), #34d399);
     border-radius: 99px;
     transition: width 0.4s ease;
+    position: relative;
+}
+
+.proj-barra-dot {
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    background: white;
+    border: 3px solid rgb(6,107,99);
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
 body.tema-escuro .proj-mini-header { background: #1f2937; border-color: #374151; }

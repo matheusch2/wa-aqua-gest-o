@@ -2013,7 +2013,9 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
             <span>${fmtG(alvo)} g</span>
           </div>
           <div class="proj-barra-fundo">
-            <div class="proj-barra-preench" style="width:${progresso}%"></div>
+            <div class="proj-barra-preench" style="width:${progresso}%">
+              <div class="proj-barra-dot"></div>
+            </div>
           </div>
         </div>
         <div class="proj-card-linha"><span>Atinge ${fmtG(alvo)} g em</span><strong>~${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</strong></div>
@@ -2129,17 +2131,17 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
           x: {
             title: { display: true, text: "Dia de cultivo", color: "#6b7280", font: { size: 12 } },
             grid: { color: "rgba(0,0,0,0.05)" },
-            ticks: { color: "#6b7280", font: { size: 11 } }
+            ticks: { color: "#6b7280", font: { size: 11 }, maxTicksLimit: 6, autoSkip: true, maxRotation: 0 }
           },
           y: {
             title: { display: true, text: "Peso (g)", color: "#6b7280", font: { size: 12 } },
             grid: { color: "rgba(0,0,0,0.05)" },
+            min: Math.max(0, Math.floor(Math.min(...pesos) * 0.8)),
             ticks: {
               color: "#6b7280",
               font: { size: 11 },
               callback: v => fmtG(v) + " g"
             },
-            beginAtZero: false,
           }
         }
       }
