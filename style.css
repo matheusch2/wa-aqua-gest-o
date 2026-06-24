@@ -3022,6 +3022,293 @@ body.tema-escuro .boleto-resumo-chip.vencido { background: #2a1414; border-color
 body.tema-escuro .botao-submenu-cadastro-boleto { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }
 body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
 
+/* ─── BOLETOS TABELA ─────────────────────────────────────────────────────────── */
+
+.bt-form .form-topo { padding-bottom: 0; }
+
+.bt-corpo {
+    display: flex;
+    flex-direction: column;
+}
+
+.bt-chips {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 0;
+}
+
+.bt-chip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    border: 1px solid #d1fae5;
+    border-radius: 10px;
+    padding: 8px 8px;
+    color: rgb(6, 107, 99);
+    min-width: 0;
+}
+
+.bt-chip svg { flex-shrink: 0; }
+
+.bt-chip-val {
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bt-chip-lbl {
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 1.1;
+}
+
+.bt-chip-warn {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+.bt-chip-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.bt-abas {
+    display: flex;
+    gap: 0;
+    padding: 12px 16px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bt-aba {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: -1px;
+}
+
+.bt-aba.ativa {
+    color: rgb(6, 107, 99);
+    border-bottom-color: rgb(6, 107, 99);
+}
+
+.bt-tabela-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bt-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.bt-tabela thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.bt-tabela thead th:nth-child(2),
+.bt-tabela thead th:nth-child(3),
+.bt-tabela thead th:nth-child(4) { text-align: center; }
+
+.bt-row {
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.bt-row:hover { background: #f9fafb; }
+.bt-row:active { background: #f3f4f6; }
+
+.bt-row-pago { opacity: 0.55; }
+
+.bt-tabela td {
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+.bt-td-boleto {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+}
+
+.bt-icone {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bt-icone-ok    { background: #f0fdf4; color: rgb(6, 107, 99); }
+.bt-icone-proximo { background: #fef3c7; color: #92400e; }
+.bt-icone-hoje  { background: #fff7ed; color: #c2410c; }
+.bt-icone-vencido { background: #fef2f2; color: #dc2626; }
+.bt-icone-pago  { background: #f0fdf4; color: #16a34a; }
+
+.bt-nome-wrap { display: flex; flex-direction: column; min-width: 0; }
+
+.bt-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bt-sub {
+    font-size: 11px;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bt-td-valor {
+    font-weight: 700;
+    color: rgb(6, 107, 99);
+    white-space: nowrap;
+    text-align: center;
+}
+
+.bt-td-data {
+    color: #6b7280;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 12px;
+}
+
+.bt-td-status { text-align: center; }
+
+.bt-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.bt-badge-ok      { background: #f0fdf4; color: rgb(6,107,99); border: 1px solid #d1fae5; }
+.bt-badge-proximo { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.bt-badge-hoje    { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.bt-badge-vencido { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.bt-badge-pago    { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+
+.bt-td-menu { position: relative; padding: 0 8px; width: 32px; }
+
+.bt-menu-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    color: #9ca3af;
+    line-height: 1;
+}
+
+.bt-menu-btn:hover { background: #f3f4f6; color: #374151; }
+
+.bt-menu-drop {
+    position: absolute;
+    right: 8px;
+    top: 100%;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 50;
+    min-width: 170px;
+    overflow: hidden;
+}
+
+.bt-menu-drop button {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.bt-menu-drop button:last-child { border-bottom: none; }
+.bt-menu-drop button:hover { background: #f9fafb; }
+.bt-menu-excluir { color: #ef4444 !important; }
+
+.bt-confirmar-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fef2f2;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #7f1d1d;
+}
+
+.bt-confirmar-inline span { flex: 1; font-weight: 500; }
+
+.bt-empty {
+    text-align: center;
+    padding: 32px 16px !important;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* dark mode */
+body.tema-escuro .bt-chip { background: #052e2b; border-color: #0f4d47; color: #34d399; }
+body.tema-escuro .bt-chip-lbl { color: #6b7280; }
+body.tema-escuro .bt-chip-warn { background: #2d1f00; border-color: #78350f; color: #fcd34d; }
+body.tema-escuro .bt-chip-danger { background: #2a1414; border-color: #5b2020; color: #f87171; }
+body.tema-escuro .bt-aba { color: #6b7280; }
+body.tema-escuro .bt-aba.ativa { color: #34d399; border-bottom-color: #34d399; }
+body.tema-escuro .bt-abas { border-bottom-color: #374151; }
+body.tema-escuro .bt-tabela thead th { color: #6b7280; border-bottom-color: #374151; }
+body.tema-escuro .bt-row { border-bottom-color: #1f2937; }
+body.tema-escuro .bt-row:hover { background: #1f2937; }
+body.tema-escuro .bt-tabela td { color: #f9fafb; }
+body.tema-escuro .bt-nome { color: #f9fafb; }
+body.tema-escuro .bt-td-valor { color: #34d399; }
+body.tema-escuro .bt-td-data { color: #9ca3af; }
+body.tema-escuro .bt-menu-btn { color: #6b7280; }
+body.tema-escuro .bt-menu-btn:hover { background: #374151; color: #f9fafb; }
+body.tema-escuro .bt-menu-drop { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-menu-drop button { color: #f9fafb; border-bottom-color: #374151; }
+body.tema-escuro .bt-menu-drop button:hover { background: #374151; }
+body.tema-escuro .bt-icone-ok { background: #052e2b; }
+body.tema-escuro .bt-icone-pago { background: #052e2b; }
+
 /* ─── CURVA DE CRESCIMENTO ───────────────────────────────────────────────────── */
 
 .botao-curva-crescimento {

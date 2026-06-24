@@ -5,6 +5,7 @@ let viveiros = [];
 let produtos = []; let tiposRacao = [];
 let boletos = [];
 let _financeiroModo = "detalhado";
+let _boletosFiltro = "todos";
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
@@ -3022,62 +3023,137 @@ function abrirMenuFinanceiro() {
   `;
 }
 
-function abrirBoletos() {
+function abrirBoletos(filtro) {
+  if (filtro) _boletosFiltro = filtro;
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
-  // Mantém o índice original e ordena: não pagos por urgência (vencendo primeiro), pagos no fim
-  const ordenados = boletos
-    .map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }))
-    .sort((x, y) => {
-      if (!!x.b.pago !== !!y.b.pago) return x.b.pago ? 1 : -1;
-      return x.st.diff - y.st.diff;
-    });
+  const todos = boletos.map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }));
+  const naoPagos = todos.filter(x => !x.b.pago);
+  const valorTotal = naoPagos.reduce((s, x) => s + (x.b.valor || 0), 0);
+  const qtdVencendo = naoPagos.filter(x => x.st.tipo === "proximo" || x.st.tipo === "hoje").length;
+  const qtdVencidos = naoPagos.filter(x => x.st.tipo === "vencido").length;
 
-  const itens = ordenados.map(({ b, i, st }) => {
-    const diasTexto = b.pago ? "✓ Pago" : st.label;
-    const diasClasse = b.pago ? "pago" : st.tipo;
+  let filtrados;
+  if (_boletosFiltro === "vencendo") filtrados = naoPagos.filter(x => x.st.tipo === "proximo" || x.st.tipo === "hoje");
+  else if (_boletosFiltro === "vencidos") filtrados = naoPagos.filter(x => x.st.tipo === "vencido");
+  else if (_boletosFiltro === "pagos") filtrados = todos.filter(x => x.b.pago);
+  else filtrados = [...todos].sort((x, y) => {
+    if (!!x.b.pago !== !!y.b.pago) return x.b.pago ? 1 : -1;
+    return x.st.diff - y.st.diff;
+  });
+
+  const rows = filtrados.map(({ b, i, st }) => {
+    const [ano, mes, dia] = b.dataCompra.split("-").map(Number);
+    const vencDate = new Date(ano, mes - 1, dia);
+    vencDate.setDate(vencDate.getDate() + b.prazoDias);
+    const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const badgeTipo = b.pago ? "pago" : st.tipo;
+    const badgeLabel = b.pago ? "Em dia" : st.label;
     return `
-      <div class="boleto-item${b.pago ? " boleto-item-pago" : ""}" onclick="verDetalhesBoleto(${i})" style="cursor:pointer">
-        <div class="boleto-item-linha">
-          <span class="boleto-item-nome">${b.nome}</span>
-          ${b.valor ? `<span class="boleto-valor-slim">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
-          <span class="boleto-dias-text boleto-dias-${diasClasse}">${diasTexto}</span>
-        </div>
-      </div>
+      <tr class="bt-row${b.pago ? " bt-row-pago" : ""}" onclick="verDetalhesBoleto(${i})">
+        <td class="bt-td-boleto">
+          <div class="bt-icone bt-icone-${badgeTipo}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div class="bt-nome-wrap">
+            <span class="bt-nome">${b.nome}</span>
+            <span class="bt-sub">${b.fornecedor}</span>
+          </div>
+        </td>
+        <td class="bt-td-valor">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}</td>
+        <td class="bt-td-data">${vencFmt}</td>
+        <td class="bt-td-status"><span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span></td>
+        <td class="bt-td-menu" onclick="event.stopPropagation()">
+          <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">⋮</button>
+          <div id="bt-menu-${i}" class="bt-menu-drop" style="display:none">
+            ${b.pago
+              ? `<button onclick="_toggleMenuBoleto(${i});desmarcarBoletoPago(${i})">↩️ Desfazer pagamento</button>`
+              : `<button onclick="_toggleMenuBoleto(${i});marcarBoletoPago(${i})">✅ Marcar como pago</button>`}
+            <button onclick="_toggleMenuBoleto(${i});abrirFormBoleto(${i})">✏️ Editar</button>
+            <button class="bt-menu-excluir" onclick="_toggleMenuBoleto(${i});_mostrarConfirmarExcluir(${i})">🗑️ Excluir</button>
+          </div>
+        </td>
+      </tr>
+      <tr id="bt-conf-${i}" style="display:none">
+        <td colspan="5" style="padding:0 12px 8px">
+          <div class="bt-confirmar-inline">
+            <span>Excluir este boleto?</span>
+            <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('bt-conf-${i}').style.display='none'">Cancelar</button>
+            <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${i})">Excluir</button>
+          </div>
+        </td>
+      </tr>
     `;
   }).join("");
 
-  // Resumo: total a pagar (não pagos) e, se houver, total vencido
-  const naoPagos = boletos.filter(b => !b.pago);
-  const totalAPagar = naoPagos.reduce((s, b) => s + (b.valor || 0), 0);
-  const vencidos = naoPagos.filter(b => _statusBoleto(b.dataCompra, b.prazoDias).tipo === "vencido");
-  const totalVencido = vencidos.reduce((s, b) => s + (b.valor || 0), 0);
-
-  const resumoHtml = naoPagos.length === 0 ? "" : `
-    <div class="boleto-resumo-bar">
-      <span class="boleto-resumo-chip">${naoPagos.length} boleto${naoPagos.length > 1 ? "s" : ""} · <strong>R$ ${formatarNumeroBR(totalAPagar, 2)}</strong></span>
-      ${totalVencido > 0 ? `<span class="boleto-resumo-chip vencido">⚠️ <strong>R$ ${formatarNumeroBR(totalVencido, 2)}</strong> vencido${vencidos.length > 1 ? "s" : ""}</span>` : ""}
-    </div>
-  `;
+  const emptyRow = `<tr><td colspan="5" class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</td></tr>`;
 
   area.innerHTML = `
-    <div class="form-lancamento">
+    <div class="form-lancamento bt-form">
       <div class="form-topo">
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         </div>
         <h2 class="form-titulo">Boletos</h2>
       </div>
-      <div class="form-corpo">
-        ${boletos.length === 0
-          ? `<p style="text-align:center;color:#6b7280;font-size:14px;margin:16px 0">Nenhum boleto cadastrado.<br><small>Use "Cadastrar boleto" no menu financeiro para adicionar.</small></p>`
-          : resumoHtml + `<div class="boleto-lista">${itens}</div>`
-        }
-        <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuFinanceiro()">← Voltar</button>
+      <div class="bt-corpo">
+        <div class="bt-chips">
+          <div class="bt-chip">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <div><div class="bt-chip-val">${naoPagos.length}</div><div class="bt-chip-lbl">ativos</div></div>
+          </div>
+          <div class="bt-chip">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <div><div class="bt-chip-val">R$ ${formatarNumeroBR(valorTotal, 2)}</div><div class="bt-chip-lbl">valor total</div></div>
+          </div>
+          <div class="bt-chip bt-chip-warn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div><div class="bt-chip-val">${qtdVencendo}</div><div class="bt-chip-lbl">vencendo</div></div>
+          </div>
+          <div class="bt-chip bt-chip-danger">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div><div class="bt-chip-val">${qtdVencidos}</div><div class="bt-chip-lbl">vencidos</div></div>
+          </div>
+        </div>
+        <div class="bt-abas">
+          <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">Todos</button>
+          <button class="bt-aba${_boletosFiltro === "vencendo" ? " ativa" : ""}" onclick="abrirBoletos('vencendo')">Vencendo</button>
+          <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
+          <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
+        </div>
+        <div class="bt-tabela-wrap">
+          <table class="bt-tabela">
+            <thead><tr>
+              <th>BOLETO</th><th>VALOR</th><th>VENCIMENTO</th><th>STATUS</th><th></th>
+            </tr></thead>
+            <tbody>${filtrados.length ? rows : emptyRow}</tbody>
+          </table>
+        </div>
+        <button class="botao-voltar-form" style="margin:8px 16px 16px" onclick="abrirMenuFinanceiro()">← Voltar</button>
       </div>
     </div>
   `;
+
+  // Fecha menus ao clicar fora
+  document.addEventListener("click", _fecharMenusBoleto, { once: true });
+}
+
+function _toggleMenuBoleto(index) {
+  const menu = document.getElementById(`bt-menu-${index}`);
+  if (!menu) return;
+  const aberto = menu.style.display !== "none";
+  document.querySelectorAll(".bt-menu-drop").forEach(el => el.style.display = "none");
+  if (!aberto) menu.style.display = "block";
+}
+
+function _fecharMenusBoleto() {
+  document.querySelectorAll(".bt-menu-drop").forEach(el => el.style.display = "none");
+}
+
+function _mostrarConfirmarExcluir(index) {
+  const row = document.getElementById(`bt-conf-${index}`);
+  if (row) row.style.display = "table-row";
 }
 
 function verDetalhesBoleto(index) {
