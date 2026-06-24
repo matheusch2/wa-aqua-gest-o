@@ -3342,6 +3342,81 @@ body.tema-escuro .botao-curva-crescimento {
     border-color: #065f46;
 }
 
+/* mini-header da curva */
+.proj-mini-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 0;
+    margin-bottom: 12px;
+}
+
+.proj-mini-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.proj-mini-sep {
+    width: 1px;
+    height: 32px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+}
+
+.proj-mini-lbl {
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.proj-mini-val {
+    font-size: 14px;
+    font-weight: 800;
+    color: rgb(6, 107, 99);
+}
+
+/* barra de progresso */
+.proj-progresso-wrap {
+    margin-bottom: 10px;
+}
+
+.proj-progresso-topo {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.proj-barra-fundo {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.proj-barra-preench {
+    height: 100%;
+    background: linear-gradient(90deg, rgb(6,107,99), #34d399);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+body.tema-escuro .proj-mini-header { background: #1f2937; border-color: #374151; }
+body.tema-escuro .proj-mini-sep { background: #374151; }
+body.tema-escuro .proj-mini-val { color: #34d399; }
+body.tema-escuro .proj-progresso-topo { color: #d1d5db; }
+body.tema-escuro .proj-barra-fundo { background: #374151; }
+
 /* projeção de despesca */
 .proj-controle {
     display: flex;
