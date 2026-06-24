@@ -3122,8 +3122,8 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 0 10px 16px;
+    gap: 8px;
+    padding: 12px 0 12px 16px;
     cursor: pointer;
     min-width: 0;
 }
@@ -3132,52 +3132,15 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
 
 .bt-row-pago { opacity: 0.55; }
 
-.bt-icone {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.bt-icone-ok      { background: #f0fdf4; color: rgb(6, 107, 99); }
-.bt-icone-proximo { background: #fef3c7; color: #92400e; }
-.bt-icone-hoje    { background: #fff7ed; color: #c2410c; }
-.bt-icone-vencido { background: #fef2f2; color: #dc2626; }
-.bt-icone-pago    { background: #f0fdf4; color: #16a34a; }
-
-.bt-nome-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
 .bt-nome {
+    flex: 1;
     font-size: 13px;
     font-weight: 600;
     color: #1f2937;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.bt-sub {
-    font-size: 11px;
-    color: #9ca3af;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bt-row-direita {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-    flex-shrink: 0;
+    min-width: 0;
 }
 
 .bt-valor-row {
@@ -3185,12 +3148,7 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
     font-weight: 700;
     color: rgb(6, 107, 99);
     white-space: nowrap;
-}
-
-.bt-data-row {
-    font-size: 11px;
-    color: #9ca3af;
-    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .bt-badge {

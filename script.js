@@ -3053,18 +3053,9 @@ function abrirBoletos(filtro) {
     return `
       <div class="bt-row${b.pago ? " bt-row-pago" : ""}">
         <div class="bt-row-main" onclick="verDetalhesBoleto(${i})">
-          <div class="bt-icone bt-icone-${badgeTipo}">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          </div>
-          <div class="bt-nome-wrap">
-            <span class="bt-nome">${b.nome}</span>
-            <span class="bt-sub">${b.fornecedor}</span>
-          </div>
-          <div class="bt-row-direita">
-            <span class="bt-valor-row">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}</span>
-            <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
-            <span class="bt-data-row">${vencFmt}</span>
-          </div>
+          <span class="bt-nome">${b.nome}</span>
+          <span class="bt-valor-row">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}</span>
+          <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
         </div>
         <div class="bt-menu-wrap" onclick="event.stopPropagation()">
           <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">⋮</button>
