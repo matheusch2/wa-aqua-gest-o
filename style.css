@@ -2759,8 +2759,7 @@ body.tema-escuro .confirmar-exclusao-custo {
 .boleto-item-linha {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: 0;
+    width: 100%;
 }
 
 .boleto-item-nome {
@@ -2772,14 +2771,16 @@ body.tema-escuro .confirmar-exclusao-custo {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
+    text-align: left;
 }
 
 .boleto-valor-slim {
+    flex: 1;
     font-size: 13px;
     font-weight: 700;
     color: rgb(6, 107, 99);
     white-space: nowrap;
-    flex-shrink: 0;
+    text-align: center;
 }
 
 .boleto-item-btns {
@@ -2789,10 +2790,11 @@ body.tema-escuro .confirmar-exclusao-custo {
 }
 
 .boleto-dias-text {
+    flex: 1;
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
-    flex-shrink: 0;
+    text-align: right;
 }
 
 .boleto-dias-ok { color: rgb(6, 107, 99); }

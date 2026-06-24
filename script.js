@@ -3009,7 +3009,7 @@ function abrirMenuFinanceiro() {
         </button>
         <button class="botao-submenu-financeiro botao-submenu-boleto" onclick="abrirBoletos()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          Boletos a vencer
+          Boletos
         </button>
         <button class="botao-submenu-financeiro botao-submenu-cadastro-boleto" onclick="abrirFormBoleto()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="9.5" y1="17.5" x2="14.5" y2="17.5"/></svg>
@@ -3067,7 +3067,7 @@ function abrirBoletos() {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         </div>
-        <h2 class="form-titulo">Boletos a vencer</h2>
+        <h2 class="form-titulo">Boletos</h2>
       </div>
       <div class="form-corpo">
         ${boletos.length === 0
