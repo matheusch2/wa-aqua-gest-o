@@ -3105,58 +3105,36 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
     border-bottom-color: rgb(6, 107, 99);
 }
 
-.bt-tabela-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+.bt-lista {
+    display: flex;
+    flex-direction: column;
 }
-
-.bt-tabela {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.bt-tabela thead th {
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 10px;
-    font-weight: 700;
-    color: #9ca3af;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid #e5e7eb;
-    white-space: nowrap;
-}
-
-.bt-tabela thead th:nth-child(2),
-.bt-tabela thead th:nth-child(3),
-.bt-tabela thead th:nth-child(4) { text-align: center; }
 
 .bt-row {
+    display: flex;
+    align-items: center;
     border-bottom: 1px solid #f3f4f6;
-    cursor: pointer;
-    transition: background 0.1s;
+    position: relative;
+    flex-wrap: wrap;
 }
 
-.bt-row:hover { background: #f9fafb; }
-.bt-row:active { background: #f3f4f6; }
+.bt-row-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 10px 16px;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.bt-row-main:active { background: #f9fafb; }
 
 .bt-row-pago { opacity: 0.55; }
 
-.bt-tabela td {
-    padding: 10px 12px;
-    vertical-align: middle;
-}
-
-.bt-td-boleto {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 120px;
-}
-
 .bt-icone {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -3164,13 +3142,18 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
     flex-shrink: 0;
 }
 
-.bt-icone-ok    { background: #f0fdf4; color: rgb(6, 107, 99); }
+.bt-icone-ok      { background: #f0fdf4; color: rgb(6, 107, 99); }
 .bt-icone-proximo { background: #fef3c7; color: #92400e; }
-.bt-icone-hoje  { background: #fff7ed; color: #c2410c; }
+.bt-icone-hoje    { background: #fff7ed; color: #c2410c; }
 .bt-icone-vencido { background: #fef2f2; color: #dc2626; }
-.bt-icone-pago  { background: #f0fdf4; color: #16a34a; }
+.bt-icone-pago    { background: #f0fdf4; color: #16a34a; }
 
-.bt-nome-wrap { display: flex; flex-direction: column; min-width: 0; }
+.bt-nome-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
 
 .bt-nome {
     font-size: 13px;
@@ -3189,27 +3172,32 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
     text-overflow: ellipsis;
 }
 
-.bt-td-valor {
+.bt-row-direita {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.bt-valor-row {
+    font-size: 13px;
     font-weight: 700;
     color: rgb(6, 107, 99);
     white-space: nowrap;
-    text-align: center;
 }
 
-.bt-td-data {
-    color: #6b7280;
+.bt-data-row {
+    font-size: 11px;
+    color: #9ca3af;
     white-space: nowrap;
-    text-align: center;
-    font-size: 12px;
 }
-
-.bt-td-status { text-align: center; }
 
 .bt-badge {
     display: inline-block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    padding: 3px 8px;
+    padding: 2px 7px;
     border-radius: 20px;
     white-space: nowrap;
 }
@@ -3220,7 +3208,7 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
 .bt-badge-vencido { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
 .bt-badge-pago    { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
 
-.bt-td-menu { position: relative; padding: 0 8px; width: 32px; }
+.bt-menu-wrap { position: relative; padding: 0 8px; flex-shrink: 0; }
 
 .bt-menu-btn {
     background: none;
@@ -3271,10 +3259,11 @@ body.tema-escuro .botao-submenu-cadastro-boleto svg { stroke: #93c5fd; }
     align-items: center;
     gap: 8px;
     background: #fef2f2;
-    border-radius: 8px;
-    padding: 8px 12px;
+    padding: 8px 16px;
     font-size: 13px;
     color: #7f1d1d;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .bt-confirmar-inline span { flex: 1; font-weight: 500; }

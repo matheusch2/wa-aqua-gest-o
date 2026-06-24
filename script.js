@@ -3047,24 +3047,26 @@ function abrirBoletos(filtro) {
     const [ano, mes, dia] = b.dataCompra.split("-").map(Number);
     const vencDate = new Date(ano, mes - 1, dia);
     vencDate.setDate(vencDate.getDate() + b.prazoDias);
-    const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
     const badgeTipo = b.pago ? "pago" : st.tipo;
-    const badgeLabel = b.pago ? "Em dia" : st.label;
+    const badgeLabel = b.pago ? "✓ Pago" : st.label;
     return `
-      <tr class="bt-row${b.pago ? " bt-row-pago" : ""}" onclick="verDetalhesBoleto(${i})">
-        <td class="bt-td-boleto">
+      <div class="bt-row${b.pago ? " bt-row-pago" : ""}">
+        <div class="bt-row-main" onclick="verDetalhesBoleto(${i})">
           <div class="bt-icone bt-icone-${badgeTipo}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           </div>
           <div class="bt-nome-wrap">
             <span class="bt-nome">${b.nome}</span>
             <span class="bt-sub">${b.fornecedor}</span>
           </div>
-        </td>
-        <td class="bt-td-valor">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}</td>
-        <td class="bt-td-data">${vencFmt}</td>
-        <td class="bt-td-status"><span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span></td>
-        <td class="bt-td-menu" onclick="event.stopPropagation()">
+          <div class="bt-row-direita">
+            <span class="bt-valor-row">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}</span>
+            <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
+            <span class="bt-data-row">${vencFmt}</span>
+          </div>
+        </div>
+        <div class="bt-menu-wrap" onclick="event.stopPropagation()">
           <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">⋮</button>
           <div id="bt-menu-${i}" class="bt-menu-drop" style="display:none">
             ${b.pago
@@ -3073,25 +3075,19 @@ function abrirBoletos(filtro) {
             <button onclick="_toggleMenuBoleto(${i});abrirFormBoleto(${i})">✏️ Editar</button>
             <button class="bt-menu-excluir" onclick="_toggleMenuBoleto(${i});_mostrarConfirmarExcluir(${i})">🗑️ Excluir</button>
           </div>
-        </td>
-      </tr>
-      <tr id="bt-conf-${i}" style="display:none">
-        <td colspan="5" style="padding:0 12px 8px">
-          <div class="bt-confirmar-inline">
-            <span>Excluir este boleto?</span>
-            <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('bt-conf-${i}').style.display='none'">Cancelar</button>
-            <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${i})">Excluir</button>
-          </div>
-        </td>
-      </tr>
+        </div>
+        <div id="bt-conf-${i}" class="bt-confirmar-inline" style="display:none">
+          <span>Excluir este boleto?</span>
+          <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('bt-conf-${i}').style.display='none'">Cancelar</button>
+          <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${i})">Excluir</button>
+        </div>
+      </div>
     `;
   }).join("");
 
-  const emptyRow = `<tr><td colspan="5" class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</td></tr>`;
-
   area.innerHTML = `
     <div class="form-lancamento bt-form">
-      <div class="form-topo">
+      <div class="form-topo" style="padding-bottom:0">
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         </div>
@@ -3100,19 +3096,19 @@ function abrirBoletos(filtro) {
       <div class="bt-corpo">
         <div class="bt-chips">
           <div class="bt-chip">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             <div><div class="bt-chip-val">${naoPagos.length}</div><div class="bt-chip-lbl">ativos</div></div>
           </div>
           <div class="bt-chip">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <div><div class="bt-chip-val">R$ ${formatarNumeroBR(valorTotal, 2)}</div><div class="bt-chip-lbl">valor total</div></div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <div><div class="bt-chip-val" style="font-size:11px">R$ ${formatarNumeroBR(valorTotal, 2)}</div><div class="bt-chip-lbl">valor total</div></div>
           </div>
           <div class="bt-chip bt-chip-warn">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <div><div class="bt-chip-val">${qtdVencendo}</div><div class="bt-chip-lbl">vencendo</div></div>
           </div>
           <div class="bt-chip bt-chip-danger">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div><div class="bt-chip-val">${qtdVencidos}</div><div class="bt-chip-lbl">vencidos</div></div>
           </div>
         </div>
@@ -3122,13 +3118,8 @@ function abrirBoletos(filtro) {
           <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
           <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
         </div>
-        <div class="bt-tabela-wrap">
-          <table class="bt-tabela">
-            <thead><tr>
-              <th>BOLETO</th><th>VALOR</th><th>VENCIMENTO</th><th>STATUS</th><th></th>
-            </tr></thead>
-            <tbody>${filtrados.length ? rows : emptyRow}</tbody>
-          </table>
+        <div class="bt-lista">
+          ${filtrados.length ? rows : `<div class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</div>`}
         </div>
         <button class="botao-voltar-form" style="margin:8px 16px 16px" onclick="abrirMenuFinanceiro()">← Voltar</button>
       </div>
