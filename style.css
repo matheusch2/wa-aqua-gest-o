@@ -2788,6 +2788,19 @@ body.tema-escuro .confirmar-exclusao-custo {
     flex-shrink: 0;
 }
 
+.boleto-dias-text {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.boleto-dias-ok { color: rgb(6, 107, 99); }
+.boleto-dias-proximo { color: #92400e; }
+.boleto-dias-hoje { color: #c2410c; }
+.boleto-dias-vencido { color: #dc2626; }
+.boleto-dias-pago { color: #16a34a; }
+
 .boleto-valor {
     font-size: 14px;
     font-weight: 700;

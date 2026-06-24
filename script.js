@@ -2961,10 +2961,10 @@ function _statusBoleto(dataCompra, prazoDias) {
   venc.setDate(venc.getDate() + prazoDias);
   const diff = Math.round((venc - hojeZerado) / 86400000);
   const dataFmt = venc.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), diff, label: `Vencido há ${Math.abs(diff)}d`, dataFmt };
+  if (diff < 0) return { tipo: "vencido", dias: Math.abs(diff), diff, label: `Vencido há ${Math.abs(diff)} dias`, dataFmt };
   if (diff === 0) return { tipo: "hoje", dias: 0, diff, label: "Vence hoje!", dataFmt };
-  if (diff <= 10) return { tipo: "proximo", dias: diff, diff, label: `Vence em ${diff}d`, dataFmt };
-  return { tipo: "ok", dias: diff, diff, label: `Vence ${dataFmt}`, dataFmt };
+  if (diff <= 10) return { tipo: "proximo", dias: diff, diff, label: `Vence em ${diff} dias`, dataFmt };
+  return { tipo: "ok", dias: diff, diff, label: `Vence em ${diff} dias`, dataFmt };
 }
 
 function verificarBoletosVencendo() {
@@ -3035,30 +3035,14 @@ function abrirBoletos() {
     });
 
   const itens = ordenados.map(({ b, i, st }) => {
-    const badge = b.pago
-      ? `<span class="boleto-badge boleto-badge-pago">✓ Pago</span>`
-      : `<span class="boleto-badge boleto-badge-${st.tipo}">${st.label}</span>`;
-    const toggleBtn = b.pago
-      ? `<button class="botao-icone-acao" title="Desfazer pagamento" onclick="event.stopPropagation();desmarcarBoletoPago(${i})">↩️</button>`
-      : `<button class="botao-icone-acao" title="Marcar como pago" onclick="event.stopPropagation();marcarBoletoPago(${i})">✅</button>`;
+    const diasTexto = b.pago ? "✓ Pago" : st.label;
+    const diasClasse = b.pago ? "pago" : st.tipo;
     return `
       <div class="boleto-item${b.pago ? " boleto-item-pago" : ""}" onclick="verDetalhesBoleto(${i})" style="cursor:pointer">
         <div class="boleto-item-linha">
           <span class="boleto-item-nome">${b.nome}</span>
           ${b.valor ? `<span class="boleto-valor-slim">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ""}
-          ${badge}
-          <div class="boleto-item-btns" onclick="event.stopPropagation()">
-            ${toggleBtn}
-            <button class="botao-icone-acao" onclick="abrirFormBoleto(${i})">✏️</button>
-            <button class="botao-icone-acao" onclick="confirmarExcluirBoleto(${i})">🗑️</button>
-          </div>
-        </div>
-        <div id="confirmar-excluir-boleto-${i}" class="painel-confirmar-boleto" style="display:none">
-          <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
-          <div class="confirmar-boleto-botoes">
-            <button class="confirmar-boleto-btn-cancelar" onclick="event.stopPropagation();document.getElementById('confirmar-excluir-boleto-${i}').style.display='none'">Cancelar</button>
-            <button class="confirmar-boleto-btn-excluir" onclick="event.stopPropagation();excluirBoleto(${i})">Excluir</button>
-          </div>
+          <span class="boleto-dias-text boleto-dias-${diasClasse}">${diasTexto}</span>
         </div>
       </div>
     `;
@@ -3087,12 +3071,10 @@ function abrirBoletos() {
       </div>
       <div class="form-corpo">
         ${boletos.length === 0
-          ? `<p style="text-align:center;color:#6b7280;font-size:14px;margin:16px 0">Nenhum boleto cadastrado.<br><small>Adicione para receber alertas de vencimento.</small></p>`
+          ? `<p style="text-align:center;color:#6b7280;font-size:14px;margin:16px 0">Nenhum boleto cadastrado.<br><small>Use "Cadastrar boleto" no menu financeiro para adicionar.</small></p>`
           : resumoHtml + `<div class="boleto-lista">${itens}</div>`
         }
-        <button class="botao-salvar" style="margin-top:${boletos.length ? 12 : 4}px" onclick="abrirFormBoleto()">+ Adicionar boleto</button>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirMenuFinanceiro()">← Voltar</button>
+        <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuFinanceiro()">← Voltar</button>
       </div>
     </div>
   `;
@@ -3153,6 +3135,14 @@ function verDetalhesBoleto(index) {
           : `<button class="botao-salvar" style="margin-top:16px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✅ Marcar como pago</button>`}
         <div style="display:flex;gap:10px;margin-top:10px">
           <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
+          <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'">🗑️ Excluir</button>
+        </div>
+        <div id="confirmar-excluir-det" class="painel-confirmar-boleto" style="display:none;margin-top:10px">
+          <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
+          <div class="confirmar-boleto-botoes">
+            <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('confirmar-excluir-det').style.display='none'">Cancelar</button>
+            <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${index})">Excluir</button>
+          </div>
         </div>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="abrirBoletos()">← Voltar</button>
