@@ -1949,20 +1949,63 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
     `;
 }
 
-function verCurvaCrescimento(index, direto) {
+function verCurvaCrescimento(index, direto, pesoAlvo) {
   const viveiro = viveiros[index];
   const biometrias = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
   const dataPovoamento = viveiro.dataPovoamento ? new Date(viveiro.dataPovoamento + "T00:00:00") : null;
+  const alvo = (pesoAlvo === undefined || pesoAlvo === null || isNaN(pesoAlvo)) ? 20 : pesoAlvo;
 
-  const labels = biometrias.map(b => {
-    if (dataPovoamento) {
-      const dataBio = new Date(b.data + "T00:00:00");
-      const diff = Math.round((dataBio - dataPovoamento) / 86400000);
-      return `D${diff}`;
-    }
-    return formatarData(b.data);
-  });
+  const diaCultivo = (dataStr) => dataPovoamento
+    ? Math.round((new Date(dataStr + "T00:00:00") - dataPovoamento) / 86400000)
+    : null;
+
+  const dias = biometrias.map(b => diaCultivo(b.data));
+  const labels = biometrias.map((b, i) => dataPovoamento ? `D${dias[i]}` : formatarData(b.data));
   const pesos = biometrias.map(b => b.gramatura);
+
+  // Taxa média de crescimento (g/dia) — média dos intervalos, igual ao painel do viveiro
+  const taxas = [];
+  for (let i = 1; i < biometrias.length; i++) {
+    const dd = Math.round((_parseDataLocal(biometrias[i].data) - _parseDataLocal(biometrias[i - 1].data)) / 86400000);
+    if (dd > 0) taxas.push((biometrias[i].gramatura - biometrias[i - 1].gramatura) / dd);
+  }
+  const gDia = taxas.length ? taxas.reduce((s, v) => s + v, 0) / taxas.length : 0;
+
+  const pesoAtual = pesos[pesos.length - 1];
+  const ultimoDia = dias[dias.length - 1];
+
+  // Monta dados de projeção (linha pontilhada do último ponto real até o alvo)
+  let chartLabels = [...labels];
+  let realData = [...pesos];
+  let projData = pesos.map(() => null);
+  let cardProj;
+
+  if (!dataPovoamento) {
+    cardProj = `<p class="proj-obs">Defina a data de povoamento do viveiro para projetar a despesca.</p>`;
+  } else if (gDia <= 0) {
+    cardProj = `<p class="proj-obs">Sem ganho de peso médio positivo entre as biometrias — não dá para projetar.</p>`;
+  } else if (alvo <= pesoAtual) {
+    cardProj = `<p class="proj-obs">O camarão já está com ${fmtG(pesoAtual)} g, igual ou acima do alvo de ${fmtG(alvo)} g.</p>`;
+  } else {
+    const diasFalta = Math.ceil((alvo - pesoAtual) / gDia);
+    const diaAlvo = ultimoDia + diasFalta;
+    const dataAlvoObj = new Date(dataPovoamento.getTime() + diaAlvo * 86400000);
+    const dataAlvoStr = `${dataAlvoObj.getFullYear()}-${String(dataAlvoObj.getMonth() + 1).padStart(2, "0")}-${String(dataAlvoObj.getDate()).padStart(2, "0")}`;
+
+    chartLabels.push(`D${diaAlvo}`);
+    realData.push(null);
+    projData = pesos.map((p, i) => i === pesos.length - 1 ? p : null);
+    projData.push(alvo);
+
+    cardProj = `
+      <div class="proj-card">
+        <div class="proj-card-linha"><span>Atinge ${fmtG(alvo)} g em</span><strong>~${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</strong></div>
+        <div class="proj-card-linha"><span>Data estimada</span><strong>${formatarData(dataAlvoStr)}</strong></div>
+        <div class="proj-card-linha"><span>Dia de cultivo</span><strong>D${diaAlvo}</strong></div>
+      </div>
+      <p class="proj-obs">Estimativa pelo ganho médio de ${formatarNumeroBR(gDia * 7, 2)} g/semana. Quanto mais biometrias, mais precisa.</p>
+    `;
+  }
 
   const area = document.getElementById("resultado-historico") || document.getElementById("area-gestao");
 
@@ -1971,6 +2014,15 @@ function verCurvaCrescimento(index, direto) {
     <div class="grafico-container">
       <canvas id="canvas-crescimento"></canvas>
     </div>
+    <div class="proj-controle">
+      <label for="proj-alvo">🎯 Peso-alvo da despesca</label>
+      <div class="proj-input-wrap">
+        <input type="number" id="proj-alvo" value="${alvo}" min="1" step="0.5"
+          onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value))">
+        <span>g</span>
+      </div>
+    </div>
+    ${cardProj}
     <div class="grafico-resumo">
       ${biometrias.map((b, i) => {
         const cresc = i > 0 ? ` <span class="grafico-cresc">+${fmtG(b.gramatura - biometrias[i-1].gramatura)}g</span>` : "";
@@ -1990,19 +2042,34 @@ function verCurvaCrescimento(index, direto) {
     new Chart(ctx, {
       type: "line",
       data: {
-        labels,
-        datasets: [{
-          label: "Peso (g)",
-          data: pesos,
-          borderColor: "rgb(6,107,99)",
-          backgroundColor: "rgba(6,107,99,0.08)",
-          pointBackgroundColor: "rgb(6,107,99)",
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          tension: 0.3,
-          fill: true,
-          borderWidth: 2.5,
-        }]
+        labels: chartLabels,
+        datasets: [
+          {
+            label: "Peso (g)",
+            data: realData,
+            borderColor: "rgb(6,107,99)",
+            backgroundColor: "rgba(6,107,99,0.08)",
+            pointBackgroundColor: "rgb(6,107,99)",
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            tension: 0.3,
+            fill: true,
+            borderWidth: 2.5,
+          },
+          {
+            label: "Projeção",
+            data: projData,
+            borderColor: "#f59e0b",
+            backgroundColor: "transparent",
+            pointBackgroundColor: "#f59e0b",
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderDash: [6, 6],
+            tension: 0,
+            fill: false,
+            borderWidth: 2.5,
+          }
+        ]
       },
       options: {
         responsive: true,
@@ -2011,7 +2078,7 @@ function verCurvaCrescimento(index, direto) {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: ctx => `${fmtG(ctx.parsed.y)} g`,
+              label: ctx => `${ctx.dataset.label === "Projeção" ? "Alvo: " : ""}${fmtG(ctx.parsed.y)} g`,
             }
           }
         },

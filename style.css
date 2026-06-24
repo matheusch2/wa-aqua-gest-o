@@ -3341,3 +3341,91 @@ body.tema-escuro .botao-curva-crescimento {
     color: #34d399;
     border-color: #065f46;
 }
+
+/* projeção de despesca */
+.proj-controle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+}
+
+.proj-controle label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.proj-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: white;
+    border: 1.5px solid #fde68a;
+    border-radius: 8px;
+    padding: 4px 10px;
+}
+
+.proj-input-wrap input {
+    width: 56px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: #92400e;
+    text-align: right;
+    background: transparent;
+    padding: 0;
+}
+
+.proj-input-wrap span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400e;
+}
+
+.proj-card {
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.proj-card-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #374151;
+}
+
+.proj-card-linha strong {
+    font-size: 15px;
+    font-weight: 800;
+    color: rgb(6, 107, 99);
+}
+
+.proj-obs {
+    font-size: 11px;
+    color: #9ca3af;
+    margin: 0 2px 12px;
+    line-height: 1.4;
+}
+
+body.tema-escuro .proj-controle { background: #2d1f00; border-color: #78350f; }
+body.tema-escuro .proj-controle label { color: #fcd34d; }
+body.tema-escuro .proj-input-wrap { background: #1f2937; border-color: #78350f; }
+body.tema-escuro .proj-input-wrap input,
+body.tema-escuro .proj-input-wrap span { color: #fcd34d; }
+body.tema-escuro .proj-card { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .proj-card-linha { color: #d1d5db; }
+body.tema-escuro .proj-card-linha strong { color: #34d399; }
