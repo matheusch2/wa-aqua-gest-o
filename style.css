@@ -3514,6 +3514,12 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
     text-align: right;
     background: transparent;
     padding: 0;
+    -moz-appearance: textfield;
+}
+.proj-alvo-val-wrap input::-webkit-inner-spin-button,
+.proj-alvo-val-wrap input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .proj-alvo-val-wrap span {
