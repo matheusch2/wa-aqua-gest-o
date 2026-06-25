@@ -1982,10 +1982,12 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const ultimaRacaoNaoZero = [...racoesSorted].reverse().find(r => r.racao > 0);
   const populacaoNum = viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")) : null;
   let biomasaAlvoStr = null;
+  let estimatedPopulation = null;
   if (populacaoNum && ultimaRacaoNaoZero && pesoAtual > 0) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
     if (res && res.quantidade > 0) {
-      biomasaAlvoStr = formatarNumeroBR(res.quantidade * alvo / 1000, 0) + " kg";
+      estimatedPopulation = res.quantidade;
+      biomasaAlvoStr = formatarNumeroBR(estimatedPopulation * alvo / 1000, 0) + " kg";
     }
   }
 
@@ -2110,7 +2112,8 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
             backgroundColor: "rgba(6,107,99,0.08)",
             pointBackgroundColor: "rgb(6,107,99)",
             pointRadius: ctx2 => ctx2.dataIndex < pesos.length ? 5 : 0,
-            pointHoverRadius: 7,
+            pointHoverRadius: 8,
+            pointHitRadius: 14,
             tension: 0.3,
             fill: true,
             borderWidth: 2.5,
@@ -2138,6 +2141,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
               return 4;
             },
             pointHoverRadius: 8,
+            pointHitRadius: 14,
             borderDash: [5, 5],
             tension: 0.2,
             fill: false,
@@ -2152,15 +2156,21 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            mode: "index",
+            mode: "nearest",
             intersect: false,
-            animation: { duration: 80 },
+            animation: { duration: 60 },
             callbacks: {
-              title: ctx2 => ctx2[0]?.label || "",
+              title: ctx2 => ctx2[0]?.label ? `📅 ${ctx2[0].label}` : "",
               label: ctx2 => {
                 if (ctx2.parsed.y === null) return null;
-                const prefix = ctx2.dataset.label === "Projeção" ? "Proj: " : "";
-                return ` ${prefix}${fmtG(ctx2.parsed.y)} g`;
+                const isProj = ctx2.dataset.label === "Projeção";
+                const peso = ctx2.parsed.y;
+                const lines = [`${isProj ? "🔮 Proj: " : "⚖️ Peso: "}${fmtG(peso)} g`];
+                if (estimatedPopulation) {
+                  const bio = Math.round(estimatedPopulation * peso / 1000);
+                  lines.push(`🦐 Biomassa: ~${bio.toLocaleString("pt-BR")} kg`);
+                }
+                return lines;
               },
             }
           }
