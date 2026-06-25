@@ -2089,12 +2089,16 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     <div class="grafico-container">
       <canvas id="canvas-crescimento"></canvas>
     </div>
-    <div class="proj-controle-inline">
-      <span class="proj-controle-label">🎯 Peso-alvo:</span>
-      <div class="proj-input-wrap-sm">
-        <input type="number" id="proj-alvo" value="${alvo}" min="1" step="0.5"
-          onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value) || 20)">
-        <span>g</span>
+    <div class="proj-alvo-row">
+      <span class="proj-alvo-lbl">Peso-alvo</span>
+      <div class="proj-alvo-ctrl">
+        <button class="proj-alvo-btn" onclick="(function(){var v=Math.max(1,parseFloat(document.getElementById('proj-alvo').value||20)-0.5);document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">−</button>
+        <div class="proj-alvo-val-wrap">
+          <input type="number" id="proj-alvo" value="${alvo}" min="1" step="0.5"
+            onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value) || 20)">
+          <span>g</span>
+        </div>
+        <button class="proj-alvo-btn" onclick="(function(){var v=parseFloat(document.getElementById('proj-alvo').value||20)+0.5;document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">+</button>
       </div>
     </div>
     ${cardProj}
