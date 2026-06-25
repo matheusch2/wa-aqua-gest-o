@@ -465,6 +465,10 @@ function esconderMenu() {
 }
 
 function voltarMenuGestao() {
+  if (window.innerWidth >= 900) {
+    mostrarListaViveiros();
+    return;
+  }
   document.getElementById("menuGestao").style.display = "grid";
   limparAreaGestao();
   verificarBoletosVencendo();
