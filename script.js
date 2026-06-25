@@ -1991,10 +1991,29 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     }
   }
 
-  // Monta projeção com pontos a cada 7 dias (linha suave)
-  let chartLabels = [...labels];
-  let realData = [...pesos];
-  let projData = pesos.map(() => null);
+  // Monta dados: biometrias reais + pontos semanais interpolados entre elas + projeção semanal
+  const chartLabels = [];
+  const realData = [];
+  const projData = [];
+  const actualBioIndices = new Set();
+
+  for (let i = 0; i < biometrias.length; i++) {
+    if (i > 0 && dias[i] !== null && dias[i - 1] !== null && dias[i] - dias[i - 1] > 7) {
+      const dS = dias[i - 1], dE = dias[i], pS = pesos[i - 1], pE = pesos[i];
+      for (let d = dS + 7; d < dE; d += 7) {
+        const frac = (d - dS) / (dE - dS);
+        chartLabels.push(`D${d}`);
+        realData.push(parseFloat((pS + frac * (pE - pS)).toFixed(2)));
+        projData.push(null);
+      }
+    }
+    chartLabels.push(labels[i]);
+    realData.push(pesos[i]);
+    projData.push(null);
+    actualBioIndices.add(chartLabels.length - 1);
+  }
+
+  const junctionIndex = chartLabels.length - 1;
   let cardProj = "";
   let progresso = 0;
 
@@ -2002,21 +2021,16 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     const diasFalta = Math.ceil((alvo - pesoAtual) / gDia);
     const diaAlvo = ultimoDia + diasFalta;
 
-    // Pontos intermediários a cada 7 dias
-    const step = Math.max(1, Math.round(diasFalta / 6));
-    let diaAtual = ultimoDia;
-    let pesoAtualProj = pesoAtual;
-    projData[projData.length - 1] = pesoAtual; // conecta no último ponto real
+    projData[junctionIndex] = pesoAtual;
 
-    while (diaAtual < diaAlvo) {
-      const proximoDia = Math.min(diaAtual + step, diaAlvo);
-      const pesoProximo = Math.min(pesoAtualProj + gDia * (proximoDia - diaAtual), alvo);
-      chartLabels.push(`D${proximoDia}`);
+    for (let d = ultimoDia + 7; d < diaAlvo; d += 7) {
+      chartLabels.push(`D${d}`);
       realData.push(null);
-      projData.push(parseFloat(pesoProximo.toFixed(3)));
-      diaAtual = proximoDia;
-      pesoAtualProj = pesoProximo;
+      projData.push(parseFloat((pesoAtual + gDia * (d - ultimoDia)).toFixed(2)));
     }
+    chartLabels.push(`D${diaAlvo}`);
+    realData.push(null);
+    projData.push(alvo);
 
     const dataAlvoObj = new Date(dataPovoamento.getTime() + diaAlvo * 86400000);
     const dataAlvoStr = `${dataAlvoObj.getFullYear()}-${String(dataAlvoObj.getMonth() + 1).padStart(2, "0")}-${String(dataAlvoObj.getDate()).padStart(2, "0")}`;
@@ -2110,8 +2124,11 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
             data: realData,
             borderColor: "rgb(6,107,99)",
             backgroundColor: "rgba(6,107,99,0.08)",
-            pointBackgroundColor: "rgb(6,107,99)",
-            pointRadius: ctx2 => ctx2.dataIndex < pesos.length ? 5 : 0,
+            pointBackgroundColor: ctx2 => actualBioIndices.has(ctx2.dataIndex) ? "rgb(6,107,99)" : "rgba(6,107,99,0.55)",
+            pointRadius: ctx2 => {
+              if (ctx2.dataIndex > junctionIndex) return 0;
+              return actualBioIndices.has(ctx2.dataIndex) ? 5 : 3;
+            },
             pointHoverRadius: 8,
             pointHitRadius: 14,
             tension: 0.3,
@@ -2136,7 +2153,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
             },
             pointRadius: ctx2 => {
               if (projData[ctx2.dataIndex] === null) return 0;
-              if (ctx2.dataIndex === pesos.length - 1) return 0;
+              if (ctx2.dataIndex === junctionIndex) return 0;
               if (ctx2.dataIndex === projData.length - 1) return 7;
               return 4;
             },
