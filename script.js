@@ -5152,9 +5152,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
 
-      document.getElementById("area-gestao").innerHTML = "";
-      document.getElementById("menuGestao").style.display = "grid";
       verificarBoletosVencendo();
+      if (window.innerWidth >= 900) {
+        mostrarListaViveiros();
+      } else {
+        document.getElementById("area-gestao").innerHTML = "";
+        document.getElementById("menuGestao").style.display = "grid";
+      }
     } else {
       window.location.href = "login.html";
     }

@@ -3536,6 +3536,19 @@ body.tema-escuro .proj-card-linha strong { color: #34d399; }
   .topo-conteudo {
     max-width: 1140px;
     margin: 0 auto;
+    position: relative;
+  }
+
+  /* Título centralizado no header */
+  .topo-esquerda {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Avatar colado no canto direito */
+  .topo-direita {
+    margin-left: auto;
   }
 
   /* Card vira container flex row */
