@@ -3496,16 +3496,17 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
 .proj-alvo-val-wrap {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     padding: 0 10px;
     border-left: 1.5px solid #e5e7eb;
     border-right: 1.5px solid #e5e7eb;
-    min-width: 64px;
+    min-width: 72px;
     justify-content: center;
+    height: 36px;
 }
 
 .proj-alvo-val-wrap input {
-    width: 38px;
+    width: 52px;
     border: none;
     outline: none;
     font-size: 15px;
@@ -3514,11 +3515,16 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
     text-align: right;
     background: transparent;
     padding: 0;
+    line-height: 1;
+    -webkit-appearance: none;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 .proj-alvo-val-wrap input::-webkit-inner-spin-button,
 .proj-alvo-val-wrap input::-webkit-outer-spin-button {
     -webkit-appearance: none;
+    appearance: none;
+    display: none;
     margin: 0;
 }
 
@@ -3526,6 +3532,8 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
     font-size: 13px;
     font-weight: 600;
     color: #6b7280;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .proj-input-wrap {
