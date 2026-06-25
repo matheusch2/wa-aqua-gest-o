@@ -1977,6 +1977,18 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   }
   const gDia = taxas.length ? taxas.reduce((s, v) => s + v, 0) / taxas.length : 0;
 
+  // Biomassa estimada (usa última ração + sobrevivência calculada)
+  const racoesSorted = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const ultimaRacaoNaoZero = [...racoesSorted].reverse().find(r => r.racao > 0);
+  const populacaoNum = viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")) : null;
+  let biomasaAlvoStr = null;
+  if (populacaoNum && ultimaRacaoNaoZero && pesoAtual > 0) {
+    const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
+    if (res && res.quantidade > 0) {
+      biomasaAlvoStr = formatarNumeroBR(res.quantidade * alvo / 1000, 0) + " kg";
+    }
+  }
+
   // Monta projeção com pontos a cada 7 dias (linha suave)
   let chartLabels = [...labels];
   let realData = [...pesos];
@@ -2025,6 +2037,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         <div class="proj-card-linha"><span>Atinge ${fmtG(alvo)} g em</span><strong>~${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</strong></div>
         <div class="proj-card-linha"><span>Data estimada</span><strong>${formatarData(dataAlvoStr)}</strong></div>
         <div class="proj-card-linha"><span>Dia de cultivo</span><strong>D${diaAlvo}</strong></div>
+        ${biomasaAlvoStr ? `<div class="proj-card-linha"><span>Biomassa estimada</span><strong>~${biomasaAlvoStr}</strong></div>` : ""}
       </div>
       <p class="proj-obs">Estimativa pelo ganho médio de ${formatarNumeroBR(gDia * 7, 2)} g/semana. Quanto mais biometrias, mais precisa.</p>
     `;
@@ -2060,9 +2073,9 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     <div class="grafico-container">
       <canvas id="canvas-crescimento"></canvas>
     </div>
-    <div class="proj-controle">
-      <label for="proj-alvo">🎯 Peso-alvo da despesca</label>
-      <div class="proj-input-wrap">
+    <div class="proj-controle-inline">
+      <span class="proj-controle-label">🎯 Peso-alvo:</span>
+      <div class="proj-input-wrap-sm">
         <input type="number" id="proj-alvo" value="${alvo}" min="1" step="0.5"
           onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value) || 20)">
         <span>g</span>
@@ -2108,10 +2121,23 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
             data: projData,
             borderColor: "#f59e0b",
             backgroundColor: "transparent",
-            pointBackgroundColor: ctx2 => ctx2.dataIndex === projData.length - 1 ? "#f59e0b" : "transparent",
-            pointBorderColor: ctx2 => ctx2.dataIndex === projData.length - 1 ? "#f59e0b" : "transparent",
-            pointRadius: ctx2 => ctx2.dataIndex === projData.length - 1 ? 6 : 3,
-            pointHoverRadius: 7,
+            pointBackgroundColor: ctx2 => {
+              if (projData[ctx2.dataIndex] === null) return "transparent";
+              if (ctx2.dataIndex === pesos.length - 1) return "transparent";
+              return "#f59e0b";
+            },
+            pointBorderColor: ctx2 => {
+              if (projData[ctx2.dataIndex] === null) return "transparent";
+              if (ctx2.dataIndex === pesos.length - 1) return "transparent";
+              return "#f59e0b";
+            },
+            pointRadius: ctx2 => {
+              if (projData[ctx2.dataIndex] === null) return 0;
+              if (ctx2.dataIndex === pesos.length - 1) return 0;
+              if (ctx2.dataIndex === projData.length - 1) return 7;
+              return 4;
+            },
+            pointHoverRadius: 8,
             borderDash: [5, 5],
             tension: 0.2,
             fill: false,
@@ -2126,8 +2152,16 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         plugins: {
           legend: { display: false },
           tooltip: {
+            mode: "index",
+            intersect: false,
+            animation: { duration: 80 },
             callbacks: {
-              label: ctx2 => `${ctx2.dataset.label === "Projeção" ? "Proj: " : ""}${fmtG(ctx2.parsed.y)} g`,
+              title: ctx2 => ctx2[0]?.label || "",
+              label: ctx2 => {
+                if (ctx2.parsed.y === null) return null;
+                const prefix = ctx2.dataset.label === "Projeção" ? "Proj: " : "";
+                return ` ${prefix}${fmtG(ctx2.parsed.y)} g`;
+              },
             }
           }
         },
