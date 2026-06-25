@@ -2160,15 +2160,15 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
             intersect: false,
             animation: { duration: 60 },
             callbacks: {
-              title: ctx2 => ctx2[0]?.label ? `📅 ${ctx2[0].label}` : "",
+              title: ctx2 => ctx2[0]?.label || "",
               label: ctx2 => {
                 if (ctx2.parsed.y === null) return null;
                 const isProj = ctx2.dataset.label === "Projeção";
                 const peso = ctx2.parsed.y;
-                const lines = [`${isProj ? "🔮 Proj: " : "⚖️ Peso: "}${fmtG(peso)} g`];
+                const lines = [isProj ? `Proj: ${fmtG(peso)} g` : `Peso: ${fmtG(peso)} g`];
                 if (estimatedPopulation) {
                   const bio = Math.round(estimatedPopulation * peso / 1000);
-                  lines.push(`🦐 Biomassa: ~${bio.toLocaleString("pt-BR")} kg`);
+                  lines.push(`Biomassa: ~${bio.toLocaleString("pt-BR")} kg`);
                 }
                 return lines;
               },
