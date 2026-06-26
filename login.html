@@ -6,6 +6,31 @@
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
         input::-webkit-credentials-auto-fill-button { visibility: hidden; pointer-events: none; }
+
+        @media (min-width: 900px) {
+            body {
+                background: rgb(4,75,70);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                padding: 24px;
+                box-sizing: border-box;
+            }
+            #card-gestao {
+                display: block !important;
+                flex-direction: unset !important;
+                max-width: 420px !important;
+                width: 100% !important;
+                margin: 0 !important;
+                min-height: auto !important;
+                flex: unset !important;
+                border-radius: 20px !important;
+                box-shadow: 0 12px 48px rgba(0,0,0,0.35) !important;
+                overflow: hidden !important;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
