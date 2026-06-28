@@ -5256,30 +5256,31 @@ body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
 .rc-periodo {
     display: flex;
     align-items: stretch;
+    flex-wrap: wrap;
     gap: 8px;
     background: #f8fafc;
     border: 1.5px solid #eef0f2;
     border-radius: 14px;
-    padding: 14px 12px;
+    padding: 12px 12px;
     margin-bottom: 16px;
 }
 .rc-periodo-item {
-    flex: 1;
+    flex: 1 1 108px;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     min-width: 0;
 }
-.rc-periodo-item svg { width: 22px; height: 22px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.rc-periodo-item svg { width: 19px; height: 19px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 .rc-periodo-txt { display: flex; flex-direction: column; min-width: 0; }
-.rc-periodo-txt small { font-size: 9.5px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-.rc-periodo-txt strong { font-size: 14px; font-weight: 800; color: #1f2937; }
-.rc-periodo-seta { align-self: center; color: #9ca3af; font-size: 16px; flex-shrink: 0; }
+.rc-periodo-txt small { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; }
+.rc-periodo-txt strong { font-size: 13px; font-weight: 800; color: #1f2937; white-space: nowrap; }
+.rc-periodo-seta { align-self: center; color: #9ca3af; font-size: 15px; flex-shrink: 0; }
 .rc-periodo-destaque {
     background: rgb(6,107,99);
     border-radius: 11px;
-    padding: 10px 12px;
-    flex: 1.1;
+    padding: 10px 14px;
+    flex: 1 1 132px;
 }
 .rc-periodo-destaque svg { stroke: white; }
 .rc-periodo-destaque .rc-periodo-txt small { color: rgba(255,255,255,0.75); }
@@ -5309,7 +5310,7 @@ body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
 /* Informações — 4 cards */
 .rc-info-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
 }
 .rc-info-card {
@@ -5321,11 +5322,12 @@ body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
     background: white;
     border: 1px solid #eef0f2;
     border-radius: 12px;
-    padding: 12px 6px;
+    padding: 12px 8px;
+    min-width: 0;
 }
 .rc-info-card svg { width: 20px; height: 20px; stroke: rgb(6,107,99); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 2px; }
-.rc-info-card small { font-size: 9.5px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; }
-.rc-info-card strong { font-size: 13px; font-weight: 800; color: #1f2937; }
+.rc-info-card small { font-size: 10px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; }
+.rc-info-card strong { font-size: 14px; font-weight: 800; color: #1f2937; }
 
 /* Resultado produtivo — 3 cards */
 .rc-result-grid {
