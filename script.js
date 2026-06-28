@@ -630,7 +630,6 @@ async function abrirMinhaConta() {
         <div class="conta-info-linha"><span>Próxima cobrança</span><strong>${proxStr}</strong></div>
       </div>
       <div class="cfg-lista">
-        ${_cfgItem("boleto", "Meus boletos", "Ver e gerenciar boletos", "abrirBoletos()")}
         ${_cfgItem("renovar", "Renovar assinatura", "Estender seu plano", "renovarAssinatura()")}
       </div>
       <div class="conta-aviso">
