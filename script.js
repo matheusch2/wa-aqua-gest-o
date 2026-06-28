@@ -6142,14 +6142,22 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
 
 function imprimirCustos(viveiroIndex) {
   const viveiro = viveiros[viveiroIndex];
-  const custos = [...(viveiro.custos || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const custos = viveiro.custos || [];
   const total = custos.reduce((s, c) => s + Number(c.valor), 0);
 
-  const linhas = custos.map(c => {
-    const qtd = (c.quantidadeG && c.categoria !== "Ração")
-      ? ` (${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"})`
-      : "";
-    return `<tr><td>${formatarData(c.data)}</td><td>${c.nomeProduto}${qtd}</td><td>R$ ${formatarNumeroBR(c.valor, 2)}</td></tr>`;
+  // Agrupa por produto/nome (igual à tela): uma linha por item
+  const grupos = {};
+  custos.forEach(c => {
+    const chave = _chaveCusto(c);
+    if (!grupos[chave]) grupos[chave] = { nome: c.nomeProduto || c.categoria || "Custo", quantidadeG: 0, valor: 0 };
+    grupos[chave].valor += Number(c.valor) || 0;
+    if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
+  });
+  const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
+
+  const linhas = lista.map(g => {
+    const qtd = _fmtQtdCusto(g.quantidadeG);
+    return `<tr><td>${g.nome}</td><td>${qtd || "-"}</td><td>R$ ${formatarNumeroBR(g.valor, 2)}</td></tr>`;
   }).join("");
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custos - ${viveiro.nome}</title>
@@ -6161,13 +6169,14 @@ function imprimirCustos(viveiroIndex) {
     th:last-child{text-align:right}
     td{padding:8px 12px;border-bottom:1px solid #e5e7eb}
     td:last-child{text-align:right;font-weight:600}
+    td:nth-child(2){text-align:center;color:#555}
     tr:nth-child(even) td{background:#f6fafa}
     .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63}
     @media print{body{padding:0}}
   </style></head><body>
   <h1>Custos — ${viveiro.nome}</h1>
   <table>
-    <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
+    <thead><tr><th>Descrição</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
     <tbody>
       ${linhas}
       <tr class="total-row"><td colspan="2">TOTAL</td><td>R$ ${formatarNumeroBR(total, 2)}</td></tr>
