@@ -4871,14 +4871,23 @@ function gerarRelatorioImpressao() {
   const diaDe = d => calcularDiasCultivo(ciclo.dataPovoamento, d);
   const racaoAcumAte = dataStr => racoesSorted.filter(r => r.data <= dataStr).reduce((s, r) => s + r.racao, 0);
 
+  // Como é relatório FINAL, sabemos a sobrevivência real: reconstruímos os
+  // sobreviventes decrescendo da população inicial até a quantidade final.
+  const diasArr = bios.map(b => diaDe(b.data));
+  const lastDay = diasArr.length ? (diasArr[diasArr.length - 1] || 1) : 1;
+  const survFinal = Number(ciclo.pesoFinal) > 0 ? producaoTotal / (Number(ciclo.pesoFinal) / 1000)
+    : (popNum * (Number(ciclo.sobrevivencia) || 100) / 100);
+
   const serieDias = [], seriePeso = [], serieCresc = [], serieBiomassa = [], serieFca = [], serieRacaoAcum = [], serieObs = [], serieDatas = [];
   bios.forEach((b, i) => {
     const racAcum = racaoAcumAte(b.data);
-    let biomassa;
-    const res = (popNum && racAcum > 0 && b.gramatura > 0) ? _calcularBiomassa(popNum, racAcum, b.gramatura) : null;
-    biomassa = (res && res.biomassa > 0) ? res.biomassa : (popNum > 0 ? b.gramatura * popNum / 1000 : 0);
+    const dia = diasArr[i];
+    const frac = lastDay > 0 ? Math.min(1, Math.max(0, dia / lastDay)) : 1;
+    let surv = popNum - (popNum - survFinal) * frac; // sobreviventes estimados nesse dia
+    if (surv < 0) surv = 0;
+    let biomassa = surv * b.gramatura / 1000;
     serieDatas.push(formatarData(b.data));
-    serieDias.push(diaDe(b.data));
+    serieDias.push(dia);
     seriePeso.push(Number(b.gramatura));
     serieCresc.push(i > 0 ? Number((b.gramatura - bios[i - 1].gramatura).toFixed(2)) : null);
     serieBiomassa.push(Number(biomassa.toFixed(1)));
@@ -5008,6 +5017,8 @@ function gerarRelatorioImpressao() {
       <div class="charts">
         <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
+        <div class="chart-box"><h4>FCA ao longo do cultivo</h4><canvas id="cFca"></canvas></div>
+        <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
       </div>
     </div>
     <div>
@@ -5056,6 +5067,8 @@ function gerarRelatorioImpressao() {
     if (typeof Chart === "undefined") { setTimeout(render, 100); return; }
     linha("cPeso", D.peso, "#16a34a", "rgba(22,163,74,.08)");
     new Chart(document.getElementById("cRacao"), { type: "bar", data: { labels: D.racao.labels, datasets: [{ data: D.racao.data, backgroundColor: "#0b6b63" }] }, options: { responsive: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
+    linha("cFca", D.fca, "#2563eb");
+    linha("cBio", D.biomassa, "#f59e0b", "rgba(245,158,11,.08)");
     if (document.getElementById("cDist") && D.dist.data.length) {
       new Chart(document.getElementById("cDist"), { type: "doughnut", data: { labels: D.dist.labels, datasets: [{ data: D.dist.data, backgroundColor: D.dist.cores, borderColor: "#fff", borderWidth: 2 }] }, options: { responsive: false, cutout: "62%", plugins: { legend: { display: false } } } });
     }
