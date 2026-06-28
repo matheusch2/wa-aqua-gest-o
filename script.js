@@ -294,6 +294,464 @@ document.addEventListener("click", function(e) {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIGURAÇÕES
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _ICO = {
+  fazenda:  `<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  seguranca:`<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  aparencia:`<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  conta:    `<svg viewBox="0 0 24 24"><path d="M3 18h18M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z"/></svg>`,
+  faq:      `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  suporte:  `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  sair:     `<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  boleto:   `<svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+  renovar:  `<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
+  whatsapp: `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>`,
+  mail:     `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>`,
+  alerta:   `<svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  ideia:    `<svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>`,
+};
+
+function _cfgItem(ico, titulo, sub, onclick) {
+  return `<button class="cfg-item" onclick="${onclick}">
+    <div class="cfg-item-ico">${_ICO[ico]}</div>
+    <div class="cfg-item-texto">
+      <span class="cfg-item-titulo">${titulo}</span>
+      <span class="cfg-item-sub">${sub}</span>
+    </div>
+    <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>`;
+}
+
+function _fmtDataISO(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+async function atualizarAvatarTopo() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return;
+  const fotoUrl = user.user_metadata?.avatar_url;
+  const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "?";
+  const avatarTopo = document.getElementById("avatar-topo");
+  if (!avatarTopo) return;
+  if (fotoUrl) {
+    avatarTopo.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+    avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${ini}</span>`;
+  }
+}
+
+// ─── Hub de Configurações ──────────────────────────────────────────────────
+async function abrirConfiguracoes() {
+  fecharMenuUsuario();
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Minha fazenda";
+  const email = user?.email || "";
+  const fotoUrl = user?.user_metadata?.avatar_url || null;
+  const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+  const avatarHtml = fotoUrl ? `<img src="${fotoUrl}" alt="">` : `<span>${ini}</span>`;
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Configurações</h3>
+    <div class="cfg-wrap">
+      <div class="cfg-header">
+        <div class="cfg-header-avatar">${avatarHtml}</div>
+        <div class="cfg-header-info">
+          <span class="cfg-header-nome">${nome}</span>
+          <span class="cfg-header-email">${email}</span>
+          <span class="cfg-header-online">● Online</span>
+        </div>
+      </div>
+      <div class="cfg-lista">
+        ${_cfgItem("fazenda", "Fazenda", "Nome, e-mail e foto", "abrirFazenda()")}
+        ${_cfgItem("seguranca", "Segurança", "Alterar senha", "abrirSeguranca()")}
+        ${_cfgItem("aparencia", "Aparência", "Tema claro ou escuro", "abrirAparencia()")}
+        ${_cfgItem("conta", "Minha conta", "Plano e assinatura", "abrirMinhaConta()")}
+        ${_cfgItem("faq", "Perguntas frequentes (FAQ)", "Dúvidas sobre o sistema", "abrirFAQ()")}
+        ${_cfgItem("suporte", "Suporte", "Fale com nossa equipe", "abrirSuporte()")}
+      </div>
+      <button class="cfg-item cfg-item-sair" onclick="confirmarSairConta()">
+        <div class="cfg-item-ico cfg-item-ico-sair">${_ICO.sair}</div>
+        <div class="cfg-item-texto">
+          <span class="cfg-item-titulo">Sair da conta</span>
+          <span class="cfg-item-sub">Encerrar sessão atual</span>
+        </div>
+      </button>
+      <div id="cfg-sair-confirm" class="cfg-sair-confirm" style="display:none">
+        <p>Deseja realmente sair da sua conta?</p>
+        <div class="cfg-sair-botoes">
+          <button class="cfg-sair-cancelar" onclick="document.getElementById('cfg-sair-confirm').style.display='none'">Cancelar</button>
+          <button class="cfg-sair-confirmar" onclick="sairUsuario()">Sim, sair</button>
+        </div>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>
+    </div>
+  `;
+}
+
+function confirmarSairConta() {
+  const el = document.getElementById("cfg-sair-confirm");
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+// ─── Fazenda ───────────────────────────────────────────────────────────────
+async function abrirFazenda() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const nome = user?.user_metadata?.nome || "";
+  const prop = user?.user_metadata?.proprietario || "";
+  const email = user?.email || "";
+  const fotoUrl = user?.user_metadata?.avatar_url || null;
+  const ini = (nome || email).split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Fazenda</h3>
+    <div class="cfg-wrap">
+      <div class="fazenda-foto-wrap">
+        <div id="fazenda-foto" class="fazenda-foto">${fotoUrl ? `<img src="${fotoUrl}" alt="">` : `<span>${ini}</span>`}</div>
+        <label class="fazenda-foto-edit">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <input type="file" accept="image/*" onchange="uploadFotoFazenda(this)" style="display:none">
+        </label>
+      </div>
+      ${fotoUrl ? `<button class="fazenda-remover-foto" onclick="excluirFotoFazenda()">Remover foto</button>` : `<p class="fazenda-foto-dica">Adicione uma foto da fazenda (opcional)</p>`}
+      <div class="form-corpo" style="padding:0">
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><label>Nome da fazenda</label></div>
+          <input type="text" id="fzNome" value="${nome}" placeholder="Ex: Fazenda São João">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><label>Nome do proprietário</label></div>
+          <input type="text" id="fzProp" value="${prop}" placeholder="Seu nome">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg><label>E-mail</label></div>
+          <input type="email" id="fzEmail" value="${email}" placeholder="seu@email.com">
+        </div>
+        <div id="msg-fazenda" style="display:none;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
+        <button class="botao-salvar" onclick="salvarFazenda()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar alterações
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirConfiguracoes()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarFazenda() {
+  const nome = document.getElementById("fzNome").value.trim();
+  const prop = document.getElementById("fzProp").value.trim();
+  const email = document.getElementById("fzEmail").value.trim();
+  const msg = document.getElementById("msg-fazenda");
+  const setMsg = (t, ok) => { if (msg) { msg.textContent = t; msg.style.display = "block"; msg.style.color = ok ? "#16a34a" : "#ef4444"; } };
+  if (msg) msg.style.display = "none";
+  if (!nome) { setMsg("Digite o nome da fazenda."); return; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const emailMudou = email && email !== user?.email;
+
+  const { error } = await supabaseClient.auth.updateUser({ data: { nome, proprietario: prop } });
+  if (error) { setMsg("Erro ao salvar. Tente novamente."); return; }
+
+  if (emailMudou) {
+    const { error: e2 } = await supabaseClient.auth.updateUser({ email });
+    if (e2) { setMsg("Dados salvos, mas o e-mail não pôde ser alterado: " + e2.message); return; }
+    _toastSucesso("Enviamos um link de confirmação para o novo e-mail.");
+  } else {
+    _toastSucesso("Alterações salvas!");
+  }
+  atualizarAvatarTopo();
+  abrirConfiguracoes();
+}
+
+async function uploadFotoFazenda(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = 80; canvas.height = 80;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = async () => {
+    const ctx = canvas.getContext("2d");
+    const size = Math.min(img.width, img.height);
+    ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 80, 80);
+    URL.revokeObjectURL(url);
+    const base64 = canvas.toDataURL("image/jpeg", 0.5);
+    const { error } = await supabaseClient.auth.updateUser({ data: { avatar_url: base64 } });
+    if (error) { _toastErro("Erro ao salvar foto."); return; }
+    const fz = document.getElementById("fazenda-foto");
+    if (fz) fz.innerHTML = `<img src="${base64}" alt="">`;
+    atualizarAvatarTopo();
+    _toastSucesso("Foto atualizada!");
+    abrirFazenda();
+  };
+  img.src = url;
+}
+
+async function excluirFotoFazenda() {
+  const { error } = await supabaseClient.auth.updateUser({ data: { avatar_url: null } });
+  if (error) { _toastErro("Erro ao remover foto."); return; }
+  atualizarAvatarTopo();
+  abrirFazenda();
+}
+
+// ─── Segurança ─────────────────────────────────────────────────────────────
+function abrirSeguranca() {
+  esconderMenu();
+  const lock = `<svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">Segurança</h3>
+    <div class="cfg-wrap">
+      <div class="cfg-hero">
+        <div class="cfg-hero-ico"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h4>Alterar senha</h4>
+        <p>Para sua segurança, escolha uma senha forte.</p>
+      </div>
+      <div class="form-corpo" style="padding:0">
+        <div class="campo-form">
+          <div class="campo-label">${lock}<label>Senha atual</label></div>
+          <input type="password" id="segAtual" placeholder="Digite sua senha atual">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">${lock}<label>Nova senha</label></div>
+          <input type="password" id="segNova" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">${lock}<label>Confirmar nova senha</label></div>
+          <input type="password" id="segConfirma" placeholder="Repita a nova senha">
+        </div>
+        <div id="msg-seg" style="display:none;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
+        <button class="botao-salvar" onclick="salvarNovaSenha()">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar nova senha
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirConfiguracoes()">← Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarNovaSenha() {
+  const atual = document.getElementById("segAtual").value;
+  const nova = document.getElementById("segNova").value;
+  const conf = document.getElementById("segConfirma").value;
+  const msg = document.getElementById("msg-seg");
+  const setMsg = (t) => { if (msg) { msg.textContent = t; msg.style.display = "block"; msg.style.color = "#ef4444"; } };
+  if (msg) msg.style.display = "none";
+
+  if (!atual) { setMsg("Digite sua senha atual."); return; }
+  if (!nova || nova.length < 6) { setMsg("A nova senha deve ter no mínimo 6 caracteres."); return; }
+  if (nova !== conf) { setMsg("As senhas não coincidem."); return; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const { error: eAuth } = await supabaseClient.auth.signInWithPassword({ email: user.email, password: atual });
+  if (eAuth) { setMsg("Senha atual incorreta."); return; }
+
+  const { error } = await supabaseClient.auth.updateUser({ password: nova });
+  if (error) { setMsg("Erro ao alterar senha: " + error.message); return; }
+
+  _toastSucesso("Senha alterada com sucesso!");
+  abrirConfiguracoes();
+}
+
+// ─── Aparência ─────────────────────────────────────────────────────────────
+function abrirAparencia() {
+  esconderMenu();
+  const escuro = document.body.classList.contains("tema-escuro");
+  const check = `<svg class="aparencia-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">Aparência</h3>
+    <div class="cfg-wrap">
+      <p class="cfg-secao-desc">Escolha como o aplicativo deve aparecer. A mudança é aplicada imediatamente.</p>
+      <div class="aparencia-opcoes">
+        <button class="aparencia-card ${!escuro ? "ativo" : ""}" onclick="setTema('claro')">
+          <div class="aparencia-preview preview-claro"><span class="ap-barra"></span><span class="ap-linha"></span><span class="ap-linha curta"></span></div>
+          <span class="aparencia-nome">Claro</span>
+          ${!escuro ? check : ""}
+        </button>
+        <button class="aparencia-card ${escuro ? "ativo" : ""}" onclick="setTema('escuro')">
+          <div class="aparencia-preview preview-escuro"><span class="ap-barra"></span><span class="ap-linha"></span><span class="ap-linha curta"></span></div>
+          <span class="aparencia-nome">Escuro</span>
+          ${escuro ? check : ""}
+        </button>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">← Voltar</button>
+    </div>
+  `;
+}
+
+function setTema(modo) {
+  const escuro = modo === "escuro";
+  document.body.classList.toggle("tema-escuro", escuro);
+  localStorage.setItem("tema", escuro ? "escuro" : "claro");
+  abrirAparencia();
+}
+
+// ─── Minha conta ───────────────────────────────────────────────────────────
+async function abrirMinhaConta() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const cadastroStr = _fmtDataISO(user?.created_at);
+  let vencStr = "—", proxStr = "—";
+  if (user?.created_at) {
+    const venc = new Date(user.created_at);
+    if (!isNaN(venc.getTime())) {
+      venc.setFullYear(venc.getFullYear() + 1);
+      vencStr = _fmtDataISO(venc.toISOString());
+      proxStr = vencStr;
+    }
+  }
+  area.innerHTML = `
+    <h3 class="titulo-secao">Minha conta</h3>
+    <div class="cfg-wrap">
+      <div class="conta-plano">
+        <div class="conta-plano-ico">${_ICO.conta}</div>
+        <span class="conta-plano-nome">Plano Premium</span>
+        <span class="conta-plano-badge">Ativo</span>
+      </div>
+      <div class="conta-info">
+        <div class="conta-info-linha"><span>Data de cadastro</span><strong>${cadastroStr}</strong></div>
+        <div class="conta-info-linha"><span>Vencimento da assinatura</span><strong>${vencStr}</strong></div>
+        <div class="conta-info-linha"><span>Próxima cobrança</span><strong>${proxStr}</strong></div>
+      </div>
+      <div class="cfg-lista">
+        ${_cfgItem("boleto", "Meus boletos", "Ver e gerenciar boletos", "abrirBoletos()")}
+        ${_cfgItem("renovar", "Renovar assinatura", "Estender seu plano", "renovarAssinatura()")}
+      </div>
+      <div class="conta-aviso">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        <span>Sua assinatura garante acesso a todos os recursos do WA Aqua Gestão.</span>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">← Voltar</button>
+    </div>
+  `;
+}
+
+function renovarAssinatura() {
+  _toastSucesso("Em breve você poderá renovar sua assinatura por aqui.");
+}
+
+// ─── Perguntas frequentes (FAQ) ────────────────────────────────────────────
+const _FAQ = [
+  { q: "Como cadastrar um viveiro?", a: "Para cadastrar um novo viveiro, acesse Cadastrar viveiro no menu principal. Informe o nome do viveiro, a data de povoamento, a quantidade de pós-larvas, o tamanho do viveiro e o laboratório de origem. Após salvar, o viveiro estará disponível para lançamentos de ração, biometria, despesca e acompanhamento do ciclo." },
+  { q: "Como lançar uma biometria?", a: "Abra o viveiro desejado e selecione Lançar biometria. Informe o peso médio obtido na biometria e confirme o lançamento. O sistema atualizará automaticamente o histórico de crescimento, o ganho semanal e a projeção de crescimento do cultivo." },
+  { q: "Como encerrar um ciclo?", a: "Após finalizar a despesca, acesse o viveiro e toque em Encerrar ciclo. O sistema encerrará o cultivo atual, mantendo todas as informações armazenadas no histórico. Os dados poderão ser consultados posteriormente sempre que necessário." },
+  { q: "Como funciona a projeção de crescimento?", a: "A projeção utiliza as biometrias registradas para calcular o ganho médio semanal do lote. Com base nesse histórico, o sistema estima a data em que o peso-alvo será atingido, o dia estimado de cultivo e a biomassa prevista. Quanto maior o número de biometrias registradas, maior será a precisão da estimativa." },
+  { q: "Como alterar o peso-alvo?", a: "Na tela de projeção de crescimento, utilize os botões + e − para definir o peso desejado para a despesca. Todas as previsões serão recalculadas automaticamente com base no novo peso-alvo." },
+  { q: "Como renovar minha assinatura?", a: "Acesse Configurações → Minha conta e selecione Renovar assinatura. Escolha o plano desejado e siga as instruções para concluir a renovação." },
+  { q: "Esqueci minha senha. O que fazer?", a: "Na tela de login, selecione Esqueci minha senha. Informe o e-mail cadastrado e siga as instruções enviadas para redefinir sua senha. Se não conseguir recuperar o acesso, entre em contato com o suporte do WA Aqua Gestão." },
+  { q: "Como lançar uma despesca?", a: "Acesse o viveiro desejado e selecione Lançar despesca. Informe a quantidade despescada e o peso médio dos camarões. O sistema calculará automaticamente a biomassa despescada e registrará a operação no histórico do ciclo." },
+  { q: "Como lançar o consumo de ração?", a: "Abra o viveiro e toque em Lançar ração. Informe a quantidade fornecida no dia e confirme o lançamento. O consumo será somado ao histórico do cultivo e utilizado nos cálculos de biomassa, FCA e demais indicadores do sistema." },
+];
+
+function _faqItem(f, i) {
+  return `<div class="faq-item" data-q="${f.q.toLowerCase()}">
+    <button class="faq-pergunta" onclick="toggleFAQ(${i})">
+      <span>${f.q}</span>
+      <svg class="faq-seta" id="faq-seta-${i}" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="faq-resposta" id="faq-resp-${i}"><div class="faq-resposta-inner"><p>${f.a}</p></div></div>
+  </div>`;
+}
+
+function abrirFAQ() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">Perguntas frequentes</h3>
+    <div class="cfg-wrap">
+      <div class="faq-busca">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="faqBusca" placeholder="Buscar dúvidas..." oninput="filtrarFAQ(this.value)">
+      </div>
+      <div class="faq-lista" id="faq-lista">
+        ${_FAQ.map((f, i) => _faqItem(f, i)).join("")}
+        <p id="faq-vazio" class="faq-vazio" style="display:none">Nenhuma dúvida encontrada. Fale com o suporte.</p>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">← Voltar</button>
+    </div>
+  `;
+}
+
+function toggleFAQ(i) {
+  const resp = document.getElementById("faq-resp-" + i);
+  const seta = document.getElementById("faq-seta-" + i);
+  if (!resp) return;
+  const aberto = resp.classList.toggle("aberto");
+  if (seta) seta.classList.toggle("rot", aberto);
+}
+
+function filtrarFAQ(termo) {
+  const t = (termo || "").trim().toLowerCase();
+  let visiveis = 0;
+  document.querySelectorAll("#faq-lista .faq-item").forEach(el => {
+    const ok = !t || (el.dataset.q || "").includes(t);
+    el.style.display = ok ? "" : "none";
+    if (ok) visiveis++;
+  });
+  const vazio = document.getElementById("faq-vazio");
+  if (vazio) vazio.style.display = visiveis === 0 ? "block" : "none";
+}
+
+// ─── Suporte ───────────────────────────────────────────────────────────────
+function abrirSuporte() {
+  esconderMenu();
+  const wa = "5588992498067";
+  const mail = "matheuswitalo86@gmail.com";
+  const chev = `<svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const txtProblema = encodeURIComponent("Olá! Quero reportar um problema no WA Aqua Gestão:");
+  const txtSugestao = encodeURIComponent("Olá! Tenho uma sugestão para o WA Aqua Gestão:");
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">Suporte</h3>
+    <div class="cfg-wrap">
+      <div class="cfg-hero">
+        <div class="cfg-hero-ico"><svg viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+        <h4>Como podemos ajudar?</h4>
+        <p>Entre em contato pelos canais abaixo.</p>
+      </div>
+      <div class="cfg-lista">
+        <a class="cfg-item" href="https://wa.me/${wa}" target="_blank" rel="noopener">
+          <div class="cfg-item-ico">${_ICO.whatsapp}</div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">WhatsApp</span><span class="cfg-item-sub">(88) 99249-8067</span></div>
+          ${chev}
+        </a>
+        <a class="cfg-item" href="mailto:${mail}">
+          <div class="cfg-item-ico">${_ICO.mail}</div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">E-mail</span><span class="cfg-item-sub">${mail}</span></div>
+          ${chev}
+        </a>
+        <a class="cfg-item" href="https://wa.me/${wa}?text=${txtProblema}" target="_blank" rel="noopener">
+          <div class="cfg-item-ico cfg-item-ico-alerta">${_ICO.alerta}</div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Reportar problema</span><span class="cfg-item-sub">Descreva o que aconteceu</span></div>
+          ${chev}
+        </a>
+        <a class="cfg-item" href="https://wa.me/${wa}?text=${txtSugestao}" target="_blank" rel="noopener">
+          <div class="cfg-item-ico">${_ICO.ideia}</div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Enviar sugestão</span><span class="cfg-item-sub">Conte sua ideia para a gente</span></div>
+          ${chev}
+        </a>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">← Voltar</button>
+    </div>
+  `;
+}
+
 async function pegarUsuarioLogado() {
   const {
     data: { user },
