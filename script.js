@@ -5129,6 +5129,23 @@ async function _aplicarProtocolosRacao(index, racaoKg, data) {
   }
 }
 
+// Aplica um protocolo de ração aos lançamentos de ração já existentes
+async function _aplicarProtocoloRacaoRetroativo(index, prot) {
+  const produto = produtos.find(pr => pr.id === prot.produtoId);
+  if (!produto) return;
+  const v = viveiros[index];
+  const minData = prot.inicio || v.dataPovoamento || "0000-00-00";
+  const racoes = (v.racoes || []).filter(r => r.data >= minData).sort((a, b) => a.data.localeCompare(b.data));
+  for (const r of racoes) {
+    const wd = _maParse(r.data).getDay();
+    if (Array.isArray(prot.dias) && prot.dias.length > 0 && !prot.dias.includes(wd)) continue;
+    const jaTem = (v.custos || []).some(c => c.data === r.data && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
+    if (jaTem) continue;
+    const quantidadeG = (Number(prot.dosePorKgG) || 0) * r.racao;
+    await _lancarCustoAuto(index, produto, quantidadeG, r.data, "Automático (ração)");
+  }
+}
+
 // Põe em dia os protocolos semanais ao abrir o app
 async function aplicarProtocolosSemanais() {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -5268,6 +5285,8 @@ function abrirFormProtocolo(index, protId) {
       </div>
       <p class="rc-print-dica">Deixe vazio para valer desde o início do cultivo.</p>
 
+      <label class="ma-check"><input type="checkbox" id="protRetroativo"> Aplicar aos dias anteriores (lança o que já passou)</label>
+
       <div id="msg-prot-erro" style="display:none;color:#ef4444;font-size:13px;margin:8px 0;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" style="margin-top:12px" onclick="salvarProtocolo(${index}, ${protId ? `'${protId}'` : "null"})">Salvar protocolo</button>
       <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirManejoAutomatico(${index})">← Voltar</button>
@@ -5290,6 +5309,8 @@ async function salvarProtocolo(index, protId) {
   const produto = produtos.find(pr => pr.id === produtoId);
   if (!produto) { erro("Escolha um produto."); return; }
   const tipo = document.getElementById("protTipo").value;
+  const retro = !!document.getElementById("protRetroativo")?.checked;
+  const hojeStr = _maYmd(new Date());
 
   const prot = { id: protId || ("p" + Date.now()), produtoId, nomeProduto: produto.nome, tipo, ativo: true, ultimoLancamento: null };
   if (protId) {
@@ -5310,7 +5331,8 @@ async function salvarProtocolo(index, protId) {
     if (dias.length === 0) { erro("Selecione ao menos um dia da semana."); return; }
     prot.quantidadeG = qtd;
     prot.dias = dias;
-    prot.ultimoLancamento = null; // recomeça o agendamento
+    // Retroativo: backfill desde o início; senão, começa de hoje em diante
+    prot.ultimoLancamento = retro ? null : _maAddDias(hojeStr, -1);
   }
 
   if (!viveiros[index].protocolos) viveiros[index].protocolos = [];
@@ -5322,7 +5344,11 @@ async function salvarProtocolo(index, protId) {
   }
   const ok = await salvarProtocolos(index);
   if (!ok) return;
-  if (tipo === "semanal") await aplicarProtocolosSemanais();
+  if (tipo === "semanal") {
+    await aplicarProtocolosSemanais();
+  } else if (retro) {
+    await _aplicarProtocoloRacaoRetroativo(index, prot);
+  }
   _toastSucesso("Protocolo salvo!");
   abrirManejoAutomatico(index);
 }
