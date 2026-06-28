@@ -4936,7 +4936,9 @@ function gerarRelatorioImpressao() {
   @page { size: A4; margin: 12mm; }
   * { box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; margin: 0; padding: 16px; font-size: 12px; }
-  .doc { max-width: 980px; margin: 0 auto; }
+  .doc { max-width: 100%; margin: 0 auto; }
+  .sec, .duas > div { page-break-inside: avoid; }
+  table, .chart-box, .rosca-wrap, .cel { page-break-inside: avoid; }
   .cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; border-bottom: 3px solid #0b6b63; padding-bottom: 12px; margin-bottom: 16px; }
   .cab-marca { display: flex; align-items: center; gap: 10px; }
   .cab-logo { width: 46px; height: 46px; border-radius: 10px; background: #0b6b63; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; text-align: center; line-height: 1.1; }
@@ -4948,12 +4950,13 @@ function gerarRelatorioImpressao() {
   .cab-periodo small { opacity: .8; font-size: 9px; letter-spacing: .05em; } .cab-periodo b { display: block; font-size: 12px; margin-top: 2px; }
   h2.sec { font-size: 13px; color: #0b6b63; margin: 18px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #e5e7eb; }
   .grid { display: grid; gap: 8px; }
-  .info6 { grid-template-columns: repeat(6, 1fr); }
-  .ind5 { grid-template-columns: repeat(5, 1fr); }
+  .info6 { grid-template-columns: repeat(3, 1fr); }
+  .ind5 { grid-template-columns: repeat(3, 1fr); }
   .cel { background: #f8fafc; border: 1px solid #eef0f2; border-radius: 8px; padding: 9px 10px; }
   .cel small { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; display: block; }
   .cel b { font-size: 14px; color: #111827; }
-  .duas { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+  .duas { display: block; }
+  .duas > div + div { margin-top: 4px; }
   .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .chart-box { border: 1px solid #eef0f2; border-radius: 8px; padding: 8px; }
   .chart-box h4 { margin: 0 0 6px; font-size: 10.5px; color: #374151; text-align: center; font-weight: 700; }
@@ -5005,8 +5008,6 @@ function gerarRelatorioImpressao() {
       <div class="charts">
         <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
-        <div class="chart-box"><h4>FCA ao longo do cultivo</h4><canvas id="cFca"></canvas></div>
-        <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
       </div>
     </div>
     <div>
@@ -5055,8 +5056,6 @@ function gerarRelatorioImpressao() {
     if (typeof Chart === "undefined") { setTimeout(render, 100); return; }
     linha("cPeso", D.peso, "#16a34a", "rgba(22,163,74,.08)");
     new Chart(document.getElementById("cRacao"), { type: "bar", data: { labels: D.racao.labels, datasets: [{ data: D.racao.data, backgroundColor: "#0b6b63" }] }, options: { responsive: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
-    linha("cFca", D.fca, "#2563eb");
-    linha("cBio", D.biomassa, "#f59e0b", "rgba(245,158,11,.08)");
     if (document.getElementById("cDist") && D.dist.data.length) {
       new Chart(document.getElementById("cDist"), { type: "doughnut", data: { labels: D.dist.labels, datasets: [{ data: D.dist.data, backgroundColor: D.dist.cores, borderColor: "#fff", borderWidth: 2 }] }, options: { responsive: false, cutout: "62%", plugins: { legend: { display: false } } } });
     }
