@@ -2053,7 +2053,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         <div class="proj-resumo-linha">
           <svg class="proj-resumo-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           <span class="proj-resumo-lbl">Tempo restante</span>
-          <span class="proj-resumo-val">~${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</span>
+          <span class="proj-resumo-val">${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</span>
         </div>
         <div class="proj-resumo-linha">
           <svg class="proj-resumo-ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -2068,7 +2068,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         ${biomasaAlvoStr ? `<div class="proj-resumo-linha">
           <svg class="proj-resumo-ico" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span class="proj-resumo-lbl">Biomassa estimada</span>
-          <span class="proj-resumo-val">~${biomasaAlvoStr}</span>
+          <span class="proj-resumo-val">${biomasaAlvoStr}</span>
         </div>` : ""}
       </div>
       <p class="proj-obs">Estimativa pelo ganho médio de ${formatarNumeroBR(gDia * 7, 2)} g/semana. Quanto mais biometrias, mais precisa.</p>
