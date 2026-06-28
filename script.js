@@ -1944,8 +1944,11 @@ async function salvarLancamentoRacao(indexDireto = "") {
     }
   }
 
-  // Mostra mensagem de sucesso e reseta o formulário
-  document.getElementById("dataRacao").value = new Date().toISOString().split("T")[0];
+  // Mostra mensagem de sucesso e avança a data para o dia seguinte (sequência)
+  const [ay, am, ad] = data.split("-").map(Number);
+  const prox = new Date(ay, am - 1, ad + 1);
+  const proxStr = `${prox.getFullYear()}-${String(prox.getMonth() + 1).padStart(2, "0")}-${String(prox.getDate()).padStart(2, "0")}`;
+  document.getElementById("dataRacao").value = proxStr;
   document.getElementById("consumoRacao").value = "";
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
 
