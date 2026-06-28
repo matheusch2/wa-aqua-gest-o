@@ -1261,7 +1261,6 @@ function abrirViveiro(index) {
         </div>
         <div class="vv-header-info">
           <h2 class="vv-titulo">${viveiro.nome.toUpperCase()}</h2>
-          <p class="vv-sub">${viveiro.laboratorio || "—"}${viveiro.tamanho ? " • " + viveiro.tamanho + " ha" : ""}</p>
           <span class="vv-badge"><span class="vv-badge-dot"></span>Em cultivo</span>
         </div>
         <div class="vv-pls">${totalFormatado} PLs</div>
@@ -1308,7 +1307,7 @@ function abrirViveiro(index) {
           <strong>${formatarNumeroBR(totalRacao, 1)} kg</strong>
         </div>
 
-        <div class="info-box info-box-destaque">
+        <div class="info-box">
           <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
