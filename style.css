@@ -4535,3 +4535,450 @@ body.tema-escuro .faq-item { background: #1f2937; border-color: #374151; }
 body.tema-escuro .faq-pergunta { color: #f3f4f6; }
 body.tema-escuro .faq-seta { stroke: #34d399; }
 body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓDULO FINANCEIRO — reorganização
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ícones coloridos do hub */
+.cfg-item-ico-amber { background: #fffbeb !important; }
+.cfg-item-ico-amber svg { stroke: #d97706 !important; }
+.cfg-item-ico-roxo { background: #f5f3ff !important; }
+.cfg-item-ico-roxo svg { stroke: #7c3aed !important; }
+
+/* Topo com ação à direita */
+.fin-topo-acoes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.fin-novo-btn {
+    background: rgb(6,107,99);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.fin-novo-btn:active { background: rgb(4,85,79); }
+
+/* Período */
+.fin-periodo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fin-periodo-row input {
+    flex: 1;
+    min-width: 0;
+}
+.fin-periodo-row span { font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+
+.fin-limpar-filtros {
+    display: block;
+    margin: 0 0 12px auto;
+    background: none;
+    border: none;
+    color: rgb(6,107,99);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+/* Toggle Detalhado / Por tipo */
+.fin-modo-toggle {
+    display: flex;
+    background: #eef0f2;
+    border-radius: 11px;
+    padding: 3px;
+    margin-bottom: 14px;
+}
+.fin-modo-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.fin-modo-btn.ativo { background: white; color: rgb(6,107,99); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* 4 cards de indicadores */
+.fin-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.fin-card {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.fin-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.fin-card-top svg {
+    width: 15px;
+    height: 15px;
+    stroke: rgb(6,107,99);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.fin-card-top span {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+}
+.fin-card strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 800;
+    color: rgb(6,107,99);
+}
+.fin-card small {
+    display: block;
+    font-size: 10.5px;
+    color: #9ca3af;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Lista de lançamentos */
+.fin-lista-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.fin-lista-head span {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1f2937;
+}
+.fin-ordenar {
+    width: auto !important;
+    padding: 6px 28px 6px 10px !important;
+    font-size: 12.5px !important;
+    font-weight: 600;
+    border-radius: 9px !important;
+}
+.fin-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+.fin-linha {
+    display: grid;
+    grid-template-columns: auto 44px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 9px;
+}
+.fin-linha-data { font-size: 11.5px; color: #6b7280; font-weight: 600; }
+.fin-linha-viveiro { font-size: 11.5px; font-weight: 800; color: rgb(6,107,99); }
+.fin-linha-desc {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fin-linha-desc small {
+    display: block;
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+.fin-linha-valor { font-size: 13px; font-weight: 700; color: #1f2937; justify-self: end; }
+
+/* Paginação */
+.fin-paginacao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.fin-paginacao button {
+    background: white;
+    border: 1.5px solid #d1d5db;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: rgb(6,107,99);
+    cursor: pointer;
+}
+.fin-paginacao button:disabled { opacity: 0.4; cursor: default; }
+.fin-paginacao span { font-size: 12px; color: #9ca3af; font-weight: 600; }
+
+/* Total geral */
+.fin-total-geral {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+.fin-total-geral-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: rgb(6,107,99);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fin-total-geral-ico svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fin-total-geral-txt { display: flex; flex-direction: column; }
+.fin-total-geral-txt span { font-size: 12px; color: #15803d; font-weight: 600; }
+.fin-total-geral-txt strong { font-size: 20px; font-weight: 900; color: rgb(6,107,99); }
+
+/* Por tipo — pizza + ranking */
+.fin-secao-titulo {
+    font-size: 11px;
+    font-weight: 800;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+}
+.fin-pizza-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+.fin-pizza-canvas {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    flex-shrink: 0;
+    margin: 0 auto;
+}
+.fin-pizza-centro {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+.fin-pizza-centro span { display: block; font-size: 10px; color: #9ca3af; font-weight: 600; }
+.fin-pizza-centro strong { display: block; font-size: 12px; font-weight: 800; color: #1f2937; }
+.fin-pizza-legenda {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.fin-leg-item { display: flex; align-items: center; gap: 8px; }
+.fin-leg-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.fin-leg-nome { flex: 1; font-size: 13px; font-weight: 600; color: #374151; }
+.fin-leg-val { font-size: 12.5px; font-weight: 700; color: #1f2937; }
+.fin-leg-val small { font-size: 11px; color: #9ca3af; font-weight: 600; }
+
+.fin-ranking { margin-bottom: 4px; }
+.fin-rank-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 9px;
+    margin-bottom: 6px;
+}
+.fin-rank-pos {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgb(6,107,99);
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fin-rank-nome { flex: 1; font-size: 13px; font-weight: 600; color: #1f2937; }
+.fin-rank-val { font-size: 13px; font-weight: 700; color: rgb(6,107,99); }
+
+/* Formulário de boleto — vencimento auto */
+.fin-venc-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 4px;
+}
+.fin-venc-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #15803d; }
+.fin-venc-label svg { width: 17px; height: 17px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fin-venc-valor { font-size: 15px; font-weight: 800; color: rgb(6,107,99); }
+.fin-venc-dica { font-size: 11px; color: #9ca3af; margin: 6px 2px 10px; }
+
+/* Boletos — busca + cards */
+.bt-busca {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 14px;
+    margin-bottom: 12px;
+}
+.bt-busca svg { width: 17px; height: 17px; stroke: #9ca3af; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.bt-busca input { flex: 1; border: none; outline: none; padding: 11px 0; font-size: 14px; background: transparent; }
+
+.bt-chip-sub { font-size: 10px; color: #6b7280; font-weight: 700; margin-top: 2px; }
+.bt-chip-ok { color: #16a34a; }
+
+.bt-card {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 13px;
+    margin-bottom: 8px;
+    overflow: visible;
+}
+.bt-card-pago { opacity: 0.72; }
+.bt-card-main { flex: 1; padding: 12px 14px; cursor: pointer; min-width: 0; }
+.bt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.bt-card-nome { font-size: 14.5px; font-weight: 800; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-card-sub { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+.bt-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bt-card-venc { font-size: 12px; color: #6b7280; font-weight: 500; }
+.bt-card-valor { font-size: 14px; font-weight: 800; color: rgb(6,107,99); }
+
+/* Detalhe do boleto */
+.bt-det-topo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.bt-det-ico {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bt-det-ico svg { width: 28px; height: 28px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bt-det-info {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 4px 16px;
+}
+.bt-det-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f1f3;
+    font-size: 13.5px;
+    color: #6b7280;
+}
+.bt-det-linha:last-child { border-bottom: none; }
+.bt-det-linha strong { font-size: 14px; font-weight: 700; color: #1f2937; }
+.bt-det-valor strong { font-size: 18px; color: rgb(6,107,99); }
+
+.bt-det-historico {
+    background: #f9fafb;
+    border: 1.5px solid #eef0f2;
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-top: 14px;
+}
+.bt-det-historico h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; color: #1f2937; }
+.bt-hist-linha { display: flex; gap: 12px; padding: 5px 0; font-size: 12.5px; }
+.bt-hist-data { color: #9ca3af; font-weight: 600; flex-shrink: 0; }
+.bt-hist-txt { color: #4b5563; }
+
+/* DARK MODE — financeiro */
+body.tema-escuro .fin-modo-toggle { background: #374151; }
+body.tema-escuro .fin-modo-btn.ativo { background: #1f2937; color: #34d399; }
+body.tema-escuro .fin-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .fin-card strong { color: #34d399; }
+body.tema-escuro .fin-card-top span { color: #9ca3af; }
+body.tema-escuro .fin-card-top svg { stroke: #34d399; }
+body.tema-escuro .fin-lista-head span { color: #f3f4f6; }
+body.tema-escuro .fin-linha { background: #374151; border-color: #4b5563; }
+body.tema-escuro .fin-linha-desc { color: #f3f4f6; }
+body.tema-escuro .fin-linha-valor { color: #f3f4f6; }
+body.tema-escuro .fin-linha-viveiro { color: #34d399; }
+body.tema-escuro .fin-total-geral { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .fin-total-geral-txt strong { color: #34d399; }
+body.tema-escuro .fin-paginacao button { background: #1f2937; border-color: #4b5563; color: #34d399; }
+body.tema-escuro .fin-rank-linha { background: #374151; border-color: #4b5563; }
+body.tema-escuro .fin-rank-nome { color: #f3f4f6; }
+body.tema-escuro .fin-rank-val { color: #34d399; }
+body.tema-escuro .fin-leg-nome { color: #d1d5db; }
+body.tema-escuro .fin-leg-val { color: #f3f4f6; }
+body.tema-escuro .fin-pizza-centro strong { color: #f3f4f6; }
+body.tema-escuro .fin-venc-box { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .fin-venc-valor, body.tema-escuro .fin-venc-label { color: #34d399; }
+body.tema-escuro .fin-venc-label svg { stroke: #34d399; }
+body.tema-escuro .bt-busca { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-busca input { color: #f3f4f6; }
+body.tema-escuro .bt-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-card-nome { color: #f3f4f6; }
+body.tema-escuro .bt-card-valor { color: #34d399; }
+body.tema-escuro .bt-det-info { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-det-linha { border-bottom-color: #374151; color: #9ca3af; }
+body.tema-escuro .bt-det-linha strong { color: #f3f4f6; }
+body.tema-escuro .bt-det-valor strong { color: #34d399; }
+body.tema-escuro .bt-det-ico { background: #052e2b; }
+body.tema-escuro .bt-det-ico svg { stroke: #34d399; }
+body.tema-escuro .bt-det-historico { background: #374151; border-color: #4b5563; }
+body.tema-escuro .bt-det-historico h4 { color: #f3f4f6; }
+body.tema-escuro .bt-hist-txt { color: #d1d5db; }
+
+/* Ajuste de espaçamento de chips/abas no novo layout do Financeiro */
+.cfg-wrap .bt-chips { padding: 0; margin-bottom: 12px; }
+.cfg-wrap .bt-abas { padding: 0; margin-bottom: 14px; }
+.cfg-wrap .bt-lista { margin-bottom: 4px; }
+.cfg-wrap .bt-empty { padding: 24px 8px; text-align: center; color: #9ca3af; font-size: 13px; }

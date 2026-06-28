@@ -6,6 +6,10 @@ let produtos = []; let tiposRacao = [];
 let boletos = [];
 let _financeiroModo = "detalhado";
 let _boletosFiltro = "todos";
+let _finOrdenacao = "data";
+let _finPagina = 0;
+let _finPeriodoIni = "";
+let _finPeriodoFim = "";
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
@@ -3693,29 +3697,31 @@ function abrirMenuFinanceiro() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
   area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <h2 class="form-titulo">Financeiro</h2>
+    <h3 class="titulo-secao">Financeiro</h3>
+    <div class="cfg-wrap">
+      <div class="cfg-hero">
+        <div class="cfg-hero-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h4>Financeiro</h4>
+        <p>Acompanhe os custos do cultivo e gerencie suas contas a pagar.</p>
       </div>
-      <div class="form-corpo">
-        <button class="botao-submenu-financeiro" onclick="abrirFinanceiro()">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="rgb(6,107,99)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Relatório financeiro
+      <div class="cfg-lista">
+        <button class="cfg-item" onclick="abrirFinanceiro()">
+          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Relatório financeiro</span><span class="cfg-item-sub">Consulte os custos por viveiro ou geral</span></div>
+          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="botao-submenu-financeiro botao-submenu-boleto" onclick="abrirBoletos()">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          Boletos
+        <button class="cfg-item" onclick="abrirBoletos()">
+          <div class="cfg-item-ico cfg-item-ico-amber"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Boletos</span><span class="cfg-item-sub">Veja e gerencie boletos e vencimentos</span></div>
+          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="botao-submenu-financeiro botao-submenu-cadastro-boleto" onclick="abrirFormBoleto()">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="9.5" y1="17.5" x2="14.5" y2="17.5"/></svg>
-          Cadastrar boleto
+        <button class="cfg-item" onclick="abrirFormBoleto()">
+          <div class="cfg-item-ico cfg-item-ico-roxo"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Cadastrar boleto</span><span class="cfg-item-sub">Cadastre uma nova conta a pagar</span></div>
+          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
       </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>
     </div>
   `;
 }
@@ -3740,19 +3746,27 @@ function abrirBoletos(filtro) {
     return x.st.diff - y.st.diff;
   });
 
+  const qtdPagos = todos.filter(x => x.b.pago).length;
+
   const rows = filtrados.map(({ b, i, st }) => {
     const [ano, mes, dia] = b.dataCompra.split("-").map(Number);
     const vencDate = new Date(ano, mes - 1, dia);
     vencDate.setDate(vencDate.getDate() + b.prazoDias);
-    const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
     const badgeTipo = b.pago ? "pago" : st.tipo;
     const badgeLabel = b.pago ? "✓ Pago" : st.label;
     return `
-      <div class="bt-row${b.pago ? " bt-row-pago" : ""}">
-        <div class="bt-row-main" onclick="verDetalhesBoleto(${i})">
-          <span class="bt-nome">${b.nome}</span>
-          <span class="bt-valor-row">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}</span>
-          <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
+      <div class="bt-card${b.pago ? " bt-card-pago" : ""}" data-busca="${(b.nome + " " + (b.fornecedor || "")).toLowerCase()}">
+        <div class="bt-card-main" onclick="verDetalhesBoleto(${i})">
+          <div class="bt-card-head">
+            <span class="bt-card-nome">${b.nome}</span>
+            <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
+          </div>
+          <div class="bt-card-sub">Fornecedor: ${b.fornecedor || "—"}</div>
+          <div class="bt-card-foot">
+            <span class="bt-card-venc">Vencimento: ${vencFmt}</span>
+            <span class="bt-card-valor">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}</span>
+          </div>
         </div>
         <div class="bt-menu-wrap" onclick="event.stopPropagation()">
           <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">⋮</button>
@@ -3774,52 +3788,62 @@ function abrirBoletos(filtro) {
   }).join("");
 
   area.innerHTML = `
-    <div class="form-lancamento bt-form">
-      <div class="form-topo" style="padding-bottom:0">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    <div class="fin-topo-acoes">
+      <h3 class="titulo-secao" style="margin:0">Boletos</h3>
+      <button class="fin-novo-btn" onclick="abrirFormBoleto()">+ Novo boleto</button>
+    </div>
+    <div class="cfg-wrap">
+      <div class="bt-chips">
+        <div class="bt-chip">
+          <div class="bt-chip-val">${naoPagos.length}</div>
+          <div class="bt-chip-lbl">Ativos</div>
+          <div class="bt-chip-sub">R$ ${formatarNumeroBR(valorTotal, 2)}</div>
         </div>
-        <h2 class="form-titulo">Boletos</h2>
+        <div class="bt-chip bt-chip-warn">
+          <div class="bt-chip-val">${qtdVencendo}</div>
+          <div class="bt-chip-lbl">Vencendo</div>
+        </div>
+        <div class="bt-chip bt-chip-danger">
+          <div class="bt-chip-val">${qtdVencidos}</div>
+          <div class="bt-chip-lbl">Vencidos</div>
+        </div>
+        <div class="bt-chip bt-chip-ok">
+          <div class="bt-chip-val">${qtdPagos}</div>
+          <div class="bt-chip-lbl">Pagos</div>
+        </div>
       </div>
-      <div class="bt-corpo">
-        <div class="bt-chips">
-          <div class="bt-chip">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <div class="bt-chip-val">${naoPagos.length}</div>
-            <div class="bt-chip-lbl">ativos</div>
-          </div>
-          <div class="bt-chip">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <div class="bt-chip-val" style="font-size:11px;font-weight:800">R$ ${formatarNumeroBR(valorTotal, 2)}</div>
-            <div class="bt-chip-lbl">total</div>
-          </div>
-          <div class="bt-chip bt-chip-warn">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <div class="bt-chip-val">${qtdVencendo}</div>
-            <div class="bt-chip-lbl">vencendo</div>
-          </div>
-          <div class="bt-chip bt-chip-danger">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div class="bt-chip-val">${qtdVencidos}</div>
-            <div class="bt-chip-lbl">vencidos</div>
-          </div>
-        </div>
-        <div class="bt-abas">
-          <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">Todos</button>
-          <button class="bt-aba${_boletosFiltro === "vencendo" ? " ativa" : ""}" onclick="abrirBoletos('vencendo')">Vencendo</button>
-          <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
-          <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
-        </div>
-        <div class="bt-lista">
-          ${filtrados.length ? rows : `<div class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</div>`}
-        </div>
-        <button class="botao-voltar-form" style="margin:8px 16px 16px" onclick="abrirMenuFinanceiro()">← Voltar</button>
+      <div class="bt-busca">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar por nome ou fornecedor..." oninput="_filtrarBoletosBusca(this.value)">
       </div>
+      <div class="bt-abas">
+        <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">Todos</button>
+        <button class="bt-aba${_boletosFiltro === "vencendo" ? " ativa" : ""}" onclick="abrirBoletos('vencendo')">Vencendo</button>
+        <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
+        <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
+      </div>
+      <div class="bt-lista">
+        ${filtrados.length ? rows : `<div class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</div>`}
+        <p id="bt-busca-vazio" class="bt-empty" style="display:none">Nenhum boleto encontrado.</p>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:6px" onclick="abrirMenuFinanceiro()">← Voltar</button>
     </div>
   `;
 
   // Fecha menus ao clicar fora
   document.addEventListener("click", _fecharMenusBoleto, { once: true });
+}
+
+function _filtrarBoletosBusca(termo) {
+  const t = (termo || "").trim().toLowerCase();
+  let vis = 0;
+  document.querySelectorAll(".bt-lista .bt-card").forEach(el => {
+    const ok = !t || (el.dataset.busca || "").includes(t);
+    el.style.display = ok ? "" : "none";
+    if (ok) vis++;
+  });
+  const vazio = document.getElementById("bt-busca-vazio");
+  if (vazio) vazio.style.display = vis === 0 ? "block" : "none";
 }
 
 function _toggleMenuBoleto(index) {
@@ -3848,64 +3872,45 @@ function verDetalhesBoleto(index) {
   const dataCompraFmt = new Date(ano, mes - 1, dia).toLocaleDateString("pt-BR");
 
   area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        </div>
-        <h2 class="form-titulo">${b.nome}</h2>
-      </div>
-      <div class="form-corpo">
-        <div class="boleto-detalhe-status">
+    <h3 class="titulo-secao">${b.nome}</h3>
+    <div class="cfg-wrap">
+      <div class="bt-det-topo">
+        <div class="bt-det-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+        <div class="bt-det-status">
           ${b.pago
             ? `<span class="boleto-badge boleto-badge-pago" style="font-size:13px;padding:6px 14px">✓ Pago</span>`
             : `<span class="boleto-badge boleto-badge-${st.tipo}" style="font-size:13px;padding:6px 14px">${st.label}</span>`}
         </div>
-        <div class="boleto-detalhe-grid">
-          <div class="boleto-detalhe-linha">
-            <span class="boleto-detalhe-label">Fornecedor</span>
-            <span class="boleto-detalhe-valor">${b.fornecedor}</span>
-          </div>
-          <div class="boleto-detalhe-linha">
-            <span class="boleto-detalhe-label">Data da compra</span>
-            <span class="boleto-detalhe-valor">${dataCompraFmt}</span>
-          </div>
-          <div class="boleto-detalhe-linha">
-            <span class="boleto-detalhe-label">Prazo</span>
-            <span class="boleto-detalhe-valor">${b.prazoDias} dias</span>
-          </div>
-          <div class="boleto-detalhe-linha">
-            <span class="boleto-detalhe-label">Vencimento</span>
-            <span class="boleto-detalhe-valor">${st.dataFmt}</span>
-          </div>
-          ${b.pago && b.dataPagamento ? `
-          <div class="boleto-detalhe-linha">
-            <span class="boleto-detalhe-label">Pago em</span>
-            <span class="boleto-detalhe-valor">${formatarData(b.dataPagamento)}</span>
-          </div>` : ""}
-          ${b.valor ? `
-          <div class="boleto-detalhe-linha boleto-detalhe-destaque">
-            <span class="boleto-detalhe-label">Valor</span>
-            <span class="boleto-detalhe-valor" style="font-size:18px;font-weight:700;color:rgb(6,107,99)">R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-          </div>` : ""}
-        </div>
-        ${b.pago
-          ? `<button class="botao-salvar" style="margin-top:16px;background:#6b7280" onclick="desmarcarBoletoPago(${index}, true)">↩️ Desfazer pagamento</button>`
-          : `<button class="botao-salvar" style="margin-top:16px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✅ Marcar como pago</button>`}
-        <div style="display:flex;gap:10px;margin-top:10px">
-          <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
-          <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'">🗑️ Excluir</button>
-        </div>
-        <div id="confirmar-excluir-det" class="painel-confirmar-boleto" style="display:none;margin-top:10px">
-          <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
-          <div class="confirmar-boleto-botoes">
-            <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('confirmar-excluir-det').style.display='none'">Cancelar</button>
-            <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${index})">Excluir</button>
-          </div>
-        </div>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirBoletos()">← Voltar</button>
       </div>
+      <div class="bt-det-info">
+        <div class="bt-det-linha"><span>Fornecedor</span><strong>${b.fornecedor || "—"}</strong></div>
+        <div class="bt-det-linha"><span>Data da compra</span><strong>${dataCompraFmt}</strong></div>
+        <div class="bt-det-linha"><span>Prazo</span><strong>${b.prazoDias} dias</strong></div>
+        <div class="bt-det-linha"><span>Vencimento</span><strong>${st.dataFmt}</strong></div>
+        ${b.pago && b.dataPagamento ? `<div class="bt-det-linha"><span>Pago em</span><strong>${formatarData(b.dataPagamento)}</strong></div>` : ""}
+        ${b.valor ? `<div class="bt-det-linha bt-det-valor"><span>Valor</span><strong>R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>` : ""}
+      </div>
+      ${b.pago
+        ? `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desmarcarBoletoPago(${index}, true)">↩️ Desfazer pagamento</button>`
+        : `<button class="botao-salvar" style="margin-top:14px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✓ Marcar como pago</button>`}
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
+        <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'">🗑️ Excluir</button>
+      </div>
+      <div id="confirmar-excluir-det" class="painel-confirmar-boleto" style="display:none;margin-top:10px">
+        <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
+        <div class="confirmar-boleto-botoes">
+          <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('confirmar-excluir-det').style.display='none'">Cancelar</button>
+          <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${index})">Excluir</button>
+        </div>
+      </div>
+      <div class="bt-det-historico">
+        <h4>Histórico</h4>
+        <div class="bt-hist-linha"><span class="bt-hist-data">${dataCompraFmt}</span><span class="bt-hist-txt">Boleto cadastrado</span></div>
+        <div class="bt-hist-linha"><span class="bt-hist-data">${dataCompraFmt}</span><span class="bt-hist-txt">Vencimento definido: ${st.dataFmt}</span></div>
+        ${b.pago && b.dataPagamento ? `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(b.dataPagamento)}</span><span class="bt-hist-txt">Marcado como pago</span></div>` : ""}
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirBoletos()">← Voltar</button>
     </div>
   `;
 }
@@ -3916,56 +3921,77 @@ function abrirFormBoleto(index) {
   const b = editando ? boletos[index] : null;
 
   area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    <h3 class="titulo-secao">${editando ? "Editar boleto" : "Novo boleto"}</h3>
+    <div class="cfg-wrap">
+      <div class="fin-secao-titulo">Informações do boleto</div>
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <label>Nome do boleto</label>
         </div>
-        <h2 class="form-titulo">${editando ? "Editar boleto" : "Novo boleto"}</h2>
+        <input type="text" id="boleto-nome" placeholder="Ex: Ração ABC" value="${b ? b.nome : ""}">
       </div>
-      <div class="form-corpo">
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <label>Nome do boleto</label>
-          </div>
-          <input type="text" id="boleto-nome" placeholder="Ex: Ração ABC" value="${b ? b.nome : ""}">
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <label>Fornecedor</label>
         </div>
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <label>Fornecedor</label>
-          </div>
-          <input type="text" id="boleto-fornecedor" placeholder="Ex: Loja do João" value="${b ? b.fornecedor : ""}">
-        </div>
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <label>Valor (R$)</label>
-          </div>
-          <input type="text" inputmode="decimal" id="boleto-valor" placeholder="Ex: 1.500,00" value="${b && b.valor ? b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}">
-        </div>
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <label>Data da compra</label>
-          </div>
-          <input type="date" id="boleto-data" value="${b ? b.dataCompra : ""}">
-        </div>
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <label>Prazo (dias)</label>
-          </div>
-          <input type="number" id="boleto-prazo" placeholder="Ex: 60" min="1" value="${b ? b.prazoDias : ""}">
-        </div>
-        <div id="msg-boleto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center"></div>
-        <button class="botao-salvar" onclick="salvarBoleto(${editando ? index : "null"})">${editando ? "Salvar alterações" : "Adicionar"}</button>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirBoletos()">← Voltar</button>
+        <input type="text" id="boleto-fornecedor" placeholder="Ex: Loja do João" value="${b ? b.fornecedor : ""}">
       </div>
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <label>Valor (R$)</label>
+        </div>
+        <input type="text" inputmode="decimal" id="boleto-valor" placeholder="Ex: 1.500,00" value="${b && b.valor ? b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}">
+      </div>
+
+      <div class="fin-secao-titulo" style="margin-top:16px">Datas e prazo</div>
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <label>Data da compra</label>
+        </div>
+        <input type="date" id="boleto-data" value="${b ? b.dataCompra : ""}" oninput="_calcVencimentoForm()">
+      </div>
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <label>Prazo (dias)</label>
+        </div>
+        <input type="number" id="boleto-prazo" placeholder="Ex: 60" min="1" value="${b ? b.prazoDias : ""}" oninput="_calcVencimentoForm()">
+      </div>
+      <div class="fin-venc-box">
+        <div class="fin-venc-label">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Vencimento
+        </div>
+        <span class="fin-venc-valor" id="boleto-vencimento">—</span>
+      </div>
+      <p class="fin-venc-dica">Calculado automaticamente pela data da compra + prazo.</p>
+
+      <div id="msg-boleto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center"></div>
+      <button class="botao-salvar" onclick="salvarBoleto(${editando ? index : "null"})">${editando ? "Salvar boleto" : "Salvar boleto"}</button>
+      <div class="separador-ou"><span>ou</span></div>
+      <button class="botao-voltar-form" onclick="abrirBoletos()">← Voltar</button>
     </div>
   `;
+  _calcVencimentoForm();
+}
+
+function _calcVencimentoForm() {
+  const d = document.getElementById("boleto-data")?.value;
+  const p = parseInt(document.getElementById("boleto-prazo")?.value);
+  const out = document.getElementById("boleto-vencimento");
+  if (!out) return;
+  if (d && p > 0) {
+    const [a, m, dia] = d.split("-").map(Number);
+    const venc = new Date(a, m - 1, dia);
+    venc.setDate(venc.getDate() + p);
+    out.textContent = venc.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } else {
+    out.textContent = "—";
+  }
 }
 
 async function salvarBoleto(index) {
@@ -4051,137 +4077,280 @@ function confirmarExcluirBoleto(index) {
 
 function abrirFinanceiro() {
   esconderMenu();
+  // Período padrão: mês atual
+  if (!_finPeriodoIni && !_finPeriodoFim) {
+    const now = new Date();
+    const ini = new Date(now.getFullYear(), now.getMonth(), 1);
+    const fim = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    _finPeriodoIni = ini.toISOString().split("T")[0];
+    _finPeriodoFim = fim.toISOString().split("T")[0];
+  }
   const area = document.getElementById("area-gestao");
-
   area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <div class="fin-topo-acoes">
+      <h3 class="titulo-secao" style="margin:0">Relatório financeiro</h3>
+      <button class="fin-novo-btn" onclick="imprimirRelatorioFinanceiro()">🖨️ Imprimir</button>
+    </div>
+    <div class="cfg-wrap">
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+          <label>Viveiro</label>
         </div>
-        <h2 class="form-titulo">Financeiro</h2>
+        <select id="viveiroFinanceiro" onchange="_finPagina=0;mostrarCustosFinanceiro()">
+          <option value="">Todos os viveiros</option>
+          ${viveiros.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("")}
+        </select>
       </div>
-      <div class="form-corpo">
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
-            <label>Viveiro</label>
-          </div>
-          <select id="viveiroFinanceiro" onchange="mostrarCustosFinanceiro()">
-            <option value="">Todos os viveiros</option>
-            ${viveiros.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("")}
-          </select>
+      <div class="campo-form" style="margin-bottom:6px">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <label>Período</label>
         </div>
-        <div id="resultado-financeiro"></div>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirMenuFinanceiro()">← Voltar</button>
+        <div class="fin-periodo-row">
+          <input type="date" id="finPeriodoIni" value="${_finPeriodoIni}" onchange="_finSetPeriodo()">
+          <span>até</span>
+          <input type="date" id="finPeriodoFim" value="${_finPeriodoFim}" onchange="_finSetPeriodo()">
+        </div>
       </div>
+      <button class="fin-limpar-filtros" onclick="_finLimparFiltros()">Limpar filtros</button>
+      <div class="fin-modo-toggle">
+        <button class="fin-modo-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" onclick="_financeiroModo='detalhado';_finPagina=0;mostrarCustosFinanceiro()">Detalhado</button>
+        <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" onclick="_financeiroModo='resumido';mostrarCustosFinanceiro()">Por tipo</button>
+      </div>
+      <div id="resultado-financeiro"></div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">← Voltar</button>
     </div>
   `;
-
   mostrarCustosFinanceiro();
 }
 
-function mostrarCustosFinanceiro() {
-  const viveiroIndex = document.getElementById("viveiroFinanceiro").value;
-  const resultado = document.getElementById("resultado-financeiro");
-  const porViveiro = viveiroIndex !== "";
+function _finSetPeriodo() {
+  _finPeriodoIni = document.getElementById("finPeriodoIni")?.value || "";
+  _finPeriodoFim = document.getElementById("finPeriodoFim")?.value || "";
+  _finPagina = 0;
+  mostrarCustosFinanceiro();
+}
 
+function _finLimparFiltros() {
+  _finPeriodoIni = ""; _finPeriodoFim = ""; _finPagina = 0;
+  const a = document.getElementById("finPeriodoIni"); if (a) a.value = "";
+  const b = document.getElementById("finPeriodoFim"); if (b) b.value = "";
+  const v = document.getElementById("viveiroFinanceiro"); if (v) v.value = "";
+  mostrarCustosFinanceiro();
+}
+
+function _finTipoLabel(c) {
+  return c.tipo === "produto" ? "Produto" : "Outro custo";
+}
+
+function _finColetarCustos() {
+  const viveiroIndex = document.getElementById("viveiroFinanceiro")?.value ?? "";
+  const porViveiro = viveiroIndex !== "";
   let custos;
   if (porViveiro) {
     const v = viveiros[viveiroIndex];
     custos = (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }));
   } else {
-    custos = viveiros.flatMap(v =>
-      (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }))
-    );
+    custos = viveiros.flatMap(v => (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome })));
   }
+  if (_finPeriodoIni) custos = custos.filter(c => c.data >= _finPeriodoIni);
+  if (_finPeriodoFim) custos = custos.filter(c => c.data <= _finPeriodoFim);
+  return { custos, porViveiro };
+}
 
-  // Para "por tipo": agrupa por descrição → viveiro → data
-  const custosResumo = [...custos].sort((a, b) => a.data.localeCompare(b.data));
-  const custosDetalhado = [...custos].sort((a, b) => {
-    const nomeA = (a.nomeProduto || a.categoria || "").toLowerCase();
-    const nomeB = (b.nomeProduto || b.categoria || "").toLowerCase();
-    if (nomeA !== nomeB) return nomeA.localeCompare(nomeB, "pt-BR");
-    const vA = (a.viveiroNome || "").toLowerCase();
-    const vB = (b.viveiroNome || "").toLowerCase();
-    if (vA !== vB) return vA.localeCompare(vB, "pt-BR");
-    return a.data.localeCompare(b.data);
-  });
-  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
+function mostrarCustosFinanceiro() {
+  const resultado = document.getElementById("resultado-financeiro");
+  if (!resultado) return;
+  const { custos, porViveiro } = _finColetarCustos();
 
   if (custos.length === 0) {
-    resultado.innerHTML = `<p class="sobrevivencia-texto" style="margin:16px 0">Nenhum custo lançado${porViveiro ? " para este viveiro" : ""}.<br><small>Lance custos dentro de cada viveiro.</small></p>`;
+    resultado.innerHTML = `<p class="sobrevivencia-texto" style="margin:16px 0">Nenhum custo lançado${porViveiro ? " para este viveiro" : ""} no período.<br><small>Ajuste os filtros ou lance custos dentro de cada viveiro.</small></p>`;
     return;
   }
 
-  const seletor = `
-    <div class="financeiro-toggle">
-      <button class="financeiro-toggle-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" onclick="_financeiroModo='detalhado';mostrarCustosFinanceiro()">Detalhado</button>
-      <button class="financeiro-toggle-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" onclick="_financeiroModo='resumido';mostrarCustosFinanceiro()">Por tipo</button>
-    </div>
-  `;
+  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
 
   if (_financeiroModo === "resumido") {
-    // Agrupar por descrição (nome do produto/categoria)
-    const grupos = {};
-    custos.forEach(c => {
-      const chave = c.nomeProduto || c.categoria || "Outros";
-      if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0 };
-      grupos[chave].total += Number(c.valor);
-      grupos[chave].qtd += 1;
-    });
-    const listaGrupos = Object.values(grupos).sort((a, b) => b.total - a.total);
-
-    resultado.innerHTML = `
-      ${seletor}
-      <div class="tabela-historico" style="margin-bottom:10px">
-        <div class="linha-hist-resumo cabecalho">
-          <span>DESCRIÇÃO</span>
-          <span class="col-centro">QTD</span>
-          <span class="col-direita">TOTAL</span>
-        </div>
-        ${listaGrupos.map(g => `
-          <div class="linha-hist-resumo">
-            <span style="font-size:13px;font-weight:500">${g.nome}</span>
-            <span class="col-centro" style="font-size:13px">${g.qtd}x</span>
-            <span class="col-direita" style="font-size:13px;font-weight:600">R$&nbsp;${formatarNumeroBR(g.total, 2)}</span>
-          </div>
-        `).join("")}
-      </div>
-      <div class="total-chip">
-        <span class="total-chip-label">Total</span>
-        <span class="total-chip-valor">R$ ${formatarNumeroBR(total, 2)}</span>
-      </div>
-    `;
-    return;
+    _finRenderPorTipo(resultado, custos, total);
+  } else {
+    _finRenderDetalhado(resultado, custos, total);
   }
+}
+
+function _finRenderDetalhado(resultado, custos, total) {
+  // % do total geral (mesmo período, todos os viveiros)
+  let custosGeral = viveiros.flatMap(v => (v.custos || []));
+  if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
+  if (_finPeriodoFim) custosGeral = custosGeral.filter(c => c.data <= _finPeriodoFim);
+  const totalGeral = custosGeral.reduce((s, c) => s + Number(c.valor), 0);
+  const pct = totalGeral > 0 ? Math.round((total / totalGeral) * 100) : 100;
+
+  // dias do período
+  let dias;
+  if (_finPeriodoIni && _finPeriodoFim) {
+    dias = Math.max(1, Math.round((_parseDataLocal(_finPeriodoFim) - _parseDataLocal(_finPeriodoIni)) / 86400000) + 1);
+  } else {
+    const datas = custos.map(c => c.data).sort();
+    dias = Math.max(1, Math.round((_parseDataLocal(datas[datas.length - 1]) - _parseDataLocal(datas[0])) / 86400000) + 1);
+  }
+  const mediaDia = total / dias;
+  const maior = custos.reduce((m, c) => Number(c.valor) > Number(m.valor) ? c : m, custos[0]);
+
+  // ordenação
+  const ord = _finOrdenacao;
+  const ordenados = [...custos].sort((a, b) => {
+    if (ord === "valor") return Number(b.valor) - Number(a.valor);
+    if (ord === "descricao") return (a.nomeProduto || "").localeCompare(b.nomeProduto || "", "pt-BR");
+    return b.data.localeCompare(a.data);
+  });
+
+  // paginação
+  const PP = 8;
+  const totalPag = Math.max(1, Math.ceil(ordenados.length / PP));
+  if (_finPagina > totalPag - 1) _finPagina = totalPag - 1;
+  if (_finPagina < 0) _finPagina = 0;
+  const pagina = ordenados.slice(_finPagina * PP, _finPagina * PP + PP);
 
   resultado.innerHTML = `
-    ${seletor}
-    <div class="tabela-historico" style="margin-bottom:10px">
-      <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"} cabecalho">
-        <span>DATA</span>
-        ${!porViveiro ? `<span class="col-centro">VIVEIRO</span>` : ""}
-        <span class="col-centro">DESCRIÇÃO</span>
-        <span class="col-centro">VALOR</span>
+    <div class="fin-cards">
+      <div class="fin-card">
+        <div class="fin-card-top"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Total de custos</span></div>
+        <strong>R$ ${formatarNumeroBR(total, 2)}</strong>
+        <small>${pct}% do total</small>
       </div>
-      ${custosDetalhado.map(c => `
-        <div class="${porViveiro ? "linha-hist-custo-3col" : "linha-hist-custo-geral"}">
-          <span style="font-size:12px">${formatarData(c.data)}</span>
-          ${!porViveiro ? `<span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>` : ""}
-          <span class="col-centro" style="font-size:13px;font-weight:500">
-            ${c.nomeProduto}${(c.quantidadeG && c.categoria !== "Ração") ? `<br><small style="font-size:10px;opacity:0.6">${c.quantidadeG >= 1000 ? formatarNumeroBR(c.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(c.quantidadeG, 0) + " g"}</small>` : ""}
-          </span>
-          <span class="col-centro" style="font-size:13px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
+      <div class="fin-card">
+        <div class="fin-card-top"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Lançamentos</span></div>
+        <strong>${custos.length}</strong>
+        <small>Itens registrados</small>
+      </div>
+      <div class="fin-card">
+        <div class="fin-card-top"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Custo médio / dia</span></div>
+        <strong>R$ ${formatarNumeroBR(mediaDia, 2)}</strong>
+        <small>No período</small>
+      </div>
+      <div class="fin-card">
+        <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior lançamento</span></div>
+        <strong>R$ ${formatarNumeroBR(Number(maior.valor), 2)}</strong>
+        <small>${maior.nomeProduto || "—"} · ${formatarData(maior.data)}</small>
+      </div>
+    </div>
+
+    <div class="fin-lista-head">
+      <span>Lançamentos de custos</span>
+      <select class="fin-ordenar" onchange="_finOrdenacao=this.value;_finPagina=0;mostrarCustosFinanceiro()">
+        <option value="data" ${ord === "data" ? "selected" : ""}>Data</option>
+        <option value="valor" ${ord === "valor" ? "selected" : ""}>Valor</option>
+        <option value="descricao" ${ord === "descricao" ? "selected" : ""}>Descrição</option>
+      </select>
+    </div>
+    <div class="fin-lista">
+      ${pagina.map(c => `
+        <div class="fin-linha">
+          <span class="fin-linha-data">${formatarData(c.data)}</span>
+          <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
+          <span class="fin-linha-desc">${c.nomeProduto || "—"}<small>${_finTipoLabel(c)}</small></span>
+          <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
         </div>
       `).join("")}
     </div>
-    <div class="total-chip">
-      <span class="total-chip-label">Total</span>
-      <span class="total-chip-valor">R$ ${formatarNumeroBR(total, 2)}</span>
+    ${totalPag > 1 ? `
+      <div class="fin-paginacao">
+        <button ${_finPagina <= 0 ? "disabled" : ""} onclick="_finPagina--;mostrarCustosFinanceiro()">← Anterior</button>
+        <span>Pág. ${_finPagina + 1} / ${totalPag}</span>
+        <button ${_finPagina >= totalPag - 1 ? "disabled" : ""} onclick="_finPagina++;mostrarCustosFinanceiro()">Próxima →</button>
+      </div>` : ""}
+    <div class="fin-total-geral">
+      <div class="fin-total-geral-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="fin-total-geral-txt">
+        <span>Total geral no período</span>
+        <strong>R$ ${formatarNumeroBR(total, 2)}</strong>
+      </div>
     </div>
   `;
+}
+
+function _finRenderPorTipo(resultado, custos, total) {
+  const grupos = {};
+  custos.forEach(c => {
+    const chave = c.tipo === "outro" ? "Outro custo" : (c.categoria || "Outros");
+    if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0 };
+    grupos[chave].total += Number(c.valor);
+    grupos[chave].qtd += 1;
+  });
+  const lista = Object.values(grupos).sort((a, b) => b.total - a.total);
+  const cores = ["rgb(6,107,99)", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#14b8a6", "#ec4899", "#84cc16"];
+
+  resultado.innerHTML = `
+    <div class="fin-secao-titulo" style="margin-top:4px">Resumo por tipo</div>
+    <div class="fin-pizza-wrap">
+      <div class="fin-pizza-canvas">
+        <canvas id="finPizza"></canvas>
+        <div class="fin-pizza-centro"><span>Total</span><strong>R$ ${formatarNumeroBR(total, 2)}</strong></div>
+      </div>
+      <div class="fin-pizza-legenda">
+        ${lista.map((g, i) => `
+          <div class="fin-leg-item">
+            <span class="fin-leg-dot" style="background:${cores[i % cores.length]}"></span>
+            <span class="fin-leg-nome">${g.nome}</span>
+            <span class="fin-leg-val">R$ ${formatarNumeroBR(g.total, 2)} <small>${total > 0 ? Math.round((g.total / total) * 100) : 0}%</small></span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+    <div class="fin-ranking">
+      <div class="fin-secao-titulo">Maiores custos</div>
+      ${lista.map((g, i) => `
+        <div class="fin-rank-linha">
+          <span class="fin-rank-pos">${i + 1}</span>
+          <span class="fin-rank-nome">${g.nome}</span>
+          <span class="fin-rank-val">R$ ${formatarNumeroBR(g.total, 2)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  setTimeout(() => {
+    const cv = document.getElementById("finPizza");
+    if (!cv || typeof Chart === "undefined") return;
+    new Chart(cv.getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: lista.map(g => g.nome),
+        datasets: [{ data: lista.map(g => g.total), backgroundColor: lista.map((_, i) => cores[i % cores.length]), borderWidth: 2, borderColor: "#fff" }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: "62%",
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` R$ ${formatarNumeroBR(ctx.parsed, 2)}` } }
+        }
+      }
+    });
+  }, 50);
+}
+
+function imprimirRelatorioFinanceiro() {
+  const { custos } = _finColetarCustos();
+  if (!custos.length) { _toastErro("Nenhum custo no período para imprimir."); return; }
+  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
+  const ordenados = [...custos].sort((a, b) => b.data.localeCompare(a.data));
+  const periodoTxt = (_finPeriodoIni || _finPeriodoFim)
+    ? `${_finPeriodoIni ? formatarData(_finPeriodoIni) : "início"} até ${_finPeriodoFim ? formatarData(_finPeriodoFim) : "hoje"}`
+    : "Todo o período";
+  const linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${c.viveiroNome || ""}</td><td>${c.nomeProduto || ""}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("");
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório financeiro</title>
+    <style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}h1{color:rgb(6,107,99);font-size:20px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:left}th{background:#f0fdf4}.total-row td{font-weight:700;border-top:2px solid rgb(6,107,99)}</style></head>
+    <body><h1>Relatório financeiro</h1><p>Período: ${periodoTxt}</p>
+    <table><thead><tr><th>Data</th><th>Viveiro</th><th>Descrição</th><th>Valor</th></tr></thead>
+    <tbody>${linhas}<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr></tbody></table></body></html>`;
+  const janela = window.open("", "_blank");
+  if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
+  janela.document.write(html);
+  janela.document.close();
+  janela.onload = () => janela.print();
 }
 
 function abrirEstoque() {
