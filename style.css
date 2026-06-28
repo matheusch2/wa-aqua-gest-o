@@ -5544,3 +5544,61 @@ body.tema-escuro .ma-check { color: #d1d5db; }
 body.tema-escuro .custo-grupo { background: #1f2937; border-color: #374151; }
 body.tema-escuro .custo-grupo-nome { color: #f3f4f6; }
 body.tema-escuro .custo-grupo-valor { color: #34d399; }
+
+/* Área de custos — visual em cards */
+.custo-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.custo-titulo { margin: 0; font-size: 20px; font-weight: 900; color: rgb(6,107,99); }
+.custo-sub { margin: 2px 0 0; font-size: 12.5px; color: #9ca3af; }
+.custo-imprimir {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    background: white; border: 1.5px solid #d1d5db; border-radius: 10px;
+    padding: 8px 14px; font-size: 13px; font-weight: 700; color: rgb(6,107,99); cursor: pointer;
+}
+.custo-imprimir svg { width: 16px; height: 16px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.custo-card {
+    display: flex; align-items: center; gap: 12px;
+    background: white; border: 1.5px solid #eef0f2; border-radius: 14px;
+    padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.custo-card-ico {
+    width: 44px; height: 44px; border-radius: 50%; background: #eaf6f1;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.custo-card-ico svg { width: 22px; height: 22px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.custo-card-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.custo-card-nome { font-size: 15px; font-weight: 800; color: #1f2937; }
+.custo-card-qtd {
+    align-self: flex-start; font-size: 11.5px; font-weight: 700; color: #15803d;
+    background: #eaf6f1; padding: 2px 9px; border-radius: 99px;
+}
+.custo-card-valor { font-size: 15px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; }
+.custo-card-acoes { display: flex; align-items: center; gap: 2px; border-left: 1px solid #eef0f2; padding-left: 8px; flex-shrink: 0; }
+.custo-card-acoes .botao-editar { background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px; }
+
+.custo-total {
+    display: flex; align-items: center; gap: 12px;
+    background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 14px;
+    padding: 16px; margin-top: 12px;
+}
+.custo-total-ico {
+    width: 42px; height: 42px; border-radius: 11px; background: rgb(6,107,99);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.custo-total-ico svg { width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.custo-total-lbl { flex: 1; font-size: 14px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.02em; }
+.custo-total-val { font-size: 22px; font-weight: 900; color: rgb(6,107,99); white-space: nowrap; }
+
+body.tema-escuro .custo-titulo { color: #34d399; }
+body.tema-escuro .custo-imprimir { background: #1f2937; border-color: #4b5563; color: #34d399; }
+body.tema-escuro .custo-imprimir svg { stroke: #34d399; }
+body.tema-escuro .custo-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .custo-card-ico { background: #052e2b; }
+body.tema-escuro .custo-card-ico svg { stroke: #34d399; }
+body.tema-escuro .custo-card-nome { color: #f3f4f6; }
+body.tema-escuro .custo-card-qtd { background: #052e2b; color: #6ee7b7; }
+body.tema-escuro .custo-card-valor { color: #34d399; }
+body.tema-escuro .custo-card-acoes { border-left-color: #374151; }
+body.tema-escuro .custo-total { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .custo-total-lbl { color: #6ee7b7; }
+body.tema-escuro .custo-total-val { color: #34d399; }

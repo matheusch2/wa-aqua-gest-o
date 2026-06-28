@@ -5999,33 +5999,110 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   });
   const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
 
+  const dolarIco = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M14.5 9.5a2 2 0 0 0-2-1.5h-1a1.8 1.8 0 0 0 0 3.6h1a1.8 1.8 0 0 1 0 3.6h-1.2a2 2 0 0 1-2-1.5"/></svg>`;
   resultado.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-      <h3 class="titulo-secao" style="margin:0">Custos - ${abreviarViveiro(viveiro.nome)}</h3>
-      ${custos.length > 0 ? `<button class="botao-imprimir-custos" onclick="imprimirCustos(${index})">🖨️ Imprimir</button>` : ""}
+    <div class="custo-topo">
+      <div>
+        <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
+        <p class="custo-sub">Resumo de custos do ciclo</p>
+      </div>
+      ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
     </div>
     <div class="custo-grupo-lista">
       ${lista.length === 0
         ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
         : lista.map((g, gi) => {
             const qtd = _fmtQtdCusto(g.quantidadeG);
-            return `<div class="custo-grupo" id="cg-${index}-${gi}">
-              <div class="custo-grupo-info">
-                <span class="custo-grupo-nome">${g.nome}</span>
-                ${qtd ? `<span class="custo-grupo-qtd">${qtd}</span>` : ""}
+            return `<div class="custo-card" id="cg-${index}-${gi}">
+              <div class="custo-card-ico">${dolarIco}</div>
+              <div class="custo-card-info">
+                <span class="custo-card-nome">${g.nome}</span>
+                <span class="custo-card-qtd">${qtd || "—"}</span>
               </div>
-              <span class="custo-grupo-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
-              <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>
+              <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
+              <div class="custo-card-acoes">
+                <button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">✏️</button>
+                <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>
+              </div>
             </div>`;
           }).join("")
       }
     </div>
-    <div class="total-chip">
-      <span class="total-chip-label">Total de custos</span>
-      <span class="total-chip-valor">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
+    <div class="custo-total">
+      <div class="custo-total-ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l1.5 11a2 2 0 0 1-2 2.3H5.5A2 2 0 0 1 3.5 19z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/><circle cx="12" cy="13.5" r="1.5"/></svg></div>
+      <span class="custo-total-lbl">Total de custos</span>
+      <span class="custo-total-val">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
     </div>
-    <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
+    <button class="botao-voltar-form" style="margin-top:14px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
   `;
+}
+
+function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
+  const chave = decodeURIComponent(chaveEnc);
+  const v = viveiros[index];
+  const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
+  if (!grupo.length) return;
+  const isProduto = chave.startsWith("id:");
+  const nome = grupo[0].nomeProduto || grupo[0].categoria || "Custo";
+  const valor = grupo.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const resultado = document.getElementById(elementoId);
+  resultado.innerHTML = `
+    <h3 class="titulo-secao">Editar custo</h3>
+    <div class="cfg-wrap">
+      <div class="campo-form">
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><label>Nome do custo</label></div>
+        <input type="text" id="editCustoNome" value="${nome.replace(/"/g, "&quot;")}" ${isProduto ? "disabled" : ""}>
+        ${isProduto ? `<p class="rc-print-dica">Nome vem do cadastro do produto (Insumos).</p>` : ""}
+      </div>
+      <div class="campo-form">
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Valor total (R$)</label></div>
+        <input type="text" inputmode="decimal" id="editCustoValor" value="${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" onblur="formatarMoedaBlur(this)">
+      </div>
+      <div id="msg-edit-custo" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
+      <button class="botao-salvar" onclick="salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto})">Salvar alterações</button>
+      <button class="botao-voltar-form" style="margin-top:10px" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${direto})">← Voltar</button>
+    </div>
+  `;
+}
+
+async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
+  const chave = decodeURIComponent(chaveEnc);
+  const msg = document.getElementById("msg-edit-custo");
+  const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+  const v = viveiros[index];
+  const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
+  if (!grupo.length) return;
+  const isProduto = chave.startsWith("id:");
+  const novoNome = isProduto ? (grupo[0].nomeProduto || grupo[0].categoria) : document.getElementById("editCustoNome").value.trim();
+  const novoValor = parseMoedaBR(document.getElementById("editCustoValor").value);
+  if (!novoNome) { erro("Informe o nome do custo."); return; }
+  if (isNaN(novoValor) || novoValor < 0) { erro("Informe um valor válido."); return; }
+
+  const somaQtd = grupo.reduce((s, c) => s + (Number(c.quantidadeG) || 0), 0);
+  const ids = grupo.map(c => c.id);
+
+  // Remove os lançamentos do grupo e grava um único consolidado
+  const del = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
+  if (del.error) { erro("Erro ao salvar: " + del.error.message); return; }
+
+  const novo = {
+    user_id: usuario.id, viveiro_id: v.id, tipo: grupo[0].tipo,
+    produto_id: grupo[0].produtoId || null, nome_produto: novoNome,
+    quantidade_g: somaQtd > 0 ? somaQtd : null, valor: novoValor,
+    categoria: grupo[0].categoria, data: grupo[0].data, observacao: null,
+  };
+  const { data: salvo, error } = await supabaseClient.from("custos").insert([novo]).select();
+  if (error) { erro("Erro ao salvar: " + error.message); return; }
+
+  v.custos = (v.custos || []).filter(c => !ids.includes(c.id));
+  v.custos.push({
+    id: salvo[0].id, tipo: novo.tipo, produtoId: novo.produto_id, nomeProduto: novoNome,
+    quantidadeG: novo.quantidade_g, valor: novoValor, categoria: novo.categoria, data: novo.data, observacao: null,
+  });
+  _toastSucesso("Custo atualizado!");
+  renderizarHistoricoCustos(index, elementoId, direto);
 }
 
 function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
