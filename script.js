@@ -4661,8 +4661,13 @@ function mostrarConfirmExcluirViveiro(index) {
   document.getElementById(`confirm-excluir-viveiro-${index}`).style.display = "block";
 }
 
+let _relImpCiclo = null;
+let _relImpIndex = null;
+
 function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const area = document.getElementById("area-gestao");
+  _relImpCiclo = ciclo;
+  _relImpIndex = index;
 
   const custosBloco = (() => {
     const custosCiclo = (viveiros[index]?.custos || []).filter(c =>
@@ -4797,16 +4802,262 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
         <span class="rc-hero-valor">${formatarNumeroBR(ciclo.producaoTotal, 1)} kg</span>
       </div>
 
-      <div class="acoes-relatorio">
-        <button class="botao-salvar" onclick="window.print()">
+      <div class="rc-print-box">
+        <div class="rc-print-box-titulo">Relatório técnico (impressão)</div>
+        <div class="campo-form" style="margin-bottom:8px">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Preço de venda (R$/kg)</label></div>
+          <input type="text" inputmode="decimal" id="rc-preco-kg" placeholder="Ex: 7,00" onblur="formatarMoedaBlur(this)">
+        </div>
+        <p class="rc-print-dica">Informe o preço para calcular receita, lucro e ROI no relatório técnico.</p>
+        <button class="botao-salvar" onclick="gerarRelatorioImpressao()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir relatório
         </button>
-        <button class="botao-voltar-form" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
       </div>
+      <button class="botao-voltar-form" style="margin-top:10px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
 
     </div>
   `;
+}
+
+function gerarRelatorioImpressao() {
+  const ciclo = _relImpCiclo;
+  const index = _relImpIndex;
+  if (!ciclo) { _toastErro("Relatório indisponível."); return; }
+
+  const precoKg = parseMoedaBR(document.getElementById("rc-preco-kg")?.value || "0") || 0;
+
+  // ── Custos do ciclo (no período) ──
+  const custos = (viveiros[index]?.custos || []).filter(c =>
+    ciclo.dataPovoamento && ciclo.dataEncerramento &&
+    c.data >= ciclo.dataPovoamento && c.data <= ciclo.dataEncerramento
+  );
+  const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0);
+
+  const grupos = {};
+  custos.forEach(c => {
+    const chave = c.tipo === "outro" ? (c.categoria || c.nomeProduto || "Outros") : (c.categoria || "Outros");
+    grupos[chave] = (grupos[chave] || 0) + Number(c.valor);
+  });
+  const distLista = Object.entries(grupos).map(([nome, total]) => ({ nome, total })).sort((a, b) => b.total - a.total);
+
+  // ── Indicadores ──
+  const producaoTotal = Number(ciclo.producaoTotal) || 0;
+  const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
+  const receitaBruta = producaoTotal * precoKg;
+  const lucroLiquido = receitaBruta - custoTotal;
+  const tamanhoNum = parseFloat(ciclo.tamanho) || 0;
+  const lucroPorHa = tamanhoNum > 0 ? lucroLiquido / tamanhoNum : 0;
+  const lucroPorKg = producaoTotal > 0 ? lucroLiquido / producaoTotal : 0;
+  const roi = custoTotal > 0 ? (lucroLiquido / custoTotal) * 100 : 0;
+  const temPreco = precoKg > 0;
+
+  // ── Séries (biometrias) ──
+  const bios = [...(ciclo.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const racoesSorted = [...(ciclo.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const popNum = ciclo.totalPovoado ? Number(String(ciclo.totalPovoado).replace(/\./g, "")) : 0;
+  const diaDe = d => calcularDiasCultivo(ciclo.dataPovoamento, d);
+  const racaoAcumAte = dataStr => racoesSorted.filter(r => r.data <= dataStr).reduce((s, r) => s + r.racao, 0);
+
+  const serieDias = [], seriePeso = [], serieCresc = [], serieBiomassa = [], serieFca = [], serieRacaoAcum = [], serieObs = [], serieDatas = [];
+  bios.forEach((b, i) => {
+    const racAcum = racaoAcumAte(b.data);
+    let biomassa;
+    const res = (popNum && racAcum > 0 && b.gramatura > 0) ? _calcularBiomassa(popNum, racAcum, b.gramatura) : null;
+    biomassa = (res && res.biomassa > 0) ? res.biomassa : (popNum > 0 ? b.gramatura * popNum / 1000 : 0);
+    serieDatas.push(formatarData(b.data));
+    serieDias.push(diaDe(b.data));
+    seriePeso.push(Number(b.gramatura));
+    serieCresc.push(i > 0 ? Number((b.gramatura - bios[i - 1].gramatura).toFixed(2)) : null);
+    serieBiomassa.push(Number(biomassa.toFixed(1)));
+    serieFca.push(Number((biomassa > 0 ? racAcum / biomassa : 0).toFixed(2)));
+    serieRacaoAcum.push(Number(racAcum.toFixed(1)));
+    serieObs.push(i === 0 ? "Povoamento" : (i === bios.length - 1 ? "Final do ciclo" : "-"));
+  });
+  if (serieBiomassa.length && producaoTotal > 0) serieBiomassa[serieBiomassa.length - 1] = producaoTotal;
+
+  // ── Despescas ──
+  const despescas = [...(ciclo.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const linhasDespesca = despescas.map(d => {
+    const valor = (Number(d.quantidadeKg) || 0) * precoKg;
+    return `<tr><td>${formatarData(d.data)}</td><td>${d.tipo || "Parcial"}</td><td class="num">${formatarNumeroBR(d.quantidadeKg, 1)}</td><td class="num">${d.pesoMedio ? formatarNumeroBR(d.pesoMedio, 1) : "-"}</td><td class="num">${temPreco ? "R$ " + formatarNumeroBR(valor, 2) : "-"}</td></tr>`;
+  }).join("");
+  const totDespQtd = despescas.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+
+  const fmt = (v, d = 2) => formatarNumeroBR(v, d);
+  const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "—";
+  const cores = ["#0b6b63", "#2563eb", "#f59e0b", "#10b981", "#a16207", "#9ca3af", "#ec4899", "#84cc16", "#06b6d4"];
+
+  const dados = {
+    peso: { labels: serieDias, data: seriePeso },
+    racao: { labels: serieDias, data: serieRacaoAcum },
+    fca: { labels: serieDias, data: serieFca },
+    biomassa: { labels: serieDias, data: serieBiomassa },
+    dist: { labels: distLista.map(d => d.nome), data: distLista.map(d => d.total), cores: distLista.map((_, i) => cores[i % cores.length]) },
+  };
+
+  const hoje = new Date();
+  const dataEmissao = `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
+
+  const indicadores = [
+    { lbl: "Peso médio final", val: fmt(ciclo.pesoFinal, 1) + " g" },
+    { lbl: "Biomassa produzida", val: fmt(producaoTotal, 1) + " kg" },
+    { lbl: "Produtividade", val: fmt(ciclo.produtividade, 1) + " kg/ha" },
+    { lbl: "FCA final", val: fmt(ciclo.fca, 2) },
+    { lbl: "Sobrevivência", val: fmt(ciclo.sobrevivencia, 1) + " %" },
+    { lbl: "Ração consumida", val: fmt(ciclo.racaoConsumida, 1) + " kg" },
+    { lbl: "Custo total", val: "R$ " + fmt(custoTotal, 2) },
+    { lbl: "Custo por kg", val: "R$ " + fmt(custoPorKg, 2) },
+    { lbl: "Receita bruta", val: rs(receitaBruta) },
+    { lbl: "Lucro líquido", val: rs(lucroLiquido) },
+  ];
+
+  const legendaDist = distLista.map((d, i) => `
+    <div class="leg-item"><span class="leg-dot" style="background:${cores[i % cores.length]}"></span>
+      <span class="leg-nome">${d.nome}<br><b>R$ ${fmt(d.total, 2)}</b></span>
+      <span class="leg-pct">${custoTotal > 0 ? fmt(d.total / custoTotal * 100, 1) : "0"}%</span></div>`).join("");
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>Relatório Final do Ciclo — ${ciclo.nomeViveiro}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; margin: 0; padding: 16px; font-size: 12px; }
+  .doc { max-width: 980px; margin: 0 auto; }
+  .cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; border-bottom: 3px solid #0b6b63; padding-bottom: 12px; margin-bottom: 16px; }
+  .cab-marca { display: flex; align-items: center; gap: 10px; }
+  .cab-logo { width: 46px; height: 46px; border-radius: 10px; background: #0b6b63; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; text-align: center; line-height: 1.1; }
+  .cab-marca b { font-size: 15px; color: #0b6b63; } .cab-marca small { color: #6b7280; font-size: 9px; letter-spacing: .05em; }
+  .cab-centro { text-align: center; flex: 1; }
+  .cab-centro h1 { margin: 0; font-size: 22px; color: #0b6b63; letter-spacing: .5px; }
+  .cab-centro .viv { color: #6b7280; font-weight: 700; font-size: 12px; letter-spacing: .15em; }
+  .cab-periodo { background: #0b6b63; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 11px; min-width: 180px; }
+  .cab-periodo small { opacity: .8; font-size: 9px; letter-spacing: .05em; } .cab-periodo b { display: block; font-size: 12px; margin-top: 2px; }
+  h2.sec { font-size: 13px; color: #0b6b63; margin: 18px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #e5e7eb; }
+  .grid { display: grid; gap: 8px; }
+  .info6 { grid-template-columns: repeat(6, 1fr); }
+  .ind5 { grid-template-columns: repeat(5, 1fr); }
+  .cel { background: #f8fafc; border: 1px solid #eef0f2; border-radius: 8px; padding: 9px 10px; }
+  .cel small { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; display: block; }
+  .cel b { font-size: 14px; color: #111827; }
+  .duas { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .chart-box { border: 1px solid #eef0f2; border-radius: 8px; padding: 8px; }
+  .chart-box h4 { margin: 0 0 6px; font-size: 10.5px; color: #374151; text-align: center; font-weight: 700; }
+  .chart-box canvas { width: 100% !important; height: 130px !important; }
+  .rosca-wrap { display: flex; flex-direction: column; align-items: center; }
+  .rosca-canvas { width: 180px; height: 180px; position: relative; }
+  .rosca-centro { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+  .rosca-centro small { color: #6b7280; font-size: 9px; } .rosca-centro b { display: block; font-size: 12px; }
+  .leg { width: 100%; margin-top: 8px; }
+  .leg-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 10.5px; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; } .leg-nome { flex: 1; } .leg-pct { font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid #eef0f2; text-align: left; font-size: 10.5px; }
+  th { background: #f0fdf4; color: #166534; font-size: 9.5px; text-transform: uppercase; }
+  td.num, th.num { text-align: right; }
+  .fin-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eef0f2; font-size: 11.5px; }
+  .fin-row.destaque { background: #f0fdf4; font-weight: 800; padding: 8px 8px; border-radius: 6px; border: none; color: #0b6b63; }
+  .fin-row b { font-weight: 800; }
+  .obs-box { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; min-height: 90px; font-size: 11px; color: #374151; white-space: pre-wrap; }
+  .assin { text-align: center; margin-top: 28px; } .assin .linha { border-top: 1px solid #9ca3af; width: 220px; margin: 0 auto 4px; } .assin small { color: #6b7280; }
+  .rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; }
+  .btn-print { background: #0b6b63; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  @media print { .no-print { display: none !important; } body { padding: 0; } }
+</style></head>
+<body><div class="doc">
+
+  <div class="cab">
+    <div class="cab-marca"><div class="cab-logo">WA<br>AQUA</div><div><b>WA Aqua Gestão</b><br><small>TECNOLOGIA PARA AQUICULTURA</small></div></div>
+    <div class="cab-centro"><h1>RELATÓRIO FINAL DO CICLO</h1><span class="viv">${(ciclo.nomeViveiro || "").toUpperCase()}</span></div>
+    <div class="cab-periodo"><small>PERÍODO DO CICLO</small><b>${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)}</b>${ciclo.diasCultivo} dias de cultivo</div>
+  </div>
+
+  <h2 class="sec">1. Informações gerais</h2>
+  <div class="grid info6">
+    <div class="cel"><small>Data do povoamento</small><b>${formatarData(ciclo.dataPovoamento)}</b></div>
+    <div class="cel"><small>Total de PLs</small><b>${Number(String(ciclo.totalPovoado).replace(/\./g,"")||0).toLocaleString("pt-BR")}</b></div>
+    <div class="cel"><small>Laboratório</small><b>${ciclo.laboratorio || "-"}</b></div>
+    <div class="cel"><small>Área do viveiro</small><b>${fmt(tamanhoNum, 1)} ha</b></div>
+    <div class="cel"><small>Fim do ciclo</small><b>${formatarData(ciclo.dataEncerramento)}</b></div>
+    <div class="cel"><small>Dias de cultivo</small><b>${ciclo.diasCultivo} dias</b></div>
+  </div>
+
+  <h2 class="sec">2. Indicadores finais do ciclo</h2>
+  <div class="grid ind5">${indicadores.map(i => `<div class="cel"><small>${i.lbl}</small><b>${i.val}</b></div>`).join("")}</div>
+
+  <div class="duas" style="margin-top:18px">
+    <div>
+      <h2 class="sec" style="margin-top:0">3. Evolução do cultivo</h2>
+      <div class="charts">
+        <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
+        <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
+        <div class="chart-box"><h4>FCA ao longo do cultivo</h4><canvas id="cFca"></canvas></div>
+        <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <h2 class="sec" style="margin-top:0">4. Distribuição dos custos</h2>
+      ${distLista.length ? `<div class="rosca-wrap"><div class="rosca-canvas"><canvas id="cDist"></canvas><div class="rosca-centro"><small>TOTAL</small><b>R$ ${fmt(custoTotal,2)}</b></div></div><div class="leg">${legendaDist}</div></div>` : `<p style="color:#9ca3af;font-size:11px">Nenhum custo lançado neste ciclo.</p>`}
+
+      <h2 class="sec">5. Resumo financeiro</h2>
+      <div class="fin-row"><span>Receita bruta</span><b>${rs(receitaBruta)}</b></div>
+      <div class="fin-row"><span>(-) Custo total</span><b>R$ ${fmt(custoTotal,2)}</b></div>
+      <div class="fin-row destaque"><span>Lucro líquido</span><b>${rs(lucroLiquido)}</b></div>
+      <div class="fin-row"><span>Lucro por hectare</span><b>${rs(lucroPorHa)}</b></div>
+      <div class="fin-row"><span>Lucro por kg produzido</span><b>${rs(lucroPorKg)}</b></div>
+      <div class="fin-row"><span>ROI (retorno sobre investimento)</span><b>${temPreco ? fmt(roi,1) + "%" : "—"}</b></div>
+    </div>
+  </div>
+
+  <h2 class="sec">6. Biometrias realizadas</h2>
+  <table><thead><tr><th>Data</th><th class="num">Dias</th><th class="num">Peso médio (g)</th><th class="num">Crescimento (g)</th><th class="num">Biomassa (kg)</th><th>Observações</th></tr></thead>
+  <tbody>${bios.map((b,i)=>`<tr><td>${serieDatas[i]}</td><td class="num">${serieDias[i]}</td><td class="num">${fmt(seriePeso[i],1)}</td><td class="num">${serieCresc[i]===null?"-":fmt(serieCresc[i],1)}</td><td class="num">${fmt(serieBiomassa[i],1)}</td><td>${serieObs[i]}</td></tr>`).join("") || `<tr><td colspan="6" style="text-align:center;color:#9ca3af">Sem biometrias.</td></tr>`}</tbody></table>
+
+  <h2 class="sec">7. Despescas realizadas</h2>
+  <table><thead><tr><th>Data</th><th>Tipo</th><th class="num">Quantidade (kg)</th><th class="num">Peso médio (g)</th><th class="num">Valor (R$)</th></tr></thead>
+  <tbody>${linhasDespesca || `<tr><td colspan="5" style="text-align:center;color:#9ca3af">Sem despescas.</td></tr>`}
+  <tr style="font-weight:800;background:#f8fafc"><td colspan="2">TOTAL</td><td class="num">${fmt(totDespQtd,1)}</td><td></td><td class="num">${temPreco ? "R$ "+fmt(totDespQtd*precoKg,2) : "-"}</td></tr></tbody></table>
+
+  <h2 class="sec">8. Observações</h2>
+  <div class="obs-box">${(ciclo.observacoes || "").trim() || "—"}</div>
+  <div class="assin"><div class="linha"></div><small>Responsável técnico</small><br><small>${dataEmissao}</small></div>
+
+  <div class="rodape">
+    <span>Relatório gerado automaticamente pelo WA Aqua Gestão. As informações baseiam-se nos dados registrados no sistema.</span>
+    <span>Emissão: ${dataEmissao}</span>
+  </div>
+
+  <div class="no-print" style="text-align:center;margin-top:18px"><button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
+</div>
+
+<script>
+  var D = ${JSON.stringify(dados)};
+  function linha(id, dados, cor, fill) {
+    new Chart(document.getElementById(id), { type: "line",
+      data: { labels: dados.labels, datasets: [{ data: dados.data, borderColor: cor, backgroundColor: fill || "transparent", fill: !!fill, tension: .3, pointRadius: 3, pointBackgroundColor: cor, borderWidth: 2 }] },
+      options: { responsive: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
+  }
+  function render() {
+    if (typeof Chart === "undefined") { setTimeout(render, 100); return; }
+    linha("cPeso", D.peso, "#16a34a", "rgba(22,163,74,.08)");
+    new Chart(document.getElementById("cRacao"), { type: "bar", data: { labels: D.racao.labels, datasets: [{ data: D.racao.data, backgroundColor: "#0b6b63" }] }, options: { responsive: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
+    linha("cFca", D.fca, "#2563eb");
+    linha("cBio", D.biomassa, "#f59e0b", "rgba(245,158,11,.08)");
+    if (document.getElementById("cDist") && D.dist.data.length) {
+      new Chart(document.getElementById("cDist"), { type: "doughnut", data: { labels: D.dist.labels, datasets: [{ data: D.dist.data, backgroundColor: D.dist.cores, borderColor: "#fff", borderWidth: 2 }] }, options: { responsive: false, cutout: "62%", plugins: { legend: { display: false } } } });
+    }
+    setTimeout(function(){ try { window.print(); } catch(e){} }, 600);
+  }
+  window.onload = render;
+<\/script>
+</body></html>`;
+
+  const win = window.open("", "_blank");
+  if (!win) { _toastErro("Permita pop-ups para gerar o relatório."); return; }
+  win.document.write(html);
+  win.document.close();
 }
 
 // ─── CUSTOS E INSUMOS ─────────────────────────────────────────────────────────

@@ -5437,3 +5437,17 @@ body.tema-escuro .rc-lista { background: #1f2937; border-color: #374151; }
 body.tema-escuro .rc-lista-row { border-bottom-color: #374151; color: #9ca3af; }
 body.tema-escuro .rc-lista-row strong { color: #f3f4f6; }
 body.tema-escuro .rc-lista-total strong { color: #34d399; }
+
+/* Caixa do relatório técnico (impressão) na tela do app */
+.rc-print-box {
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 4px;
+}
+.rc-print-box-titulo { font-size: 12px; font-weight: 800; color: rgb(6,107,99); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+.rc-print-dica { font-size: 11px; color: #6b7280; margin: 0 0 10px; }
+body.tema-escuro .rc-print-box { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .rc-print-box-titulo { color: #34d399; }
+body.tema-escuro .rc-print-dica { color: #9ca3af; }
