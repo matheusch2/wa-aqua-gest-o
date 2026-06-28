@@ -4874,11 +4874,17 @@ body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
     position: relative;
     display: flex;
     align-items: stretch;
+    flex-wrap: wrap;
     background: white;
     border: 1.5px solid #e5e7eb;
     border-radius: 13px;
     margin-bottom: 8px;
     overflow: visible;
+}
+.bt-card .bt-confirmar-inline {
+    flex-basis: 100%;
+    border-top: 1px solid #fecaca;
+    border-radius: 0 0 12px 12px;
 }
 .bt-card-pago { opacity: 0.72; }
 .bt-card-main { flex: 1; padding: 12px 14px; cursor: pointer; min-width: 0; }

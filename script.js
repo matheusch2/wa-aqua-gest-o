@@ -3860,7 +3860,7 @@ function _fecharMenusBoleto() {
 
 function _mostrarConfirmarExcluir(index) {
   const row = document.getElementById(`bt-conf-${index}`);
-  if (row) row.style.display = "table-row";
+  if (row) row.style.display = "flex";
 }
 
 function verDetalhesBoleto(index) {
