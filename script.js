@@ -1384,11 +1384,17 @@ function abrirViveiro(index) {
         </button>
       </div>
 
-      <div class="vv-secao-lbl">Consultas</div>
-      <button class="vv-consulta-btn" onclick="mostrarHistoricoDoViveiroDireto(${index})">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Histórico
-      </button>
+      <div class="vv-secao-lbl">Consultas e manejo</div>
+      <div class="vv-consulta-grid">
+        <button class="vv-consulta-btn" onclick="mostrarHistoricoDoViveiroDireto(${index})">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Histórico
+        </button>
+        <button class="vv-consulta-btn" onclick="abrirManejoAutomatico(${index})">
+          <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+          Manejo automático
+        </button>
+      </div>
 
       <div class="vv-secao-lbl">Ações de administração</div>
       <div class="vv-admin-row">
@@ -1943,6 +1949,9 @@ async function salvarLancamentoRacao(indexDireto = "") {
       }
     }
   }
+
+  // Protocolos automáticos atrelados à ração (ex.: potássio por kg)
+  await _aplicarProtocolosRacao(index, racao, data);
 
   // Mostra mensagem de sucesso e avança a data para o dia seguinte (sequência)
   const [ay, am, ad] = data.split("-").map(Number);
@@ -5063,6 +5072,244 @@ function gerarRelatorioImpressao() {
   win.document.close();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  MANEJO AUTOMÁTICO (protocolos por viveiro)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _MA_DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function _maYmd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function _maParse(s) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function _maAddDias(s, n) {
+  const d = _maParse(s); d.setDate(d.getDate() + n); return _maYmd(d);
+}
+
+async function salvarProtocolos(index) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+  const { error } = await supabaseClient.from("viveiros")
+    .update({ protocolos: viveiros[index].protocolos || [] })
+    .eq("id", viveiros[index].id).eq("user_id", usuario.id);
+  if (error) { console.log(error); _toastErro("Erro ao salvar (rode o SQL da coluna protocolos): " + error.message); return false; }
+  return true;
+}
+
+async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
+  if (!quantidadeG || quantidadeG <= 0) return false;
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+  const valor = (produto.custoPorGrama || 0) * quantidadeG;
+  const { data: salvo, error } = await supabaseClient.from("custos").insert([{
+    user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto",
+    produto_id: produto.id, nome_produto: produto.nome, quantidade_g: quantidadeG,
+    valor, categoria: produto.categoria, data, observacao: obs || "Automático",
+  }]).select();
+  if (error) { console.log(error); return false; }
+  if (!viveiros[index].custos) viveiros[index].custos = [];
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: produto.id, nomeProduto: produto.nome, quantidadeG, valor, categoria: produto.categoria, data, observacao: obs || "Automático" });
+  return true;
+}
+
+// Dispara ao lançar ração (tipo "racao") — dose por kg de ração
+async function _aplicarProtocolosRacao(index, racaoKg, data) {
+  const prots = (viveiros[index].protocolos || []).filter(p => p.ativo && p.tipo === "racao");
+  for (const p of prots) {
+    const produto = produtos.find(pr => pr.id === p.produtoId);
+    if (!produto) continue;
+    const quantidadeG = (Number(p.dosePorKgG) || 0) * racaoKg;
+    await _lancarCustoAuto(index, produto, quantidadeG, data, "Automático (ração)");
+  }
+}
+
+// Põe em dia os protocolos semanais ao abrir o app
+async function aplicarProtocolosSemanais() {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const hojeStr = _maYmd(hoje);
+  const aSalvar = [];
+  for (let index = 0; index < viveiros.length; index++) {
+    const v = viveiros[index];
+    if (!v.dataPovoamento) continue;
+    const prots = (v.protocolos || []).filter(p => p.ativo && p.tipo === "semanal" && Array.isArray(p.dias) && p.dias.length);
+    let alterou = false;
+    for (const p of prots) {
+      const produto = produtos.find(pr => pr.id === p.produtoId);
+      if (!produto) continue;
+      let inicio = p.ultimoLancamento ? _maAddDias(p.ultimoLancamento, 1) : v.dataPovoamento;
+      if (inicio < v.dataPovoamento) inicio = v.dataPovoamento;
+      let cur = _maParse(inicio);
+      const fim = _maParse(hojeStr);
+      let guard = 0;
+      while (cur <= fim && guard < 400) {
+        guard++;
+        const ds = _maYmd(cur);
+        if (p.dias.includes(cur.getDay())) {
+          const jaTem = (v.custos || []).some(c => c.data === ds && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
+          if (!jaTem) await _lancarCustoAuto(index, produto, Number(p.quantidadeG) || 0, ds, "Automático (semanal)");
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      if (p.ultimoLancamento !== hojeStr) { p.ultimoLancamento = hojeStr; alterou = true; }
+    }
+    if (alterou) aSalvar.push(index);
+  }
+  for (const idx of aSalvar) await salvarProtocolos(idx);
+}
+
+function _maResumoProtocolo(p) {
+  if (p.tipo === "racao") return `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração`;
+  const dias = (p.dias || []).map(d => _MA_DIAS[d]).join(", ");
+  return `${formatarNumeroBR(p.quantidadeG, 0)} g · ${dias || "—"}`;
+}
+
+function abrirManejoAutomatico(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const prots = viveiro.protocolos || [];
+  area.innerHTML = `
+    <h3 class="titulo-secao">Manejo automático — ${abreviarViveiro(viveiro.nome)}</h3>
+    <div class="cfg-wrap">
+      <p class="cfg-secao-desc">Produtos lançados automaticamente neste viveiro. Os lançamentos viram custos e podem ser editados/excluídos no histórico de custos.</p>
+      ${produtos.length === 0 ? `<div class="viveiro-sem-ciclo-msg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Cadastre um produto em Insumos antes de criar um protocolo.</span></div>` : ""}
+      <div class="ma-lista">
+        ${prots.length === 0 ? `<p class="ma-vazio">Nenhum protocolo configurado.</p>` : prots.map(p => {
+          const prod = produtos.find(pr => pr.id === p.produtoId);
+          return `<div class="ma-item ${p.ativo ? "" : "ma-inativo"}">
+            <div class="ma-item-info">
+              <span class="ma-item-nome">${prod ? prod.nome : (p.nomeProduto || "Produto removido")}</span>
+              <span class="ma-item-regra">${p.tipo === "racao" ? "Atrelado à ração" : "Programado semanal"} · ${_maResumoProtocolo(p)}</span>
+            </div>
+            <div class="ma-item-acoes">
+              <button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}')" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>
+              <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">✏️</button>
+              <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}')">🗑️</button>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+      ${produtos.length > 0 ? `<button class="botao-salvar" style="margin-top:12px" onclick="abrirFormProtocolo(${index})"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Adicionar produto automático</button>` : ""}
+      <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirViveiro(${index})">← Voltar</button>
+    </div>
+  `;
+}
+
+async function toggleProtocolo(index, protId) {
+  const p = (viveiros[index].protocolos || []).find(x => x.id === protId);
+  if (!p) return;
+  p.ativo = !p.ativo;
+  await salvarProtocolos(index);
+  abrirManejoAutomatico(index);
+}
+
+async function excluirProtocolo(index, protId) {
+  viveiros[index].protocolos = (viveiros[index].protocolos || []).filter(x => x.id !== protId);
+  await salvarProtocolos(index);
+  abrirManejoAutomatico(index);
+}
+
+function abrirFormProtocolo(index, protId) {
+  const viveiro = viveiros[index];
+  const p = protId ? (viveiro.protocolos || []).find(x => x.id === protId) : null;
+  const tipo = p ? p.tipo : "racao";
+  const diasSel = p && p.dias ? p.dias : [];
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">${p ? "Editar protocolo" : "Novo protocolo"}</h3>
+    <div class="cfg-wrap">
+      <div class="campo-form">
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Produto</label></div>
+        <select id="protProduto">
+          ${produtos.map(pr => `<option value="${pr.id}" ${p && p.produtoId === pr.id ? "selected" : ""}>${pr.nome} (${pr.categoria})</option>`).join("")}
+        </select>
+      </div>
+      <div class="campo-form">
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><label>Tipo de lançamento</label></div>
+        <select id="protTipo" onchange="_protToggleTipo()">
+          <option value="racao" ${tipo === "racao" ? "selected" : ""}>Atrelado à ração (por kg)</option>
+          <option value="semanal" ${tipo === "semanal" ? "selected" : ""}>Programado (dias da semana)</option>
+        </select>
+      </div>
+
+      <div id="prot-racao" style="display:${tipo === "racao" ? "block" : "none"}">
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/></svg><label>Dose por kg de ração (g)</label></div>
+          <input type="number" inputmode="decimal" id="protDosePorKg" step="any" placeholder="Ex: 5" value="${p && p.tipo === "racao" ? p.dosePorKgG : ""}">
+        </div>
+        <p class="rc-print-dica">Ex.: 5 g de produto para cada kg de ração lançada.</p>
+      </div>
+
+      <div id="prot-semanal" style="display:${tipo === "semanal" ? "block" : "none"}">
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Quantidade por aplicação (g)</label></div>
+          <input type="number" inputmode="decimal" id="protQtd" step="any" placeholder="Ex: 250" value="${p && p.tipo === "semanal" ? p.quantidadeG : ""}">
+        </div>
+        <div class="campo-label" style="margin-bottom:6px"><label>Dias da semana</label></div>
+        <div class="ma-dias">
+          ${_MA_DIAS.map((d, i) => `<button type="button" class="ma-dia ${diasSel.includes(i) ? "sel" : ""}" data-dia="${i}" onclick="this.classList.toggle('sel')">${d}</button>`).join("")}
+        </div>
+      </div>
+
+      <div id="msg-prot-erro" style="display:none;color:#ef4444;font-size:13px;margin:8px 0;text-align:center;font-weight:500"></div>
+      <button class="botao-salvar" style="margin-top:12px" onclick="salvarProtocolo(${index}, ${protId ? `'${protId}'` : "null"})">Salvar protocolo</button>
+      <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirManejoAutomatico(${index})">← Voltar</button>
+    </div>
+  `;
+}
+
+function _protToggleTipo() {
+  const tipo = document.getElementById("protTipo").value;
+  document.getElementById("prot-racao").style.display = tipo === "racao" ? "block" : "none";
+  document.getElementById("prot-semanal").style.display = tipo === "semanal" ? "block" : "none";
+}
+
+async function salvarProtocolo(index, protId) {
+  const msg = document.getElementById("msg-prot-erro");
+  const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
+  if (msg) msg.style.display = "none";
+
+  const produtoId = document.getElementById("protProduto").value;
+  const produto = produtos.find(pr => pr.id === produtoId);
+  if (!produto) { erro("Escolha um produto."); return; }
+  const tipo = document.getElementById("protTipo").value;
+
+  const prot = { id: protId || ("p" + Date.now()), produtoId, nomeProduto: produto.nome, tipo, ativo: true, ultimoLancamento: null };
+  if (protId) {
+    const antigo = (viveiros[index].protocolos || []).find(x => x.id === protId);
+    if (antigo) { prot.ativo = antigo.ativo; prot.ultimoLancamento = antigo.ultimoLancamento; }
+  }
+
+  if (tipo === "racao") {
+    const dose = parseFloat(document.getElementById("protDosePorKg").value);
+    if (!dose || dose <= 0) { erro("Informe a dose por kg de ração."); return; }
+    prot.dosePorKgG = dose;
+  } else {
+    const qtd = parseFloat(document.getElementById("protQtd").value);
+    if (!qtd || qtd <= 0) { erro("Informe a quantidade por aplicação."); return; }
+    const dias = [...document.querySelectorAll(".ma-dia.sel")].map(b => Number(b.dataset.dia));
+    if (dias.length === 0) { erro("Selecione ao menos um dia da semana."); return; }
+    prot.quantidadeG = qtd;
+    prot.dias = dias;
+    prot.ultimoLancamento = null; // recomeça o agendamento
+  }
+
+  if (!viveiros[index].protocolos) viveiros[index].protocolos = [];
+  if (protId) {
+    const i = viveiros[index].protocolos.findIndex(x => x.id === protId);
+    if (i >= 0) viveiros[index].protocolos[i] = prot; else viveiros[index].protocolos.push(prot);
+  } else {
+    viveiros[index].protocolos.push(prot);
+  }
+  const ok = await salvarProtocolos(index);
+  if (!ok) return;
+  if (tipo === "semanal") await aplicarProtocolosSemanais();
+  _toastSucesso("Protocolo salvo!");
+  abrirManejoAutomatico(index);
+}
+
 // ─── CUSTOS E INSUMOS ─────────────────────────────────────────────────────────
 
 function abrirCustosInsumos() {
@@ -6103,6 +6350,8 @@ async function carregarViveiros() {
         data: c.data,
         observacao: c.observacao,
       })),
+
+    protocolos: Array.isArray(item.protocolos) ? item.protocolos : [],
   }));
 
   // Ordenar viveiros por número no nome (Viveiro 1, Viveiro 2...)
@@ -6136,6 +6385,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
       await carregarViveiros();
+
+      // Põe em dia os protocolos semanais (lançamento automático)
+      try { await aplicarProtocolosSemanais(); } catch (e) { console.log("Protocolos:", e); }
 
       // Atualizar avatar no topo
       const { data: { user } } = await supabaseClient.auth.getUser();

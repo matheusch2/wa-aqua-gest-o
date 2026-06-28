@@ -5451,3 +5451,58 @@ body.tema-escuro .rc-lista-total strong { color: #34d399; }
 body.tema-escuro .rc-print-box { background: #052e2b; border-color: #0f4d47; }
 body.tema-escuro .rc-print-box-titulo { color: #34d399; }
 body.tema-escuro .rc-print-dica { color: #9ca3af; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MANEJO AUTOMÁTICO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Grade de consultas no viveiro (Histórico + Manejo automático) */
+.vv-consulta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.vv-consulta-grid .vv-consulta-btn { font-size: 13.5px; padding: 13px 8px; }
+
+.ma-lista { display: flex; flex-direction: column; gap: 8px; }
+.ma-vazio { text-align: center; color: #9ca3af; font-size: 13px; padding: 18px 8px; margin: 0; }
+
+.ma-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 13px;
+    padding: 12px 14px;
+}
+.ma-item.ma-inativo { opacity: 0.55; }
+.ma-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ma-item-nome { font-size: 14.5px; font-weight: 800; color: #1f2937; }
+.ma-item-regra { font-size: 12px; color: #6b7280; }
+.ma-item-acoes { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ma-btn-ic { background: none; border: none; font-size: 15px; cursor: pointer; padding: 4px; }
+
+/* Toggle ativar/pausar */
+.ma-toggle {
+    width: 40px; height: 23px; border-radius: 99px; background: #d1d5db;
+    border: none; position: relative; cursor: pointer; flex-shrink: 0; transition: background 0.2s;
+}
+.ma-toggle span {
+    position: absolute; top: 3px; left: 3px; width: 17px; height: 17px;
+    background: white; border-radius: 50%; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.ma-toggle.on { background: rgb(6,107,99); }
+.ma-toggle.on span { left: 20px; }
+
+/* Dias da semana (chips) */
+.ma-dias { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.ma-dia {
+    flex: 1; min-width: 40px; padding: 9px 0; border-radius: 9px;
+    border: 1.5px solid #d1d5db; background: white; color: #6b7280;
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+}
+.ma-dia.sel { background: rgb(6,107,99); border-color: rgb(6,107,99); color: white; }
+
+body.tema-escuro .ma-item { background: #1f2937; border-color: #374151; }
+body.tema-escuro .ma-item-nome { color: #f3f4f6; }
+body.tema-escuro .ma-toggle { background: #4b5563; }
+body.tema-escuro .ma-toggle.on { background: #34d399; }
+body.tema-escuro .ma-dia { background: #1f2937; border-color: #4b5563; color: #d1d5db; }
+body.tema-escuro .ma-dia.sel { background: #34d399; border-color: #34d399; color: #052e2b; }
