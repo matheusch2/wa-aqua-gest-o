@@ -5118,7 +5118,9 @@ async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
 // Dispara ao lançar ração (tipo "racao") — dose por kg de ração
 async function _aplicarProtocolosRacao(index, racaoKg, data) {
   const prots = (viveiros[index].protocolos || []).filter(p => p.ativo && p.tipo === "racao");
+  const wd = _maParse(data).getDay();
   for (const p of prots) {
+    if (Array.isArray(p.dias) && p.dias.length > 0 && !p.dias.includes(wd)) continue;
     const produto = produtos.find(pr => pr.id === p.produtoId);
     if (!produto) continue;
     const quantidadeG = (Number(p.dosePorKgG) || 0) * racaoKg;
@@ -5161,8 +5163,10 @@ async function aplicarProtocolosSemanais() {
 }
 
 function _maResumoProtocolo(p) {
-  if (p.tipo === "racao") return `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração`;
   const dias = (p.dias || []).map(d => _MA_DIAS[d]).join(", ");
+  if (p.tipo === "racao") {
+    return `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração · ${dias || "todos os dias"}`;
+  }
   return `${formatarNumeroBR(p.quantidadeG, 0)} g · ${dias || "—"}`;
 }
 
@@ -5247,11 +5251,13 @@ function abrirFormProtocolo(index, protId) {
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Quantidade por aplicação (g)</label></div>
           <input type="number" inputmode="decimal" id="protQtd" step="any" placeholder="Ex: 250" value="${p && p.tipo === "semanal" ? p.quantidadeG : ""}">
         </div>
-        <div class="campo-label" style="margin-bottom:6px"><label>Dias da semana</label></div>
-        <div class="ma-dias">
-          ${_MA_DIAS.map((d, i) => `<button type="button" class="ma-dia ${diasSel.includes(i) ? "sel" : ""}" data-dia="${i}" onclick="this.classList.toggle('sel')">${d}</button>`).join("")}
-        </div>
       </div>
+
+      <div class="campo-label" style="margin-bottom:6px"><label>Dias da semana</label></div>
+      <div class="ma-dias">
+        ${_MA_DIAS.map((d, i) => `<button type="button" class="ma-dia ${diasSel.includes(i) ? "sel" : ""}" data-dia="${i}" onclick="this.classList.toggle('sel')">${d}</button>`).join("")}
+      </div>
+      <p class="rc-print-dica" id="prot-dias-dica">Atrelado à ração: deixe vazio para aplicar sempre que lançar ração. Programado: selecione os dias.</p>
 
       <div id="msg-prot-erro" style="display:none;color:#ef4444;font-size:13px;margin:8px 0;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" style="margin-top:12px" onclick="salvarProtocolo(${index}, ${protId ? `'${protId}'` : "null"})">Salvar protocolo</button>
@@ -5282,14 +5288,15 @@ async function salvarProtocolo(index, protId) {
     if (antigo) { prot.ativo = antigo.ativo; prot.ultimoLancamento = antigo.ultimoLancamento; }
   }
 
+  const dias = [...document.querySelectorAll(".ma-dia.sel")].map(b => Number(b.dataset.dia));
   if (tipo === "racao") {
     const dose = parseFloat(document.getElementById("protDosePorKg").value);
     if (!dose || dose <= 0) { erro("Informe a dose por kg de ração."); return; }
     prot.dosePorKgG = dose;
+    prot.dias = dias; // vazio = todo dia que lançar ração
   } else {
     const qtd = parseFloat(document.getElementById("protQtd").value);
     if (!qtd || qtd <= 0) { erro("Informe a quantidade por aplicação."); return; }
-    const dias = [...document.querySelectorAll(".ma-dia.sel")].map(b => Number(b.dataset.dia));
     if (dias.length === 0) { erro("Selecione ao menos um dia da semana."); return; }
     prot.quantidadeG = qtd;
     prot.dias = dias;
