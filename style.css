@@ -3287,121 +3287,219 @@ body.tema-escuro .bt-icone-pago { background: #052e2b; }
     background: white;
     border: 1.5px solid #e5e7eb;
     border-radius: 14px;
-    padding: 16px 8px 8px;
-    margin-bottom: 12px;
+    padding: 14px 12px 12px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }
 
-.grafico-resumo {
+.grafico-titulo {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1f2937;
+    margin: 0 2px 8px;
+    text-align: center;
+}
+
+.grafico-legenda {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.grafico-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.grafico-leg-dot {
+    width: 16px;
+    height: 3px;
+    border-radius: 99px;
+    flex-shrink: 0;
+}
+
+.grafico-leg-dot.leg-verde { background: rgb(6,107,99); }
+.grafico-leg-dot.leg-laranja {
+    background: repeating-linear-gradient(90deg, #f59e0b 0 4px, transparent 4px 7px);
+    height: 2px;
+}
+
+.grafico-canvas-wrap {
+    position: relative;
+    height: 300px;
+}
+
+/* histórico de biometrias compacto */
+.bio-hist-titulo {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1f2937;
+    margin: 16px 2px 8px;
+}
+
+.bio-historico {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
     margin-bottom: 4px;
 }
 
-.grafico-resumo-item {
-    display: flex;
-    justify-content: space-between;
+.bio-hist-linha {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
     align-items: center;
-    padding: 8px 12px;
+    gap: 10px;
+    padding: 9px 14px;
     background: #f9fafb;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    border: 1px solid #eef0f2;
 }
 
-.grafico-resumo-label {
-    font-size: 12px;
-    font-weight: 700;
+.bio-hist-dia {
+    font-size: 13px;
+    font-weight: 800;
     color: rgb(6,107,99);
 }
 
-.grafico-resumo-peso {
-    font-size: 13px;
+.bio-hist-peso {
+    font-size: 14px;
     color: #1f2937;
-    font-weight: 500;
+    font-weight: 700;
 }
 
-.grafico-cresc {
-    color: #16a34a;
-    font-size: 12px;
+.bio-hist-ganho {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12.5px;
     font-weight: 700;
-    margin-left: 6px;
+    justify-self: end;
+}
+
+.bio-hist-ganho.pos { color: #16a34a; }
+.bio-hist-ganho.neg { color: #dc2626; }
+.bio-hist-ganho.neutro { color: #9ca3af; }
+
+.bio-hist-seta {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
 }
 
 body.tema-escuro .grafico-container {
     background: #1f2937;
     border-color: #374151;
 }
-body.tema-escuro .grafico-resumo-item {
+body.tema-escuro .grafico-titulo { color: #f3f4f6; }
+body.tema-escuro .bio-hist-titulo { color: #f3f4f6; }
+body.tema-escuro .bio-hist-linha {
     background: #374151;
     border-color: #4b5563;
 }
-body.tema-escuro .grafico-resumo-peso { color: #f9fafb; }
+body.tema-escuro .bio-hist-peso { color: #f9fafb; }
+body.tema-escuro .bio-hist-dia { color: #34d399; }
 body.tema-escuro .botao-curva-crescimento {
     background: #064e3b;
     color: #34d399;
     border-color: #065f46;
 }
 
-/* mini-header da curva */
-.proj-mini-header {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 10px 0;
-    margin-bottom: 12px;
+/* 3 cards de indicadores no topo */
+.cresc-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
 }
 
-.proj-mini-item {
-    flex: 1;
+.cresc-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 6px 11px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.proj-mini-sep {
-    width: 1px;
-    height: 32px;
-    background: #e5e7eb;
-    flex-shrink: 0;
+.cresc-card-ico {
+    width: 18px;
+    height: 18px;
+    stroke: rgb(6,107,99);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.85;
 }
 
-.proj-mini-lbl {
+.cresc-card-lbl {
     font-size: 10px;
     color: #9ca3af;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
+    text-align: center;
 }
 
-.proj-mini-val {
-    font-size: 14px;
+.cresc-card-val {
+    font-size: 16px;
     font-weight: 800;
     color: rgb(6, 107, 99);
+    text-align: center;
 }
 
-/* barra de progresso */
-.proj-progresso-wrap {
+body.tema-escuro .cresc-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .cresc-card-lbl { color: #9ca3af; }
+body.tema-escuro .cresc-card-val { color: #34d399; }
+body.tema-escuro .cresc-card-ico { stroke: #34d399; }
+
+/* card de progresso (barra) */
+.proj-progresso-card {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 13px 16px 12px;
     margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.proj-progresso-topo {
-    display: flex;
-    justify-content: space-between;
+.proj-prog-pct-row {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.proj-prog-pct {
+    font-size: 20px;
+    font-weight: 900;
+    color: rgb(6,107,99);
+}
+
+.proj-prog-pct-lbl {
     font-size: 12px;
     font-weight: 600;
-    color: #374151;
-    margin-bottom: 4px;
+    color: #9ca3af;
+    margin-left: 4px;
 }
 
 .proj-barra-fundo {
-    height: 10px;
-    background: #e5e7eb;
+    height: 9px;
+    background: #eef0f2;
     border-radius: 99px;
-    overflow: visible;
+    overflow: hidden;
     position: relative;
 }
 
@@ -3410,27 +3508,70 @@ body.tema-escuro .botao-curva-crescimento {
     background: linear-gradient(90deg, rgb(6,107,99), #34d399);
     border-radius: 99px;
     transition: width 0.4s ease;
-    position: relative;
 }
 
-.proj-barra-dot {
-    position: absolute;
-    right: -5px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 14px;
-    height: 14px;
-    background: white;
-    border: 3px solid rgb(6,107,99);
-    border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+.proj-progresso-base {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
 }
 
-body.tema-escuro .proj-mini-header { background: #1f2937; border-color: #374151; }
-body.tema-escuro .proj-mini-sep { background: #374151; }
-body.tema-escuro .proj-mini-val { color: #34d399; }
-body.tema-escuro .proj-progresso-topo { color: #d1d5db; }
+/* resumo executivo da projeção */
+.proj-resumo {
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 12px;
+    padding: 6px 14px;
+    margin-bottom: 8px;
+}
+
+.proj-resumo-linha {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(6,107,99,0.08);
+}
+
+.proj-resumo-linha:last-child { border-bottom: none; }
+
+.proj-resumo-ico {
+    width: 17px;
+    height: 17px;
+    stroke: rgb(6,107,99);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.proj-resumo-lbl {
+    font-size: 13px;
+    color: #374151;
+    font-weight: 500;
+    flex: 1;
+}
+
+.proj-resumo-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: rgb(4, 75, 70);
+}
+
+body.tema-escuro .proj-progresso-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .proj-prog-pct { color: #34d399; }
 body.tema-escuro .proj-barra-fundo { background: #374151; }
+body.tema-escuro .proj-progresso-base { color: #d1d5db; }
+body.tema-escuro .proj-resumo { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .proj-resumo-linha { border-bottom-color: rgba(52,211,153,0.12); }
+body.tema-escuro .proj-resumo-lbl { color: #d1d5db; }
+body.tema-escuro .proj-resumo-val { color: #34d399; }
+body.tema-escuro .proj-resumo-ico { stroke: #34d399; }
 
 /* projeção de despesca */
 .proj-controle {
@@ -3456,12 +3597,12 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .proj-alvo-lbl {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     color: #374151;
 }
 
@@ -3476,13 +3617,13 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
 }
 
 .proj-alvo-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 40px;
     background: #f3f4f6;
     border: none;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 500;
-    color: #374151;
+    color: #6b7280;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -3496,21 +3637,21 @@ body.tema-escuro .proj-barra-fundo { background: #374151; }
 .proj-alvo-val-wrap {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 0 10px;
+    gap: 3px;
+    padding: 0 12px;
     border-left: 1.5px solid #e5e7eb;
     border-right: 1.5px solid #e5e7eb;
-    min-width: 72px;
+    min-width: 78px;
     justify-content: center;
-    height: 36px;
+    height: 40px;
 }
 
 .proj-alvo-val-wrap input {
-    width: 52px;
+    width: 56px;
     border: none;
     outline: none;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 800;
     color: #111827;
     text-align: right;
     background: transparent;

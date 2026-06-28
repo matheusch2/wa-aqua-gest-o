@@ -2016,6 +2016,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const junctionIndex = chartLabels.length - 1;
   let cardProj = "";
   let progresso = 0;
+  let despescaIndex = -1;
 
   if (dataPovoamento && gDia > 0 && alvo > pesoAtual) {
     const diasFalta = Math.ceil((alvo - pesoAtual) / gDia);
@@ -2031,29 +2032,44 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     chartLabels.push(`D${diaAlvo}`);
     realData.push(null);
     projData.push(alvo);
+    despescaIndex = chartLabels.length - 1;
 
     const dataAlvoObj = new Date(dataPovoamento.getTime() + diaAlvo * 86400000);
     const dataAlvoStr = `${dataAlvoObj.getFullYear()}-${String(dataAlvoObj.getMonth() + 1).padStart(2, "0")}-${String(dataAlvoObj.getDate()).padStart(2, "0")}`;
     progresso = Math.min(100, Math.round((pesoAtual / alvo) * 100));
 
     cardProj = `
-      <div class="proj-card">
-        <div class="proj-progresso-wrap">
-          <div class="proj-progresso-topo">
-            <span>${fmtG(pesoAtual)} g</span>
-            <span style="color:#9ca3af;font-size:11px">${progresso}% do alvo</span>
-            <span>${fmtG(alvo)} g</span>
-          </div>
-          <div class="proj-barra-fundo">
-            <div class="proj-barra-preench" style="width:${progresso}%">
-              <div class="proj-barra-dot"></div>
-            </div>
-          </div>
+      <div class="proj-progresso-card">
+        <div class="proj-prog-pct-row"><span class="proj-prog-pct">${progresso}%</span> <span class="proj-prog-pct-lbl">do peso-alvo</span></div>
+        <div class="proj-barra-fundo">
+          <div class="proj-barra-preench" style="width:${progresso}%"></div>
         </div>
-        <div class="proj-card-linha"><span>Atinge ${fmtG(alvo)} g em</span><strong>~${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</strong></div>
-        <div class="proj-card-linha"><span>Data estimada</span><strong>${formatarData(dataAlvoStr)}</strong></div>
-        <div class="proj-card-linha"><span>Dia de cultivo</span><strong>D${diaAlvo}</strong></div>
-        ${biomasaAlvoStr ? `<div class="proj-card-linha"><span>Biomassa estimada</span><strong>~${biomasaAlvoStr}</strong></div>` : ""}
+        <div class="proj-progresso-base">
+          <span>${fmtG(pesoAtual)} g</span>
+          <span>${fmtG(alvo)} g</span>
+        </div>
+      </div>
+      <div class="proj-resumo">
+        <div class="proj-resumo-linha">
+          <svg class="proj-resumo-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span class="proj-resumo-lbl">Tempo restante</span>
+          <span class="proj-resumo-val">~${diasFalta} ${diasFalta === 1 ? "dia" : "dias"}</span>
+        </div>
+        <div class="proj-resumo-linha">
+          <svg class="proj-resumo-ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="proj-resumo-lbl">Data prevista</span>
+          <span class="proj-resumo-val">${formatarData(dataAlvoStr)}</span>
+        </div>
+        <div class="proj-resumo-linha">
+          <svg class="proj-resumo-ico" viewBox="0 0 24 24"><path d="M12 2s7 6 7 12a7 7 0 0 1-14 0c0-6 7-12 7-12z"/></svg>
+          <span class="proj-resumo-lbl">Dia de cultivo</span>
+          <span class="proj-resumo-val">D${diaAlvo}</span>
+        </div>
+        ${biomasaAlvoStr ? `<div class="proj-resumo-linha">
+          <svg class="proj-resumo-ico" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span class="proj-resumo-lbl">Biomassa estimada</span>
+          <span class="proj-resumo-val">~${biomasaAlvoStr}</span>
+        </div>` : ""}
       </div>
       <p class="proj-obs">Estimativa pelo ganho médio de ${formatarNumeroBR(gDia * 7, 2)} g/semana. Quanto mais biometrias, mais precisa.</p>
     `;
@@ -2070,24 +2086,32 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
 
   area.innerHTML = `
     <h3 class="titulo-secao">Curva de crescimento — ${abreviarViveiro(viveiro.nome)}</h3>
-    <div class="proj-mini-header">
-      <div class="proj-mini-item">
-        <span class="proj-mini-lbl">Peso atual</span>
-        <span class="proj-mini-val">${fmtG(pesoAtual)} g</span>
+    <div class="cresc-cards">
+      <div class="cresc-card">
+        <svg class="cresc-card-ico" viewBox="0 0 24 24"><path d="M12 3a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.72V8h4l3 11a3 3 0 0 1-3 4H7a3 3 0 0 1-3-4L7 8h4V6.72A2 2 0 0 1 10 5a2 2 0 0 1 2-2z"/></svg>
+        <span class="cresc-card-lbl">Peso atual</span>
+        <span class="cresc-card-val">${fmtG(pesoAtual)} g</span>
       </div>
-      <div class="proj-mini-sep"></div>
-      <div class="proj-mini-item">
-        <span class="proj-mini-lbl">Crescimento</span>
-        <span class="proj-mini-val">${gDia > 0 ? formatarNumeroBR(gDia * 7, 2) + " g/sem" : "--"}</span>
+      <div class="cresc-card">
+        <svg class="cresc-card-ico" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+        <span class="cresc-card-lbl">Crescimento</span>
+        <span class="cresc-card-val">${gDia > 0 ? formatarNumeroBR(gDia * 7, 2) + " g/sem" : "--"}</span>
       </div>
-      <div class="proj-mini-sep"></div>
-      <div class="proj-mini-item">
-        <span class="proj-mini-lbl">Dia de cultivo</span>
-        <span class="proj-mini-val">${dataPovoamento ? "D" + ultimoDia : "--"}</span>
+      <div class="cresc-card">
+        <svg class="cresc-card-ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="cresc-card-lbl">Dia de cultivo</span>
+        <span class="cresc-card-val">${dataPovoamento ? "D" + ultimoDia : "--"}</span>
       </div>
     </div>
     <div class="grafico-container">
-      <canvas id="canvas-crescimento"></canvas>
+      <h4 class="grafico-titulo">Evolução do crescimento</h4>
+      <div class="grafico-legenda">
+        <span class="grafico-leg-item"><span class="grafico-leg-dot leg-verde"></span>Biometrias realizadas</span>
+        <span class="grafico-leg-item"><span class="grafico-leg-dot leg-laranja"></span>Projeção de crescimento</span>
+      </div>
+      <div class="grafico-canvas-wrap">
+        <canvas id="canvas-crescimento"></canvas>
+      </div>
     </div>
     <div class="proj-alvo-row">
       <span class="proj-alvo-lbl">Peso-alvo</span>
@@ -2102,12 +2126,19 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
       </div>
     </div>
     ${cardProj}
-    <div class="grafico-resumo">
+    <h4 class="bio-hist-titulo">Histórico de biometrias</h4>
+    <div class="bio-historico">
       ${biometrias.map((b, i) => {
-        const cresc = i > 0 ? ` <span class="grafico-cresc">+${fmtG(b.gramatura - biometrias[i-1].gramatura)}g</span>` : "";
-        return `<div class="grafico-resumo-item">
-          <span class="grafico-resumo-label">${labels[i]}</span>
-          <span class="grafico-resumo-peso">${fmtG(b.gramatura)} g${cresc}</span>
+        const dif = i > 0 ? b.gramatura - biometrias[i-1].gramatura : null;
+        const ganho = dif !== null
+          ? `<span class="bio-hist-ganho ${dif >= 0 ? "pos" : "neg"}">${dif >= 0
+              ? `<svg class="bio-hist-seta" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`
+              : `<svg class="bio-hist-seta" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`}${dif >= 0 ? "+" : ""}${fmtG(dif)}g</span>`
+          : `<span class="bio-hist-ganho neutro">—</span>`;
+        return `<div class="bio-hist-linha">
+          <span class="bio-hist-dia">${labels[i]}</span>
+          <span class="bio-hist-peso">${fmtG(b.gramatura)} g</span>
+          ${ganho}
         </div>`;
       }).join("")}
     </div>
@@ -2118,8 +2149,35 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     const canvas = document.getElementById("canvas-crescimento");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+
+    const linhaDespescaPlugin = {
+      id: "linhaDespesca",
+      afterDatasetsDraw(chart) {
+        if (despescaIndex < 0) return;
+        const xScale = chart.scales.x, yScale = chart.scales.y;
+        const x = xScale.getPixelForValue(despescaIndex);
+        const top = yScale.top, bottom = yScale.bottom;
+        const c = chart.ctx;
+        c.save();
+        c.beginPath();
+        c.setLineDash([4, 4]);
+        c.moveTo(x, top);
+        c.lineTo(x, bottom);
+        c.lineWidth = 1.5;
+        c.strokeStyle = "rgba(245,158,11,0.65)";
+        c.stroke();
+        c.setLineDash([]);
+        c.fillStyle = "#f59e0b";
+        c.font = "700 10px Arial";
+        c.textAlign = x > xScale.right - 30 ? "right" : "center";
+        c.fillText("Despesca", x, top - 5);
+        c.restore();
+      }
+    };
+
     new Chart(ctx, {
       type: "line",
+      plugins: [linhaDespescaPlugin],
       data: {
         labels: chartLabels,
         datasets: [
@@ -2173,7 +2231,8 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 18 } },
         plugins: {
           legend: { display: false },
           tooltip: {
