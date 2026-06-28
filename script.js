@@ -5120,6 +5120,7 @@ async function _aplicarProtocolosRacao(index, racaoKg, data) {
   const prots = (viveiros[index].protocolos || []).filter(p => p.ativo && p.tipo === "racao");
   const wd = _maParse(data).getDay();
   for (const p of prots) {
+    if (p.inicio && data < p.inicio) continue;
     if (Array.isArray(p.dias) && p.dias.length > 0 && !p.dias.includes(wd)) continue;
     const produto = produtos.find(pr => pr.id === p.produtoId);
     if (!produto) continue;
@@ -5143,6 +5144,7 @@ async function aplicarProtocolosSemanais() {
       if (!produto) continue;
       let inicio = p.ultimoLancamento ? _maAddDias(p.ultimoLancamento, 1) : v.dataPovoamento;
       if (inicio < v.dataPovoamento) inicio = v.dataPovoamento;
+      if (p.inicio && inicio < p.inicio) inicio = p.inicio;
       let cur = _maParse(inicio);
       const fim = _maParse(hojeStr);
       let guard = 0;
@@ -5164,10 +5166,11 @@ async function aplicarProtocolosSemanais() {
 
 function _maResumoProtocolo(p) {
   const dias = (p.dias || []).map(d => _MA_DIAS[d]).join(", ");
+  const desde = p.inicio ? ` · desde ${formatarData(p.inicio)}` : "";
   if (p.tipo === "racao") {
-    return `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração · ${dias || "todos os dias"}`;
+    return `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração · ${dias || "todos os dias"}${desde}`;
   }
-  return `${formatarNumeroBR(p.quantidadeG, 0)} g · ${dias || "—"}`;
+  return `${formatarNumeroBR(p.quantidadeG, 0)} g · ${dias || "—"}${desde}`;
 }
 
 function abrirManejoAutomatico(index) {
@@ -5259,6 +5262,12 @@ function abrirFormProtocolo(index, protId) {
       </div>
       <p class="rc-print-dica" id="prot-dias-dica">Atrelado à ração: deixe vazio para aplicar sempre que lançar ração. Programado: selecione os dias.</p>
 
+      <div class="campo-form" style="margin-top:12px">
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>Aplicar a partir de (opcional)</label></div>
+        <input type="date" id="protInicio" value="${p && p.inicio ? p.inicio : ""}">
+      </div>
+      <p class="rc-print-dica">Deixe vazio para valer desde o início do cultivo.</p>
+
       <div id="msg-prot-erro" style="display:none;color:#ef4444;font-size:13px;margin:8px 0;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" style="margin-top:12px" onclick="salvarProtocolo(${index}, ${protId ? `'${protId}'` : "null"})">Salvar protocolo</button>
       <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirManejoAutomatico(${index})">← Voltar</button>
@@ -5288,6 +5297,7 @@ async function salvarProtocolo(index, protId) {
     if (antigo) { prot.ativo = antigo.ativo; prot.ultimoLancamento = antigo.ultimoLancamento; }
   }
 
+  prot.inicio = document.getElementById("protInicio").value || null;
   const dias = [...document.querySelectorAll(".ma-dia.sel")].map(b => Number(b.dataset.dia));
   if (tipo === "racao") {
     const dose = parseFloat(document.getElementById("protDosePorKg").value);
