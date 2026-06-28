@@ -1255,11 +1255,16 @@ function abrirViveiro(index) {
   area.innerHTML = `
     <div class="painel-viveiro">
 
-      <div class="viveiro-header">
-        <h2 class="viveiro-titulo">${viveiro.nome.toUpperCase()}</h2>
-        <div class="viveiro-pls">
-          <div class="pls-numero">${totalFormatado} PLs</div>
+      <div class="vv-header">
+        <div class="vv-header-ico">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
         </div>
+        <div class="vv-header-info">
+          <h2 class="vv-titulo">${viveiro.nome.toUpperCase()}</h2>
+          <p class="vv-sub">${viveiro.laboratorio || "—"}${viveiro.tamanho ? " • " + viveiro.tamanho + " ha" : ""}</p>
+          <span class="vv-badge"><span class="vv-badge-dot"></span>Em cultivo</span>
+        </div>
+        <div class="vv-pls">${totalFormatado} PLs</div>
       </div>
 
       <div class="painel-info">
@@ -1281,9 +1286,17 @@ function abrirViveiro(index) {
 
         <div class="info-box">
           <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <small>Dias de cultivo</small>
+          <strong>${diasCultivo} dias</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
           </div>
-          <small>Tamanho</small>
+          <small>Área do viveiro</small>
           <strong>${viveiro.tamanho || "--"} ha</strong>
         </div>
 
@@ -1295,12 +1308,36 @@ function abrirViveiro(index) {
           <strong>${formatarNumeroBR(totalRacao, 1)} kg</strong>
         </div>
 
-        <div class="info-box">
+        <div class="info-box info-box-destaque">
           <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <small>Custo parcial</small>
           <strong>${totalCustos > 0 ? "R$ " + formatarNumeroBR(totalCustos, 2) : "--"}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+          </div>
+          <small>Última biometria</small>
+          <strong>${ultimaBiometria} g</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <small>Média de crescimento</small>
+          <strong>${mediaCrescimento}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <small>Sobrevivência est.</small>
+          <strong>${sobrevivenciaEstimada}</strong>
         </div>
 
         <div class="info-box">
@@ -1315,66 +1352,58 @@ function abrirViveiro(index) {
           <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           </div>
-          <small>Biomassa atual est.</small>
+          <small>Biomassa estimada</small>
           <strong>${biomassaAtualStr}</strong>
         </div>
 
         <div class="info-box">
           <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
           </div>
-          <small>Biomassa na despesca</small>
-          <strong>${biomassaDespescaStr}</strong>
-        </div>
-
-        <div class="info-box info-box-kpi">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <small>Custo por kg produzido</small>
+          <small>Custo por quilo</small>
           <strong>${custoKgProduzidoStr}</strong>
         </div>
       </div>
 
-      <div class="painel-acoes">
-        <button class="botao-painel" onclick="mostrarLancamentoRacao(${index})">
+      <div class="vv-secao-lbl">Ações de manejo</div>
+      <div class="vv-manejo-grid">
+        <button class="vv-manejo-btn" onclick="mostrarLancamentoRacao(${index})">
           <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
-          Lançar ração
+          <span>Lançar ração</span>
         </button>
-
-        <button class="botao-painel" onclick="abrirBiometria(${index})">
+        <button class="vv-manejo-btn" onclick="abrirBiometria(${index})">
           <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="1"/><line x1="6" y1="7" x2="6" y2="17"/><line x1="10" y1="7" x2="10" y2="12"/><line x1="14" y1="7" x2="14" y2="12"/><line x1="18" y1="7" x2="18" y2="17"/></svg>
-          Lançar biometria
+          <span>Lançar biometria</span>
         </button>
-
-        <button class="botao-painel" onclick="abrirDespesca(${index})">
+        <button class="vv-manejo-btn" onclick="abrirDespesca(${index})">
           <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Lançar despesca
+          <span>Lançar despesca</span>
         </button>
-
-        <button class="botao-painel" onclick="abrirLancarCusto(${index})">
+        <button class="vv-manejo-btn" onclick="abrirLancarCusto(${index})">
           <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Lançar custo
+          <span>Lançar custo</span>
         </button>
+      </div>
 
-        <button class="botao-painel" onclick="mostrarHistoricoDoViveiroDireto(${index})">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Histórico
-        </button>
+      <div class="vv-secao-lbl">Consultas</div>
+      <button class="vv-consulta-btn" onclick="mostrarHistoricoDoViveiroDireto(${index})">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Histórico
+      </button>
 
-        <button class="botao-painel botao-alerta" onclick="abrirEncerrarCiclo(${index})">
+      <div class="vv-secao-lbl">Ações de administração</div>
+      <div class="vv-admin-row">
+        <button class="vv-admin-btn vv-admin-amber" onclick="abrirEncerrarCiclo(${index})">
           <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-          Encerrar ciclo
+          <span>Encerrar ciclo</span>
         </button>
-
-        <button class="botao-painel botao-reiniciar" onclick="reiniciarCiclo(${index})">
+        <button class="vv-admin-btn vv-admin-cinza" onclick="reiniciarCiclo(${index})">
           <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-          Reiniciar ciclo
+          <span>Reiniciar ciclo</span>
         </button>
-
-        <button class="botao-painel botao-perigo" onclick="confirmarExcluirViveiro(${index})">
+        <button class="vv-admin-btn vv-admin-vermelho" onclick="confirmarExcluirViveiro(${index})">
           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          Excluir viveiro
+          <span>Excluir viveiro</span>
         </button>
       </div>
 
