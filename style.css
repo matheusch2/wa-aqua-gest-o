@@ -557,6 +557,22 @@ button {
     font-weight: 700;
 }
 
+/* KPI em destaque, largura total */
+.info-box-kpi {
+    grid-column: 1 / -1;
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+}
+.info-box-kpi strong {
+    color: rgb(6,107,99);
+    font-size: 18px;
+}
+body.tema-escuro .info-box-kpi {
+    background: #052e2b;
+    border-color: #0f4d47;
+}
+body.tema-escuro .info-box-kpi strong { color: #34d399; }
+
 /* ─── BOTÕES DO PAINEL ───────────────────────────────────────────────────── */
 
 .painel-acoes {

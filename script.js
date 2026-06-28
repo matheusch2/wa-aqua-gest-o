@@ -1232,11 +1232,19 @@ function abrirViveiro(index) {
 
   let sobrevivenciaEstimada = "--";
   let fciEstimado = "--";
+  let biomassaAtualStr = "--";
+  let biomassaDespescaStr = "--";
+  let custoKgProduzidoStr = "--";
+  const PESO_ALVO_DESPESCA = 20; // g — meta padrão de despesca
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
     if (res && res.biomassa > 0) {
       sobrevivenciaEstimada = formatarNumeroBR(res.sobrevivencia, 1) + " %";
       if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / res.biomassa, 2);
+      biomassaAtualStr = formatarNumeroBR(res.biomassa, 0) + " kg";
+      if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / res.biomassa, 2);
+      const pesoDespesca = Math.max(PESO_ALVO_DESPESCA, pesoUltimaBio);
+      biomassaDespescaStr = formatarNumeroBR(res.quantidade * pesoDespesca / 1000, 0) + " kg";
     }
   }
 
@@ -1273,14 +1281,6 @@ function abrirViveiro(index) {
 
         <div class="info-box">
           <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <small>Dias de cultivo</small>
-          <strong>${diasCultivo} dias</strong>
-        </div>
-
-        <div class="info-box">
-          <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
           </div>
           <small>Tamanho</small>
@@ -1305,34 +1305,34 @@ function abrirViveiro(index) {
 
         <div class="info-box">
           <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           </div>
-          <small>Última biometria</small>
-          <strong>${ultimaBiometria} g</strong>
+          <small>FCA estimado</small>
+          <strong>${fciEstimado}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <small>Biomassa atual est.</small>
+          <strong>${biomassaAtualStr}</strong>
         </div>
 
         <div class="info-box">
           <div class="info-box-icone">
             <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           </div>
-          <small>Média de crescimento</small>
-          <strong>${mediaCrescimento}</strong>
+          <small>Biomassa na despesca</small>
+          <strong>${biomassaDespescaStr}</strong>
         </div>
 
-        <div class="info-box">
+        <div class="info-box info-box-kpi">
           <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
-          <small>Sobrevivência est.</small>
-          <strong>${sobrevivenciaEstimada}</strong>
-        </div>
-
-        <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          </div>
-          <small>FCA estimado</small>
-          <strong>${fciEstimado}</strong>
+          <small>Custo por kg produzido</small>
+          <strong>${custoKgProduzidoStr}</strong>
         </div>
       </div>
 
