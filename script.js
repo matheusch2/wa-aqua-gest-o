@@ -6001,13 +6001,8 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
 
   const dolarIco = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M14.5 9.5a2 2 0 0 0-2-1.5h-1a1.8 1.8 0 0 0 0 3.6h1a1.8 1.8 0 0 1 0 3.6h-1.2a2 2 0 0 1-2-1.5"/></svg>`;
   resultado.innerHTML = `
-    <div class="custo-topo">
-      <div>
-        <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
-        <p class="custo-sub">Resumo de custos do ciclo</p>
-      </div>
-      ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
-    </div>
+    <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
+    ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
     <div class="custo-grupo-lista">
       ${lista.length === 0
         ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
