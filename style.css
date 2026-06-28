@@ -5519,3 +5519,28 @@ body.tema-escuro .ma-dia.sel { background: #34d399; border-color: #34d399; color
 }
 .ma-check input { width: 18px; height: 18px; accent-color: rgb(6,107,99); flex-shrink: 0; }
 body.tema-escuro .ma-check { color: #d1d5db; }
+
+/* Custos agrupados por produto */
+.custo-grupo-lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.custo-grupo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 11px 14px;
+}
+.custo-grupo-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.custo-grupo-nome { font-size: 14px; font-weight: 700; color: #1f2937; }
+.custo-grupo-qtd { font-size: 12px; color: #6b7280; font-weight: 600; }
+.custo-grupo-valor { font-size: 14px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; }
+.custo-grupo .botao-editar { background: none; border: none; cursor: pointer; font-size: 15px; padding: 2px; flex-shrink: 0; }
+.custo-grupo-conf { width: 100%; }
+.custo-grupo-conf > span { font-size: 13px; font-weight: 600; color: #991b1b; }
+.custo-grupo-conf-btns { display: flex; gap: 8px; margin-top: 8px; }
+.custo-grupo-conf-btns button { flex: 1; padding: 9px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+body.tema-escuro .custo-grupo { background: #1f2937; border-color: #374151; }
+body.tema-escuro .custo-grupo-nome { color: #f3f4f6; }
+body.tema-escuro .custo-grupo-valor { color: #34d399; }

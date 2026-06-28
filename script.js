@@ -5101,6 +5101,10 @@ async function salvarProtocolos(index) {
 
 async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
   if (!quantidadeG || quantidadeG <= 0) return false;
+  // Nunca repete o mesmo lançamento automático (mesmo produto + data)
+  const jaTem = (viveiros[index].custos || []).some(c =>
+    c.data === data && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
+  if (jaTem) return false;
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return false;
   const valor = (produto.custoPorGrama || 0) * quantidadeG;
@@ -5344,13 +5348,16 @@ async function salvarProtocolo(index, protId) {
   }
   const ok = await salvarProtocolos(index);
   if (!ok) return;
+  // Feedback imediato + volta pra lista
+  _toastSucesso("Manejo salvo!");
+  abrirManejoAutomatico(index);
+  // Aplica lançamentos (pode envolver vários custos) sem travar o retorno
   if (tipo === "semanal") {
     await aplicarProtocolosSemanais();
+    abrirManejoAutomatico(index);
   } else if (retro) {
     await _aplicarProtocoloRacaoRetroativo(index, prot);
   }
-  _toastSucesso("Protocolo salvo!");
-  abrirManejoAutomatico(index);
 }
 
 // ─── CUSTOS E INSUMOS ─────────────────────────────────────────────────────────
@@ -5963,40 +5970,52 @@ function abrirHistoricoCustos() {
   renderizarHistoricoCustos(index, "resultado-historico", false);
 }
 
+function _fmtQtdCusto(g) {
+  if (!g || g <= 0) return "";
+  if (g >= 1000) {
+    const kg = g / 1000;
+    return formatarNumeroBR(kg, Number.isInteger(kg) ? 0 : 2) + " kg";
+  }
+  return formatarNumeroBR(g, 0) + " g";
+}
+
+function _chaveCusto(c) {
+  return c.produtoId ? ("id:" + c.produtoId) : ("nome:" + (c.nomeProduto || c.categoria || "Outros"));
+}
+
 function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
-  const custos = [...(viveiro.custos || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const custos = viveiro.custos || [];
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0);
 
+  // Agrupa por produto/nome — soma quantidade e valor (sem datas)
+  const grupos = {};
+  custos.forEach(c => {
+    const chave = _chaveCusto(c);
+    if (!grupos[chave]) grupos[chave] = { chave, nome: c.nomeProduto || c.categoria || "Custo", quantidadeG: 0, valor: 0 };
+    grupos[chave].valor += Number(c.valor) || 0;
+    if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
+  });
+  const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
+
   resultado.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
       <h3 class="titulo-secao" style="margin:0">Custos - ${abreviarViveiro(viveiro.nome)}</h3>
       ${custos.length > 0 ? `<button class="botao-imprimir-custos" onclick="imprimirCustos(${index})">🖨️ Imprimir</button>` : ""}
     </div>
-    <div class="tabela-historico">
-      <div class="linha-historico-acoes cabecalho">
-        <span>DATA</span>
-        <span class="col-centro">DESCRIÇÃO</span>
-        <span class="col-centro">VALOR</span>
-        <span></span>
-      </div>
-      ${custos.length === 0
+    <div class="custo-grupo-lista">
+      ${lista.length === 0
         ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
-        : custos.map((item) => {
-            const iOriginal = viveiro.custos.findIndex(c => c.id === item.id);
-            const qtdTxt = (item.quantidadeG && item.categoria !== "Ração")
-              ? `<br><small style="font-size:10px;opacity:0.6">${item.quantidadeG >= 1000 ? formatarNumeroBR(item.quantidadeG / 1000, 2) + " kg" : formatarNumeroBR(item.quantidadeG, 0) + " g"}</small>`
-              : "";
-            return `
-            <div class="linha-historico-acoes" id="custo-row-${index}-${iOriginal}">
-              <span style="font-size:12px">${formatarData(item.data)}</span>
-              <span class="col-centro" style="font-size:13px;font-weight:500">${item.nomeProduto}${qtdTxt}</span>
-              <span class="col-centro" style="font-size:13px">R$&nbsp;${formatarNumeroBR(item.valor, 2)}</span>
-              <span class="col-acoes">
-                <button class="botao-editar" onclick="abrirEdicaoCusto(${index},${iOriginal},'${elementoId}',${direto})">✏️</button>
-                <button class="botao-editar botao-excluir" onclick="confirmarExcluirCusto(${index},${iOriginal},'${elementoId}',${direto})">🗑️</button>
-              </span>
+        : lista.map((g, gi) => {
+            const qtd = _fmtQtdCusto(g.quantidadeG);
+            return `<div class="custo-grupo" id="cg-${index}-${gi}">
+              <div class="custo-grupo-info">
+                <span class="custo-grupo-nome">${g.nome}</span>
+                ${qtd ? `<span class="custo-grupo-qtd">${qtd}</span>` : ""}
+              </div>
+              <span class="custo-grupo-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
+              <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>
             </div>`;
           }).join("")
       }
@@ -6007,6 +6026,33 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     </div>
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
   `;
+}
+
+function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
+  const row = document.getElementById(`cg-${index}-${gi}`);
+  if (!row) return;
+  row.style.flexWrap = "wrap";
+  row.innerHTML = `<div class="custo-grupo-conf">
+    <span>Excluir todos os lançamentos deste item?</span>
+    <div class="custo-grupo-conf-btns">
+      <button class="ciclo-btn-relatorio" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Cancelar</button>
+      <button class="ciclo-btn-excluir" onclick="excluirGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto})">Excluir</button>
+    </div>
+  </div>`;
+}
+
+async function excluirGrupoCusto(index, chaveEnc, elementoId, direto) {
+  const chave = decodeURIComponent(chaveEnc);
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+  const v = viveiros[index];
+  const ids = (v.custos || []).filter(c => _chaveCusto(c) === chave).map(c => c.id);
+  if (ids.length) {
+    const { error } = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
+    if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
+  }
+  v.custos = (v.custos || []).filter(c => !ids.includes(c.id));
+  renderizarHistoricoCustos(index, elementoId, direto);
 }
 
 function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
