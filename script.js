@@ -5127,7 +5127,7 @@ function abrirCadastrarProduto() {
             <label>Peso do saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="pesoKgProduto" placeholder="Ex: 25">
+            <input type="number" id="pesoKgProduto" placeholder="Ex: 25" oninput="calcularPreviaKg()">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -5137,7 +5137,7 @@ function abrirCadastrarProduto() {
             <label>Valor pago por saco</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="valorPagoProduto" placeholder="Ex: 85,00" onblur="formatarMoedaBlur(this); calcularPreviaKg()">
+            <input type="text" inputmode="decimal" id="valorPagoProduto" placeholder="Ex: 85,00" oninput="calcularPreviaKg()" onblur="formatarMoedaBlur(this); calcularPreviaKg()">
             <span class="campo-unidade">R$</span>
           </div>
         </div>
