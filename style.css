@@ -5340,15 +5340,15 @@ body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 3px;
+    gap: 2px;
     background: #f0fdf4;
     border: 1.5px solid #d1fae5;
     border-radius: 14px;
-    padding: 16px 8px;
+    padding: 12px 6px 11px;
 }
 .rc-result-ico {
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: #d8f3e3;
     display: flex;
@@ -5356,10 +5356,10 @@ body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
     justify-content: center;
     margin-bottom: 6px;
 }
-.rc-result-ico svg { width: 19px; height: 19px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.rc-result-card strong { font-size: 22px; font-weight: 900; color: rgb(6,107,99); line-height: 1; }
-.rc-result-un { font-size: 12px; font-weight: 700; color: rgb(6,107,99); }
-.rc-result-card small { font-size: 10.5px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; margin-top: 4px; }
+.rc-result-ico svg { width: 17px; height: 17px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rc-result-card strong { font-size: 19px; font-weight: 900; color: rgb(6,107,99); line-height: 1.05; }
+.rc-result-un { font-size: 11px; font-weight: 700; color: rgb(6,107,99); }
+.rc-result-card small { font-size: 9.5px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em; margin-top: 4px; line-height: 1.2; }
 
 /* Duo (Alimentação / Despesca) */
 .rc-duo {
