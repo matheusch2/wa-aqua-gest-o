@@ -4465,6 +4465,16 @@ function abrirEncerrarCiclo(index) {
         </div>
         <div class="campo-form">
           <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor de venda (R$/kg)</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="precoVendaCiclo" placeholder="Ex: 18,00" onblur="formatarMoedaBlur(this)">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <label>Observações</label>
           </div>
@@ -4488,6 +4498,7 @@ async function salvarEncerramentoCiclo(index) {
   const dataEncerramento = document.getElementById("dataEncerramento").value;
   const producaoFinal = parseFloat(document.getElementById("producaoFinal").value);
   const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
+  const precoVenda = parseMoedaBR(document.getElementById("precoVendaCiclo")?.value || "0") || 0;
   const observacoes = document.getElementById("observacoesCiclo").value;
   const usuario = await pegarUsuarioLogado();
 
@@ -4552,6 +4563,7 @@ async function salvarEncerramentoCiclo(index) {
     fca: fca,
     sobrevivencia: sobrevivencia,
     observacoes: observacoes,
+    preco_venda: precoVenda || null,
   };
 
   const { error } = await supabaseClient
@@ -4594,6 +4606,7 @@ async function salvarEncerramentoCiclo(index) {
     racaoConsumida: racaoConsumida,
     fca: fca,
     sobrevivencia: sobrevivencia,
+    precoVenda: precoVenda || 0,
     biometrias: [...biometrias],
     racoes: [...racoes],
     despescas: [...despescas],
@@ -4684,6 +4697,8 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const area = document.getElementById("area-gestao");
   _relImpCiclo = ciclo;
   _relImpIndex = index;
+  const _serieRel = _seriesCiclo(ciclo);
+  const _precoVal = ciclo.precoVenda > 0 ? ciclo.precoVenda.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
   const custosBloco = (() => {
     const custosCiclo = (viveiros[index]?.custos || []).filter(c =>
@@ -4810,6 +4825,17 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
 
       ${custosBloco}
 
+      ${_serieRel.dias.length ? `
+      <div class="rc-secao">
+        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Evolução do cultivo</div>
+        <div class="rc-graficos">
+          <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
+          <div class="rc-graf-box"><h5>Consumo de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
+          <div class="rc-graf-box"><h5>FCA ao longo do cultivo</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
+          <div class="rc-graf-box"><h5>Biomassa estimada (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBio"></canvas></div></div>
+        </div>
+      </div>` : ""}
+
       <div class="rc-hero">
         <div class="rc-hero-esq">
           <div class="rc-hero-ico"><svg viewBox="0 0 24 24"><path d="M3 6h18l-2 13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L3 6z"/><path d="M3 6l1-3h16l1 3"/><line x1="9" y1="11" x2="9" y2="16"/><line x1="15" y1="11" x2="15" y2="16"/></svg></div>
@@ -4822,7 +4848,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
         <div class="rc-print-box-titulo">Relatório técnico (impressão)</div>
         <div class="campo-form" style="margin-bottom:8px">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Preço de venda (R$/kg)</label></div>
-          <input type="text" inputmode="decimal" id="rc-preco-kg" placeholder="Ex: 7,00" onblur="formatarMoedaBlur(this)">
+          <input type="text" inputmode="decimal" id="rc-preco-kg" value="${_precoVal}" placeholder="Ex: 7,00" onblur="formatarMoedaBlur(this)">
         </div>
         <p class="rc-print-dica">Informe o preço para calcular receita, lucro e ROI no relatório técnico.</p>
         <button class="botao-salvar" onclick="gerarRelatorioImpressao()">
@@ -4834,6 +4860,59 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
 
     </div>
   `;
+
+  setTimeout(() => _renderGraficosCiclo(_serieRel), 60);
+}
+
+// Séries do ciclo para os gráficos (sobreviventes decrescentes — relatório final)
+function _seriesCiclo(ciclo) {
+  const bios = [...(ciclo.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const racoesSorted = [...(ciclo.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const popNum = ciclo.totalPovoado ? Number(String(ciclo.totalPovoado).replace(/\./g, "")) : 0;
+  const producaoTotal = Number(ciclo.producaoTotal) || 0;
+  const diaDe = d => calcularDiasCultivo(ciclo.dataPovoamento, d);
+  const racaoAcumAte = ds => racoesSorted.filter(r => r.data <= ds).reduce((s, r) => s + r.racao, 0);
+  const diasArr = bios.map(b => diaDe(b.data));
+  const lastDay = diasArr.length ? (diasArr[diasArr.length - 1] || 1) : 1;
+  const survFinal = Number(ciclo.pesoFinal) > 0 ? producaoTotal / (Number(ciclo.pesoFinal) / 1000)
+    : (popNum * (Number(ciclo.sobrevivencia) || 100) / 100);
+  const dias = [], peso = [], cresc = [], biomassa = [], fca = [], racaoAcum = [], obs = [], datas = [];
+  bios.forEach((b, i) => {
+    const racAcum = racaoAcumAte(b.data);
+    const dia = diasArr[i];
+    const frac = lastDay > 0 ? Math.min(1, Math.max(0, dia / lastDay)) : 1;
+    let surv = popNum - (popNum - survFinal) * frac;
+    if (surv < 0) surv = 0;
+    const bm = surv * b.gramatura / 1000;
+    datas.push(formatarData(b.data));
+    dias.push(dia);
+    peso.push(Number(b.gramatura));
+    cresc.push(i > 0 ? Number((b.gramatura - bios[i - 1].gramatura).toFixed(2)) : null);
+    biomassa.push(Number(bm.toFixed(1)));
+    fca.push(Number((bm > 0 ? racAcum / bm : 0).toFixed(2)));
+    racaoAcum.push(Number(racAcum.toFixed(1)));
+    obs.push(i === 0 ? "Povoamento" : (i === bios.length - 1 ? "Final do ciclo" : "-"));
+  });
+  if (biomassa.length && producaoTotal > 0) biomassa[biomassa.length - 1] = producaoTotal;
+  return { bios, dias, peso, cresc, biomassa, fca, racaoAcum, obs, datas, popNum, producaoTotal };
+}
+
+function _renderGraficosCiclo(serie) {
+  if (typeof Chart === "undefined" || !serie.dias.length) return;
+  const op = (cor, fill) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { font: { size: 9 }, color: "#9ca3af" }, grid: { display: false } }, y: { beginAtZero: true, ticks: { font: { size: 9 }, color: "#9ca3af" }, grid: { color: "rgba(0,0,0,0.05)" } } },
+  });
+  const linha = (id, data, cor, fill) => {
+    const el = document.getElementById(id); if (!el) return;
+    new Chart(el.getContext("2d"), { type: "line", data: { labels: serie.dias, datasets: [{ data, borderColor: cor, backgroundColor: fill || "transparent", fill: !!fill, tension: 0.3, pointRadius: 3, pointBackgroundColor: cor, borderWidth: 2 }] }, options: op() });
+  };
+  linha("rcPeso", serie.peso, "#16a34a", "rgba(22,163,74,.08)");
+  const elR = document.getElementById("rcRacao");
+  if (elR) new Chart(elR.getContext("2d"), { type: "bar", data: { labels: serie.dias, datasets: [{ data: serie.racaoAcum, backgroundColor: "rgb(6,107,99)" }] }, options: op() });
+  linha("rcFca", serie.fca, "#2563eb");
+  linha("rcBio", serie.biomassa, "#f59e0b", "rgba(245,158,11,.08)");
 }
 
 function gerarRelatorioImpressao() {
@@ -6520,6 +6599,7 @@ async function carregarViveiros() {
         racaoConsumida: Number(ciclo.racao_consumida),
         fca: Number(ciclo.fca),
         sobrevivencia: Number(ciclo.sobrevivencia),
+        precoVenda: ciclo.preco_venda ? Number(ciclo.preco_venda) : 0,
         observacoes: ciclo.observacoes,
       })),
 

@@ -5601,3 +5601,14 @@ body.tema-escuro .custo-card-acoes { border-left-color: #374151; }
 body.tema-escuro .custo-total { background: #052e2b; border-color: #0f4d47; }
 body.tema-escuro .custo-total-lbl { color: #6ee7b7; }
 body.tema-escuro .custo-total-val { color: #34d399; }
+
+/* Gráficos na visualização do relatório de ciclo */
+.rc-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rc-graf-box { background: white; border: 1px solid #eef0f2; border-radius: 12px; padding: 10px 8px 8px; }
+.rc-graf-box h5 { margin: 0 0 6px; font-size: 11px; font-weight: 700; color: #374151; text-align: center; }
+.rc-graf-canvas { position: relative; height: 120px; }
+body.tema-escuro .rc-graf-box { background: #1f2937; border-color: #374151; }
+body.tema-escuro .rc-graf-box h5 { color: #d1d5db; }
+@media (max-width: 480px) {
+  .rc-graficos { grid-template-columns: 1fr; }
+}
