@@ -958,20 +958,44 @@ function mostrarCadastroViveiro() {
           <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
         </div>
 
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <label>Data de povoamento</label>
+        <div class="cad-modo-toggle">
+          <button type="button" class="cad-modo-btn ativo" id="cadBtnPrep" onclick="_cadModo('prep')">Em preparação</button>
+          <button type="button" class="cad-modo-btn" id="cadBtnCultivo" onclick="_cadModo('cultivo')">Cultivo iniciado</button>
+        </div>
+        <input type="hidden" id="cadModo" value="prep">
+
+        <div id="cad-prep">
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <label>Início da preparação</label>
+            </div>
+            <input type="date" id="dataPreparacao" value="${new Date().toISOString().split("T")[0]}">
           </div>
-          <input type="date" id="dataPovoamento">
         </div>
 
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
-            <label>Total povoado</label>
+        <div id="cad-cultivo" style="display:none">
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <label>Data de povoamento</label>
+            </div>
+            <input type="date" id="dataPovoamento">
           </div>
-          <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250.000" oninput="formatarPopulacao(this)">
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+              <label>Total povoado</label>
+            </div>
+            <input type="text" id="totalPovoadoGestao" placeholder="Ex: 250.000" oninput="formatarPopulacao(this)">
+          </div>
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              <label>Laboratório (fornecedor de pós-larva)</label>
+            </div>
+            <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
+          </div>
         </div>
 
         <div class="campo-form">
@@ -983,14 +1007,6 @@ function mostrarCadastroViveiro() {
             <input type="number" id="tamanhoViveiro" placeholder="Ex: 0.5">
             <span class="campo-unidade">ha</span>
           </div>
-        </div>
-
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            <label>Laboratório (fornecedor de pós-larva)</label>
-          </div>
-          <input type="text" id="laboratorio" placeholder="Ex: Aquatec">
         </div>
 
         <div id="msg-viveiro-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
@@ -1005,35 +1021,47 @@ function mostrarCadastroViveiro() {
   `;
 }
 
+function _cadModo(modo) {
+  document.getElementById("cadModo").value = modo;
+  document.getElementById("cadBtnPrep").classList.toggle("ativo", modo === "prep");
+  document.getElementById("cadBtnCultivo").classList.toggle("ativo", modo === "cultivo");
+  document.getElementById("cad-prep").style.display = modo === "prep" ? "block" : "none";
+  document.getElementById("cad-cultivo").style.display = modo === "cultivo" ? "block" : "none";
+}
+
 async function salvarViveiro() {
   const nome = document.getElementById("nomeViveiro").value;
-  const data = document.getElementById("dataPovoamento").value;
-  const total = document.getElementById("totalPovoadoGestao").value.replace(/\D/g, "");
+  const modo = document.getElementById("cadModo")?.value || "cultivo";
   const tamanho = document.getElementById("tamanhoViveiro").value;
-  const laboratorio = document.getElementById("laboratorio").value;
   const erroViveiro = document.getElementById("msg-viveiro-erro");
   function mostrarErroViveiro(msg) {
     if (erroViveiro) { erroViveiro.textContent = msg; erroViveiro.style.display = "block"; }
   }
   if (erroViveiro) erroViveiro.style.display = "none";
 
-  if (!nome || !data || !total || !tamanho || !laboratorio) {
-    mostrarErroViveiro("Preencha todos os campos.");
-    return;
-  }
+  if (!nome || !tamanho) { mostrarErroViveiro("Informe o nome e o tamanho do viveiro."); return; }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  const novoViveiro = {
-    nome: nome,
-    data_povoamento: data,
-    total_povoado: total,
-    tamanho: tamanho,
-    laboratorio: laboratorio,
-    ativo: true,
-    user_id: usuario.id,
-  };
+  let novoViveiro;
+  if (modo === "prep") {
+    const dataPrep = document.getElementById("dataPreparacao").value;
+    if (!dataPrep) { mostrarErroViveiro("Informe a data de início da preparação."); return; }
+    novoViveiro = {
+      nome, tamanho, ativo: true, user_id: usuario.id,
+      data_preparacao: dataPrep, data_povoamento: null, total_povoado: null, laboratorio: null,
+    };
+  } else {
+    const data = document.getElementById("dataPovoamento").value;
+    const total = document.getElementById("totalPovoadoGestao").value.replace(/\D/g, "");
+    const laboratorio = document.getElementById("laboratorio").value;
+    if (!data || !total || !laboratorio) { mostrarErroViveiro("Preencha data de povoamento, total povoado e laboratório."); return; }
+    novoViveiro = {
+      nome, tamanho, ativo: true, user_id: usuario.id,
+      data_povoamento: data, total_povoado: total, laboratorio: laboratorio, data_preparacao: null,
+    };
+  }
 
   const { data: viveiroSalvo, error } = await supabaseClient
     .from("viveiros")
@@ -3375,29 +3403,32 @@ function reiniciarCiclo(index) {
   mostrarFormularioReinicio(index);
 }
 
-function mostrarFormularioReinicio(index) {
+function mostrarFormularioReinicio(index, modo = "reiniciar") {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
   const hoje = new Date().toISOString().split("T")[0];
+  const povoar = modo === "povoar";
 
   area.innerHTML = `
     <div class="form-lancamento">
       <div class="form-topo">
-        <div class="form-icone-circulo" style="background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2)">
-          <svg viewBox="0 0 24 24" style="stroke:#ef4444"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        <div class="form-icone-circulo" style="${povoar ? "" : "background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2)"}">
+          ${povoar
+            ? `<svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>`
+            : `<svg viewBox="0 0 24 24" style="stroke:#ef4444"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>`}
         </div>
         <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
-        <h2 class="form-titulo">Reiniciar Ciclo</h2>
+        <h2 class="form-titulo">${povoar ? "Povoar Viveiro" : "Reiniciar Ciclo"}</h2>
       </div>
-      <div class="aviso-reinicio">
+      ${povoar ? "" : `<div class="aviso-reinicio">
         <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#b45309;fill:none;stroke-width:2;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <span>Todo o histórico de ração, biometrias e despescas será <strong>apagado</strong>.</span>
-      </div>
+      </div>`}
       <div class="form-corpo">
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <label>Nova data de povoamento</label>
+            <label>${povoar ? "Data de povoamento" : "Nova data de povoamento"}</label>
           </div>
           <input type="date" id="novoPovoamento" value="${hoje}">
         </div>
@@ -3416,9 +3447,10 @@ function mostrarFormularioReinicio(index) {
           <input type="text" id="novoLaboratorio" placeholder="Nome do laboratório">
         </div>
         <div id="msg-reinicio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar botao-alerta" onclick="salvarNovoCiclo(${index})">
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-          Confirmar reinício
+        <button class="botao-salvar ${povoar ? "" : "botao-alerta"}" onclick="salvarNovoCiclo(${index})">
+          ${povoar
+            ? `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg> Povoar viveiro`
+            : `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Confirmar reinício`}
         </button>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="abrirViveiro(${index})">← Cancelar</button>
@@ -4564,6 +4596,7 @@ async function salvarEncerramentoCiclo(index) {
     sobrevivencia: sobrevivencia,
     observacoes: observacoes,
     preco_venda: precoVenda || null,
+    data_preparacao: viveiro.dataPreparacao || null,
   };
 
   const { error } = await supabaseClient
@@ -4607,6 +4640,7 @@ async function salvarEncerramentoCiclo(index) {
     fca: fca,
     sobrevivencia: sobrevivencia,
     precoVenda: precoVenda || 0,
+    dataPreparacao: viveiro.dataPreparacao || null,
     biometrias: [...biometrias],
     racoes: [...racoes],
     despescas: [...despescas],
@@ -4618,16 +4652,17 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.biometrias = [];
   viveiro.despescas = [];
 
-  // Zerar campos do ciclo no viveiro (mantém só nome e tamanho)
+  // Zera o ciclo e volta o viveiro para "Em preparação" (conta desde o encerramento)
   await supabaseClient
     .from("viveiros")
-    .update({ data_povoamento: null, total_povoado: null, laboratorio: null })
+    .update({ data_povoamento: null, total_povoado: null, laboratorio: null, data_preparacao: dataEncerramento })
     .eq("id", viveiro.id)
     .eq("user_id", usuario.id);
 
   viveiro.dataPovoamento = null;
   viveiro.totalPovoado = null;
   viveiro.laboratorio = null;
+  viveiro.dataPreparacao = dataEncerramento;
 
   if (!viveiro.ciclosFinalizados) {
     viveiro.ciclosFinalizados = [];
@@ -4652,6 +4687,25 @@ function mostrarViveiroSemCiclo(index) {
         <span class="form-caption">${viveiro.tamanho ? viveiro.tamanho + " ha" : ""}</span>
         <h2 class="form-titulo">${viveiro.nome}</h2>
       </div>
+      ${viveiro.dataPreparacao ? `
+      <div class="prep-status">
+        <div class="prep-status-ico"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg></div>
+        <div class="prep-status-txt">
+          <span class="prep-status-lbl">Em preparação</span>
+          <strong class="prep-status-dias">${calcularDiasCultivo(viveiro.dataPreparacao)} dias</strong>
+          <small>desde ${formatarData(viveiro.dataPreparacao)}</small>
+        </div>
+      </div>
+
+      <button class="botao-salvar" onclick="mostrarFormularioReinicio(${index}, 'povoar')" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+        Povoar viveiro
+      </button>
+      <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})" style="margin-top:8px">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Lançar custo de preparação
+      </button>
+      ` : `
       <div class="viveiro-sem-ciclo-msg">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span>Nenhum ciclo ativo. Inicie um novo ciclo para começar os lançamentos.</span>
@@ -4661,6 +4715,7 @@ function mostrarViveiroSemCiclo(index) {
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Iniciar novo ciclo
       </button>
+      `}
 
       <button class="botao-voltar-form botao-perigo-outline" onclick="mostrarConfirmExcluirViveiro(${index})" style="margin-top:8px">
         🗑️ Excluir viveiro
@@ -4703,7 +4758,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const custosBloco = (() => {
     const custosCiclo = (viveiros[index]?.custos || []).filter(c =>
       ciclo.dataPovoamento && ciclo.dataEncerramento &&
-      c.data >= ciclo.dataPovoamento && c.data <= ciclo.dataEncerramento
+      c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento
     );
     const totalProdutos = custosCiclo.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
     const totalOutros = custosCiclo.filter(c => c.tipo === "outro").reduce((s, c) => s + Number(c.valor), 0);
@@ -4767,6 +4822,11 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
             <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
             <small>Área do viveiro</small><strong>${ciclo.tamanho} ha</strong>
           </div>
+          ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `
+          <div class="rc-info-card">
+            <svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg>
+            <small>Preparação</small><strong>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</strong>
+          </div>` : ""}
         </div>
       </div>
 
@@ -4925,7 +4985,7 @@ function gerarRelatorioImpressao() {
   // ── Custos do ciclo (no período) ──
   const custos = (viveiros[index]?.custos || []).filter(c =>
     ciclo.dataPovoamento && ciclo.dataEncerramento &&
-    c.data >= ciclo.dataPovoamento && c.data <= ciclo.dataEncerramento
+    c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento
   );
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0);
 
@@ -6548,6 +6608,7 @@ async function carregarViveiros() {
     id: item.id,
     nome: item.nome,
     dataPovoamento: item.data_povoamento,
+    dataPreparacao: item.data_preparacao || null,
     totalPovoado: item.total_povoado,
     tamanho: item.tamanho,
     laboratorio: item.laboratorio,
@@ -6600,6 +6661,7 @@ async function carregarViveiros() {
         fca: Number(ciclo.fca),
         sobrevivencia: Number(ciclo.sobrevivencia),
         precoVenda: ciclo.preco_venda ? Number(ciclo.preco_venda) : 0,
+        dataPreparacao: ciclo.data_preparacao || null,
         observacoes: ciclo.observacoes,
       })),
 
