@@ -1979,7 +1979,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
   }
 
   // Protocolos automáticos atrelados à ração (ex.: potássio por kg)
-  await _aplicarProtocolosRacao(index, racao, data);
+  // Protegido: nunca pode quebrar o lançamento de ração nem o feedback.
+  try { await _aplicarProtocolosRacao(index, racao, data); } catch (e) { console.log("Protocolo ração:", e); }
 
   // Mostra mensagem de sucesso e avança a data para o dia seguinte (sequência)
   const [ay, am, ad] = data.split("-").map(Number);
