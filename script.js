@@ -5081,16 +5081,17 @@ function gerarRelatorioImpressao() {
   const VERSAO_SISTEMA = "2.6";
   const codRel = `${(ciclo.nomeViveiro || "V").replace(/\s+/g, "").toUpperCase().slice(0, 6)}-${String(hoje.getDate()).padStart(2, "0")}${String(hoje.getMonth() + 1).padStart(2, "0")}${String(hoje.getFullYear()).slice(-2)}`;
 
-  // Análise automática (sem metas de sobrevivência)
-  const insights = [];
+  // Conclusão técnica automática (texto corrido, sem metas)
   const _dc = Number(ciclo.diasCultivo) || 0;
-  if (_dc < 30) insights.push("Ciclo curto — a análise de desempenho fica limitada.");
-  if ((Number(ciclo.racaoConsumida) || 0) <= 0) insights.push("Não houve consumo de ração registrado no ciclo.");
-  if ((Number(ciclo.fca) || 0) > 0) insights.push(`FCA final registrado de ${fmt(ciclo.fca, 2)}.`);
-  if (custoTotal > 0 && producaoTotal > 0) insights.push(`Custo de produção de R$ ${fmt(custoPorKg, 2)} por kg produzido.`);
-  if (temPreco) insights.push(lucroLiquido >= 0 ? "Resultado financeiro positivo no período." : "Resultado financeiro negativo — revise custos e preço de venda.");
-  else insights.push("Informe o preço de venda para avaliar o resultado financeiro.");
-  if (!insights.length) insights.push("Ciclo dentro dos parâmetros registrados.");
+  const _fr = [];
+  _fr.push(`O ciclo teve ${_dc} ${_dc === 1 ? "dia" : "dias"} de cultivo, com sobrevivência estimada de ${fmt(ciclo.sobrevivencia, 1)}% e produção final de ${fmt(producaoTotal, 1)} kg (${fmt(ciclo.produtividade, 1)} kg/ha).`);
+  if ((Number(ciclo.racaoConsumida) || 0) > 0) _fr.push(`Foram consumidos ${fmt(ciclo.racaoConsumida, 1)} kg de ração, com FCA final de ${fmt(ciclo.fca, 2)}.`);
+  else _fr.push(`Não houve consumo de ração registrado no período.`);
+  if (custoTotal > 0) _fr.push(`O custo total foi de R$ ${fmt(custoTotal, 2)} (R$ ${fmt(custoPorKg, 2)} por kg produzido).`);
+  if (temPreco) _fr.push(lucroLiquido >= 0
+    ? `O resultado financeiro foi positivo, com lucro líquido de R$ ${fmt(lucroLiquido, 2)}.`
+    : `O resultado financeiro foi negativo, com prejuízo de R$ ${fmt(Math.abs(lucroLiquido), 2)}. Recomenda-se revisar as condições iniciais do cultivo, os manejos adotados e o preço de venda para melhorar o desempenho nos próximos ciclos.`);
+  const conclusaoTecnica = _fr.join(" ");
 
   // Cards do resumo executivo
   const _ico = {
@@ -5158,17 +5159,13 @@ function gerarRelatorioImpressao() {
   .assin { text-align: center; margin-top: 28px; } .assin .linha { border-top: 1px solid #9ca3af; width: 220px; margin: 0 auto 4px; } .assin small { color: #6b7280; }
   .rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; }
   .btn-print { background: #0b6b63; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 700; cursor: pointer; }
-  .exec-tag { display: inline-block; background: #0b6b63; color: #fff; font-size: 9px; font-weight: 800; letter-spacing: .05em; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px; text-transform: uppercase; }
-  .exec-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .exec-card { border: 1px solid #eef0f2; border-radius: 10px; padding: 10px 6px; text-align: center; }
-  .exec-card .eico { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #d1fae5; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
-  .exec-card .eico svg { width: 17px; height: 17px; stroke: #0b6b63; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .exec-card small { display: block; color: #6b7280; font-size: 8.5px; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px; }
-  .exec-card b { font-size: 15px; color: #111827; }
-  .exec-card .esub { display: block; font-size: 8.5px; color: #9ca3af; margin-top: 2px; }
-  .exec-card.amber b { color: #b45309; }
-  .exec-card.danger b, .exec-card.danger .esub { color: #dc2626; }
-  .exec-card.ok b, .exec-card.ok .esub { color: #0b6b63; }
+  .exec-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 6px; }
+  .exec-card { border: 1px solid #eef0f2; border-radius: 12px; padding: 16px 8px 14px; text-align: center; }
+  .exec-card .eico { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #cdeae3; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+  .exec-card .eico svg { width: 24px; height: 24px; stroke: #0b6b63; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .exec-card b { display: block; font-size: 20px; color: #0b6b63; }
+  .exec-card small { display: block; color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; margin-top: 4px; }
+  .exec-card.danger b { color: #dc2626; }
   .grupos3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .grupo { border: 1px solid #eef0f2; border-radius: 10px; padding: 10px 12px; }
   .grupo h5 { margin: 0 0 8px; font-size: 9.5px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; text-align: center; border-bottom: 1px solid #eef0f2; padding-bottom: 6px; }
@@ -5178,7 +5175,9 @@ function gerarRelatorioImpressao() {
   .insights ul { margin: 0; padding: 0; }
   .insights li { font-size: 10.5px; color: #374151; margin: 5px 0; list-style: none; padding-left: 16px; position: relative; }
   .insights li::before { content: "›"; position: absolute; left: 2px; color: #0b6b63; font-weight: 800; }
-  .rodape .cod { font-weight: 700; color: #6b7280; }
+  .cab-centro .viv { display: inline-block; background: #0b6b63; color: #fff; padding: 4px 18px; border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
+  .obs-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; page-break-inside: avoid; }
+  .conclusao { font-size: 11px; line-height: 1.6; color: #374151; margin: 0; text-align: justify; }
   @media print { .no-print { display: none !important; } body { padding: 0; } }
 </style></head>
 <body><div class="doc">
@@ -5189,11 +5188,8 @@ function gerarRelatorioImpressao() {
     <div class="cab-periodo"><small>PERÍODO DO CICLO</small><b>${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)}</b>${ciclo.diasCultivo} dias de cultivo</div>
   </div>
 
-  <div class="sec" style="border:1px solid #eef0f2;border-radius:10px;padding:12px;margin-bottom:6px">
-    <span class="exec-tag">Resumo executivo</span>
-    <div class="exec-cards">
-      ${execCards.map(c => `<div class="exec-card ${c.cls}"><div class="eico">${c.ico}</div><small>${c.lbl}</small><b>${c.val}</b>${c.sub ? `<span class="esub">${c.sub}</span>` : ""}</div>`).join("")}
-    </div>
+  <div class="exec-cards">
+    ${execCards.map(c => `<div class="exec-card ${c.cls}"><div class="eico">${c.ico}</div><b>${c.val}</b><small>${c.lbl}</small></div>`).join("")}
   </div>
 
   <h2 class="sec">1. Informações gerais</h2>
@@ -5237,10 +5233,7 @@ function gerarRelatorioImpressao() {
         <div class="chart-box"><h4>FCA ao longo do cultivo</h4><canvas id="cFca"></canvas></div>
         <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
       </div>
-      <div class="insights" style="margin-top:10px">
-        <h4 style="margin:0 0 8px;font-size:11px;color:#0b6b63">Análise automática do ciclo</h4>
-        <ul>${insights.map(t => `<li>${t}</li>`).join("")}</ul>
-      </div>
+      <p style="font-size:9.5px;color:#9ca3af;margin:8px 2px 0">Gráficos gerados com base nos dados registrados do ciclo.</p>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">4. Distribuição dos custos</h2>
@@ -5265,13 +5258,22 @@ function gerarRelatorioImpressao() {
   <tbody>${linhasDespesca || `<tr><td colspan="5" style="text-align:center;color:#9ca3af">Sem despescas.</td></tr>`}
   <tr style="font-weight:800;background:#f8fafc"><td colspan="2">TOTAL</td><td class="num">${fmt(totDespQtd,1)}</td><td></td><td class="num">${temPreco ? "R$ "+fmt(totDespQtd*precoKg,2) : "-"}</td></tr></tbody></table>
 
-  <h2 class="sec">8. Observações</h2>
-  <div class="obs-box">${(ciclo.observacoes || "").trim() || "—"}</div>
-  <div class="assin"><div class="linha"></div><small>Responsável técnico</small><br><small>${dataEmissao}</small></div>
+  <div class="obs-duas">
+    <div>
+      <h2 class="sec" style="margin-top:0">8. Observações</h2>
+      <div class="obs-box">${(ciclo.observacoes || "").trim() || "—"}</div>
+    </div>
+    <div>
+      <h2 class="sec" style="margin-top:0">Conclusão técnica</h2>
+      <p class="conclusao">${conclusaoTecnica}</p>
+    </div>
+  </div>
+
+  <div class="assin"><div class="linha"></div><small>Responsável técnico</small></div>
 
   <div class="rodape">
-    <span>Relatório gerado automaticamente pelo WA Aqua Gestão.<br><span class="cod">Código: ${codRel}</span></span>
-    <span style="text-align:right">Emissão: ${dataEmissao} às ${horaEmissao}<br>Versão do sistema: ${VERSAO_SISTEMA}</span>
+    <span>Relatório gerado automaticamente pelo WA Aqua Gestão.</span>
+    <span style="text-align:right">Emissão: ${dataEmissao} às ${horaEmissao}</span>
   </div>
 
   <div class="no-print" style="text-align:center;margin-top:18px"><button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
