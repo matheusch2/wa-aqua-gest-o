@@ -1030,7 +1030,7 @@ function _cadModo(modo) {
 }
 
 async function salvarViveiro() {
-  const nome = document.getElementById("nomeViveiro").value;
+  const nome = document.getElementById("nomeViveiro").value.trim();
   const modo = document.getElementById("cadModo")?.value || "cultivo";
   const tamanho = document.getElementById("tamanhoViveiro").value;
   const erroViveiro = document.getElementById("msg-viveiro-erro");
@@ -1040,6 +1040,13 @@ async function salvarViveiro() {
   if (erroViveiro) erroViveiro.style.display = "none";
 
   if (!nome || !tamanho) { mostrarErroViveiro("Informe o nome e o tamanho do viveiro."); return; }
+
+  // Trava: não permite dois viveiros com o mesmo nome
+  const nomeNorm = nome.trim().toLowerCase();
+  if (viveiros.some(v => (v.nome || "").trim().toLowerCase() === nomeNorm)) {
+    mostrarErroViveiro(`Já existe um viveiro chamado "${nome.trim()}". Use outro nome.`);
+    return;
+  }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -1074,24 +1081,11 @@ async function salvarViveiro() {
     return;
   }
 
-  const viveiroLocal = {
-    id: viveiroSalvo[0].id,
-    nome: nome,
-    dataPovoamento: data,
-    totalPovoado: total,
-    tamanho: tamanho,
-    laboratorio: laboratorio,
-    racoes: [],
-    biometrias: [],
-    despescas: [],
-    ciclosFinalizados: [],
-  };
-
   // Recarrega do banco para garantir estado sincronizado
   await carregarViveiros();
 
   // Vai pra lista de viveiros com mensagem de sucesso
-  mostrarListaViveiros(0, "", `${nome} cadastrado com sucesso!`);
+  mostrarListaViveiros(0, "", `${nome.trim()} cadastrado com sucesso!`);
 }
 
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
