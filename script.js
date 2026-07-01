@@ -5076,6 +5076,38 @@ function gerarRelatorioImpressao() {
       <span class="leg-nome">${d.nome}<br><b>R$ ${fmt(d.total, 2)}</b></span>
       <span class="leg-pct">${custoTotal > 0 ? fmt(d.total / custoTotal * 100, 1) : "0"}%</span></div>`).join("");
 
+  // Rodapé / identificação
+  const horaEmissao = `${String(hoje.getHours()).padStart(2, "0")}:${String(hoje.getMinutes()).padStart(2, "0")}`;
+  const VERSAO_SISTEMA = "2.6";
+  const codRel = `${(ciclo.nomeViveiro || "V").replace(/\s+/g, "").toUpperCase().slice(0, 6)}-${String(hoje.getDate()).padStart(2, "0")}${String(hoje.getMonth() + 1).padStart(2, "0")}${String(hoje.getFullYear()).slice(-2)}`;
+
+  // Análise automática (sem metas de sobrevivência)
+  const insights = [];
+  const _dc = Number(ciclo.diasCultivo) || 0;
+  if (_dc < 30) insights.push("Ciclo curto — a análise de desempenho fica limitada.");
+  if ((Number(ciclo.racaoConsumida) || 0) <= 0) insights.push("Não houve consumo de ração registrado no ciclo.");
+  if ((Number(ciclo.fca) || 0) > 0) insights.push(`FCA final registrado de ${fmt(ciclo.fca, 2)}.`);
+  if (custoTotal > 0 && producaoTotal > 0) insights.push(`Custo de produção de R$ ${fmt(custoPorKg, 2)} por kg produzido.`);
+  if (temPreco) insights.push(lucroLiquido >= 0 ? "Resultado financeiro positivo no período." : "Resultado financeiro negativo — revise custos e preço de venda.");
+  else insights.push("Informe o preço de venda para avaliar o resultado financeiro.");
+  if (!insights.length) insights.push("Ciclo dentro dos parâmetros registrados.");
+
+  // Cards do resumo executivo
+  const _ico = {
+    prod: `<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    sobr: `<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>`,
+    dollar: `<svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+    wallet: `<svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>`,
+    trend: `<svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+  };
+  const execCards = [
+    { ico: _ico.prod, lbl: "Produção final", val: fmt(producaoTotal, 1) + " kg", sub: fmt(ciclo.produtividade, 1) + " kg/ha", cls: "" },
+    { ico: _ico.sobr, lbl: "Sobrevivência", val: fmt(ciclo.sobrevivencia, 1) + " %", sub: "", cls: "" },
+    { ico: _ico.dollar, lbl: "Receita bruta", val: rs(receitaBruta), sub: "", cls: "" },
+    { ico: _ico.wallet, lbl: "Custo total", val: "R$ " + fmt(custoTotal, 2), sub: "", cls: "amber" },
+    { ico: _ico.trend, lbl: "Lucro líquido", val: rs(lucroLiquido), sub: (temPreco && custoTotal > 0) ? fmt(roi, 1) + "% ROI" : "", cls: temPreco ? (lucroLiquido < 0 ? "danger" : "ok") : "" },
+  ];
+
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>Relatório Final do Ciclo — ${ciclo.nomeViveiro}</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
@@ -5126,6 +5158,27 @@ function gerarRelatorioImpressao() {
   .assin { text-align: center; margin-top: 28px; } .assin .linha { border-top: 1px solid #9ca3af; width: 220px; margin: 0 auto 4px; } .assin small { color: #6b7280; }
   .rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; }
   .btn-print { background: #0b6b63; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .exec-tag { display: inline-block; background: #0b6b63; color: #fff; font-size: 9px; font-weight: 800; letter-spacing: .05em; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px; text-transform: uppercase; }
+  .exec-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .exec-card { border: 1px solid #eef0f2; border-radius: 10px; padding: 10px 6px; text-align: center; }
+  .exec-card .eico { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #d1fae5; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
+  .exec-card .eico svg { width: 17px; height: 17px; stroke: #0b6b63; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .exec-card small { display: block; color: #6b7280; font-size: 8.5px; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px; }
+  .exec-card b { font-size: 15px; color: #111827; }
+  .exec-card .esub { display: block; font-size: 8.5px; color: #9ca3af; margin-top: 2px; }
+  .exec-card.amber b { color: #b45309; }
+  .exec-card.danger b, .exec-card.danger .esub { color: #dc2626; }
+  .exec-card.ok b, .exec-card.ok .esub { color: #0b6b63; }
+  .grupos3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grupo { border: 1px solid #eef0f2; border-radius: 10px; padding: 10px 12px; }
+  .grupo h5 { margin: 0 0 8px; font-size: 9.5px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; text-align: center; border-bottom: 1px solid #eef0f2; padding-bottom: 6px; }
+  .grupo-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 11px; color: #374151; }
+  .grupo-row b { font-weight: 800; color: #111827; }
+  .insights { border: 1px solid #eef0f2; border-radius: 10px; padding: 12px 14px; }
+  .insights ul { margin: 0; padding: 0; }
+  .insights li { font-size: 10.5px; color: #374151; margin: 5px 0; list-style: none; padding-left: 16px; position: relative; }
+  .insights li::before { content: "›"; position: absolute; left: 2px; color: #0b6b63; font-weight: 800; }
+  .rodape .cod { font-weight: 700; color: #6b7280; }
   @media print { .no-print { display: none !important; } body { padding: 0; } }
 </style></head>
 <body><div class="doc">
@@ -5134,6 +5187,13 @@ function gerarRelatorioImpressao() {
     <div class="cab-marca"><div class="cab-logo">WA<br>AQUA</div><div><b>WA Aqua Gestão</b><br><small>TECNOLOGIA PARA AQUICULTURA</small></div></div>
     <div class="cab-centro"><h1>RELATÓRIO FINAL DO CICLO</h1><span class="viv">${(ciclo.nomeViveiro || "").toUpperCase()}</span></div>
     <div class="cab-periodo"><small>PERÍODO DO CICLO</small><b>${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)}</b>${ciclo.diasCultivo} dias de cultivo</div>
+  </div>
+
+  <div class="sec" style="border:1px solid #eef0f2;border-radius:10px;padding:12px;margin-bottom:6px">
+    <span class="exec-tag">Resumo executivo</span>
+    <div class="exec-cards">
+      ${execCards.map(c => `<div class="exec-card ${c.cls}"><div class="eico">${c.ico}</div><small>${c.lbl}</small><b>${c.val}</b>${c.sub ? `<span class="esub">${c.sub}</span>` : ""}</div>`).join("")}
+    </div>
   </div>
 
   <h2 class="sec">1. Informações gerais</h2>
@@ -5147,7 +5207,26 @@ function gerarRelatorioImpressao() {
   </div>
 
   <h2 class="sec">2. Indicadores finais do ciclo</h2>
-  <div class="grid ind5">${indicadores.map(i => `<div class="cel"><small>${i.lbl}</small><b>${i.val}</b></div>`).join("")}</div>
+  <div class="grupos3">
+    <div class="grupo">
+      <h5>Produção</h5>
+      <div class="grupo-row"><span>Peso médio final</span><b>${fmt(ciclo.pesoFinal, 1)} g</b></div>
+      <div class="grupo-row"><span>Biomassa produzida</span><b>${fmt(producaoTotal, 1)} kg</b></div>
+      <div class="grupo-row"><span>Produtividade</span><b>${fmt(ciclo.produtividade, 1)} kg/ha</b></div>
+    </div>
+    <div class="grupo">
+      <h5>Desempenho</h5>
+      <div class="grupo-row"><span>FCA final</span><b>${fmt(ciclo.fca, 2)}</b></div>
+      <div class="grupo-row"><span>Sobrevivência</span><b>${fmt(ciclo.sobrevivencia, 1)} %</b></div>
+      <div class="grupo-row"><span>Ração consumida</span><b>${fmt(ciclo.racaoConsumida, 1)} kg</b></div>
+    </div>
+    <div class="grupo">
+      <h5>Financeiro</h5>
+      <div class="grupo-row"><span>Custo total</span><b>R$ ${fmt(custoTotal, 2)}</b></div>
+      <div class="grupo-row"><span>Custo por kg</span><b>R$ ${fmt(custoPorKg, 2)}</b></div>
+      <div class="grupo-row"><span>Lucro líquido</span><b>${rs(lucroLiquido)}</b></div>
+    </div>
+  </div>
 
   <div class="duas" style="margin-top:18px">
     <div>
@@ -5157,6 +5236,10 @@ function gerarRelatorioImpressao() {
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
         <div class="chart-box"><h4>FCA ao longo do cultivo</h4><canvas id="cFca"></canvas></div>
         <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
+      </div>
+      <div class="insights" style="margin-top:10px">
+        <h4 style="margin:0 0 8px;font-size:11px;color:#0b6b63">Análise automática do ciclo</h4>
+        <ul>${insights.map(t => `<li>${t}</li>`).join("")}</ul>
       </div>
     </div>
     <div>
@@ -5187,8 +5270,8 @@ function gerarRelatorioImpressao() {
   <div class="assin"><div class="linha"></div><small>Responsável técnico</small><br><small>${dataEmissao}</small></div>
 
   <div class="rodape">
-    <span>Relatório gerado automaticamente pelo WA Aqua Gestão. As informações baseiam-se nos dados registrados no sistema.</span>
-    <span>Emissão: ${dataEmissao}</span>
+    <span>Relatório gerado automaticamente pelo WA Aqua Gestão.<br><span class="cod">Código: ${codRel}</span></span>
+    <span style="text-align:right">Emissão: ${dataEmissao} às ${horaEmissao}<br>Versão do sistema: ${VERSAO_SISTEMA}</span>
   </div>
 
   <div class="no-print" style="text-align:center;margin-top:18px"><button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
