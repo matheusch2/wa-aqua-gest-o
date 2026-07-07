@@ -4561,6 +4561,59 @@ body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
 .cfg-item-ico-amber svg { stroke: #d97706 !important; }
 .cfg-item-ico-roxo { background: #f5f3ff !important; }
 .cfg-item-ico-roxo svg { stroke: #7c3aed !important; }
+.cfg-item-ico-verde { background: #ecfdf5 !important; }
+.cfg-item-ico-verde svg { stroke: #059669 !important; }
+
+/* ── Custos fixos mensais ── */
+.cf-explica {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: #f0fdfa; border: 1px solid #99f6e4;
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+    font-size: 12.5px; color: #0f766e; line-height: 1.45;
+}
+.cf-explica svg { width: 18px; height: 18px; flex-shrink: 0; stroke: #0d9488; fill: none; stroke-width: 2; margin-top: 1px; }
+.cf-explica strong { color: #0f766e; }
+
+.cf-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.cf-resumo-card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 12px 10px; text-align: center;
+}
+.cf-resumo-card small { display: block; font-size: 10.5px; color: #9ca3af; margin-bottom: 4px; }
+.cf-resumo-card strong { font-size: 15px; color: #111827; font-weight: 700; }
+
+.cf-lista { display: flex; flex-direction: column; gap: 10px; }
+.cf-card {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+    padding: 12px 14px;
+}
+.cf-card-off { opacity: 0.55; }
+.cf-card-ico {
+    width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
+    background: #ecfdf5; display: flex; align-items: center; justify-content: center;
+}
+.cf-card-ico svg { width: 20px; height: 20px; stroke: #059669; fill: none; stroke-width: 2; }
+.cf-card-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cf-card-nome { font-size: 14px; font-weight: 600; color: #111827; }
+.cf-card-cat { font-size: 11.5px; color: #9ca3af; }
+.cf-card-valor { font-size: 15px; font-weight: 700; color: #059669; white-space: nowrap; }
+.cf-card-valor small { font-size: 10.5px; font-weight: 500; color: #9ca3af; }
+.cf-card-acoes { display: flex; gap: 6px; }
+.cf-btn-acao {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
+    background: #f9fafb; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+}
+.cf-btn-acao svg { width: 16px; height: 16px; stroke: #6b7280; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cf-btn-acao:hover { background: #f3f4f6; }
+.cf-btn-excluir svg { stroke: #dc2626; }
+.cf-confirmar {
+    flex-basis: 100%; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px; padding-top: 10px; border-top: 1px dashed #e5e7eb;
+    font-size: 13px; color: #374151;
+}
+.cf-confirmar span { flex: 1; }
 
 /* Topo com ação à direita */
 .fin-topo-acoes {
@@ -4965,6 +5018,17 @@ body.tema-escuro .fin-modo-toggle { background: #374151; }
 body.tema-escuro .fin-modo-btn.ativo { background: #1f2937; color: #34d399; }
 body.tema-escuro .fin-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .fin-card strong { color: #34d399; }
+body.tema-escuro .cf-explica { background: #052e2b; border-color: #0f4d47; color: #5eead4; }
+body.tema-escuro .cf-explica strong { color: #5eead4; }
+body.tema-escuro .cf-resumo-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .cf-resumo-card strong { color: #f3f4f6; }
+body.tema-escuro .cf-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .cf-card-ico { background: #052e2b; }
+body.tema-escuro .cf-card-ico svg { stroke: #34d399; }
+body.tema-escuro .cf-card-nome { color: #f3f4f6; }
+body.tema-escuro .cf-card-valor { color: #34d399; }
+body.tema-escuro .cf-btn-acao { background: #374151; border-color: #4b5563; }
+body.tema-escuro .cf-btn-acao svg { stroke: #d1d5db; }
 body.tema-escuro .fin-card-top span { color: #9ca3af; }
 body.tema-escuro .fin-card-top svg { stroke: #34d399; }
 body.tema-escuro .fin-lista-head span { color: #f3f4f6; }
