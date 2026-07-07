@@ -3841,7 +3841,7 @@ function abrirCustosFixos() {
   const ativos = custosFixos.filter(c => c.ativo);
   const totalMensal = _custoFixoMensalTotal();
   const nViveirosAtivos = _viveirosAtivosNaData(hoje, hoje);
-  const custoDiaPorViveiro = nViveirosAtivos > 0 ? _custoFixoDiaTotal() / nViveirosAtivos : 0;
+  const custoDiaPorViveiro = nViveirosAtivos > 0 ? _custoFixoDiaTotalNaData(hoje) / nViveirosAtivos : 0;
 
   const cards = custosFixos.length === 0
     ? `<p class="sobrevivencia-texto" style="margin:18px 0">Nenhum custo fixo cadastrado ainda.<br><small>Cadastre mão de obra, energia e outros custos mensais para rateá-los automaticamente entre os viveiros.</small></p>`
@@ -3850,7 +3850,7 @@ function abrirCustosFixos() {
           <div class="cf-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div class="cf-card-info">
             <span class="cf-card-nome">${c.nome}</span>
-            <span class="cf-card-cat">${_custoFixoCatLabel(c.categoria)}${c.ativo ? "" : " · inativo"}</span>
+            <span class="cf-card-cat">${_custoFixoCatLabel(c.categoria)}${c.dataInicio ? " · desde " + formatarData(c.dataInicio) : ""}${c.ativo ? "" : " · inativo"}</span>
           </div>
           <div class="cf-card-valor">R$ ${formatarNumeroBR(c.valorMensal, 2)}<small>/mês</small></div>
           <div class="cf-card-acoes">
@@ -3929,7 +3929,11 @@ function abrirFormCustoFixo(index) {
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Valor mensal (R$)</label></div>
         <input type="text" inputmode="decimal" id="cfValor" placeholder="Ex: 1.500,00" value="${editando && c.valorMensal ? formatarNumeroBR(c.valorMensal, 2) : ""}" onblur="formatarMoedaBlur(this)">
       </div>
-      <p class="rc-print-dica" style="margin:2px 0 10px">O valor é dividido por 30 (custo/dia) e rateado entre os viveiros ativos em cada data.</p>
+      <div class="campo-form">
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>Válido a partir de</label></div>
+        <input type="date" id="cfDataInicio" value="${editando ? (c.dataInicio || "") : new Date().toISOString().split("T")[0]}">
+      </div>
+      <p class="rc-print-dica" style="margin:2px 0 10px">O custo é rateado a partir dessa data. Coloque uma data passada para incluí-lo em cultivos que já estão em andamento.</p>
       <div id="msg-cf-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" onclick="salvarCustoFixo(${editando ? index : "null"})">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -3945,6 +3949,7 @@ async function salvarCustoFixo(index) {
   const nome = (document.getElementById("cfNome").value || "").trim();
   const categoria = document.getElementById("cfCategoria").value;
   const valorMensal = parseMoedaBR(document.getElementById("cfValor").value || "0");
+  const dataInicio = document.getElementById("cfDataInicio").value || null;
   const erro = document.getElementById("msg-cf-erro");
   const mostrarErro = (m) => { if (erro) { erro.textContent = m; erro.style.display = "block"; } };
   if (erro) erro.style.display = "none";
@@ -3961,17 +3966,17 @@ async function salvarCustoFixo(index) {
   if (editando) {
     const c = custosFixos[index];
     const { error } = await supabaseClient.from("custos_fixos")
-      .update({ nome, categoria, valor_mensal: valorMensal })
+      .update({ nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio })
       .eq("id", c.id).eq("user_id", usuario.id);
     if (error) { console.log(error); mostrarErro("Erro ao salvar: " + error.message); if (botao) { botao.disabled = false; botao.style.opacity = ""; } return; }
-    c.nome = nome; c.categoria = categoria; c.valorMensal = valorMensal;
+    c.nome = nome; c.categoria = categoria; c.valorMensal = valorMensal; c.dataInicio = dataInicio;
     _toastSucesso("Custo fixo atualizado.");
   } else {
     const { data, error } = await supabaseClient.from("custos_fixos")
-      .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, ativo: true }])
+      .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio, ativo: true }])
       .select();
     if (error) { console.log(error); mostrarErro("Erro ao salvar (rode o SQL da tabela custos_fixos): " + error.message); if (botao) { botao.disabled = false; botao.style.opacity = ""; } return; }
-    custosFixos.push({ id: data[0].id, nome, categoria, valorMensal, ativo: true });
+    custosFixos.push({ id: data[0].id, nome, categoria, valorMensal, dataInicio, ativo: true });
     _toastSucesso("Custo fixo cadastrado.");
   }
   abrirCustosFixos();
@@ -5546,8 +5551,16 @@ function _maAddDias(s, n) {
 function _custoFixoMensalTotal() {
   return custosFixos.reduce((s, c) => s + (c.ativo === false ? 0 : (Number(c.valorMensal) || 0)), 0);
 }
-function _custoFixoDiaTotal() {
-  return _custoFixoMensalTotal() / 30;
+// Soma mensal dos custos que já valiam numa data (respeita a data de início de cada um)
+function _custoFixoMensalNaData(ymd) {
+  return custosFixos.reduce((s, c) => {
+    if (c.ativo === false) return s;
+    if (c.dataInicio && ymd && c.dataInicio > ymd) return s; // ainda não começou nessa data
+    return s + (Number(c.valorMensal) || 0);
+  }, 0);
+}
+function _custoFixoDiaTotalNaData(ymd) {
+  return _custoFixoMensalNaData(ymd) / 30;
 }
 
 // Quantos viveiros estavam ativos (preparação ou cultivo) numa data (YYYY-MM-DD)
@@ -5569,13 +5582,16 @@ function _viveirosAtivosNaData(ymd, hojeYmd) {
 
 // Custo fixo rateado acumulado para um viveiro no período [iniYmd, fimYmd] (inclusive)
 function _custoFixoRateado(iniYmd, fimYmd) {
-  const diaTotal = _custoFixoDiaTotal();
-  if (!iniYmd || !fimYmd || diaTotal <= 0 || iniYmd > fimYmd) return 0;
+  if (!iniYmd || !fimYmd || iniYmd > fimYmd) return 0;
+  if (!custosFixos.some(c => c.ativo !== false)) return 0;
   const hoje = new Date().toISOString().split("T")[0];
   let total = 0, cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
-    const n = _viveirosAtivosNaData(cur, hoje);
-    if (n > 0) total += diaTotal / n;
+    const diaTotal = _custoFixoDiaTotalNaData(cur);
+    if (diaTotal > 0) {
+      const n = _viveirosAtivosNaData(cur, hoje);
+      if (n > 0) total += diaTotal / n;
+    }
     cur = _maAddDias(cur, 1);
     guard++;
   }
@@ -6950,6 +6966,7 @@ async function carregarViveiros() {
     nome: c.nome,
     categoria: c.categoria || "outro",
     valorMensal: Number(c.valor_mensal),
+    dataInicio: c.data_inicio || null,
     ativo: c.ativo !== false,
   }));
 
