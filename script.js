@@ -1252,6 +1252,14 @@ function abrirViveiro(index) {
     : null;
   const pesoUltimaBio = biosSorted.length > 0 ? biosSorted[biosSorted.length - 1].gramatura : null;
 
+  // Despescas parciais já realizadas (descontam da biomassa no viveiro)
+  const _despescas = viveiro.despescas || [];
+  const despKgTotal = _despescas.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+  const despQtdTotal = _despescas.reduce((s, d) => {
+    const pm = Number(d.pesoMedio) || 0;
+    return s + (pm > 0 ? (Number(d.quantidadeKg) || 0) / (pm / 1000) : 0);
+  }, 0);
+
   let sobrevivenciaEstimada = "--";
   let fciEstimado = "--";
   let biomassaAtualStr = "--";
@@ -1261,12 +1269,20 @@ function abrirViveiro(index) {
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
     if (res && res.biomassa > 0) {
-      sobrevivenciaEstimada = formatarNumeroBR(res.sobrevivencia, 1) + " %";
+      // res.biomassa = produção total sustentada; desconta o que já saiu na despesca parcial
+      const biomassaAtual = Math.max(0, res.biomassa - despKgTotal);
+      const remanescentes = pesoUltimaBio > 0 ? biomassaAtual / (pesoUltimaBio / 1000) : 0;
+      // Sobrevivência conta remanescentes + já despescados (despesca não é mortalidade)
+      const sobreviventes = remanescentes + despQtdTotal;
+      const sobrevPct = populacaoNum > 0 ? Math.min(100, sobreviventes / populacaoNum * 100) : 0;
+
+      sobrevivenciaEstimada = formatarNumeroBR(sobrevPct, 1) + " %";
       if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / res.biomassa, 2);
-      biomassaAtualStr = formatarNumeroBR(res.biomassa, 0) + " kg";
+      biomassaAtualStr = formatarNumeroBR(biomassaAtual, 0) + " kg";
       if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / res.biomassa, 2);
       const pesoDespesca = Math.max(PESO_ALVO_DESPESCA, pesoUltimaBio);
-      biomassaDespescaStr = formatarNumeroBR(res.quantidade * pesoDespesca / 1000, 0) + " kg";
+      // Projeção final = remanescentes crescendo até a meta + o que já foi despescado
+      biomassaDespescaStr = formatarNumeroBR(remanescentes * pesoDespesca / 1000 + despKgTotal, 0) + " kg";
     }
   }
 
@@ -2507,11 +2523,20 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const populacaoNum = viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")) : null;
   let biomasaAlvoStr = null;
   let estimatedPopulation = null;
+  // Despescas parciais já realizadas
+  const _despCurva = viveiro.despescas || [];
+  const _despKg = _despCurva.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+  const _despQtd = _despCurva.reduce((s, d) => {
+    const pm = Number(d.pesoMedio) || 0;
+    return s + (pm > 0 ? (Number(d.quantidadeKg) || 0) / (pm / 1000) : 0);
+  }, 0);
   if (populacaoNum && ultimaRacaoNaoZero && pesoAtual > 0) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
     if (res && res.quantidade > 0) {
-      estimatedPopulation = res.quantidade;
-      biomasaAlvoStr = formatarNumeroBR(estimatedPopulation * alvo / 1000, 0) + " kg";
+      // desconta os camarões já despescados (parcial)
+      estimatedPopulation = Math.max(0, res.quantidade - _despQtd);
+      // projeção na despesca = remanescentes na meta + o que já saiu
+      biomasaAlvoStr = formatarNumeroBR(estimatedPopulation * alvo / 1000 + _despKg, 0) + " kg";
     }
   }
 
