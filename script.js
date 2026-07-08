@@ -1256,7 +1256,9 @@ function abrirViveiro(index) {
     : null;
   const pesoUltimaBio = biosSorted.length > 0 ? biosSorted[biosSorted.length - 1].gramatura : null;
 
-  // Despescas parciais já realizadas (descontam da biomassa no viveiro)
+  // Despescas parciais já realizadas — a ração atual já reflete só o que ficou,
+  // então a despesca NÃO é descontada da biomassa; ela apenas volta a contar na
+  // sobrevivência (quem saiu estava vivo) e na projeção final.
   const _despescas = viveiro.despescas || [];
   const despKgTotal = _despescas.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
   const despQtdTotal = _despescas.reduce((s, d) => {
@@ -1273,9 +1275,10 @@ function abrirViveiro(index) {
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
     if (res && res.biomassa > 0) {
-      // res.biomassa = produção total sustentada; desconta o que já saiu na despesca parcial
-      const biomassaAtual = Math.max(0, res.biomassa - despKgTotal);
-      const remanescentes = pesoUltimaBio > 0 ? biomassaAtual / (pesoUltimaBio / 1000) : 0;
+      // res.biomassa = biomassa atual no viveiro, estimada pela ração que os
+      // camarões remanescentes estão comendo AGORA (já é pós-despesca).
+      const biomassaAtual = res.biomassa;
+      const remanescentes = res.quantidade; // = biomassaAtual / (peso/1000)
       // Sobrevivência conta remanescentes + já despescados (despesca não é mortalidade)
       const sobreviventes = remanescentes + despQtdTotal;
       const sobrevPct = populacaoNum > 0 ? Math.min(100, sobreviventes / populacaoNum * 100) : 0;
@@ -2537,8 +2540,9 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   if (populacaoNum && ultimaRacaoNaoZero && pesoAtual > 0) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
     if (res && res.quantidade > 0) {
-      // desconta os camarões já despescados (parcial)
-      estimatedPopulation = Math.max(0, res.quantidade - _despQtd);
+      // A ração atual já reflete só os camarões remanescentes (pós-despesca),
+      // então res.quantidade JÁ é a população que ficou — não se desconta a despesca.
+      estimatedPopulation = res.quantidade;
       // projeção na despesca = remanescentes na meta + o que já saiu
       biomasaAlvoStr = formatarNumeroBR(estimatedPopulation * alvo / 1000 + _despKg, 0) + " kg";
     }
