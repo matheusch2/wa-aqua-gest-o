@@ -4037,6 +4037,8 @@ function abrirBoletos(filtro) {
   });
 
   const qtdPagos = todos.filter(x => x.b.pago).length;
+  const totalFiltrado = filtrados.reduce((s, x) => s + (x.b.valor || 0), 0);
+  const labelFiltro = { todos: "geral", vencendo: "vencendo", vencidos: "vencidos", pagos: "pagos" }[_boletosFiltro] || "geral";
 
   const rows = filtrados.map(({ b, i, st }) => {
     const [ano, mes, dia] = b.dataCompra.split("-").map(Number);
@@ -4080,7 +4082,10 @@ function abrirBoletos(filtro) {
   area.innerHTML = `
     <div class="fin-topo-acoes">
       <h3 class="titulo-secao" style="margin:0">Boletos</h3>
-      <button class="fin-novo-btn" onclick="abrirFormBoleto()">+ Novo boleto</button>
+      <div class="bt-topo-btns">
+        <button class="fin-novo-btn fin-novo-btn-sec" onclick="imprimirBoletos()">🖨️ Imprimir</button>
+        <button class="fin-novo-btn" onclick="abrirFormBoleto()">+ Novo boleto</button>
+      </div>
     </div>
     <div class="cfg-wrap">
       <div class="bt-chips">
@@ -4116,6 +4121,10 @@ function abrirBoletos(filtro) {
         ${filtrados.length ? rows : `<div class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</div>`}
         <p id="bt-busca-vazio" class="bt-empty" style="display:none">Nenhum boleto encontrado.</p>
       </div>
+      ${filtrados.length ? `<div class="bt-total-bar">
+        <span>Total ${labelFiltro} <small>(${filtrados.length} boleto${filtrados.length > 1 ? "s" : ""})</small></span>
+        <strong>R$ ${formatarNumeroBR(totalFiltrado, 2)}</strong>
+      </div>` : ""}
       <button class="botao-voltar-form" style="margin-top:6px" onclick="abrirMenuFinanceiro()">← Voltar</button>
     </div>
   `;
@@ -4142,6 +4151,63 @@ function _toggleMenuBoleto(index) {
   const aberto = menu.style.display !== "none";
   document.querySelectorAll(".bt-menu-drop").forEach(el => el.style.display = "none");
   if (!aberto) menu.style.display = "block";
+}
+
+function imprimirBoletos() {
+  const todos = boletos.map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }));
+  const naoPagos = todos.filter(x => !x.b.pago);
+
+  let filtrados, titulo;
+  if (_boletosFiltro === "vencendo") { filtrados = naoPagos.filter(x => x.st.tipo === "proximo" || x.st.tipo === "hoje"); titulo = "Boletos a vencer"; }
+  else if (_boletosFiltro === "vencidos") { filtrados = naoPagos.filter(x => x.st.tipo === "vencido"); titulo = "Boletos vencidos"; }
+  else if (_boletosFiltro === "pagos") { filtrados = todos.filter(x => x.b.pago); titulo = "Boletos pagos"; }
+  else { filtrados = [...todos].sort((x, y) => (!!x.b.pago !== !!y.b.pago ? (x.b.pago ? 1 : -1) : x.st.diff - y.st.diff)); titulo = "Todos os boletos"; }
+
+  if (!filtrados.length) { _toastErro("Nenhum boleto para imprimir nessa categoria."); return; }
+
+  const total = filtrados.reduce((s, x) => s + (x.b.valor || 0), 0);
+  const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const linhas = filtrados.map(({ b, st }) => {
+    const situacao = b.pago ? "Pago" : st.label;
+    const valor = b.valor ? "R$ " + formatarNumeroBR(b.valor, 2) : "-";
+    return `<tr>
+      <td>${b.nome}</td>
+      <td>${b.fornecedor || "-"}</td>
+      <td style="text-align:center">${st.dataFmt}</td>
+      <td style="text-align:center">${situacao}</td>
+      <td style="text-align:right;font-weight:600">${valor}</td>
+    </tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:24px;color:#222;max-width:760px;margin:0 auto}
+    h1{font-size:20px;color:#066b63;margin:0 0 4px;text-align:center}
+    .sub{text-align:center;color:#666;font-size:12px;margin:0 0 20px}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    th{background:#066b63;color:#fff;padding:9px 10px;text-align:left}
+    td{padding:8px 10px;border-bottom:1px solid #e5e7eb}
+    tr:nth-child(even) td{background:#f6fafa}
+    .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63;background:#fff}
+    @media print{body{padding:0}}
+  </style></head><body>
+  <h1>${titulo}</h1>
+  <p class="sub">Emitido em ${hoje} · ${filtrados.length} boleto${filtrados.length > 1 ? "s" : ""}</p>
+  <table>
+    <thead><tr><th>Nome</th><th>Fornecedor</th><th style="text-align:center">Vencimento</th><th style="text-align:center">Situação</th><th style="text-align:right">Valor</th></tr></thead>
+    <tbody>
+      ${linhas}
+      <tr class="total-row"><td colspan="4">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>
+    </tbody>
+  </table>
+  </body></html>`;
+
+  const janela = window.open("", "_blank");
+  if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
+  janela.document.write(html);
+  janela.document.close();
+  janela.onload = () => { janela.print(); };
 }
 
 function _fecharMenusBoleto() {
