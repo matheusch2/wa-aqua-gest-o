@@ -7,6 +7,7 @@ let boletos = [];
 let custosFixos = [];
 let _financeiroModo = "detalhado";
 let _boletosFiltro = "todos";
+let _boletosFornecedor = "";
 let _finOrdenacao = "data";
 let _finPagina = 0;
 let _finPeriodoIni = "";
@@ -4036,6 +4037,13 @@ function abrirBoletos(filtro) {
     return x.st.diff - y.st.diff;
   });
 
+  // Lista de fornecedores para o seletor
+  const fornecedores = [...new Set(boletos.map(b => (b.fornecedor || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Se o fornecedor selecionado não existe mais, limpa o filtro
+  if (_boletosFornecedor && !fornecedores.includes(_boletosFornecedor)) _boletosFornecedor = "";
+  // Filtro por fornecedor (opcional)
+  if (_boletosFornecedor) filtrados = filtrados.filter(x => (x.b.fornecedor || "").trim() === _boletosFornecedor);
+
   const qtdPagos = todos.filter(x => x.b.pago).length;
   const totalFiltrado = filtrados.reduce((s, x) => s + (x.b.valor || 0), 0);
   const labelFiltro = { todos: "geral", vencendo: "vencendo", vencidos: "vencidos", pagos: "pagos" }[_boletosFiltro] || "geral";
@@ -4117,6 +4125,13 @@ function abrirBoletos(filtro) {
         <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
         <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
       </div>
+      ${fornecedores.length ? `<div class="bt-forn-filtro">
+        <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        <select onchange="_setBoletoFornecedor(this.value)">
+          <option value="">Todos os fornecedores</option>
+          ${fornecedores.map(f => `<option value="${f.replace(/"/g, "&quot;")}"${_boletosFornecedor === f ? " selected" : ""}>${f}</option>`).join("")}
+        </select>
+      </div>` : ""}
       <div class="bt-lista">
         ${filtrados.length ? rows : `<div class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</div>`}
         <p id="bt-busca-vazio" class="bt-empty" style="display:none">Nenhum boleto encontrado.</p>
@@ -4153,6 +4168,11 @@ function _toggleMenuBoleto(index) {
   if (!aberto) menu.style.display = "block";
 }
 
+function _setBoletoFornecedor(f) {
+  _boletosFornecedor = f || "";
+  abrirBoletos();
+}
+
 function imprimirBoletos() {
   const todos = boletos.map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }));
   const naoPagos = todos.filter(x => !x.b.pago);
@@ -4163,7 +4183,13 @@ function imprimirBoletos() {
   else if (_boletosFiltro === "pagos") { filtrados = todos.filter(x => x.b.pago); titulo = "Boletos pagos"; }
   else { filtrados = [...todos].sort((x, y) => (!!x.b.pago !== !!y.b.pago ? (x.b.pago ? 1 : -1) : x.st.diff - y.st.diff)); titulo = "Todos os boletos"; }
 
-  if (!filtrados.length) { _toastErro("Nenhum boleto para imprimir nessa categoria."); return; }
+  // Aplica também o filtro de fornecedor selecionado
+  if (_boletosFornecedor) {
+    filtrados = filtrados.filter(x => (x.b.fornecedor || "").trim() === _boletosFornecedor);
+    titulo += ` — ${_boletosFornecedor}`;
+  }
+
+  if (!filtrados.length) { _toastErro("Nenhum boleto para imprimir nessa seleção."); return; }
 
   const total = filtrados.reduce((s, x) => s + (x.b.valor || 0), 0);
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });

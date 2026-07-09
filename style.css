@@ -4645,6 +4645,22 @@ body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
 }
 .fin-novo-btn-sec:active { background: #eef7f6; }
 
+/* Seletor de fornecedor (filtro opcional) */
+.bt-forn-filtro {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px; padding: 4px 10px;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.bt-forn-filtro svg { width: 15px; height: 15px; flex-shrink: 0; stroke: #6b7280; fill: none; stroke-width: 2; }
+.bt-forn-filtro select {
+    flex: 1; border: none; background: transparent; font-size: 13px;
+    color: #374151; padding: 6px 0; outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+}
+body.tema-escuro .bt-forn-filtro { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-forn-filtro svg { stroke: #9ca3af; }
+body.tema-escuro .bt-forn-filtro select { color: #e5e7eb; }
+
 /* Barra de total dos boletos (conforme o filtro) */
 .bt-total-bar {
     display: flex; align-items: center; justify-content: space-between;
