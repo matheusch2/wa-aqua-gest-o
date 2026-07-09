@@ -6292,10 +6292,6 @@ function abrirLancarCustoProduto(index) {
           Valor calculado: <strong id="previa-custo-valor">—</strong>
         </div>
         <div id="msg-custo-produto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <div id="msg-custo-produto-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Custo lançado!</span>
-        </div>
         <button class="botao-salvar" onclick="salvarCustoProduto(${index})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
@@ -6334,47 +6330,47 @@ function atualizarPreviaCusto() {
 }
 
 async function salvarCustoProduto(index) {
+  // Bloqueia o botão IMEDIATAMENTE (antes de qualquer await) para não lançar duas vezes
+  const botao = document.querySelector(".botao-salvar");
+  if (botao && botao.disabled) return; // já está processando um clique
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const reabilitar = () => { if (botao) { botao.disabled = false; botao.style.opacity = ""; } };
+
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
   const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto").value);
   const erroCustoProd = document.getElementById("msg-custo-produto-erro");
-  function _erroCustoProd(msg) { if (erroCustoProd) { erroCustoProd.textContent = msg; erroCustoProd.style.display = "block"; } }
+  const _erroCustoProd = (msg) => { if (erroCustoProd) { erroCustoProd.textContent = msg; erroCustoProd.style.display = "block"; } };
   if (erroCustoProd) erroCustoProd.style.display = "none";
 
-  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { _erroCustoProd("Preencha todos os campos."); return; }
+  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { _erroCustoProd("Preencha todos os campos."); reabilitar(); return; }
 
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { reabilitar(); return; }
 
   const prod = produtos[prodIndex];
   const quantidadeG = _unidadeCusto === "kg" ? qtdRaw * 1000 : qtdRaw;
   const valor = prod.custoPorGrama * quantidadeG;
-
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
 
   const { data: salvo, error } = await supabaseClient
     .from("custos")
     .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto", produto_id: prod.id, nome_produto: prod.nome, quantidade_g: quantidadeG, valor, categoria: prod.categoria, data }])
     .select();
 
-  if (error) {
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-    _erroCustoProd("Erro ao salvar: " + error.message);
-    return;
-  }
+  if (error) { _erroCustoProd("Erro ao salvar: " + error.message); reabilitar(); return; }
 
   if (!viveiros[index].custos) viveiros[index].custos = [];
   viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: prod.id, nomeProduto: prod.nome, quantidadeG, valor, categoria: prod.categoria, data, observacao: null });
 
+  // Limpa o formulário para um novo lançamento
   document.getElementById("dataCustoProduto").value = new Date().toISOString().split("T")[0];
   document.getElementById("selectProduto").value = "";
   document.getElementById("qtdCustoProduto").value = "";
-  document.getElementById("previa-custo-produto").style.display = "none";
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  const prev = document.getElementById("previa-custo-produto");
+  if (prev) prev.style.display = "none";
+  reabilitar();
 
-  const msg = document.getElementById("msg-custo-produto-sucesso");
-  if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
+  _toastSucesso(`Custo lançado: ${prod.nome} — R$ ${formatarNumeroBR(valor, 2)}`);
 }
 
 function abrirLancarOutroCusto(index) {
@@ -6417,10 +6413,6 @@ function abrirLancarOutroCusto(index) {
           </div>
         </div>
         <div id="msg-outro-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <div id="msg-outro-custo-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Custo lançado!</span>
-        </div>
         <button class="botao-salvar" onclick="salvarOutroCusto(${index})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
@@ -6433,45 +6425,44 @@ function abrirLancarOutroCusto(index) {
 }
 
 async function salvarOutroCusto(index) {
+  // Bloqueia o botão IMEDIATAMENTE (antes de qualquer await) para não lançar duas vezes
+  const botao = document.querySelector(".botao-salvar");
+  if (botao && botao.disabled) return; // já está processando um clique
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const reabilitar = () => { if (botao) { botao.disabled = false; botao.style.opacity = ""; } };
+
   const data = document.getElementById("dataOutroCusto").value;
   const descricao = document.getElementById("nomeOutroCusto").value.trim();
   const erroOutro = document.getElementById("msg-outro-custo-erro");
-  function _erroOutro(msg) { if (erroOutro) { erroOutro.textContent = msg; erroOutro.style.display = "block"; } }
+  const _erroOutro = (msg) => { if (erroOutro) { erroOutro.textContent = msg; erroOutro.style.display = "block"; } };
   if (erroOutro) erroOutro.style.display = "none";
 
-  if (!descricao) { _erroOutro("Digite o nome do custo."); return; }
+  if (!descricao) { _erroOutro("Digite o nome do custo."); reabilitar(); return; }
   const categoria = descricao;
   const valor = parseMoedaBR(document.getElementById("valorOutroCusto").value);
 
-  if (!data || isNaN(valor) || valor <= 0) { _erroOutro("Preencha todos os campos."); return; }
+  if (!data || isNaN(valor) || valor <= 0) { _erroOutro("Preencha todos os campos."); reabilitar(); return; }
 
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
-
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  if (!usuario) { reabilitar(); return; }
 
   const { data: salvo, error } = await supabaseClient
     .from("custos")
     .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "outro", nome_produto: descricao, valor, categoria, data }])
     .select();
 
-  if (error) {
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
-    _erroOutro("Erro ao salvar: " + error.message);
-    return;
-  }
+  if (error) { _erroOutro("Erro ao salvar: " + error.message); reabilitar(); return; }
 
   if (!viveiros[index].custos) viveiros[index].custos = [];
   viveiros[index].custos.push({ id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor, categoria, data, observacao: null });
 
+  // Limpa o formulário para um novo lançamento
   document.getElementById("dataOutroCusto").value = new Date().toISOString().split("T")[0];
   document.getElementById("nomeOutroCusto").value = "";
   document.getElementById("valorOutroCusto").value = "";
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  reabilitar();
 
-  const msg = document.getElementById("msg-outro-custo-sucesso");
-  if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
+  _toastSucesso(`Custo lançado: ${descricao} — R$ ${formatarNumeroBR(valor, 2)}`);
 }
 
 function abrirHistoricoCustosDireto(index) {
