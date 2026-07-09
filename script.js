@@ -6304,6 +6304,28 @@ function abrirLancarCustoProduto(index) {
 }
 
 let _unidadeCusto = "g";
+let _editCustoUnidade = "kg";
+
+function selecionarUnidadeEdit(u, index, chaveEnc) {
+  _editCustoUnidade = u;
+  document.getElementById("btnEditUnidadeG")?.classList.toggle("ativo", u === "g");
+  document.getElementById("btnEditUnidadeKg")?.classList.toggle("ativo", u === "kg");
+  recalcularValorEditCusto(index, chaveEnc);
+}
+
+function recalcularValorEditCusto(index, chaveEnc) {
+  const chave = decodeURIComponent(chaveEnc);
+  const v = viveiros[index];
+  const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
+  const prod = produtos.find(p => p.id === grupo[0]?.produtoId);
+  if (!prod) return; // sem produto cadastrado, não há preço para recalcular
+  const qtdRaw = parseFloat(document.getElementById("editCustoQtd")?.value);
+  const el = document.getElementById("editCustoValor");
+  if (!el || isNaN(qtdRaw) || qtdRaw <= 0) return;
+  const qtdG = _editCustoUnidade === "kg" ? qtdRaw * 1000 : qtdRaw;
+  const valor = prod.custoPorGrama * qtdG;
+  el.value = valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function selecionarUnidade(u) {
   _unidadeCusto = u;
@@ -6549,6 +6571,12 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
   const isProduto = chave.startsWith("id:");
   const nome = grupo[0].nomeProduto || grupo[0].categoria || "Custo";
   const valor = grupo.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const somaQtd = grupo.reduce((s, c) => s + (Number(c.quantidadeG) || 0), 0); // gramas
+  const prod = isProduto ? produtos.find(p => p.id === grupo[0].produtoId) : null;
+  // Unidade padrão: kg, exceto quando a quantidade é menor que 1 kg
+  _editCustoUnidade = (somaQtd > 0 && somaQtd < 1000) ? "g" : "kg";
+  const qtdNaUnidade = somaQtd > 0 ? (_editCustoUnidade === "kg" ? somaQtd / 1000 : somaQtd) : "";
+
   const resultado = document.getElementById(elementoId);
   resultado.innerHTML = `
     <h3 class="titulo-secao">Editar custo</h3>
@@ -6558,9 +6586,22 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
         <input type="text" id="editCustoNome" value="${nome.replace(/"/g, "&quot;")}" ${isProduto ? "disabled" : ""}>
         ${isProduto ? `<p class="rc-print-dica">Nome vem do cadastro do produto (Insumos).</p>` : ""}
       </div>
+      ${isProduto ? `
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <label>Quantidade utilizada</label>
+          <div class="unidade-toggle">
+            <button type="button" class="unidade-btn ${_editCustoUnidade === 'g' ? 'ativo' : ''}" id="btnEditUnidadeG" onclick="selecionarUnidadeEdit('g',${index},'${chaveEnc}')">g</button>
+            <button type="button" class="unidade-btn ${_editCustoUnidade === 'kg' ? 'ativo' : ''}" id="btnEditUnidadeKg" onclick="selecionarUnidadeEdit('kg',${index},'${chaveEnc}')">kg</button>
+          </div>
+        </div>
+        <input type="number" inputmode="decimal" id="editCustoQtd" value="${qtdNaUnidade}" min="0" step="any" oninput="recalcularValorEditCusto(${index},'${chaveEnc}')">
+      </div>` : ""}
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Valor total (R$)</label></div>
         <input type="text" inputmode="decimal" id="editCustoValor" value="${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" onblur="formatarMoedaBlur(this)">
+        ${prod ? `<p class="rc-print-dica">Recalculado pela quantidade (R$ ${formatarNumeroBR(prod.custoPorGrama * 1000, 2)}/kg). Você ainda pode ajustar o valor na mão.</p>` : ""}
       </div>
       <div id="msg-edit-custo" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" onclick="salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto})">Salvar alterações</button>
@@ -6584,7 +6625,15 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   if (!novoNome) { erro("Informe o nome do custo."); return; }
   if (isNaN(novoValor) || novoValor < 0) { erro("Informe um valor válido."); return; }
 
-  const somaQtd = grupo.reduce((s, c) => s + (Number(c.quantidadeG) || 0), 0);
+  // Quantidade: para produto, respeita o que foi editado; para outros custos, mantém o que havia
+  let somaQtd;
+  if (isProduto) {
+    const qtdRaw = parseFloat(document.getElementById("editCustoQtd")?.value);
+    if (isNaN(qtdRaw) || qtdRaw <= 0) { erro("Informe a quantidade utilizada."); return; }
+    somaQtd = _editCustoUnidade === "kg" ? qtdRaw * 1000 : qtdRaw;
+  } else {
+    somaQtd = grupo.reduce((s, c) => s + (Number(c.quantidadeG) || 0), 0);
+  }
   const ids = grupo.map(c => c.id);
 
   // Remove os lançamentos do grupo e grava um único consolidado
