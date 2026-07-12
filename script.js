@@ -114,6 +114,18 @@ function _toastSucesso(msg) {
   setTimeout(() => el.remove(), 3500);
 }
 
+// Trava um botão de ação durante uma operação de rede: mostra spinner + texto,
+// bloqueia duplo toque e devolve uma função para restaurar o estado original.
+// Use no topo da função: if (botao?.disabled) return;  (antes de qualquer await)
+function _travarBotao(botao, texto = "Salvando...") {
+  if (!botao) return () => {};
+  const htmlOriginal = botao.innerHTML;
+  botao.disabled = true;
+  botao.classList.add("btn-carregando");
+  botao.innerHTML = `<span class="btn-spinner"></span>${texto}`;
+  return () => { botao.disabled = false; botao.classList.remove("btn-carregando"); botao.innerHTML = htmlOriginal; };
+}
+
 async function uploadFotoPerfil(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1914,6 +1926,9 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 }
 
 async function salvarLancamentoRacao(indexDireto = "") {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
   const index =
     indexDireto !== ""
       ? indexDireto
@@ -1921,16 +1936,10 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   const data = document.getElementById("dataRacao").value;
   const racao = parseFloat(document.getElementById("consumoRacao").value);
-  const usuario = await pegarUsuarioLogado();
-
-  if (!usuario) return;
 
   const erroDiv = document.getElementById("msg-racao-erro");
-  function mostrarErroRacao(msg) {
-    if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; }
-    const botaoSalvar = document.querySelector(".botao-salvar");
-    if (botaoSalvar) { botaoSalvar.disabled = false; botaoSalvar.style.opacity = ""; }
-  }
+  const mostrarErroRacao = (msg) => { if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; } };
+  if (erroDiv) erroDiv.style.display = "none";
 
   if (!data || isNaN(racao) || racao < 0) {
     mostrarErroRacao("Preencha a data e a quantidade (pode ser 0 para dia sem ração).");
@@ -1944,9 +1953,11 @@ async function salvarLancamentoRacao(indexDireto = "") {
     return;
   }
 
-  // Desabilita o botão para evitar duplo clique
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  // Feedback imediato + trava do botão (antes de qualquer await)
+  const restaurar = _travarBotao(botao, "Salvando...");
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   if (!viveiros[index].racoes) {
     viveiros[index].racoes = [];
@@ -1975,6 +1986,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   if (error) {
     console.log(error);
     mostrarErroRacao("Erro ao salvar: " + error.message);
+    restaurar();
     return;
   }
 
@@ -2041,7 +2053,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   const proxStr = `${prox.getFullYear()}-${String(prox.getMonth() + 1).padStart(2, "0")}-${String(prox.getDate()).padStart(2, "0")}`;
   document.getElementById("dataRacao").value = proxStr;
   document.getElementById("consumoRacao").value = "";
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  restaurar();
 
   const msgSucesso = document.getElementById("msg-racao-sucesso");
   if (msgSucesso) {
@@ -2106,15 +2118,15 @@ function abrirBiometria(index) {
 }
 
 async function salvarBiometria(index) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
   const data = document.getElementById("dataBiometria").value;
   const gramaturaRaw = document.getElementById("gramaturaBiometria").value.trim().replace(",", ".");
   const gramatura = parseFloat(gramaturaRaw);
   const msgErro = document.getElementById("msg-bio-erro");
 
-  function mostrarErroBio(msg) {
-    if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; }
-  }
-
+  const mostrarErroBio = (msg) => { if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; } };
   if (msgErro) msgErro.style.display = "none";
 
   if (!data || !gramatura || isNaN(gramatura)) {
@@ -2128,11 +2140,10 @@ async function salvarBiometria(index) {
     return;
   }
 
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  const restaurar = _travarBotao(botao, "Salvando...");
 
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   if (!viveiros[index].biometrias) {
     viveiros[index].biometrias = [];
@@ -2152,7 +2163,7 @@ async function salvarBiometria(index) {
 
   if (error) {
     console.log(error);
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    restaurar();
     mostrarErroBio("Erro ao salvar: " + error.message);
     return;
   }
@@ -2165,7 +2176,7 @@ async function salvarBiometria(index) {
 
   document.getElementById("dataBiometria").value = new Date().toISOString().split("T")[0];
   document.getElementById("gramaturaBiometria").value = "";
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  restaurar();
 
   const msgSucesso = document.getElementById("msg-bio-sucesso");
   if (msgSucesso) {
@@ -2253,18 +2264,16 @@ function abrirDespesca(index) {
 }
 
 async function salvarDespesca(index) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
   const data = document.getElementById("dataDespesca").value;
   const quantidadeKg = parseFloat(document.getElementById("quantidadeDespesca").value);
   const pesoMedio = parseFloat(document.getElementById("pesoMedioDespesca").value);
   const precoKg = parseMoedaBR(document.getElementById("precoDespesca")?.value || "0") || null;
-  const usuario = await pegarUsuarioLogado();
-
-  if (!usuario) return;
 
   const erroDespesca = document.getElementById("msg-despesca-erro");
-  function mostrarErroDespesca(msg) {
-    if (erroDespesca) { erroDespesca.textContent = msg; erroDespesca.style.display = "block"; }
-  }
+  const mostrarErroDespesca = (msg) => { if (erroDespesca) { erroDespesca.textContent = msg; erroDespesca.style.display = "block"; } };
   if (erroDespesca) erroDespesca.style.display = "none";
 
   if (!data || !quantidadeKg || !pesoMedio) {
@@ -2272,8 +2281,10 @@ async function salvarDespesca(index) {
     return;
   }
 
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const restaurar = _travarBotao(botao, "Salvando...");
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   if (!viveiros[index].despescas) {
     viveiros[index].despescas = [];
@@ -2295,7 +2306,7 @@ async function salvarDespesca(index) {
 
   if (error) {
     console.log(error);
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    restaurar();
     mostrarErroDespesca("Erro ao salvar: " + error.message);
     return;
   }
@@ -2313,7 +2324,7 @@ async function salvarDespesca(index) {
   document.getElementById("quantidadeDespesca").value = "";
   document.getElementById("pesoMedioDespesca").value = "";
   const _pd = document.getElementById("precoDespesca"); if (_pd) _pd.value = "";
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  restaurar();
 
   const msgSucesso = document.getElementById("msg-despesca-sucesso");
   if (msgSucesso) {
@@ -3553,17 +3564,15 @@ function mostrarFormularioReinicio(index, modo = "reiniciar") {
 
 // CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
 async function salvarNovoCiclo(index) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
   const novoPovoamento = document.getElementById("novoPovoamento").value;
   const novoTotal = document.getElementById("novoTotal").value.replace(/\D/g, "");
   const novoLaboratorio = document.getElementById("novoLaboratorio").value;
-  const usuario = await pegarUsuarioLogado();
-
-  if (!usuario) return;
 
   const erroReinicio = document.getElementById("msg-reinicio-erro");
-  function mostrarErroReinicio(msg) {
-    if (erroReinicio) { erroReinicio.textContent = msg; erroReinicio.style.display = "block"; }
-  }
+  const mostrarErroReinicio = (msg) => { if (erroReinicio) { erroReinicio.textContent = msg; erroReinicio.style.display = "block"; } };
   if (erroReinicio) erroReinicio.style.display = "none";
 
   if (!novoPovoamento || !novoTotal || !novoLaboratorio) {
@@ -3571,8 +3580,10 @@ async function salvarNovoCiclo(index) {
     return;
   }
 
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const restaurar = _travarBotao(botao, "Salvando...");
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   const { error } = await supabaseClient
     .from("viveiros")
@@ -3585,7 +3596,7 @@ async function salvarNovoCiclo(index) {
 
   if (error) {
     console.log(error);
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    restaurar();
     mostrarErroReinicio("Erro ao salvar novo ciclo.");
     return;
   }
@@ -4440,6 +4451,9 @@ function _calcVencimentoForm() {
 }
 
 async function salvarBoleto(index) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
   const nome = document.getElementById("boleto-nome").value.trim();
   const fornecedor = document.getElementById("boleto-fornecedor").value.trim();
   const valorRaw = document.getElementById("boleto-valor").value;
@@ -4448,17 +4462,18 @@ async function salvarBoleto(index) {
   const prazoDias = parseInt(document.getElementById("boleto-prazo").value);
   const erroDiv = document.getElementById("msg-boleto-erro");
 
-  function mostrarErroBoleto(msg) {
-    if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; }
-  }
+  const mostrarErroBoleto = (msg) => { if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; } };
+  if (erroDiv) erroDiv.style.display = "none";
 
   if (!nome) return mostrarErroBoleto("Informe o nome do boleto.");
   if (!fornecedor) return mostrarErroBoleto("Informe o fornecedor.");
   if (!dataCompra) return mostrarErroBoleto("Informe a data da compra.");
   if (!prazoDias || prazoDias < 1) return mostrarErroBoleto("Informe o prazo em dias.");
 
+  const restaurar = _travarBotao(botao, "Salvando...");
+
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   const editando = index !== null && index !== undefined && index !== "null";
 
@@ -4466,13 +4481,13 @@ async function salvarBoleto(index) {
     const { error } = await supabaseClient.from("boletos").update({
       nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
     }).eq("id", boletos[index].id);
-    if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
+    if (error) { restaurar(); return mostrarErroBoleto("Erro ao salvar. Tente novamente."); }
     boletos[index] = { ...boletos[index], nome, fornecedor, valor, dataCompra, prazoDias };
   } else {
     const { data, error } = await supabaseClient.from("boletos").insert({
       user_id: usuario.id, nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
     }).select().single();
-    if (error) return mostrarErroBoleto("Erro ao salvar. Tente novamente.");
+    if (error) { restaurar(); return mostrarErroBoleto("Erro ao salvar. Tente novamente."); }
     boletos.push({ id: data.id, nome, fornecedor, valor, dataCompra, prazoDias });
   }
 
@@ -4894,6 +4909,9 @@ function abrirEncerrarCiclo(index) {
 }
 
 async function salvarEncerramentoCiclo(index) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
   const viveiro = viveiros[index];
 
   const dataEncerramento = document.getElementById("dataEncerramento").value;
@@ -4901,14 +4919,9 @@ async function salvarEncerramentoCiclo(index) {
   const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
   const precoVenda = parseMoedaBR(document.getElementById("precoVendaCiclo")?.value || "0") || 0;
   const observacoes = document.getElementById("observacoesCiclo").value;
-  const usuario = await pegarUsuarioLogado();
-
-  if (!usuario) return;
 
   const erroEncerrar = document.getElementById("msg-encerrar-erro");
-  function mostrarErroEncerrar(msg) {
-    if (erroEncerrar) { erroEncerrar.textContent = msg; erroEncerrar.style.display = "block"; }
-  }
+  const mostrarErroEncerrar = (msg) => { if (erroEncerrar) { erroEncerrar.textContent = msg; erroEncerrar.style.display = "block"; } };
   if (erroEncerrar) erroEncerrar.style.display = "none";
 
   if (!dataEncerramento || !producaoFinal || !pesoFinal) {
@@ -4916,8 +4929,10 @@ async function salvarEncerramentoCiclo(index) {
     return;
   }
 
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const restaurar = _travarBotao(botao, "Encerrando...");
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   const racoes = viveiro.racoes || [];
   const despescas = viveiro.despescas || [];
@@ -4987,7 +5002,7 @@ async function salvarEncerramentoCiclo(index) {
 
   if (error) {
     console.log(error);
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    restaurar();
     mostrarErroEncerrar("Erro ao encerrar ciclo: " + error.message);
     return;
   }
