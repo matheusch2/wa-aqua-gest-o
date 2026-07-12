@@ -1649,26 +1649,32 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
 }
 
 .ciclo-btn-relatorio,
-.ciclo-btn-excluir {
+.ciclo-btn-excluir,
+.ciclo-btn-relatorio {
     flex: 1;
-    padding: 8px 6px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 9px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
     border: none;
     cursor: pointer;
     width: auto;
+    transition: background 0.12s;
 }
 
 .ciclo-btn-relatorio {
-    background: rgba(6,107,99,0.08);
-    color: rgb(6,107,99);
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
 }
+.ciclo-btn-relatorio:active { background: #e5e7eb; }
 
 .ciclo-btn-excluir {
-    background: rgba(220,38,38,0.07);
-    color: #dc2626;
+    background: #dc2626;
+    color: #fff;
 }
+.ciclo-btn-excluir:active { background: #b91c1c; }
+body.tema-escuro .ciclo-btn-relatorio { background: #374151; color: #e5e7eb; border-color: #4b5563; }
 
 /* ─── FORMULÁRIO DE LANÇAMENTO ──────────────────────────────────────────────── */
 
