@@ -1509,7 +1509,7 @@ function abrirViveiro(index) {
         <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#dc2626">Excluir "${viveiro.nome}"?</p>
         <p style="margin:0 0 12px;font-size:12px;color:#7f1d1d">Todos os dados deste viveiro serão desativados. É possível recuperar pelo suporte.</p>
         <div style="display:flex;gap:8px">
-          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index})">Sim, excluir</button>
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index}, this)">Sim, excluir</button>
           <button class="ciclo-btn-relatorio" style="flex:1" onclick="document.getElementById('confirmar-excluir-viveiro-${index}').style.display='none'">Cancelar</button>
         </div>
       </div>
@@ -3624,10 +3624,12 @@ function confirmarExcluirViveiro(index) {
   if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
 }
 
-async function excluirViveiro(index) {
+async function excluirViveiro(index, botao) {
+  if (botao?.disabled) return; // trava contra duplo toque
   const viveiro = viveiros[index];
-
   if (!viveiro) return;
+
+  const restaurar = _travarBotao(botao, "Excluindo...");
 
   const { error } = await supabaseClient
     .from("viveiros")
@@ -3636,12 +3638,20 @@ async function excluirViveiro(index) {
 
   if (error) {
     console.log(error);
+    restaurar();
     _toastErro("Erro ao excluir viveiro.");
     return;
   }
 
-  await carregarViveiros();
+  // Remove do estado local em vez de recarregar tudo do banco
+  const pos = viveiros.findIndex(v => v.id === viveiro.id);
+  if (pos >= 0) viveiros.splice(pos, 1);
 
+  if (viveiros.length === 0) {
+    mostrarListaViveiros();
+    _toastSucesso(`Viveiro "${viveiro.nome}" excluído.`);
+    return;
+  }
   mostrarListaViveiros(0, "", `Viveiro "${viveiro.nome}" excluído com sucesso.`);
 }
 
@@ -5122,7 +5132,7 @@ function mostrarViveiroSemCiclo(index) {
         <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#dc2626">Excluir "${viveiro.nome}"?</p>
         <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Todos os ciclos e dados deste viveiro serão removidos.</p>
         <div style="display:flex;gap:8px">
-          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index})">Sim, excluir</button>
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index}, this)">Sim, excluir</button>
           <button class="ciclo-btn-relatorio" style="flex:1" onclick="mostrarViveiroSemCiclo(${index})">Cancelar</button>
         </div>
       </div>
