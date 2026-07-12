@@ -6607,11 +6607,8 @@ function atualizarPreviaCusto() {
 }
 
 async function salvarCustoProduto(index) {
-  // Bloqueia o botão IMEDIATAMENTE (antes de qualquer await) para não lançar duas vezes
   const botao = document.querySelector(".botao-salvar");
-  if (botao && botao.disabled) return; // já está processando um clique
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
-  const reabilitar = () => { if (botao) { botao.disabled = false; botao.style.opacity = ""; } };
+  if (botao?.disabled) return; // trava contra duplo toque
 
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
@@ -6620,7 +6617,10 @@ async function salvarCustoProduto(index) {
   const _erroCustoProd = (msg) => { if (erroCustoProd) { erroCustoProd.textContent = msg; erroCustoProd.style.display = "block"; } };
   if (erroCustoProd) erroCustoProd.style.display = "none";
 
-  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { _erroCustoProd("Preencha todos os campos."); reabilitar(); return; }
+  if (!data || prodIndex === "" || isNaN(qtdRaw) || qtdRaw <= 0) { _erroCustoProd("Preencha todos os campos."); return; }
+
+  // Feedback imediato + trava (spinner "Salvando...")
+  const reabilitar = _travarBotao(botao, "Salvando...");
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { reabilitar(); return; }
@@ -6703,11 +6703,8 @@ function abrirLancarOutroCusto(index) {
 }
 
 async function salvarOutroCusto(index) {
-  // Bloqueia o botão IMEDIATAMENTE (antes de qualquer await) para não lançar duas vezes
   const botao = document.querySelector(".botao-salvar");
-  if (botao && botao.disabled) return; // já está processando um clique
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
-  const reabilitar = () => { if (botao) { botao.disabled = false; botao.style.opacity = ""; } };
+  if (botao?.disabled) return; // trava contra duplo toque
 
   const data = document.getElementById("dataOutroCusto").value;
   const descricao = document.getElementById("nomeOutroCusto").value.trim();
@@ -6715,11 +6712,14 @@ async function salvarOutroCusto(index) {
   const _erroOutro = (msg) => { if (erroOutro) { erroOutro.textContent = msg; erroOutro.style.display = "block"; } };
   if (erroOutro) erroOutro.style.display = "none";
 
-  if (!descricao) { _erroOutro("Digite o nome do custo."); reabilitar(); return; }
+  if (!descricao) { _erroOutro("Digite o nome do custo."); return; }
   const categoria = descricao;
   const valor = parseMoedaBR(document.getElementById("valorOutroCusto").value);
 
-  if (!data || isNaN(valor) || valor <= 0) { _erroOutro("Preencha todos os campos."); reabilitar(); return; }
+  if (!data || isNaN(valor) || valor <= 0) { _erroOutro("Preencha todos os campos."); return; }
+
+  // Feedback imediato + trava (spinner "Salvando...")
+  const reabilitar = _travarBotao(botao, "Salvando...");
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { reabilitar(); return; }
