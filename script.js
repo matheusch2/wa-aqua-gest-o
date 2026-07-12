@@ -4874,7 +4874,16 @@ async function salvarEncerramentoCiclo(index) {
   const produtividade = tamanhoNum > 0 ? producaoTotal / tamanhoNum : 0;
 
   const totalPovoado = parseFloat(String(viveiro.totalPovoado).replace(/\./g, ""));
-  const quantidadeFinal = pesoFinal > 0 ? producaoTotal / (pesoFinal / 1000) : 0;
+  // Sobrevivência correta: cada despesca parcial conta com o SEU peso médio,
+  // não com o peso final. (Ex.: parcial 200kg@10g = 20.000 animais.)
+  const qtdDespescasParciais = despescas.reduce((total, item) => {
+    const kg = Number(item.quantidadeKg) || 0;
+    const peso = Number(item.pesoMedio || item.gramatura || 0);
+    if (kg <= 0 || peso <= 0) return total;
+    return total + kg / (peso / 1000);
+  }, 0);
+  const qtdDespescaFinal = pesoFinal > 0 ? producaoFinal / (pesoFinal / 1000) : 0;
+  const quantidadeFinal = qtdDespescasParciais + qtdDespescaFinal; // total de animais produzidos
   const sobrevivencia = totalPovoado > 0 ? (quantidadeFinal / totalPovoado) * 100 : 0;
 
   const diasCultivo = calcularDiasCultivo(
@@ -5177,16 +5186,16 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
       </div>
 
       <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Despesca</div>
+        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Despescas</div>
         <div class="rc-duo">
           <div class="rc-duo-item">
             <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <div class="rc-duo-txt"><small>Despesca parcial</small><strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong></div>
+            <div class="rc-duo-txt"><small>Despescas parciais</small><strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong></div>
           </div>
           <div class="rc-duo-sep"></div>
           <div class="rc-duo-item">
             <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <div class="rc-duo-txt"><small>Despesca total</small><strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong></div>
+            <div class="rc-duo-txt"><small>Despesca final</small><strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong></div>
           </div>
         </div>
       </div>
@@ -5199,9 +5208,10 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
         <div class="rc-graficos">
           <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
           <div class="rc-graf-box"><h5>Consumo de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
-          <div class="rc-graf-box"><h5>FCA ao longo do cultivo</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
+          <div class="rc-graf-box"><h5>FCA acumulado estimado</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
           <div class="rc-graf-box"><h5>Biomassa estimada (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBio"></canvas></div></div>
         </div>
+        <p class="rc-graf-nota">Biomassa e FCA são estimados a partir das biometrias e das despescas registradas.</p>
       </div>` : ""}
 
       <div class="rc-hero">
@@ -5232,26 +5242,29 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   setTimeout(() => _renderGraficosCiclo(_serieRel), 60);
 }
 
-// Séries do ciclo para os gráficos (sobreviventes decrescentes — relatório final)
+// Séries do ciclo para os gráficos — biomassa/FCA estimados descontando as
+// despescas parciais reais (cada uma com seu peso médio) até cada data.
 function _seriesCiclo(ciclo) {
   const bios = [...(ciclo.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
   const racoesSorted = [...(ciclo.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const despescasSorted = [...(ciclo.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
   const popNum = ciclo.totalPovoado ? Number(String(ciclo.totalPovoado).replace(/\./g, "")) : 0;
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
   const diaDe = d => calcularDiasCultivo(ciclo.dataPovoamento, d);
   const racaoAcumAte = ds => racoesSorted.filter(r => r.data <= ds).reduce((s, r) => s + r.racao, 0);
+  // Animais já despescados (parciais) até uma data — cada despesca com seu peso médio
+  const qtdDespescadaAte = ds => despescasSorted.filter(d => d.data <= ds).reduce((s, d) => {
+    const kg = Number(d.quantidadeKg) || 0;
+    const peso = Number(d.pesoMedio || d.gramatura || 0);
+    return (kg > 0 && peso > 0) ? s + kg / (peso / 1000) : s;
+  }, 0);
   const diasArr = bios.map(b => diaDe(b.data));
-  const lastDay = diasArr.length ? (diasArr[diasArr.length - 1] || 1) : 1;
-  const survFinal = Number(ciclo.pesoFinal) > 0 ? producaoTotal / (Number(ciclo.pesoFinal) / 1000)
-    : (popNum * (Number(ciclo.sobrevivencia) || 100) / 100);
   const dias = [], peso = [], cresc = [], biomassa = [], fca = [], racaoAcum = [], obs = [], datas = [];
   bios.forEach((b, i) => {
     const racAcum = racaoAcumAte(b.data);
     const dia = diasArr[i];
-    const frac = lastDay > 0 ? Math.min(1, Math.max(0, dia / lastDay)) : 1;
-    let surv = popNum - (popNum - survFinal) * frac;
-    if (surv < 0) surv = 0;
-    const bm = surv * b.gramatura / 1000;
+    const restante = Math.max(0, popNum - qtdDespescadaAte(b.data));
+    const bm = restante * b.gramatura / 1000; // biomassa em pé estimada na data
     datas.push(formatarData(b.data));
     dias.push(dia);
     peso.push(Number(b.gramatura));
@@ -5261,7 +5274,6 @@ function _seriesCiclo(ciclo) {
     racaoAcum.push(Number(racAcum.toFixed(1)));
     obs.push(i === 0 ? "Povoamento" : (i === bios.length - 1 ? "Final do ciclo" : "-"));
   });
-  if (biomassa.length && producaoTotal > 0) biomassa[biomassa.length - 1] = producaoTotal;
   return { bios, dias, peso, cresc, biomassa, fca, racaoAcum, obs, datas, popNum, producaoTotal };
 }
 
@@ -5317,38 +5329,13 @@ function gerarRelatorioImpressao() {
   const roi = custoTotal > 0 ? (lucroLiquido / custoTotal) * 100 : 0;
   const temPreco = precoKg > 0;
 
-  // ── Séries (biometrias) ──
-  const bios = [...(ciclo.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
-  const racoesSorted = [...(ciclo.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
-  const popNum = ciclo.totalPovoado ? Number(String(ciclo.totalPovoado).replace(/\./g, "")) : 0;
-  const diaDe = d => calcularDiasCultivo(ciclo.dataPovoamento, d);
-  const racaoAcumAte = dataStr => racoesSorted.filter(r => r.data <= dataStr).reduce((s, r) => s + r.racao, 0);
-
-  // Como é relatório FINAL, sabemos a sobrevivência real: reconstruímos os
-  // sobreviventes decrescendo da população inicial até a quantidade final.
-  const diasArr = bios.map(b => diaDe(b.data));
-  const lastDay = diasArr.length ? (diasArr[diasArr.length - 1] || 1) : 1;
-  const survFinal = Number(ciclo.pesoFinal) > 0 ? producaoTotal / (Number(ciclo.pesoFinal) / 1000)
-    : (popNum * (Number(ciclo.sobrevivencia) || 100) / 100);
-
-  const serieDias = [], seriePeso = [], serieCresc = [], serieBiomassa = [], serieFca = [], serieRacaoAcum = [], serieObs = [], serieDatas = [];
-  bios.forEach((b, i) => {
-    const racAcum = racaoAcumAte(b.data);
-    const dia = diasArr[i];
-    const frac = lastDay > 0 ? Math.min(1, Math.max(0, dia / lastDay)) : 1;
-    let surv = popNum - (popNum - survFinal) * frac; // sobreviventes estimados nesse dia
-    if (surv < 0) surv = 0;
-    let biomassa = surv * b.gramatura / 1000;
-    serieDatas.push(formatarData(b.data));
-    serieDias.push(dia);
-    seriePeso.push(Number(b.gramatura));
-    serieCresc.push(i > 0 ? Number((b.gramatura - bios[i - 1].gramatura).toFixed(2)) : null);
-    serieBiomassa.push(Number(biomassa.toFixed(1)));
-    serieFca.push(Number((biomassa > 0 ? racAcum / biomassa : 0).toFixed(2)));
-    serieRacaoAcum.push(Number(racAcum.toFixed(1)));
-    serieObs.push(i === 0 ? "Povoamento" : (i === bios.length - 1 ? "Final do ciclo" : "-"));
-  });
-  if (serieBiomassa.length && producaoTotal > 0) serieBiomassa[serieBiomassa.length - 1] = producaoTotal;
+  // ── Séries (biometrias) — biomassa/FCA estimados descontando as despescas ──
+  const _serie = _seriesCiclo(ciclo);
+  const bios = _serie.bios;
+  const popNum = _serie.popNum;
+  const serieDias = _serie.dias, seriePeso = _serie.peso, serieCresc = _serie.cresc;
+  const serieBiomassa = _serie.biomassa, serieFca = _serie.fca, serieRacaoAcum = _serie.racaoAcum;
+  const serieObs = _serie.obs, serieDatas = _serie.datas;
 
   // ── Despescas ──
   const despescas = [...(ciclo.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
@@ -5396,17 +5383,34 @@ function gerarRelatorioImpressao() {
   const VERSAO_SISTEMA = "2.6";
   const codRel = `${(ciclo.nomeViveiro || "V").replace(/\s+/g, "").toUpperCase().slice(0, 6)}-${String(hoje.getDate()).padStart(2, "0")}${String(hoje.getMonth() + 1).padStart(2, "0")}${String(hoje.getFullYear()).slice(-2)}`;
 
-  // Conclusão técnica automática (texto corrido, sem metas)
+  // Conclusão técnica automática — linguagem cautelosa, sem julgar sem critério
   const _dc = Number(ciclo.diasCultivo) || 0;
+  const _sob = Number(ciclo.sobrevivencia) || 0;
+  const _fca = Number(ciclo.fca) || 0;
   const _fr = [];
-  _fr.push(`O ciclo teve ${_dc} ${_dc === 1 ? "dia" : "dias"} de cultivo, com sobrevivência estimada de ${fmt(ciclo.sobrevivencia, 1)}% e produção final de ${fmt(producaoTotal, 1)} kg (${fmt(ciclo.produtividade, 1)} kg/ha).`);
-  if ((Number(ciclo.racaoConsumida) || 0) > 0) _fr.push(`Foram consumidos ${fmt(ciclo.racaoConsumida, 1)} kg de ração, com FCA final de ${fmt(ciclo.fca, 2)}.`);
+  _fr.push(`Com base nos dados registrados, o ciclo teve ${_dc} ${_dc === 1 ? "dia" : "dias"} de cultivo, com sobrevivência estimada de ${fmt(_sob, 1)}% e produção total de ${fmt(producaoTotal, 1)} kg (${fmt(ciclo.produtividade, 1)} kg/ha).`);
+  if ((Number(ciclo.racaoConsumida) || 0) > 0) _fr.push(`Foram consumidos ${fmt(ciclo.racaoConsumida, 1)} kg de ração, com FCA final de ${fmt(_fca, 2)}.`);
   else _fr.push(`Não houve consumo de ração registrado no período.`);
   if (custoTotal > 0) _fr.push(`O custo total foi de R$ ${fmt(custoTotal, 2)} (R$ ${fmt(custoPorKg, 2)} por kg produzido).`);
   if (temPreco) _fr.push(lucroLiquido >= 0
     ? `O resultado financeiro foi positivo, com lucro líquido de R$ ${fmt(lucroLiquido, 2)}.`
-    : `O resultado financeiro foi negativo, com prejuízo de R$ ${fmt(Math.abs(lucroLiquido), 2)}. Recomenda-se revisar as condições iniciais do cultivo, os manejos adotados e o preço de venda para melhorar o desempenho nos próximos ciclos.`);
+    : `O resultado financeiro foi negativo, com prejuízo de R$ ${fmt(Math.abs(lucroLiquido), 2)}.`);
+  _fr.push(`O resultado deve ser interpretado considerando densidade, salinidade, manejo, qualidade da água, estratégia alimentar e condições locais.`);
   const conclusaoTecnica = _fr.join(" ");
+
+  // Alertas técnicos e de dados incompletos (critérios explícitos)
+  const _alertas = [];
+  if (_sob > 100) _alertas.push("A sobrevivência estimada ficou acima de 100%, indicando possível inconsistência nos registros de povoamento, pesos ou quantidades.");
+  else if (_sob > 0 && _sob < 60) _alertas.push("A sobrevivência ficou abaixo de 60%.");
+  if (_fca > 1.8) _alertas.push("O FCA final ficou elevado (acima de 1,8).");
+  if (temPreco && lucroLiquido < 0) _alertas.push("O ciclo apresentou resultado financeiro negativo.");
+  if (!temPreco) _alertas.push("Preço de venda não informado — receita, lucro e ROI não foram calculados.");
+  if (despescas.some(d => !(Number(d.pesoMedio) > 0))) _alertas.push("Há despesca sem peso médio informado, o que afeta o cálculo de sobrevivência.");
+  if (custoTotal <= 0) _alertas.push("Nenhum custo do ciclo foi cadastrado.");
+  if (bios.length < 2) _alertas.push("Não há biometrias suficientes para gerar gráficos confiáveis.");
+  const alertasHtml = _alertas.length
+    ? `<div class="rc-alertas-dados"><strong>Pontos de atenção</strong><ul>${_alertas.map(a => `<li>${a}</li>`).join("")}</ul></div>`
+    : "";
 
   // Cards do resumo executivo
   const _ico = {
@@ -5493,6 +5497,10 @@ function gerarRelatorioImpressao() {
   .cab-centro .viv { display: inline-block; background: #0b6b63; color: #fff; padding: 4px 18px; border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
   .obs-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; page-break-inside: avoid; }
   .conclusao { font-size: 11px; line-height: 1.6; color: #374151; margin: 0; text-align: justify; }
+  .rc-alertas-dados { margin-top: 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 9px 12px; }
+  .rc-alertas-dados strong { display: block; font-size: 10.5px; color: #92400e; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .3px; }
+  .rc-alertas-dados ul { margin: 0; padding-left: 16px; }
+  .rc-alertas-dados li { font-size: 10.5px; color: #78350f; line-height: 1.5; margin-bottom: 2px; }
   @media print { .no-print { display: none !important; } body { padding: 0; } }
 </style></head>
 <body><div class="doc">
@@ -5545,10 +5553,10 @@ function gerarRelatorioImpressao() {
       <div class="charts">
         <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
-        <div class="chart-box"><h4>FCA ao longo do cultivo</h4><canvas id="cFca"></canvas></div>
+        <div class="chart-box"><h4>FCA acumulado estimado</h4><canvas id="cFca"></canvas></div>
         <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
       </div>
-      <p style="font-size:9.5px;color:#9ca3af;margin:8px 2px 0">Gráficos gerados com base nos dados registrados do ciclo.</p>
+      <p style="font-size:9.5px;color:#9ca3af;margin:8px 2px 0">Biomassa e FCA são estimados com base nas biometrias e nas despescas registradas.</p>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">4. Distribuição dos custos</h2>
@@ -5581,6 +5589,7 @@ function gerarRelatorioImpressao() {
     <div>
       <h2 class="sec" style="margin-top:0">Conclusão técnica</h2>
       <p class="conclusao">${conclusaoTecnica}</p>
+      ${alertasHtml}
     </div>
   </div>
 
