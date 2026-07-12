@@ -1736,18 +1736,20 @@ function confirmarExcluirTipoRacao(i) {
     <div class="confirmar-exclusao-custo">
       <span>Excluir <strong>${tiposRacao[i].nome}</strong>?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirTipoRacao(${i})">Sim, excluir</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirTipoRacao(${i}, this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirVerTiposRacao()">Cancelar</button>
       </div>
     </div>
   `;
 }
 
-async function excluirTipoRacao(i) {
+async function excluirTipoRacao(i, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const { error } = await supabaseClient.from("tipos_racao").delete().eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
-  if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
+  if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
   tiposRacao.splice(i, 1);
   abrirVerTiposRacao();
 }
@@ -1804,27 +1806,27 @@ function abrirEdicaoTipoRacao(i) {
 }
 
 async function salvarEdicaoTipoRacao(i) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const nome = document.getElementById("editNomeTipoRacao").value.trim();
   const pesoSacoKg = parseFloat(document.getElementById("editPesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("editValorSacoRacao").value);
   const erroEl = document.getElementById("erro-edit-tipo-racao");
-  function _erroEdit(msg) { if (erroEl) { erroEl.textContent = msg; erroEl.style.display = "block"; } }
+  const _erroEdit = (msg) => { if (erroEl) { erroEl.textContent = msg; erroEl.style.display = "block"; } };
   if (erroEl) erroEl.style.display = "none";
 
   if (!nome || !pesoSacoKg || !valorSaco) { _erroEdit("Preencha todos os campos."); return; }
 
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
-
   const custoPorKg = valorSaco / pesoSacoKg;
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   const { error } = await supabaseClient.from("tipos_racao")
     .update({ nome, peso_saco_kg: pesoSacoKg, valor_saco: valorSaco, custo_por_kg: custoPorKg })
     .eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
 
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  restaurar();
   if (error) { _erroEdit("Erro ao salvar: " + error.message); return; }
 
   tiposRacao[i] = { ...tiposRacao[i], nome, pesoSacoKg, valorSaco, custoPorKg };
@@ -3132,6 +3134,8 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
 }
 
 async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoBio").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoBio").value.replace(",", "."));
 
@@ -3145,9 +3149,10 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
     return;
   }
 
+  const restaurar = _travarBotao(botao, "Salvando...");
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   // DELETE + INSERT contorna restrição de RLS em UPDATE
   const { error: erroDel } = await supabaseClient
@@ -3156,7 +3161,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
     .eq("id", bio.id)
     .eq("user_id", usuario.id);
 
-  if (erroDel) { console.log(erroDel); _toastErro("Erro ao salvar: " + erroDel.message); return; }
+  if (erroDel) { console.log(erroDel); restaurar(); _toastErro("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("biometrias")
@@ -3170,6 +3175,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
 
   if (erroIns || !inserido || inserido.length === 0) {
     console.log(erroIns);
+    restaurar();
     _toastErro("Erro ao salvar edição. Tente novamente.");
     return;
   }
@@ -3195,21 +3201,23 @@ function confirmarExcluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
     <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
       <span>Excluir esta biometria?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto})">Sim, excluir</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto}, this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoBiometria(${viveiroIndex}, '${elementoId}', ${direto})">Cancelar</button>
       </div>
     </div>
   `;
 }
 
-async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   const { error } = await supabaseClient.from("biometrias").delete().eq("id", bio.id).eq("user_id", usuario.id);
 
-  if (error) { console.log(error); _toastErro("Erro ao excluir."); return; }
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao excluir."); return; }
 
   viveiros[viveiroIndex].biometrias.splice(bioIndex, 1);
   renderizarHistoricoBiometria(viveiroIndex, elementoId, direto);
@@ -3290,6 +3298,8 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
 }
 
 async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoDesp").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoDesp").value);
   const novoPeso = parseFloat(document.getElementById("pesoEdicaoDesp").value);
@@ -3297,9 +3307,10 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
 
   if (!novaData || !novaQtd || !novoPeso) { _toastErro("Preencha todos os campos."); return; }
 
+  const restaurar = _travarBotao(botao, "Salvando...");
   const desp = viveiros[viveiroIndex].despescas[despIndex];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   // DELETE + INSERT contorna restrição de RLS em UPDATE
   const { error: erroDel } = await supabaseClient
@@ -3308,7 +3319,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
     .eq("id", desp.id)
     .eq("user_id", usuario.id);
 
-  if (erroDel) { console.log(erroDel); _toastErro("Erro ao salvar: " + erroDel.message); return; }
+  if (erroDel) { console.log(erroDel); restaurar(); _toastErro("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("despescas")
@@ -3324,6 +3335,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
 
   if (erroIns || !inserido || inserido.length === 0) {
     console.log(erroIns);
+    restaurar();
     _toastErro("Erro ao salvar edição. Tente novamente.");
     return;
   }
@@ -3351,21 +3363,23 @@ function confirmarExcluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
     <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
       <span>Excluir esta despesca?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">Sim, excluir</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto}, this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoDespesca(${viveiroIndex}, '${elementoId}', ${direto})">Cancelar</button>
       </div>
     </div>
   `;
 }
 
-async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
+async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const desp = viveiros[viveiroIndex].despescas[despIndex];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   const { error } = await supabaseClient.from("despescas").delete().eq("id", desp.id).eq("user_id", usuario.id);
 
-  if (error) { console.log(error); _toastErro("Erro ao excluir."); return; }
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao excluir."); return; }
 
   viveiros[viveiroIndex].despescas.splice(despIndex, 1);
   renderizarHistoricoDespesca(viveiroIndex, elementoId, direto);
@@ -3379,6 +3393,8 @@ function voltarParaHistoricoRacaoDireto(viveiroIndex, paginaAtual = 0) {
 }
 
 async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAtual = 0) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoRacao").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoRacao").value);
 
@@ -3387,9 +3403,10 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     return;
   }
 
+  const restaurar = _travarBotao(botao, "Salvando...");
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   const novoTipoIdx = document.getElementById("tipoRacaoEdicaoSelect")?.value;
   const novoTipo = (novoTipoIdx !== "" && novoTipoIdx !== undefined)
@@ -3401,7 +3418,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   const { error: erroDel } = await supabaseClient
     .from("racoes").delete().eq("id", racao.id).eq("user_id", usuario.id);
 
-  if (erroDel) { _toastErro("Erro ao salvar: " + erroDel.message); return; }
+  if (erroDel) { restaurar(); _toastErro("Erro ao salvar: " + erroDel.message); return; }
 
   const { data: inserido, error: erroIns } = await supabaseClient
     .from("racoes")
@@ -3416,6 +3433,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     .select();
 
   if (erroIns || !inserido || inserido.length === 0) {
+    restaurar();
     _toastErro("Erro ao salvar edição. Tente novamente.");
     return;
   }
@@ -3480,14 +3498,15 @@ function confirmarExcluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pag
     <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
       <span>Excluir este lançamento de ração?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirRacao(${viveiroIndex},${racaoIndex},'${elementoId}',${direto},${pagina})">Sim, excluir</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirRacao(${viveiroIndex},${racaoIndex},'${elementoId}',${direto},${pagina},this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${pagina})">Cancelar</button>
       </div>
     </div>
   `;
 }
 
-async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0) {
+async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0, botao) {
+  if (botao?.disabled) return;
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
 
   if (!racao || !racao.id) {
@@ -3495,8 +3514,9 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
     return;
   }
 
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   const { data: deletado, error } = await supabaseClient
     .from("racoes")
@@ -3507,11 +3527,13 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
 
   if (error) {
     console.log(error);
+    restaurar();
     _toastErro("Erro ao excluir lançamento.");
     return;
   }
 
   if (!deletado || deletado.length === 0) {
+    restaurar();
     _toastErro("Não foi possível excluir. Verifique sua conexão ou permissão.");
     return;
   }
@@ -3817,7 +3839,7 @@ function mostrarHistoricoCiclos() {
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626">Excluir este ciclo?</p>
         <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Esta ação não pode ser desfeita.</p>
         <div style="display:flex;gap:8px">
-          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">Sim, excluir</button>
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${item.viveiroIndex}, ${item.cicloIndex}, this)">Sim, excluir</button>
           <button class="ciclo-btn-relatorio" style="flex:1" onclick="cancelarExcluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">Cancelar</button>
         </div>
       </div>
@@ -3836,12 +3858,14 @@ function cancelarExcluirCiclo(viveiroIndex, cicloIndex) {
   confirm.previousElementSibling.querySelector(".ciclo-btn-excluir").style.display = "";
 }
 
-async function excluirCiclo(viveiroIndex, cicloIndex) {
+async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
+  if (botao?.disabled) return;
   const viveiro = viveiros[viveiroIndex];
   const ciclo = viveiro.ciclosFinalizados[cicloIndex];
 
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
 
   if (!ciclo.id) {
     viveiro.ciclosFinalizados.splice(cicloIndex, 1);
@@ -3857,12 +3881,14 @@ async function excluirCiclo(viveiroIndex, cicloIndex) {
     .select();
 
   if (error) {
+    restaurar();
     const div = document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`);
     if (div) div.innerHTML = `<p style="color:#dc2626;font-size:13px;margin:0">Erro: ${error.message}</p>`;
     return;
   }
 
   if (!deletado || deletado.length === 0) {
+    restaurar();
     const div = document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`);
     if (div) div.innerHTML = `<p style="color:#dc2626;font-size:13px;margin:0">Não foi possível excluir. Verifique as permissões no Supabase (RLS da tabela ciclos).</p>`;
     return;
@@ -3984,7 +4010,7 @@ function abrirCustosFixos() {
           <div id="cf-conf-${i}" class="cf-confirmar" style="display:none">
             <span>Excluir este custo fixo?</span>
             <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('cf-conf-${i}').style.display='none'">Cancelar</button>
-            <button class="confirmar-boleto-btn-excluir" onclick="excluirCustoFixo(${i})">Excluir</button>
+            <button class="confirmar-boleto-btn-excluir" onclick="excluirCustoFixo(${i}, this)">Excluir</button>
           </div>
         </div>`).join("");
 
@@ -4064,6 +4090,8 @@ function abrirFormCustoFixo(index) {
 }
 
 async function salvarCustoFixo(index) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const editando = index !== null && index !== undefined;
   const nome = (document.getElementById("cfNome").value || "").trim();
   const categoria = document.getElementById("cfCategoria").value;
@@ -4076,25 +4104,23 @@ async function salvarCustoFixo(index) {
   if (!nome) { mostrarErro("Informe o nome do custo."); return; }
   if (!valorMensal || valorMensal <= 0) { mostrarErro("Informe um valor mensal válido."); return; }
 
+  const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
-
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  if (!usuario) { restaurar(); return; }
 
   if (editando) {
     const c = custosFixos[index];
     const { error } = await supabaseClient.from("custos_fixos")
       .update({ nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio })
       .eq("id", c.id).eq("user_id", usuario.id);
-    if (error) { console.log(error); mostrarErro("Erro ao salvar: " + error.message); if (botao) { botao.disabled = false; botao.style.opacity = ""; } return; }
+    if (error) { console.log(error); mostrarErro("Erro ao salvar: " + error.message); restaurar(); return; }
     c.nome = nome; c.categoria = categoria; c.valorMensal = valorMensal; c.dataInicio = dataInicio;
     _toastSucesso("Custo fixo atualizado.");
   } else {
     const { data, error } = await supabaseClient.from("custos_fixos")
       .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio, ativo: true }])
       .select();
-    if (error) { console.log(error); mostrarErro("Erro ao salvar (rode o SQL da tabela custos_fixos): " + error.message); if (botao) { botao.disabled = false; botao.style.opacity = ""; } return; }
+    if (error) { console.log(error); mostrarErro("Erro ao salvar (rode o SQL da tabela custos_fixos): " + error.message); restaurar(); return; }
     custosFixos.push({ id: data[0].id, nome, categoria, valorMensal, dataInicio, ativo: true });
     _toastSucesso("Custo fixo cadastrado.");
   }
@@ -4119,13 +4145,15 @@ function confirmarExcluirCustoFixo(index) {
   if (el) el.style.display = el.style.display === "none" ? "flex" : "none";
 }
 
-async function excluirCustoFixo(index) {
+async function excluirCustoFixo(index, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const c = custosFixos[index];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const { error } = await supabaseClient.from("custos_fixos")
     .delete().eq("id", c.id).eq("user_id", usuario.id);
-  if (error) { console.log(error); _toastErro("Erro ao excluir."); return; }
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao excluir."); return; }
   custosFixos.splice(index, 1);
   _toastSucesso("Custo fixo excluído.");
   abrirCustosFixos();
@@ -4195,7 +4223,7 @@ function abrirBoletos(filtro) {
         <div id="bt-conf-${i}" class="bt-confirmar-inline" style="display:none">
           <span>Excluir este boleto?</span>
           <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('bt-conf-${i}').style.display='none'">Cancelar</button>
-          <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${i})">Excluir</button>
+          <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${i}, this)">Excluir</button>
         </div>
       </div>
     `;
@@ -4397,7 +4425,7 @@ function verDetalhesBoleto(index) {
         <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
         <div class="confirmar-boleto-botoes">
           <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('confirmar-excluir-det').style.display='none'">Cancelar</button>
-          <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${index})">Excluir</button>
+          <button class="confirmar-boleto-btn-excluir" onclick="excluirBoleto(${index}, this)">Excluir</button>
         </div>
       </div>
       <div class="bt-det-historico">
@@ -4534,10 +4562,12 @@ async function salvarBoleto(index) {
   abrirBoletos();
 }
 
-async function excluirBoleto(index) {
+async function excluirBoleto(index, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const { error } = await supabaseClient.from("boletos")
     .update({ ativo: false }).eq("id", boletos[index].id);
-  if (error) { console.error(error); return; }
+  if (error) { console.error(error); restaurar(); _toastErro("Erro ao excluir."); return; }
   boletos.splice(index, 1);
   abrirBoletos();
 }
@@ -5987,7 +6017,7 @@ function abrirManejoAutomatico(index) {
             <div class="ma-item-acoes">
               <button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}')" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>
               <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">✏️</button>
-              <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}')">🗑️</button>
+              <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}', this)">🗑️</button>
             </div>
           </div>`;
         }).join("")}
@@ -6006,7 +6036,9 @@ async function toggleProtocolo(index, protId) {
   abrirManejoAutomatico(index);
 }
 
-async function excluirProtocolo(index, protId) {
+async function excluirProtocolo(index, protId, botao) {
+  if (botao?.disabled) return;
+  _travarBotao(botao, "…");
   viveiros[index].protocolos = (viveiros[index].protocolos || []).filter(x => x.id !== protId);
   await salvarProtocolos(index);
   abrirManejoAutomatico(index);
@@ -6338,18 +6370,20 @@ function confirmarExcluirProduto(i) {
     <div class="confirmar-exclusao-custo">
       <span>Excluir <strong>${produtos[i].nome}</strong>?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirProduto(${i})">Sim, excluir</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirProduto(${i}, this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirVerProdutos()">Cancelar</button>
       </div>
     </div>
   `;
 }
 
-async function excluirProduto(i) {
+async function excluirProduto(i, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const { error } = await supabaseClient.from("produtos").delete().eq("id", produtos[i].id).eq("user_id", usuario.id);
-  if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
+  if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
   produtos.splice(i, 1);
   abrirVerProdutos();
 }
@@ -6418,22 +6452,22 @@ function abrirEdicaoProduto(i) {
 }
 
 async function salvarEdicaoProduto(i) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const nome = document.getElementById("editNomeProduto").value.trim();
   const categoria = document.getElementById("editCategoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("editPesoKgProduto").value);
   const valorPago = parseMoedaBR(document.getElementById("editValorPagoProduto").value);
   const erroEditProd = document.getElementById("erro-edit-produto");
-  function _erroEditProd(msg) { if (erroEditProd) { erroEditProd.textContent = msg; erroEditProd.style.display = "block"; } }
+  const _erroEditProd = (msg) => { if (erroEditProd) { erroEditProd.textContent = msg; erroEditProd.style.display = "block"; } };
   if (erroEditProd) erroEditProd.style.display = "none";
 
   if (!nome || !pesoKg || !valorPago) { _erroEditProd("Preencha todos os campos."); return; }
 
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
-
   const custoPorGrama = valorPago / (pesoKg * 1000);
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
 
   const { error } = await supabaseClient
     .from("produtos")
@@ -6441,7 +6475,7 @@ async function salvarEdicaoProduto(i) {
     .eq("id", produtos[i].id)
     .eq("user_id", usuario.id);
 
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  restaurar();
 
   if (error) { _erroEditProd("Erro ao salvar: " + error.message); return; }
 
@@ -6868,11 +6902,11 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
 }
 
 async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const chave = decodeURIComponent(chaveEnc);
   const msg = document.getElementById("msg-edit-custo");
   const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
   const v = viveiros[index];
   const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
@@ -6893,9 +6927,13 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   }
   const ids = grupo.map(c => c.id);
 
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
   // Remove os lançamentos do grupo e grava um único consolidado
   const del = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
-  if (del.error) { erro("Erro ao salvar: " + del.error.message); return; }
+  if (del.error) { restaurar(); erro("Erro ao salvar: " + del.error.message); return; }
 
   const cicloIdGrupo = grupo[0].cicloId || null; // preserva o ciclo do custo editado
   const novo = {
@@ -6905,7 +6943,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
     categoria: grupo[0].categoria, data: grupo[0].data, observacao: null, ciclo_id: cicloIdGrupo,
   };
   const { data: salvo, error } = await supabaseClient.from("custos").insert([novo]).select();
-  if (error) { erro("Erro ao salvar: " + error.message); return; }
+  if (error) { restaurar(); erro("Erro ao salvar: " + error.message); return; }
 
   v.custos = (v.custos || []).filter(c => !ids.includes(c.id));
   v.custos.push({
@@ -6924,20 +6962,22 @@ function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
     <span>Excluir todos os lançamentos deste item?</span>
     <div class="custo-grupo-conf-btns">
       <button class="ciclo-btn-relatorio" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Cancelar</button>
-      <button class="ciclo-btn-excluir" onclick="excluirGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto})">Excluir</button>
+      <button class="ciclo-btn-excluir" onclick="excluirGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto},this)">Excluir</button>
     </div>
   </div>`;
 }
 
-async function excluirGrupoCusto(index, chaveEnc, elementoId, direto) {
+async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const chave = decodeURIComponent(chaveEnc);
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const v = viveiros[index];
   const ids = (v.custos || []).filter(c => _chaveCusto(c) === chave).map(c => c.id);
   if (ids.length) {
     const { error } = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
-    if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
+    if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
   }
   v.custos = (v.custos || []).filter(c => !ids.includes(c.id));
   renderizarHistoricoCustos(index, elementoId, direto);
@@ -6994,11 +7034,13 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
 }
 
 async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoCusto").value;
   const novoNome = document.getElementById("nomeEdicaoCusto").value.trim();
   const novoValor = parseMoedaBR(document.getElementById("valorEdicaoCusto").value);
   const erroEditCusto = document.getElementById("msg-edit-custo-erro");
-  function _erroEditCusto(msg) { if (erroEditCusto) { erroEditCusto.textContent = msg; erroEditCusto.style.display = "block"; } }
+  const _erroEditCusto = (msg) => { if (erroEditCusto) { erroEditCusto.textContent = msg; erroEditCusto.style.display = "block"; } };
   if (erroEditCusto) erroEditCusto.style.display = "none";
 
   if (!novaData || !novoNome || isNaN(novoValor) || novoValor < 0) {
@@ -7006,18 +7048,16 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
     return;
   }
 
+  const restaurar = _travarBotao(botao, "Salvando...");
   const custo = viveiros[viveiroIndex].custos[custoIndex];
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
-
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  if (!usuario) { restaurar(); return; }
 
   const { error } = await supabaseClient.from("custos")
     .update({ data: novaData, nome_produto: novoNome, valor: novoValor, categoria: novoNome })
     .eq("id", custo.id).eq("user_id", usuario.id);
 
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+  restaurar();
   if (error) { _erroEditCusto("Erro ao salvar: " + error.message); return; }
 
   viveiros[viveiroIndex].custos[custoIndex].data = novaData;
@@ -7086,19 +7126,21 @@ function confirmarExcluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
     <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
       <span>Excluir este custo?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto})">Sim, excluir</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto},this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${direto})">Cancelar</button>
       </div>
     </div>
   `;
 }
 
-async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
+async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto, botao) {
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const custo = viveiros[viveiroIndex].custos[custoIndex];
   const { error } = await supabaseClient.from("custos").delete().eq("id", custo.id).eq("user_id", usuario.id);
-  if (error) { _toastErro("Erro ao excluir: " + error.message); return; }
+  if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
   viveiros[viveiroIndex].custos.splice(custoIndex, 1);
   renderizarHistoricoCustos(viveiroIndex, elementoId, direto);
 }
