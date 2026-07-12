@@ -1268,6 +1268,7 @@ function abrirViveiro(index) {
   }, 0);
 
   let sobrevivenciaEstimada = "--";
+  let sobrevInconsistente = false;
   let fciEstimado = "--";
   let biomassaAtualStr = "--";
   let biomassaDespescaStr = "--";
@@ -1282,9 +1283,11 @@ function abrirViveiro(index) {
       const remanescentes = res.quantidade; // = biomassaAtual / (peso/1000)
       // Sobrevivência conta remanescentes + já despescados (despesca não é mortalidade)
       const sobreviventes = remanescentes + despQtdTotal;
-      const sobrevPct = populacaoNum > 0 ? Math.min(100, sobreviventes / populacaoNum * 100) : 0;
+      // NÃO limita a 100%: mostrar 103% + alerta é melhor que esconder a inconsistência
+      const sobrevPct = populacaoNum > 0 ? sobreviventes / populacaoNum * 100 : 0;
+      sobrevInconsistente = sobrevPct > 100;
 
-      sobrevivenciaEstimada = formatarNumeroBR(sobrevPct, 1) + " %";
+      sobrevivenciaEstimada = formatarNumeroBR(sobrevPct, 1) + " %" + (sobrevInconsistente ? " ⚠️" : "");
       if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / res.biomassa, 2);
       biomassaAtualStr = formatarNumeroBR(biomassaAtual, 0) + " kg";
       if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / res.biomassa, 2);
@@ -1409,6 +1412,11 @@ function abrirViveiro(index) {
           <strong>${custoKgProduzidoStr}</strong>
         </div>
       </div>
+
+      ${sobrevInconsistente ? `<div class="vv-alerta-inconsistencia">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Sobrevivência estimada acima de 100% — verifique povoamento, ração, taxa alimentar, peso médio ou o cadastro das despescas.</span>
+      </div>` : ""}
 
       <div class="vv-secao-lbl">Ações de manejo</div>
       <div class="vv-manejo-grid">
@@ -5243,7 +5251,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
           <div class="rc-graf-box"><h5>FCA acumulado estimado</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
           <div class="rc-graf-box"><h5>Biomassa estimada (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBio"></canvas></div></div>
         </div>
-        <p class="rc-graf-nota">Biomassa e FCA são estimados a partir das biometrias e das despescas registradas.</p>
+        <p class="rc-graf-nota">Biomassa estimada com base na população povoada, nas despescas registradas e no peso médio das biometrias. O cálculo não incorpora mortalidade não registrada.</p>
       </div>` : ""}
 
       <div class="rc-hero">
@@ -5605,7 +5613,7 @@ function gerarRelatorioImpressao() {
         <div class="chart-box"><h4>FCA acumulado estimado</h4><canvas id="cFca"></canvas></div>
         <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
       </div>
-      <p style="font-size:9.5px;color:#9ca3af;margin:8px 2px 0">Biomassa e FCA são estimados com base nas biometrias e nas despescas registradas.</p>
+      <p style="font-size:9.5px;color:#9ca3af;margin:8px 2px 0">Biomassa estimada com base na população povoada, nas despescas registradas e no peso médio das biometrias. O cálculo não incorpora mortalidade não registrada.</p>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">4. Distribuição dos custos</h2>
