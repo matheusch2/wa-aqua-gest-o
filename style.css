@@ -1300,6 +1300,20 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
     background: rgb(4, 85, 79);
 }
 
+.botao-salvar:disabled { cursor: default; }
+.botao-salvar.btn-carregando { opacity: 0.9; }
+.btn-spinner {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: btnspin 0.6s linear infinite;
+    will-change: transform;
+}
+@keyframes btnspin { to { transform: rotate(360deg); } }
+
 .botao-voltar-form {
     display: block;
     width: 100%;

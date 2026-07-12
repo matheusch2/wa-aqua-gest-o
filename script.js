@@ -1012,7 +1012,7 @@ function mostrarCadastroViveiro() {
         </div>
 
         <div id="msg-viveiro-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarViveiro()">
+        <button id="btnSalvarViveiro" class="botao-salvar" onclick="salvarViveiro()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar viveiro
         </button>
@@ -1032,13 +1032,14 @@ function _cadModo(modo) {
 }
 
 async function salvarViveiro() {
+  const botao = document.getElementById("btnSalvarViveiro");
+  if (botao && botao.disabled) return; // trava contra duplo toque
+
   const nome = document.getElementById("nomeViveiro").value.trim();
   const modo = document.getElementById("cadModo")?.value || "cultivo";
   const tamanho = document.getElementById("tamanhoViveiro").value;
   const erroViveiro = document.getElementById("msg-viveiro-erro");
-  function mostrarErroViveiro(msg) {
-    if (erroViveiro) { erroViveiro.textContent = msg; erroViveiro.style.display = "block"; }
-  }
+  const mostrarErroViveiro = (msg) => { if (erroViveiro) { erroViveiro.textContent = msg; erroViveiro.style.display = "block"; } };
   if (erroViveiro) erroViveiro.style.display = "none";
 
   if (!nome || !tamanho) { mostrarErroViveiro("Informe o nome e o tamanho do viveiro."); return; }
@@ -1050,44 +1051,70 @@ async function salvarViveiro() {
     return;
   }
 
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
-
+  // Monta o registro conforme o modo (valida os campos específicos)
   let novoViveiro;
   if (modo === "prep") {
     const dataPrep = document.getElementById("dataPreparacao").value;
     if (!dataPrep) { mostrarErroViveiro("Informe a data de início da preparação."); return; }
-    novoViveiro = {
-      nome, tamanho, ativo: true, user_id: usuario.id,
-      data_preparacao: dataPrep, data_povoamento: null, total_povoado: null, laboratorio: null,
-    };
+    novoViveiro = { nome, tamanho, ativo: true, data_preparacao: dataPrep, data_povoamento: null, total_povoado: null, laboratorio: null };
   } else {
     const data = document.getElementById("dataPovoamento").value;
     const total = document.getElementById("totalPovoadoGestao").value.replace(/\D/g, "");
     const laboratorio = document.getElementById("laboratorio").value;
     if (!data || !total || !laboratorio) { mostrarErroViveiro("Preencha data de povoamento, total povoado e laboratório."); return; }
-    novoViveiro = {
-      nome, tamanho, ativo: true, user_id: usuario.id,
-      data_povoamento: data, total_povoado: total, laboratorio: laboratorio, data_preparacao: null,
-    };
+    novoViveiro = { nome, tamanho, ativo: true, data_povoamento: data, total_povoado: total, laboratorio, data_preparacao: null };
   }
+
+  // Feedback visual imediato (< 50 ms) e trava do botão
+  const htmlOriginal = botao ? botao.innerHTML : "";
+  if (botao) {
+    botao.disabled = true;
+    botao.classList.add("btn-carregando");
+    botao.innerHTML = `<span class="btn-spinner"></span>Salvando...`;
+  }
+  const restaurarBotao = () => {
+    if (botao) { botao.disabled = false; botao.classList.remove("btn-carregando"); botao.innerHTML = htmlOriginal; }
+  };
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurarBotao(); return; }
+  novoViveiro.user_id = usuario.id;
 
   const { data: viveiroSalvo, error } = await supabaseClient
     .from("viveiros")
     .insert([novoViveiro])
     .select();
 
-  if (error) {
+  if (error || !viveiroSalvo || !viveiroSalvo.length) {
     console.log(error);
-    mostrarErroViveiro("Erro ao salvar: " + error.message);
+    mostrarErroViveiro("Erro ao salvar: " + (error?.message || "tente novamente."));
+    restaurarBotao();
     return;
   }
 
-  // Recarrega do banco para garantir estado sincronizado
-  await carregarViveiros();
+  // Insere direto no estado local — sem recarregar tudo do banco.
+  // Um viveiro novo não tem lançamentos, então os arrays vêm vazios.
+  const it = viveiroSalvo[0];
+  viveiros.push({
+    id: it.id,
+    nome: it.nome,
+    dataPovoamento: it.data_povoamento,
+    dataPreparacao: it.data_preparacao || null,
+    totalPovoado: it.total_povoado,
+    tamanho: it.tamanho,
+    laboratorio: it.laboratorio,
+    racoes: [], biometrias: [], despescas: [], ciclosFinalizados: [], custos: [],
+    protocolos: Array.isArray(it.protocolos) ? it.protocolos : [],
+  });
+  viveiros.sort((a, b) => {
+    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
+    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
+    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
+  });
 
-  // Vai pra lista de viveiros com mensagem de sucesso
-  mostrarListaViveiros(0, "", `${nome.trim()} cadastrado com sucesso!`);
+  // Mostra a lista já posicionada no viveiro recém-criado
+  const pos = viveiros.findIndex(v => v.id === it.id);
+  mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${nome.trim()} cadastrado com sucesso!`);
 }
 
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
