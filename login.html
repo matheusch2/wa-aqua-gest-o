@@ -2,7 +2,7 @@
 <html lang="pt-BR" translate="no">
 <head>
     <meta name="google" content="notranslate">
-    <link rel="stylesheet" href="style.css?v=20260710e">
+    <link rel="stylesheet" href="style.css?v=20260710f">
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
@@ -75,8 +75,17 @@
         const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Se já estiver logado, vai direto pro app
-        supabase.createClient(SUPABASE_URL, SUPABASE_KEY).auth.getSession().then(({ data: { session } }) => {
+        // Detecta o fluxo de recuperação de senha (link recebido por e-mail)
+        const _ehRecuperacao = (window.location.hash || "").includes("type=recovery");
+
+        // Supabase dispara este evento ao processar o token do link de recuperação
+        supabaseClient.auth.onAuthStateChange((event) => {
+            if (event === "PASSWORD_RECOVERY") mostrarDefinirNovaSenha();
+        });
+
+        // Se já estiver logado, vai direto pro app (exceto durante a recuperação de senha)
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (_ehRecuperacao) { mostrarDefinirNovaSenha(); return; }
             if (session) window.location.href = "index.html";
             else mostrarLogin();
         });
@@ -248,10 +257,62 @@
             const email = document.getElementById("emailRecuperacao").value;
             if (!email) { msgLogin("Digite seu e-mail."); return; }
             const restaurar = _travarBtnLogin(botao, "Enviando...");
-            const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+            // Faz o link do e-mail voltar para esta própria página de login
+            const redirectTo = window.location.href.split("#")[0].split("?")[0];
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
             if (error) { restaurar(); msgLogin(error.message); return; }
             mostrarLogin();
             msgLogin("E-mail enviado! Verifique sua caixa de entrada.", "ok");
+        }
+
+        // Tela mostrada ao abrir o link de recuperação recebido por e-mail
+        function mostrarDefinirNovaSenha() {
+            document.getElementById("area-login").innerHTML = `
+                <div class="login-wrapper">
+                    <div class="login-topo">
+                        <div class="logo-circulo login-logo">
+                            <span class="logo-wa">WA</span>
+                            <span class="logo-camarao">🦐</span>
+                        </div>
+                        <h1 class="titulo-login">NOVA SENHA</h1>
+                        <p class="login-subtitulo">Defina a sua nova senha</p>
+                    </div>
+                    <div class="login-form-card">
+                        <label>Nova senha</label>
+                        <div class="input-com-icone">
+                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="password" id="novaSenhaRec" placeholder="Mínimo 6 caracteres">
+                            <button class="botao-olho" type="button" onclick="toggleSenha('novaSenhaRec', this)">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
+                        <label>Confirmar nova senha</label>
+                        <div class="input-com-icone">
+                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="password" id="confSenhaRec" placeholder="Repita a nova senha">
+                        </div>
+                        <button class="botao-entrar" onclick="definirNovaSenha(this)">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Salvar nova senha
+                        </button>
+                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function definirNovaSenha(botao) {
+            if (botao?.disabled) return;
+            const nova = document.getElementById("novaSenhaRec").value;
+            const conf = document.getElementById("confSenhaRec").value;
+            if (!nova || nova.length < 6) { msgLogin("A senha deve ter no mínimo 6 caracteres."); return; }
+            if (nova !== conf) { msgLogin("As senhas não coincidem."); return; }
+            const restaurar = _travarBtnLogin(botao, "Salvando...");
+            // A sessão de recuperação autoriza trocar a senha sem a senha antiga
+            const { error } = await supabaseClient.auth.updateUser({ password: nova });
+            if (error) { restaurar(); msgLogin("Erro ao salvar: " + error.message); return; }
+            msgLogin("Senha alterada! Entrando...", "ok");
+            setTimeout(() => { window.location.href = "index.html"; }, 900);
         }
     </script>
 
