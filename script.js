@@ -290,9 +290,11 @@ function toggleTema() {
 }
 
 
-async function sairUsuario() {
+async function sairUsuario(botao) {
+  if (botao?.disabled) return; // evita duplo toque
+  _travarBotao(botao, "Saindo...");
   fecharMenuUsuario();
-  await supabaseClient.auth.signOut();
+  try { await supabaseClient.auth.signOut(); } catch (e) { console.log(e); }
   viveiros = [];
   window.location.href = "login.html";
 }
@@ -407,7 +409,7 @@ async function abrirConfiguracoes() {
         <p>Deseja realmente sair da sua conta?</p>
         <div class="cfg-sair-botoes">
           <button class="cfg-sair-cancelar" onclick="document.getElementById('cfg-sair-confirm').style.display='none'">Cancelar</button>
-          <button class="cfg-sair-confirmar" onclick="sairUsuario()">Sim, sair</button>
+          <button class="cfg-sair-confirmar" onclick="sairUsuario(this)">Sim, sair</button>
         </div>
       </div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>

@@ -2,7 +2,7 @@
 <html lang="pt-BR" translate="no">
 <head>
     <meta name="google" content="notranslate">
-    <link rel="stylesheet" href="style.css?v=20260709g">
+    <link rel="stylesheet" href="style.css?v=20260709h">
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
@@ -127,7 +127,7 @@
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                         </div>
-                        <button class="botao-entrar" onclick="entrarUsuario()">
+                        <button class="botao-entrar" onclick="entrarUsuario(this)">
                             <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                             Entrar
                         </button>
@@ -175,7 +175,7 @@
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                         </div>
-                        <button class="botao-entrar" onclick="cadastrarUsuario()">Criar conta</button>
+                        <button class="botao-entrar" onclick="cadastrarUsuario(this)">Criar conta</button>
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         <button class="botao-voltar-form" onclick="mostrarLogin()">← Voltar para o login</button>
                     </div>
@@ -199,7 +199,7 @@
                             <svg class="input-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
                             <input type="email" id="emailRecuperacao" placeholder="Digite seu e-mail">
                         </div>
-                        <button class="botao-entrar" onclick="recuperarSenha()">Enviar link de recuperação</button>
+                        <button class="botao-entrar" onclick="recuperarSenha(this)">Enviar link de recuperação</button>
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         <button class="botao-voltar-form" onclick="mostrarLogin()">← Voltar para o login</button>
                     </div>
@@ -207,33 +207,49 @@
             `;
         }
 
-        async function entrarUsuario() {
+        // Trava o botão de autenticação com spinner e devolve função para restaurar
+        function _travarBtnLogin(botao, texto) {
+            if (!botao) return () => {};
+            const html = botao.innerHTML;
+            botao.disabled = true;
+            botao.style.opacity = "0.9";
+            botao.innerHTML = `<span class="btn-spinner" style="margin-right:8px"></span>${texto}`;
+            return () => { botao.disabled = false; botao.style.opacity = ""; botao.innerHTML = html; };
+        }
+
+        async function entrarUsuario(botao) {
+            if (botao?.disabled) return;
             const email = document.getElementById("emailLogin").value;
             const senha = document.getElementById("senhaLogin").value;
             if (!email || !senha) { msgLogin("Preencha e-mail e senha."); return; }
+            const restaurar = _travarBtnLogin(botao, "Entrando...");
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-            if (error) { msgLogin("E-mail ou senha incorretos."); return; }
+            if (error) { restaurar(); msgLogin("E-mail ou senha incorretos."); return; }
             window.location.href = "index.html";
         }
 
-        async function cadastrarUsuario() {
+        async function cadastrarUsuario(botao) {
+            if (botao?.disabled) return;
             const email = document.getElementById("emailCadastro").value;
             const senha = document.getElementById("senhaCadastro").value;
             const confirmar = document.getElementById("confirmarSenha").value;
             if (!email || !senha || !confirmar) { msgLogin("Preencha todos os campos."); return; }
             if (senha !== confirmar) { msgLogin("As senhas não coincidem."); return; }
             if (senha.length < 6) { msgLogin("A senha deve ter pelo menos 6 caracteres."); return; }
+            const restaurar = _travarBtnLogin(botao, "Criando conta...");
             const { error } = await supabaseClient.auth.signUp({ email, password: senha });
-            if (error) { msgLogin(error.message); return; }
+            if (error) { restaurar(); msgLogin(error.message); return; }
             mostrarLogin();
             msgLogin("Conta criada! Agora faça login.", "ok");
         }
 
-        async function recuperarSenha() {
+        async function recuperarSenha(botao) {
+            if (botao?.disabled) return;
             const email = document.getElementById("emailRecuperacao").value;
             if (!email) { msgLogin("Digite seu e-mail."); return; }
+            const restaurar = _travarBtnLogin(botao, "Enviando...");
             const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-            if (error) { msgLogin(error.message); return; }
+            if (error) { restaurar(); msgLogin(error.message); return; }
             mostrarLogin();
             msgLogin("E-mail enviado! Verifique sua caixa de entrada.", "ok");
         }
