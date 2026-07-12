@@ -126,6 +126,17 @@ function _travarBotao(botao, texto = "Salvando...") {
   return () => { botao.disabled = false; botao.classList.remove("btn-carregando"); botao.innerHTML = htmlOriginal; };
 }
 
+// Gera um identificador único para vincular lançamentos ao ciclo correto
+// (evita mistura de custos quando um ciclo encerra e outro inicia no mesmo dia).
+function _novoCicloId() {
+  try { if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 async function uploadFotoPerfil(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1093,6 +1104,7 @@ async function salvarViveiro() {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurarBotao(); return; }
   novoViveiro.user_id = usuario.id;
+  novoViveiro.ciclo_id = _novoCicloId(); // vincula os lançamentos deste ciclo
 
   const { data: viveiroSalvo, error } = await supabaseClient
     .from("viveiros")
@@ -1117,6 +1129,7 @@ async function salvarViveiro() {
     totalPovoado: it.total_povoado,
     tamanho: it.tamanho,
     laboratorio: it.laboratorio,
+    cicloId: it.ciclo_id || null,
     racoes: [], biometrias: [], despescas: [], ciclosFinalizados: [], custos: [],
     protocolos: Array.isArray(it.protocolos) ? it.protocolos : [],
   });
@@ -1269,7 +1282,10 @@ function abrirViveiro(index) {
   const racoes = viveiro.racoes || [];
   const biometrias = viveiro.biometrias || [];
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
-  const custosLancados = (viveiro.custos || []).reduce((s, c) => s + Number(c.valor), 0);
+  // Só os custos do ciclo atual (fallback: viveiros antigos sem ciclo_id somam tudo)
+  const custosLancados = (viveiro.custos || [])
+    .filter(c => viveiro.cicloId ? (c.cicloId === viveiro.cicloId) : true)
+    .reduce((s, c) => s + Number(c.valor), 0);
   // Parcela de custos fixos (mão de obra, energia…) rateada até hoje, desde a preparação/povoamento
   const custoFixoViveiro = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
   const totalCustos = custosLancados + custoFixoViveiro;
@@ -2000,13 +2016,15 @@ async function salvarLancamentoRacao(indexDireto = "") {
     tipoRacaoId: tipoRacaoId,
   });
 
-  // Acumula custo de ração num único registro "Ração" por viveiro
+  // Acumula custo de ração num único registro "Ração" por ciclo do viveiro
   if (tipoRacao && racao > 0) {
     const custoNovo = tipoRacao.custoPorKg * racao;
     const qtdNova = racao * 1000;
+    const cicloId = viveiros[index].cicloId || null;
     if (!viveiros[index].custos) viveiros[index].custos = [];
+    // Acumula só no registro de ração do ciclo atual (não mistura com ciclos anteriores)
     const custoExistente = viveiros[index].custos.find(
-      c => c.categoria === "Ração" && c.nomeProduto === "Ração"
+      c => c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === cicloId
     );
     if (custoExistente) {
       const novoValor = custoExistente.valor + custoNovo;
@@ -2028,6 +2046,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
           valor: custoNovo,
           categoria: "Ração",
           data: data,
+          ciclo_id: cicloId,
         }]).select();
       if (salvoCusto) {
         viveiros[index].custos.push({
@@ -2040,6 +2059,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
           categoria: "Ração",
           data: data,
           observacao: null,
+          cicloId,
         });
       }
     }
@@ -3421,7 +3441,8 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
 async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTipo, novaQtd, data, usuario) {
   if (!viveiros[viveiroIndex].custos) viveiros[viveiroIndex].custos = [];
   const custos = viveiros[viveiroIndex].custos;
-  const entry = custos.find(c => c.categoria === "Ração" && c.nomeProduto === "Ração");
+  const cicloId = viveiros[viveiroIndex].cicloId || null;
+  const entry = custos.find(c => c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === cicloId);
 
   // Calcula diferença líquida no custo de ração
   const custoVelho = velhoTipo ? velhoTipo.custoPorKg * velhaQtd : 0;
@@ -3444,10 +3465,10 @@ async function ajustarCustoRacaoEdicao(viveiroIndex, velhoTipo, velhaQtd, novoTi
     const { data: salvoCusto } = await supabaseClient.from("custos").insert([{
       user_id: usuario.id, viveiro_id: viveiros[viveiroIndex].id,
       tipo: "produto", produto_id: null, nome_produto: "Ração",
-      quantidade_g: novaQtd * 1000, valor: custoNovo, categoria: "Ração", data: data,
+      quantidade_g: novaQtd * 1000, valor: custoNovo, categoria: "Ração", data: data, ciclo_id: cicloId,
     }]).select();
     if (salvoCusto) {
-      custos.push({ id: salvoCusto[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: novaQtd * 1000, valor: custoNovo, categoria: "Ração", data, observacao: null });
+      custos.push({ id: salvoCusto[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: novaQtd * 1000, valor: custoNovo, categoria: "Ração", data, observacao: null, cicloId });
     }
   }
 }
@@ -3552,7 +3573,7 @@ function mostrarFormularioReinicio(index, modo = "reiniciar") {
           <input type="text" id="novoLaboratorio" placeholder="Nome do laboratório">
         </div>
         <div id="msg-reinicio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar ${povoar ? "" : "botao-alerta"}" onclick="salvarNovoCiclo(${index})">
+        <button class="botao-salvar ${povoar ? "" : "botao-alerta"}" onclick="salvarNovoCiclo(${index}, '${modo}')">
           ${povoar
             ? `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg> Povoar viveiro`
             : `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Confirmar reinício`}
@@ -3565,7 +3586,7 @@ function mostrarFormularioReinicio(index, modo = "reiniciar") {
 }
 
 // CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
-async function salvarNovoCiclo(index) {
+async function salvarNovoCiclo(index, modo = "reiniciar") {
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -3587,12 +3608,18 @@ async function salvarNovoCiclo(index) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
 
+  // Povoar (prep → cultivo) continua o MESMO ciclo (mantém o ciclo_id da preparação,
+  // para os custos de preparação seguirem no ciclo). Reiniciar começa um ciclo novo.
+  const povoar = modo === "povoar";
+  const novoCicloId = povoar ? (viveiros[index].cicloId || _novoCicloId()) : _novoCicloId();
+
   const { error } = await supabaseClient
     .from("viveiros")
     .update({
       data_povoamento: novoPovoamento,
       total_povoado: novoTotal,
       laboratorio: novoLaboratorio,
+      ciclo_id: novoCicloId,
     })
     .eq("id", viveiros[index].id);
 
@@ -3614,6 +3641,7 @@ async function salvarNovoCiclo(index) {
   viveiros[index].dataPovoamento = novoPovoamento;
   viveiros[index].totalPovoado = novoTotal;
   viveiros[index].laboratorio = novoLaboratorio;
+  viveiros[index].cicloId = novoCicloId;
   viveiros[index].racoes = [];
   viveiros[index].biometrias = [];
   viveiros[index].despescas = [];
@@ -5002,6 +5030,7 @@ async function salvarEncerramentoCiclo(index) {
     observacoes: observacoes,
     preco_venda: precoVenda || null,
     data_preparacao: viveiro.dataPreparacao || null,
+    ciclo_id: viveiro.cicloId || null,
     // Persiste o histórico do ciclo para os relatórios continuarem completos
     biometrias_json: biometrias,
     racoes_json: racoes,
@@ -5050,6 +5079,7 @@ async function salvarEncerramentoCiclo(index) {
     sobrevivencia: sobrevivencia,
     precoVenda: precoVenda || 0,
     dataPreparacao: viveiro.dataPreparacao || null,
+    cicloId: viveiro.cicloId || null,
     biometrias: [...biometrias],
     racoes: [...racoes],
     despescas: [...despescas],
@@ -5061,10 +5091,14 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.biometrias = [];
   viveiro.despescas = [];
 
+  // Novo ciclo_id para a preparação que começa agora — assim, se outro ciclo
+  // iniciar no mesmo dia, os custos não se misturam com o ciclo recém-encerrado.
+  const novoCicloIdPrep = _novoCicloId();
+
   // Zera o ciclo e volta o viveiro para "Em preparação" (conta desde o encerramento)
   await supabaseClient
     .from("viveiros")
-    .update({ data_povoamento: null, total_povoado: null, laboratorio: null, data_preparacao: dataEncerramento })
+    .update({ data_povoamento: null, total_povoado: null, laboratorio: null, data_preparacao: dataEncerramento, ciclo_id: novoCicloIdPrep })
     .eq("id", viveiro.id)
     .eq("user_id", usuario.id);
 
@@ -5072,6 +5106,7 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.totalPovoado = null;
   viveiro.laboratorio = null;
   viveiro.dataPreparacao = dataEncerramento;
+  viveiro.cicloId = novoCicloIdPrep;
 
   if (!viveiro.ciclosFinalizados) {
     viveiro.ciclosFinalizados = [];
@@ -5165,9 +5200,12 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const _precoVal = ciclo.precoVenda > 0 ? ciclo.precoVenda.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
   const custosBloco = (() => {
+    // Vincula por ciclo_id quando disponível; senão, cai no filtro por data (compatível)
     const custosCiclo = (viveiros[index]?.custos || []).filter(c =>
-      ciclo.dataPovoamento && ciclo.dataEncerramento &&
-      c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento
+      ciclo.cicloId
+        ? c.cicloId === ciclo.cicloId
+        : (ciclo.dataPovoamento && ciclo.dataEncerramento &&
+           c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento)
     );
     const totalProdutos = custosCiclo.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
     const totalOutros = custosCiclo.filter(c => c.tipo === "outro").reduce((s, c) => s + Number(c.valor), 0);
@@ -5397,9 +5435,12 @@ function gerarRelatorioImpressao() {
   const precoKg = parseMoedaBR(document.getElementById("rc-preco-kg")?.value || "0") || 0;
 
   // ── Custos do ciclo (no período) ──
+  // Vincula por ciclo_id quando disponível; senão, cai no filtro por data (compatível)
   const custos = (viveiros[index]?.custos || []).filter(c =>
-    ciclo.dataPovoamento && ciclo.dataEncerramento &&
-    c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento
+    ciclo.cicloId
+      ? c.cicloId === ciclo.cicloId
+      : (ciclo.dataPovoamento && ciclo.dataEncerramento &&
+         c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento)
   );
   const custoFixoRateado = _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFixoRateado;
@@ -6588,15 +6629,16 @@ async function salvarCustoProduto(index) {
   const quantidadeG = _unidadeCusto === "kg" ? qtdRaw * 1000 : qtdRaw;
   const valor = prod.custoPorGrama * quantidadeG;
 
+  const cicloId = viveiros[index].cicloId || null;
   const { data: salvo, error } = await supabaseClient
     .from("custos")
-    .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto", produto_id: prod.id, nome_produto: prod.nome, quantidade_g: quantidadeG, valor, categoria: prod.categoria, data }])
+    .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto", produto_id: prod.id, nome_produto: prod.nome, quantidade_g: quantidadeG, valor, categoria: prod.categoria, data, ciclo_id: cicloId }])
     .select();
 
   if (error) { _erroCustoProd("Erro ao salvar: " + error.message); reabilitar(); return; }
 
   if (!viveiros[index].custos) viveiros[index].custos = [];
-  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: prod.id, nomeProduto: prod.nome, quantidadeG, valor, categoria: prod.categoria, data, observacao: null });
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: prod.id, nomeProduto: prod.nome, quantidadeG, valor, categoria: prod.categoria, data, observacao: null, cicloId });
 
   // Limpa o formulário para um novo lançamento
   document.getElementById("dataCustoProduto").value = new Date().toISOString().split("T")[0];
@@ -6682,15 +6724,16 @@ async function salvarOutroCusto(index) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { reabilitar(); return; }
 
+  const cicloId = viveiros[index].cicloId || null;
   const { data: salvo, error } = await supabaseClient
     .from("custos")
-    .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "outro", nome_produto: descricao, valor, categoria, data }])
+    .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "outro", nome_produto: descricao, valor, categoria, data, ciclo_id: cicloId }])
     .select();
 
   if (error) { _erroOutro("Erro ao salvar: " + error.message); reabilitar(); return; }
 
   if (!viveiros[index].custos) viveiros[index].custos = [];
-  viveiros[index].custos.push({ id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor, categoria, data, observacao: null });
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor, categoria, data, observacao: null, cicloId });
 
   // Limpa o formulário para um novo lançamento
   document.getElementById("dataOutroCusto").value = new Date().toISOString().split("T")[0];
@@ -6854,11 +6897,12 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   const del = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
   if (del.error) { erro("Erro ao salvar: " + del.error.message); return; }
 
+  const cicloIdGrupo = grupo[0].cicloId || null; // preserva o ciclo do custo editado
   const novo = {
     user_id: usuario.id, viveiro_id: v.id, tipo: grupo[0].tipo,
     produto_id: grupo[0].produtoId || null, nome_produto: novoNome,
     quantidade_g: somaQtd > 0 ? somaQtd : null, valor: novoValor,
-    categoria: grupo[0].categoria, data: grupo[0].data, observacao: null,
+    categoria: grupo[0].categoria, data: grupo[0].data, observacao: null, ciclo_id: cicloIdGrupo,
   };
   const { data: salvo, error } = await supabaseClient.from("custos").insert([novo]).select();
   if (error) { erro("Erro ao salvar: " + error.message); return; }
@@ -6866,7 +6910,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   v.custos = (v.custos || []).filter(c => !ids.includes(c.id));
   v.custos.push({
     id: salvo[0].id, tipo: novo.tipo, produtoId: novo.produto_id, nomeProduto: novoNome,
-    quantidadeG: novo.quantidade_g, valor: novoValor, categoria: novo.categoria, data: novo.data, observacao: null,
+    quantidadeG: novo.quantidade_g, valor: novoValor, categoria: novo.categoria, data: novo.data, observacao: null, cicloId: cicloIdGrupo,
   });
   _toastSucesso("Custo atualizado!");
   renderizarHistoricoCustos(index, elementoId, direto);
@@ -7241,6 +7285,7 @@ async function carregarViveiros() {
     totalPovoado: item.total_povoado,
     tamanho: item.tamanho,
     laboratorio: item.laboratorio,
+    cicloId: item.ciclo_id || null,
 
     racoes: racoesData
       .filter((racao) => racao.viveiro_id === item.id)
@@ -7293,6 +7338,7 @@ async function carregarViveiros() {
         precoVenda: ciclo.preco_venda ? Number(ciclo.preco_venda) : 0,
         dataPreparacao: ciclo.data_preparacao || null,
         observacoes: ciclo.observacoes,
+        cicloId: ciclo.ciclo_id || null,
         // Histórico persistido (gracioso para ciclos antigos sem esses campos)
         biometrias: Array.isArray(ciclo.biometrias_json) ? ciclo.biometrias_json.map(b => ({
           data: b.data, gramatura: Number(b.gramatura),
@@ -7319,6 +7365,7 @@ async function carregarViveiros() {
         categoria: c.categoria,
         data: c.data,
         observacao: c.observacao,
+        cicloId: c.ciclo_id || null,
       })),
 
     protocolos: Array.isArray(item.protocolos) ? item.protocolos : [],
