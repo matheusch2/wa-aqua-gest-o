@@ -1313,6 +1313,7 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
     will-change: transform;
 }
 @keyframes btnspin { to { transform: rotate(360deg); } }
+.spin-svg { animation: btnspin 0.8s linear infinite; transform-origin: center; will-change: transform; }
 
 .botao-voltar-form {
     display: block;
