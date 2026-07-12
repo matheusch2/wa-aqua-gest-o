@@ -2186,6 +2186,17 @@ function abrirDespesca(index) {
           </div>
         </div>
 
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Preço de venda por kg <span style="color:#9ca3af;font-weight:500">(opcional)</span></label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="precoDespesca" placeholder="Ex: 16,00" onblur="formatarMoedaBlur(this)">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+
         <div id="msg-despesca-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
 
         <div id="msg-despesca-sucesso" class="msg-sucesso-lancamento" style="display:none;">
@@ -2210,6 +2221,7 @@ async function salvarDespesca(index) {
   const data = document.getElementById("dataDespesca").value;
   const quantidadeKg = parseFloat(document.getElementById("quantidadeDespesca").value);
   const pesoMedio = parseFloat(document.getElementById("pesoMedioDespesca").value);
+  const precoKg = parseMoedaBR(document.getElementById("precoDespesca")?.value || "0") || null;
   const usuario = await pegarUsuarioLogado();
 
   if (!usuario) return;
@@ -2237,6 +2249,7 @@ async function salvarDespesca(index) {
     data: data,
     quantidade_kg: quantidadeKg,
     peso_medio: pesoMedio,
+    preco_kg: precoKg,
     user_id: usuario.id,
   };
 
@@ -2258,11 +2271,13 @@ async function salvarDespesca(index) {
     tipo: "Parcial",
     quantidadeKg: quantidadeKg,
     pesoMedio: pesoMedio,
+    precoKg: precoKg,
   });
 
   document.getElementById("dataDespesca").value = new Date().toISOString().split("T")[0];
   document.getElementById("quantidadeDespesca").value = "";
   document.getElementById("pesoMedioDespesca").value = "";
+  const _pd = document.getElementById("precoDespesca"); if (_pd) _pd.value = "";
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
 
   const msgSucesso = document.getElementById("msg-despesca-sucesso");
@@ -3185,6 +3200,16 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
             <span class="campo-unidade">g</span>
           </div>
         </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Preço de venda por kg <span style="color:#9ca3af;font-weight:500">(opcional)</span></label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="precoEdicaoDesp" value="${desp.precoKg ? formatarNumeroBR(desp.precoKg, 2) : ""}" placeholder="Ex: 16,00" onblur="formatarMoedaBlur(this)">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
         <button class="botao-salvar" onclick="salvarEdicaoDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
@@ -3200,6 +3225,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const novaData = document.getElementById("dataEdicaoDesp").value;
   const novaQtd = parseFloat(document.getElementById("qtdEdicaoDesp").value);
   const novoPeso = parseFloat(document.getElementById("pesoEdicaoDesp").value);
+  const novoPreco = parseMoedaBR(document.getElementById("precoEdicaoDesp")?.value || "0") || null;
 
   if (!novaData || !novaQtd || !novoPeso) { _toastErro("Preencha todos os campos."); return; }
 
@@ -3223,6 +3249,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
       data: novaData,
       quantidade_kg: novaQtd,
       peso_medio: novoPeso,
+      preco_kg: novoPreco,
       user_id: usuario.id,
     }])
     .select();
@@ -3237,6 +3264,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   viveiros[viveiroIndex].despescas[despIndex].data = novaData;
   viveiros[viveiroIndex].despescas[despIndex].quantidadeKg = novaQtd;
   viveiros[viveiroIndex].despescas[despIndex].pesoMedio = novoPeso;
+  viveiros[viveiroIndex].despescas[despIndex].precoKg = novoPreco;
 
   if (direto) {
     mostrarHistoricoDoViveiroDireto(viveiroIndex);
@@ -4804,7 +4832,7 @@ function abrirEncerrarCiclo(index) {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <label>Valor de venda (R$/kg)</label>
+            <label>Preço da despesca final (R$/kg)</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="precoVendaCiclo" placeholder="Ex: 18,00" onblur="formatarMoedaBlur(this)">
@@ -4912,6 +4940,10 @@ async function salvarEncerramentoCiclo(index) {
     observacoes: observacoes,
     preco_venda: precoVenda || null,
     data_preparacao: viveiro.dataPreparacao || null,
+    // Persiste o histórico do ciclo para os relatórios continuarem completos
+    biometrias_json: biometrias,
+    racoes_json: racoes,
+    despescas_json: despescas,
   };
 
   const { error } = await supabaseClient
@@ -5321,13 +5353,23 @@ function gerarRelatorioImpressao() {
   // ── Indicadores ──
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
   const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
-  const receitaBruta = producaoTotal * precoKg;
+  // Receita: cada despesca parcial usa o SEU preço (quando informado), senão o
+  // preço geral do relatório. A despesca final usa o preço geral (do encerramento).
+  const precoGeral = precoKg;
+  const despescasArr = [...(ciclo.despescas || [])];
+  const receitaDespescasParciais = despescasArr.reduce((s, d) => {
+    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoGeral;
+    return s + (Number(d.quantidadeKg) || 0) * p;
+  }, 0);
+  const producaoFinalKg = Number(ciclo.producaoFinal) || 0;
+  const receitaDespescaFinal = producaoFinalKg * precoGeral;
+  const receitaBruta = receitaDespescasParciais + receitaDespescaFinal;
   const lucroLiquido = receitaBruta - custoTotal;
   const tamanhoNum = parseFloat(ciclo.tamanho) || 0;
   const lucroPorHa = tamanhoNum > 0 ? lucroLiquido / tamanhoNum : 0;
   const lucroPorKg = producaoTotal > 0 ? lucroLiquido / producaoTotal : 0;
   const roi = custoTotal > 0 ? (lucroLiquido / custoTotal) * 100 : 0;
-  const temPreco = precoKg > 0;
+  const temPreco = receitaBruta > 0;
 
   // ── Séries (biometrias) — biomassa/FCA estimados descontando as despescas ──
   const _serie = _seriesCiclo(ciclo);
@@ -5337,13 +5379,20 @@ function gerarRelatorioImpressao() {
   const serieBiomassa = _serie.biomassa, serieFca = _serie.fca, serieRacaoAcum = _serie.racaoAcum;
   const serieObs = _serie.obs, serieDatas = _serie.datas;
 
-  // ── Despescas ──
+  // ── Despescas ── (parciais com preço próprio + despesca final como última linha)
   const despescas = [...(ciclo.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
   const linhasDespesca = despescas.map(d => {
-    const valor = (Number(d.quantidadeKg) || 0) * precoKg;
-    return `<tr><td>${formatarData(d.data)}</td><td>${d.tipo || "Parcial"}</td><td class="num">${formatarNumeroBR(d.quantidadeKg, 1)}</td><td class="num">${d.pesoMedio ? formatarNumeroBR(d.pesoMedio, 1) : "-"}</td><td class="num">${temPreco ? "R$ " + formatarNumeroBR(valor, 2) : "-"}</td></tr>`;
+    const kg = Number(d.quantidadeKg) || 0;
+    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoGeral;
+    const rec = kg * p;
+    return `<tr><td>${formatarData(d.data)}</td><td>Parcial</td><td class="num">${formatarNumeroBR(kg, 1)}</td><td class="num">${d.pesoMedio ? formatarNumeroBR(d.pesoMedio, 1) : "-"}</td><td class="num">${p > 0 ? "R$ " + formatarNumeroBR(p, 2) : "-"}</td><td class="num">${p > 0 ? "R$ " + formatarNumeroBR(rec, 2) : "-"}</td></tr>`;
   }).join("");
-  const totDespQtd = despescas.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+  // Linha da despesca final
+  const linhaFinal = producaoFinalKg > 0
+    ? `<tr><td>${formatarData(ciclo.dataEncerramento)}</td><td>Final</td><td class="num">${formatarNumeroBR(producaoFinalKg, 1)}</td><td class="num">${ciclo.pesoFinal ? formatarNumeroBR(ciclo.pesoFinal, 1) : "-"}</td><td class="num">${precoGeral > 0 ? "R$ " + formatarNumeroBR(precoGeral, 2) : "-"}</td><td class="num">${precoGeral > 0 ? "R$ " + formatarNumeroBR(receitaDespescaFinal, 2) : "-"}</td></tr>`
+    : "";
+  const totDespQtd = producaoTotal; // parciais + final
+  const totReceita = receitaBruta;
 
   const fmt = (v, d = 2) => formatarNumeroBR(v, d);
   const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "—";
@@ -5563,7 +5612,9 @@ function gerarRelatorioImpressao() {
       ${distLista.length ? `<div class="rosca-wrap"><div class="rosca-canvas"><canvas id="cDist"></canvas><div class="rosca-centro"><small>TOTAL</small><b>R$ ${fmt(custoTotal,2)}</b></div></div><div class="leg">${legendaDist}</div></div>` : `<p style="color:#9ca3af;font-size:11px">Nenhum custo lançado neste ciclo.</p>`}
 
       <h2 class="sec">5. Resumo financeiro</h2>
-      <div class="fin-row"><span>Receita bruta</span><b>${rs(receitaBruta)}</b></div>
+      <div class="fin-row"><span>Receita das despescas parciais</span><b>${rs(receitaDespescasParciais)}</b></div>
+      <div class="fin-row"><span>Receita da despesca final</span><b>${rs(receitaDespescaFinal)}</b></div>
+      <div class="fin-row"><span>Receita bruta total</span><b>${rs(receitaBruta)}</b></div>
       <div class="fin-row"><span>(-) Custo total</span><b>R$ ${fmt(custoTotal,2)}</b></div>
       <div class="fin-row destaque"><span>Lucro líquido</span><b>${rs(lucroLiquido)}</b></div>
       <div class="fin-row"><span>Lucro por hectare</span><b>${rs(lucroPorHa)}</b></div>
@@ -5577,9 +5628,9 @@ function gerarRelatorioImpressao() {
   <tbody>${bios.map((b,i)=>`<tr><td>${serieDatas[i]}</td><td class="num">${serieDias[i]}</td><td class="num">${fmt(seriePeso[i],1)}</td><td class="num">${serieCresc[i]===null?"-":fmt(serieCresc[i],1)}</td><td class="num">${fmt(serieBiomassa[i],1)}</td><td>${serieObs[i]}</td></tr>`).join("") || `<tr><td colspan="6" style="text-align:center;color:#9ca3af">Sem biometrias.</td></tr>`}</tbody></table>
 
   <h2 class="sec">7. Despescas realizadas</h2>
-  <table><thead><tr><th>Data</th><th>Tipo</th><th class="num">Quantidade (kg)</th><th class="num">Peso médio (g)</th><th class="num">Valor (R$)</th></tr></thead>
-  <tbody>${linhasDespesca || `<tr><td colspan="5" style="text-align:center;color:#9ca3af">Sem despescas.</td></tr>`}
-  <tr style="font-weight:800;background:#f8fafc"><td colspan="2">TOTAL</td><td class="num">${fmt(totDespQtd,1)}</td><td></td><td class="num">${temPreco ? "R$ "+fmt(totDespQtd*precoKg,2) : "-"}</td></tr></tbody></table>
+  <table><thead><tr><th>Data</th><th>Tipo</th><th class="num">Quantidade (kg)</th><th class="num">Peso médio (g)</th><th class="num">Preço/kg</th><th class="num">Receita (R$)</th></tr></thead>
+  <tbody>${(linhasDespesca + linhaFinal) || `<tr><td colspan="6" style="text-align:center;color:#9ca3af">Sem despescas.</td></tr>`}
+  <tr style="font-weight:800;background:#f8fafc"><td colspan="2">TOTAL</td><td class="num">${fmt(totDespQtd,1)}</td><td></td><td></td><td class="num">${precoGeral > 0 ? "R$ "+fmt(totReceita,2) : "-"}</td></tr></tbody></table>
 
   <div class="obs-duas">
     <div>
@@ -7155,6 +7206,7 @@ async function carregarViveiros() {
         tipo: "Parcial",
         quantidadeKg: Number(despesca.quantidade_kg),
         pesoMedio: Number(despesca.peso_medio),
+        precoKg: despesca.preco_kg != null ? Number(despesca.preco_kg) : null,
       })),
 
     ciclosFinalizados: ciclosData
@@ -7179,6 +7231,18 @@ async function carregarViveiros() {
         precoVenda: ciclo.preco_venda ? Number(ciclo.preco_venda) : 0,
         dataPreparacao: ciclo.data_preparacao || null,
         observacoes: ciclo.observacoes,
+        // Histórico persistido (gracioso para ciclos antigos sem esses campos)
+        biometrias: Array.isArray(ciclo.biometrias_json) ? ciclo.biometrias_json.map(b => ({
+          data: b.data, gramatura: Number(b.gramatura),
+        })) : [],
+        racoes: Array.isArray(ciclo.racoes_json) ? ciclo.racoes_json.map(r => ({
+          data: r.data, racao: Number(r.racao), nomeRacao: r.nomeRacao || null, tipoRacaoId: r.tipoRacaoId || null,
+        })) : [],
+        despescas: Array.isArray(ciclo.despescas_json) ? ciclo.despescas_json.map(d => ({
+          data: d.data, tipo: d.tipo || "Parcial",
+          quantidadeKg: Number(d.quantidadeKg), pesoMedio: Number(d.pesoMedio),
+          precoKg: d.precoKg != null ? Number(d.precoKg) : null,
+        })) : [],
       })),
 
     custos: custosArr
