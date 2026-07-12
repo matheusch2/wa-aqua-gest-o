@@ -7428,6 +7428,43 @@ async function carregarViveiros() {
   console.log("Viveiros carregados:", viveiros);
 }
 
+// Garante que todo viveiro ATIVO antigo (sem ciclo_id) receba um identificador,
+// de forma idempotente e segura contra concorrência. Não toca em ciclos
+// históricos encerrados nem no fallback por data.
+async function _garantirCicloIdViveirosAtivos() {
+  const semId = viveiros.filter(v => !v.cicloId);
+  if (!semId.length) return; // nada a migrar — idempotente
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  for (const v of semId) {
+    if (v.cicloId) continue; // já preenchido nesta execução
+    const novo = _novoCicloId();
+    // UPDATE condicional: só grava se ainda estiver null. Se outra aba/dispositivo
+    // preencher primeiro, o filtro não casa e retornamos vazio (sem sobrescrever).
+    const { data, error } = await supabaseClient
+      .from("viveiros")
+      .update({ ciclo_id: novo })
+      .eq("id", v.id)
+      .eq("user_id", usuario.id)
+      .is("ciclo_id", null)
+      .select("ciclo_id");
+
+    if (error) { console.log("ciclo_id backfill:", error); continue; }
+
+    if (data && data.length && data[0].ciclo_id) {
+      // Fonte de verdade = o valor efetivamente persistido no banco
+      v.cicloId = data[0].ciclo_id;
+    } else {
+      // Ninguém foi atualizado (outro cliente venceu a corrida): relê o valor atual
+      const { data: atual } = await supabaseClient
+        .from("viveiros").select("ciclo_id").eq("id", v.id).eq("user_id", usuario.id).maybeSingle();
+      if (atual && atual.ciclo_id) v.cicloId = atual.ciclo_id;
+    }
+  }
+}
+
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -7449,6 +7486,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
       await carregarViveiros();
+
+      // Garante ciclo_id nos viveiros ativos antigos (uma única vez, idempotente)
+      try { await _garantirCicloIdViveirosAtivos(); } catch (e) { console.log("ciclo_id backfill:", e); }
 
       // Põe em dia os protocolos semanais (lançamento automático)
       try { await aplicarProtocolosSemanais(); } catch (e) { console.log("Protocolos:", e); }
