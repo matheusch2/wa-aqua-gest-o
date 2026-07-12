@@ -5462,7 +5462,7 @@ function gerarRelatorioImpressao() {
   if (_fca > 1.8) _alertas.push("O FCA final ficou elevado (acima de 1,8).");
   if (temPreco && lucroLiquido < 0) _alertas.push("O ciclo apresentou resultado financeiro negativo.");
   if (!temPreco) _alertas.push("Preço de venda não informado — receita, lucro e ROI não foram calculados.");
-  if (despescas.some(d => !(Number(d.pesoMedio) > 0))) _alertas.push("Há despesca sem peso médio informado, o que afeta o cálculo de sobrevivência.");
+  if (despescas.some(d => !(Number(d.pesoMedio) > 0))) _alertas.push("Há despesca sem peso médio informado: ela não pôde ser convertida em número estimado de animais e ficou de fora do cálculo de sobrevivência. A sobrevivência exibida pode estar subestimada.");
   if (custoTotal <= 0) _alertas.push("Nenhum custo do ciclo foi cadastrado.");
   if (bios.length < 2) _alertas.push("Não há biometrias suficientes para gerar gráficos confiáveis.");
   const alertasHtml = _alertas.length
