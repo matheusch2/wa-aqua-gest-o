@@ -5283,174 +5283,95 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   _relImpCiclo = ciclo;
   _relImpIndex = index;
   const _serieRel = _seriesCiclo(ciclo);
-  const _precoVal = ciclo.precoVenda > 0 ? ciclo.precoVenda.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
-  const custosBloco = (() => {
-    // Fonte única: custos manuais do ciclo (por ciclo_id ou janela p/ legados) + rateio fixo
-    const _cc = _custosCicloAtivo(
-      viveiros[index] || { custos: [] }, ciclo.cicloId,
-      ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
-    );
-    const totalProdutos = _cc.totalProdutos;
-    const totalOutros = _cc.totalOutros;
-    const custoFixo = _cc.rateioFixo;
-    const totalCustos = _cc.total;
-    if (totalCustos === 0) return "";
-    return `
-      <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Custos do ciclo</div>
-        <div class="rc-lista">
-          <div class="rc-lista-row"><span>Insumos</span><strong>R$ ${formatarNumeroBR(totalProdutos, 2)}</strong></div>
-          <div class="rc-lista-row"><span>Outros custos</span><strong>R$ ${formatarNumeroBR(totalOutros, 2)}</strong></div>
-          ${custoFixo > 0 ? `<div class="rc-lista-row"><span>Mão de obra e custos fixos</span><strong>R$ ${formatarNumeroBR(custoFixo, 2)}</strong></div>` : ""}
-          <div class="rc-lista-row rc-lista-total"><span>Total de custos</span><strong>R$ ${formatarNumeroBR(totalCustos, 2)}</strong></div>
-        </div>
-      </div>`;
-  })();
+  // ── Custos (fonte única) e financeiro automático (preços das despescas) ──
+  const _cc = _custosCicloAtivo(
+    viveiros[index] || { custos: [] }, ciclo.cicloId,
+    ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
+  );
+  const custoTotal = _cc.total, custoManuais = _cc.totalManuais, rateioFixo = _cc.rateioFixo;
+
+  const producaoTotal = Number(ciclo.producaoTotal) || 0;
+  const precoFinal = Number(ciclo.precoVenda) || 0; // preço da despesca final
+  const _despRel = ciclo.despescas || [];
+  const receitaParciais = _despRel.reduce((s, d) => {
+    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal; // fallback registros antigos
+    return s + (Number(d.quantidadeKg) || 0) * p;
+  }, 0);
+  const receitaFinal = (Number(ciclo.producaoFinal) || 0) * precoFinal;
+  const receitaBruta = receitaParciais + receitaFinal;
+  const temPreco = receitaBruta > 0;
+  const precoMedio = producaoTotal > 0 ? receitaBruta / producaoTotal : 0;
+  const lucro = receitaBruta - custoTotal;
+  const roi = custoTotal > 0 ? (lucro / custoTotal) * 100 : 0;
+  const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
+  const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "—";
 
   area.innerHTML = `
-    <div class="relatorio-final rc-report">
+    <div class="rc2-report">
 
-      <div class="rc-header">
-        <div class="rc-header-ico">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="13" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-        </div>
-        <h2 class="rc-titulo">RELATÓRIO DE CICLO</h2>
-        <div class="rc-marca"><span class="rc-marca-traco"></span>WA AQUA GESTÃO<span class="rc-marca-traco"></span></div>
-        <div class="rc-viveiro-pill">${ciclo.nomeViveiro}</div>
+      <div class="rc2-head">
+        <h2 class="rc2-titulo">RELATÓRIO DE CICLO</h2>
+        <div class="rc2-viveiro">${ciclo.nomeViveiro}</div>
+        <div class="rc2-periodo">${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)} · ${ciclo.diasCultivo} dias</div>
       </div>
 
-      <div class="rc-periodo">
-        <div class="rc-periodo-item">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div class="rc-periodo-txt"><small>Início do ciclo</small><strong>${formatarData(ciclo.dataPovoamento)}</strong></div>
-        </div>
-        <span class="rc-periodo-seta">→</span>
-        <div class="rc-periodo-item">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div class="rc-periodo-txt"><small>Fim do ciclo</small><strong>${formatarData(ciclo.dataEncerramento)}</strong></div>
-        </div>
-        <div class="rc-periodo-item rc-periodo-destaque">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div class="rc-periodo-txt"><small>Duração total</small><strong>${ciclo.diasCultivo} dias</strong></div>
-        </div>
+      <div class="rc2-sec-tit">Informações gerais</div>
+      <div class="rc2-grid">
+        <div class="rc2-cell"><small>Povoamento</small><b>${formatarData(ciclo.dataPovoamento)}</b></div>
+        <div class="rc2-cell"><small>PLs</small><b>${Number(ciclo.totalPovoado).toLocaleString("pt-BR")}</b></div>
+        <div class="rc2-cell"><small>Laboratório</small><b>${ciclo.laboratorio || "—"}</b></div>
+        <div class="rc2-cell"><small>Área</small><b>${ciclo.tamanho} ha</b></div>
+        ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `<div class="rc2-cell"><small>Preparação</small><b>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</b></div>` : ""}
       </div>
 
-      <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Informações do ciclo</div>
-        <div class="rc-info-grid">
-          <div class="rc-info-card">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <small>Data do povoamento</small><strong>${formatarData(ciclo.dataPovoamento)}</strong>
-          </div>
-          <div class="rc-info-card">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <small>Total de PLs</small><strong>${Number(ciclo.totalPovoado).toLocaleString("pt-BR")} PLs</strong>
-          </div>
-          <div class="rc-info-card">
-            <svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L5 19a1 1 0 0 0 1 1.5h12A1 1 0 0 0 19 19l-5-10V3"/></svg>
-            <small>Laboratório</small><strong>${ciclo.laboratorio}</strong>
-          </div>
-          <div class="rc-info-card">
-            <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-            <small>Área do viveiro</small><strong>${ciclo.tamanho} ha</strong>
-          </div>
-          ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `
-          <div class="rc-info-card">
-            <svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg>
-            <small>Preparação</small><strong>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</strong>
-          </div>` : ""}
-        </div>
+      <div class="rc2-sec-tit">Indicadores produtivos</div>
+      <div class="rc2-band">
+        <div><b>${formatarNumeroBR(ciclo.produtividade, 0)}</b><small>kg/ha</small><span>Produtividade</span></div>
+        <div><b>${formatarNumeroBR(ciclo.pesoFinal, 1)} g</b><span>Peso final</span></div>
+        <div><b>${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</b><span>Sobrevivência</span></div>
+        <div><b>${formatarNumeroBR(ciclo.fca, 2)}</b><span>FCA</span></div>
       </div>
 
-      <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Resultado produtivo</div>
-        <div class="rc-result-grid">
-          <div class="rc-result-card">
-            <div class="rc-result-ico"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-            <strong>${formatarNumeroBR(ciclo.produtividade, 1)}</strong>
-            <span class="rc-result-un">kg/ha</span>
-            <small>Produtividade</small>
-          </div>
-          <div class="rc-result-card">
-            <div class="rc-result-ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 7h18M6 7l-3 6a3 3 0 0 0 6 0zM18 7l-3 6a3 3 0 0 0 6 0z"/></svg></div>
-            <strong>${formatarNumeroBR(ciclo.pesoFinal, 1)}</strong>
-            <span class="rc-result-un">gramas</span>
-            <small>Peso médio final</small>
-          </div>
-          <div class="rc-result-card">
-            <div class="rc-result-ico"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-            <strong>${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</strong>
-            <small>Sobrevivência</small>
-          </div>
-        </div>
+      <div class="rc2-sec-tit">Resumo operacional</div>
+      <div class="rc2-lines">
+        <div class="rc2-line"><span>Ração consumida</span><b>${formatarNumeroBR(ciclo.racaoConsumida, 1)} kg</b></div>
+        <div class="rc2-line"><span>Despescas parciais</span><b>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</b></div>
+        <div class="rc2-line"><span>Despesca final</span><b>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</b></div>
+        ${custoManuais > 0 ? `<div class="rc2-line"><span>Custos manuais</span><b>R$ ${formatarNumeroBR(custoManuais, 2)}</b></div>` : ""}
+        ${rateioFixo > 0 ? `<div class="rc2-line"><span>Rateio de custos fixos</span><b>R$ ${formatarNumeroBR(rateioFixo, 2)}</b></div>` : ""}
+        ${custoTotal > 0 ? `<div class="rc2-line rc2-line-total"><span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>` : ""}
       </div>
-
-      <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2M5 2v20M16 2c-1.5 0-3 1.5-3 4s1 4 3 4v12"/></svg>Alimentação</div>
-        <div class="rc-duo">
-          <div class="rc-duo-item">
-            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <div class="rc-duo-txt"><small>Ração consumida</small><strong>${formatarNumeroBR(ciclo.racaoConsumida, 1)} kg</strong></div>
-          </div>
-          <div class="rc-duo-sep"></div>
-          <div class="rc-duo-item">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            <div class="rc-duo-txt"><small>FCA</small><strong>${formatarNumeroBR(ciclo.fca, 2)}</strong></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Despescas</div>
-        <div class="rc-duo">
-          <div class="rc-duo-item">
-            <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <div class="rc-duo-txt"><small>Despescas parciais</small><strong>${formatarNumeroBR(ciclo.despescaParcial, 1)} kg</strong></div>
-          </div>
-          <div class="rc-duo-sep"></div>
-          <div class="rc-duo-item">
-            <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <div class="rc-duo-txt"><small>Despesca final</small><strong>${formatarNumeroBR(ciclo.producaoFinal, 1)} kg</strong></div>
-          </div>
-        </div>
-      </div>
-
-      ${custosBloco}
 
       ${_serieRel.dias.length ? `
-      <div class="rc-secao">
-        <div class="rc-secao-titulo"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Evolução do cultivo</div>
-        <div class="rc-graficos">
-          <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
-          <div class="rc-graf-box"><h5>Consumo de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
-          <div class="rc-graf-box"><h5>FCA acumulado estimado</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
-          <div class="rc-graf-box"><h5>Biomassa estimada (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBio"></canvas></div></div>
-        </div>
-        <p class="rc-graf-nota">Biomassa estimada com base na população povoada, nas despescas registradas e no peso médio das biometrias. O cálculo não incorpora mortalidade não registrada.</p>
-      </div>` : ""}
-
-      <div class="rc-hero">
-        <div class="rc-hero-esq">
-          <div class="rc-hero-ico"><svg viewBox="0 0 24 24"><path d="M3 6h18l-2 13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L3 6z"/><path d="M3 6l1-3h16l1 3"/><line x1="9" y1="11" x2="9" y2="16"/><line x1="15" y1="11" x2="15" y2="16"/></svg></div>
-          <span class="rc-hero-label">Produção final do ciclo</span>
-        </div>
-        <span class="rc-hero-valor">${formatarNumeroBR(ciclo.producaoTotal, 1)} kg</span>
+      <div class="rc2-sec-tit">Evolução do cultivo</div>
+      <div class="rc-graficos">
+        <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
+        <div class="rc-graf-box"><h5>Consumo de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
+        <div class="rc-graf-box"><h5>FCA acumulado estimado</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
+        <div class="rc-graf-box"><h5>Biomassa estimada (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBio"></canvas></div></div>
       </div>
+      <p class="rc-graf-nota">Biomassa estimada com base na população povoada, nas despescas registradas e no peso médio das biometrias. O cálculo não incorpora mortalidade não registrada.</p>
+      ` : ""}
 
-      <div class="rc-print-box">
-        <div class="rc-print-box-titulo">Relatório técnico (impressão)</div>
-        <div class="campo-form" style="margin-bottom:8px">
-          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Preço de venda (R$/kg)</label></div>
-          <input type="text" inputmode="decimal" id="rc-preco-kg" value="${_precoVal}" placeholder="Ex: 7,00" onblur="formatarMoedaBlur(this)">
-        </div>
-        <p class="rc-print-dica">Informe o preço para calcular receita, lucro e ROI no relatório técnico.</p>
-        <button class="botao-salvar" onclick="gerarRelatorioImpressao()">
+      <div class="rc2-sec-tit">Produção e desempenho financeiro</div>
+      <div class="rc2-prodfinal"><span>Produção final do ciclo</span><b>${formatarNumeroBR(producaoTotal, 1)} kg</b></div>
+      <div class="rc2-fin">
+        <div><small>Preço médio</small><b>${temPreco ? "R$ " + formatarNumeroBR(precoMedio, 2) + "/kg" : "—"}</b></div>
+        <div><small>Receita bruta</small><b>${rs(receitaBruta)}</b></div>
+        <div><small>Lucro líquido</small><b class="${temPreco ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${rs(lucro)}</b></div>
+        <div><small>ROI</small><b class="${temPreco && custoTotal > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && custoTotal > 0 ? formatarNumeroBR(roi, 1) + "%" : "—"}</b></div>
+        <div><small>Custo por kg</small><b>${custoTotal > 0 ? "R$ " + formatarNumeroBR(custoPorKg, 2) : "—"}</b></div>
+      </div>
+      ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita, lucro e ROI.</p>` : ""}
+
+      <div class="rc2-acoes">
+        <button class="botao-voltar-form" style="margin:0;flex:1" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
+        <button class="botao-salvar" style="margin:0;flex:1" onclick="gerarRelatorioImpressao()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir relatório
         </button>
       </div>
-      <button class="botao-voltar-form" style="margin-top:10px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
 
     </div>
   `;
@@ -5516,7 +5437,9 @@ function gerarRelatorioImpressao() {
   const index = _relImpIndex;
   if (!ciclo) { _toastErro("Relatório indisponível."); return; }
 
-  const precoKg = parseMoedaBR(document.getElementById("rc-preco-kg")?.value || "0") || 0;
+  // Preço automático: usa o preço da despesca final (encerramento); cada despesca
+  // parcial pode ter o seu próprio preço (tratado abaixo no cálculo da receita).
+  const precoKg = Number(ciclo.precoVenda) || 0;
 
   // ── Custos do ciclo (fonte única: manuais por ciclo_id/janela + rateio fixo) ──
   const custos = _custosManuaisDoCiclo(
