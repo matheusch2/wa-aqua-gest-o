@@ -1235,6 +1235,15 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
     font-size: 21px;
 }
 
+.login-logo { overflow: hidden; padding: 0 !important; }
+.login-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
 .titulo-login {
     text-align: center;
     font-size: 30px;
