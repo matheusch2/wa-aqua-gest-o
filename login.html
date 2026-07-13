@@ -83,11 +83,34 @@
             if (event === "PASSWORD_RECOVERY") mostrarDefinirNovaSenha();
         });
 
-        // Se já estiver logado, vai direto pro app (exceto durante a recuperação de senha)
+        // Se já estiver logado, vai direto pro app (exceto durante a recuperação de senha).
+        // replace() não deixa entrada de login navegável no histórico.
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (_ehRecuperacao) { mostrarDefinirNovaSenha(); return; }
-            if (session) window.location.href = "index.html";
+            if (session) window.location.replace("index.html");
             else mostrarLogin();
+        });
+
+        // Restaura o formulário de login se o Safari devolver a página do bfcache
+        // com o botão preso em "Entrando..." (sem apagar o e-mail digitado).
+        function restaurarEstadoVisualDoLogin() {
+            if (!document.getElementById("emailLogin")) return; // só na tela de login
+            const btn = document.querySelector(".botao-entrar");
+            if (!btn) return;
+            btn.disabled = false;
+            btn.style.opacity = "";
+            if (btn.querySelector(".btn-spinner")) {
+                btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Entrar`;
+            }
+        }
+
+        // Trata a restauração pelo back-forward cache (bfcache) do Safari.
+        window.addEventListener("pageshow", (event) => {
+            if (!event.persisted) return; // só quando a página volta do bfcache
+            restaurarEstadoVisualDoLogin();
+            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                if (session && !_ehRecuperacao) window.location.replace("index.html");
+            });
         });
 
         function msgLogin(texto, tipo) {
@@ -234,7 +257,8 @@
             const restaurar = _travarBtnLogin(botao, "Entrando...");
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
             if (error) { restaurar(); msgLogin("E-mail ou senha incorretos."); return; }
-            window.location.href = "index.html";
+            // replace() evita que o botão "Voltar" reabra a tela de login "Entrando..."
+            window.location.replace("index.html");
         }
 
         async function cadastrarUsuario(botao) {

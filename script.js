@@ -307,7 +307,8 @@ async function sairUsuario(botao) {
   fecharMenuUsuario();
   try { await supabaseClient.auth.signOut(); } catch (e) { console.log(e); }
   viveiros = [];
-  window.location.href = "login.html";
+  // replace(): Voltar/Avançar não devem reabrir o app autenticado após o logout
+  window.location.replace("login.html");
 }
 
 
@@ -7522,10 +7523,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("menuGestao").style.display = "grid";
       }
     } else {
-      window.location.href = "login.html";
+      window.location.replace("login.html");
     }
   } catch (error) {
     console.log("Erro na inicialização:", error);
-    window.location.href = "login.html";
+    window.location.replace("login.html");
   }
 });
