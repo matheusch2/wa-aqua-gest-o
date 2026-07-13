@@ -1523,9 +1523,9 @@ function abrirViveiro(index) {
         </button>
       </div>
 
-      <div id="confirmar-excluir-viveiro-${index}" style="display:none;margin:0 16px 12px;background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px">
-        <p style="margin:0 0 2px;font-size:12.5px;font-weight:700;color:#dc2626">Excluir "${viveiro.nome}"?</p>
-        <p style="margin:0 0 8px;font-size:11px;color:#7f1d1d;line-height:1.35">Os dados serão desativados (recuperáveis pelo suporte).</p>
+      <div id="confirmar-excluir-viveiro-${index}" style="display:none;margin:0 16px 10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:9px 11px">
+        <p style="margin:0 0 1px;font-size:12px;font-weight:700;color:#dc2626">Excluir "${viveiro.nome}"?</p>
+        <p style="margin:0 0 7px;font-size:10.5px;color:#7f1d1d;line-height:1.3">Os dados serão desativados (recuperáveis pelo suporte).</p>
         <div style="display:flex;gap:6px">
           <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index}, this)">Sim, excluir</button>
           <button class="ciclo-btn-relatorio" style="flex:1" onclick="document.getElementById('confirmar-excluir-viveiro-${index}').style.display='none'">Cancelar</button>
@@ -5195,9 +5195,9 @@ function mostrarViveiroSemCiclo(index) {
         🗑️ Excluir viveiro
       </button>
 
-      <div id="confirm-excluir-viveiro-${index}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
-        <p style="margin:0 0 2px;font-size:12.5px;font-weight:700;color:#dc2626">Excluir "${viveiro.nome}"?</p>
-        <p style="margin:0 0 8px;font-size:11px;color:#7f1d1d;line-height:1.35">Os dados serão desativados (recuperáveis pelo suporte).</p>
+      <div id="confirm-excluir-viveiro-${index}" style="display:none;margin-top:10px;padding:9px 11px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+        <p style="margin:0 0 1px;font-size:12px;font-weight:700;color:#dc2626">Excluir "${viveiro.nome}"?</p>
+        <p style="margin:0 0 7px;font-size:10.5px;color:#7f1d1d;line-height:1.3">Os dados serão desativados (recuperáveis pelo suporte).</p>
         <div style="display:flex;gap:6px">
           <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index}, this)">Sim, excluir</button>
           <button class="ciclo-btn-relatorio" style="flex:1" onclick="mostrarViveiroSemCiclo(${index})">Cancelar</button>
