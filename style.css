@@ -4829,6 +4829,8 @@ body.tema-escuro .bt-total-bar strong { color: #5eead4; }
     border: 1px solid #eef0f2;
     border-radius: 9px;
 }
+.fin-linha-virtual { background: #f0fdfa; border-color: #99f6e4; border-left: 3px solid #14b8a6; }
+body.tema-escuro .fin-linha-virtual { background: #052e2b; border-color: #0f4d47; border-left-color: #14b8a6; }
 .fin-linha-data { font-size: 11.5px; color: #6b7280; font-weight: 600; }
 .fin-linha-viveiro { font-size: 11.5px; font-weight: 800; color: rgb(6,107,99); }
 .fin-linha-desc {

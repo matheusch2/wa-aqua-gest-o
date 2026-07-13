@@ -4676,12 +4676,59 @@ function _finLimparFiltros() {
 }
 
 function _finTipoLabel(c) {
+  if (c.tipo === "fixo") return "Rateio automático";
   return c.tipo === "produto" ? "Produto" : "Outro custo";
+}
+
+// Gera itens VIRTUAIS de rateio dos custos fixos (funcionário, energia…) para a
+// tela financeira. Não materializa linhas na tabela custos — são calculados na
+// hora. Cada custo fixo vira um item por viveiro, com o valor rateado no período.
+function _finItensRateioFixo(alvos) {
+  if (!custosFixos.some(c => c.ativo !== false)) return [];
+  const hoje = new Date().toISOString().split("T")[0];
+  const pIni = _finPeriodoIni || null, pFim = _finPeriodoFim || null;
+  const itens = [];
+  for (const v of alvos) {
+    const vIni = v.dataPreparacao || v.dataPovoamento; // ciclo ativo: prep ou cultivo
+    if (!vIni) continue;
+    for (const cf of custosFixos) {
+      if (cf.ativo === false) continue;
+      // Janela = max(data_inicio do custo, início do viveiro) .. hoje,
+      // interceptada com o período do filtro financeiro.
+      let ini = vIni;
+      if (cf.dataInicio && cf.dataInicio > ini) ini = cf.dataInicio;
+      let fim = hoje;
+      if (pIni && pIni > ini) ini = pIni;
+      if (pFim && pFim < fim) fim = pFim;
+      if (ini > fim) continue;
+      // Acumula a parcela diária deste custo, dividida pelos viveiros ativos no dia
+      let val = 0, cur = ini, guard = 0;
+      while (cur <= fim && guard < 5000) {
+        if (!cf.dataInicio || cf.dataInicio <= cur) {
+          const n = _viveirosAtivosNaData(cur, hoje);
+          if (n > 0) val += (Number(cf.valorMensal) || 0) / 30 / n;
+        }
+        cur = _maAddDias(cur, 1); guard++;
+      }
+      if (val > 0.005) {
+        itens.push({
+          tipo: "fixo", produtoId: null,
+          nomeProduto: cf.nome + " — rateio automático",
+          categoria: _custoFixoCatLabel(cf.categoria),
+          quantidadeG: null, valor: Number(val.toFixed(2)),
+          data: fim, viveiroNome: v.nome, virtual: true,
+          periodoIni: ini, periodoFim: fim,
+        });
+      }
+    }
+  }
+  return itens;
 }
 
 function _finColetarCustos() {
   const viveiroIndex = document.getElementById("viveiroFinanceiro")?.value ?? "";
   const porViveiro = viveiroIndex !== "";
+  const alvos = porViveiro ? [viveiros[viveiroIndex]] : viveiros;
   let custos;
   if (porViveiro) {
     const v = viveiros[viveiroIndex];
@@ -4691,6 +4738,8 @@ function _finColetarCustos() {
   }
   if (_finPeriodoIni) custos = custos.filter(c => c.data >= _finPeriodoIni);
   if (_finPeriodoFim) custos = custos.filter(c => c.data <= _finPeriodoFim);
+  // Injeta os itens virtuais de rateio dos custos fixos (não editáveis pela lista)
+  custos = custos.concat(_finItensRateioFixo(alvos));
   return { custos, porViveiro };
 }
 
@@ -4714,10 +4763,11 @@ function mostrarCustosFinanceiro() {
 }
 
 function _finRenderDetalhado(resultado, custos, total) {
-  // % do total geral (mesmo período, todos os viveiros)
+  // % do total geral (mesmo período, todos os viveiros) — inclui o rateio fixo
   let custosGeral = viveiros.flatMap(v => (v.custos || []));
   if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
   if (_finPeriodoFim) custosGeral = custosGeral.filter(c => c.data <= _finPeriodoFim);
+  custosGeral = custosGeral.concat(_finItensRateioFixo(viveiros));
   const totalGeral = custosGeral.reduce((s, c) => s + Number(c.valor), 0);
   const pct = totalGeral > 0 ? Math.round((total / totalGeral) * 100) : 100;
 
@@ -4781,10 +4831,10 @@ function _finRenderDetalhado(resultado, custos, total) {
     </div>
     <div class="fin-lista">
       ${pagina.map(c => `
-        <div class="fin-linha">
+        <div class="fin-linha${c.virtual ? " fin-linha-virtual" : ""}">
           <span class="fin-linha-data">${formatarData(c.data)}</span>
           <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
-          <span class="fin-linha-desc">${c.nomeProduto || "—"}<small>${_finTipoLabel(c)}</small></span>
+          <span class="fin-linha-desc">${c.nomeProduto || "—"}<small>${c.virtual ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
           <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
         </div>
       `).join("")}
@@ -4808,7 +4858,9 @@ function _finRenderDetalhado(resultado, custos, total) {
 function _finRenderPorTipo(resultado, custos, total) {
   const grupos = {};
   custos.forEach(c => {
-    const chave = c.tipo === "outro" ? "Outro custo" : (c.categoria || "Outros");
+    // Custos fixos agrupam pela categoria (Mão de obra, Energia…); outros como antes
+    const chave = c.tipo === "fixo" ? (c.categoria || "Custos fixos")
+      : (c.tipo === "outro" ? "Outro custo" : (c.categoria || "Outros"));
     if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0 };
     grupos[chave].total += Number(c.valor);
     grupos[chave].qtd += 1;
