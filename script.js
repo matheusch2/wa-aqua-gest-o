@@ -6893,7 +6893,10 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
   const custos = viveiro.custos || [];
-  const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0);
+  // Rateio dos custos fixos (funcionário/energia) do ciclo atual — só de leitura,
+  // para o total desta tela bater com o "Custo parcial" do viveiro.
+  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
+  const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome — soma quantidade e valor (sem datas)
   const grupos = {};
@@ -6928,6 +6931,14 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
             </div>`;
           }).join("")
       }
+      ${rateioFixo > 0 ? `<div class="custo-card custo-card-rateio">
+        <div class="custo-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="custo-card-info">
+          <span class="custo-card-nome">Mão de obra e custos fixos</span>
+          <span class="custo-card-qtd">Rateio automático</span>
+        </div>
+        <span class="custo-card-valor">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
+      </div>` : ""}
     </div>
     <div class="custo-total">
       <div class="custo-total-ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l1.5 11a2 2 0 0 1-2 2.3H5.5A2 2 0 0 1 3.5 19z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/><circle cx="12" cy="13.5" r="1.5"/></svg></div>
@@ -7155,7 +7166,8 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
 function imprimirCustos(viveiroIndex) {
   const viveiro = viveiros[viveiroIndex];
   const custos = viveiro.custos || [];
-  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
+  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
+  const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome (igual à tela): uma linha por item
   const grupos = {};
@@ -7191,6 +7203,7 @@ function imprimirCustos(viveiroIndex) {
     <thead><tr><th>Descrição</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
     <tbody>
       ${linhas}
+      ${rateioFixo > 0 ? `<tr><td>Mão de obra e custos fixos</td><td>rateio</td><td>R$ ${formatarNumeroBR(rateioFixo, 2)}</td></tr>` : ""}
       <tr class="total-row"><td colspan="2">TOTAL</td><td>R$ ${formatarNumeroBR(total, 2)}</td></tr>
     </tbody>
   </table>

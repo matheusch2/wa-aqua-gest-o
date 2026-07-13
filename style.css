@@ -5710,6 +5710,11 @@ body.tema-escuro .custo-grupo-valor { color: #34d399; }
 }
 .custo-card-valor { font-size: 15px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; }
 .custo-card-acoes { display: flex; align-items: center; gap: 2px; border-left: 1px solid #eef0f2; padding-left: 8px; flex-shrink: 0; }
+.custo-card-rateio { background: #f0fdfa; border-color: #99f6e4; border-left: 3px solid #14b8a6; }
+.custo-card-rateio .custo-card-ico { background: #ccfbf1; }
+.custo-card-rateio .custo-card-ico svg { stroke: #0d9488; }
+.custo-card-rateio .custo-card-qtd { color: #0f766e; background: #ccfbf1; }
+body.tema-escuro .custo-card-rateio { background: #052e2b; border-color: #0f4d47; border-left-color: #14b8a6; }
 .custo-card-acoes .botao-editar { background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px; }
 
 .custo-total {
