@@ -1,8 +1,17 @@
+html, body {
+    /* Trava o deslize lateral: a tela só rola na vertical, sem "escorregar" pros lados */
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+}
+
 body {
     margin: 0;
     padding: 0;
     background: #f5f5f5;
     font-family: Arial, sans-serif;
+    position: relative;
 }
 
 .topo {
