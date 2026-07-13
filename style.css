@@ -1239,7 +1239,8 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
 .login-logo-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: #fff;
     border-radius: 50%;
     display: block;
 }
