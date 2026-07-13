@@ -1325,6 +1325,25 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
 @keyframes btnspin { to { transform: rotate(360deg); } }
 .spin-svg { animation: btnspin 0.8s linear infinite; transform-origin: center; will-change: transform; }
 
+/* Feedback de toque nos botões: afunda + brilho na hora do clique */
+button { transition: transform .12s ease, filter .12s ease, box-shadow .12s ease; }
+button:active:not(:disabled) {
+    transform: scale(0.96);
+    filter: brightness(1.12);
+}
+/* Onda de brilho (ripple) que sai do ponto tocado */
+.btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(0);
+    opacity: 0.7;
+    pointer-events: none;
+    animation: btnRipple .5s ease-out forwards;
+    z-index: 0;
+}
+@keyframes btnRipple { to { transform: scale(2.4); opacity: 0; } }
+
 .botao-voltar-form {
     display: block;
     width: 100%;

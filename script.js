@@ -7590,3 +7590,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.replace("login.html");
   }
 });
+
+// Feedback de toque: onda de brilho (ripple) saindo do ponto tocado.
+// Delegado no documento (captura) para valer também em botões criados dinamicamente.
+(function () {
+  function criarRipple(e) {
+    const btn = e.target.closest("button");
+    if (!btn || btn.disabled) return;
+    const rect = btn.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const size = Math.max(rect.width, rect.height);
+    const x = (e.clientX ?? rect.left + rect.width / 2) - rect.left - size / 2;
+    const y = (e.clientY ?? rect.top + rect.height / 2) - rect.top - size / 2;
+    if (getComputedStyle(btn).position === "static") btn.style.position = "relative";
+    btn.style.overflow = "hidden";
+    const ripple = document.createElement("span");
+    ripple.className = "btn-ripple";
+    ripple.style.width = ripple.style.height = size + "px";
+    ripple.style.left = x + "px";
+    ripple.style.top = y + "px";
+    btn.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove());
+  }
+  document.addEventListener("pointerdown", criarRipple, true);
+})();

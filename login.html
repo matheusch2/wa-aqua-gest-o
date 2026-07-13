@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#066b63">
     <link rel="manifest" href="manifest.json?v=20260713b">
-    <link rel="stylesheet" href="style.css?v=20260713b">
+    <link rel="stylesheet" href="style.css?v=20260713c">
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
@@ -342,6 +342,26 @@
             msgLogin("Senha alterada! Entrando...", "ok");
             setTimeout(() => { window.location.href = "index.html"; }, 900);
         }
+    </script>
+
+    <script>
+        // Feedback de toque: onda de brilho (ripple) saindo do ponto tocado
+        document.addEventListener("pointerdown", function (e) {
+            const btn = e.target.closest("button");
+            if (!btn || btn.disabled) return;
+            const rect = btn.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const size = Math.max(rect.width, rect.height);
+            if (getComputedStyle(btn).position === "static") btn.style.position = "relative";
+            btn.style.overflow = "hidden";
+            const r = document.createElement("span");
+            r.className = "btn-ripple";
+            r.style.width = r.style.height = size + "px";
+            r.style.left = ((e.clientX ?? rect.left + rect.width / 2) - rect.left - size / 2) + "px";
+            r.style.top = ((e.clientY ?? rect.top + rect.height / 2) - rect.top - size / 2) + "px";
+            btn.appendChild(r);
+            r.addEventListener("animationend", () => r.remove());
+        }, true);
     </script>
 
 </body>
