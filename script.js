@@ -5347,11 +5347,8 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc2-sec-tit">Evolução do cultivo</div>
       <div class="rc-graficos">
         <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
-        <div class="rc-graf-box"><h5>Consumo de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
-        <div class="rc-graf-box"><h5>FCA acumulado estimado</h5><div class="rc-graf-canvas"><canvas id="rcFca"></canvas></div></div>
-        <div class="rc-graf-box"><h5>Biomassa estimada (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBio"></canvas></div></div>
+        <div class="rc-graf-box"><h5>Consumo acumulado de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
       </div>
-      <p class="rc-graf-nota">Biomassa estimada com base na população povoada, nas despescas registradas e no peso médio das biometrias. O cálculo não incorpora mortalidade não registrada.</p>
       ` : ""}
 
       <div class="rc2-sec-tit">Produção e desempenho financeiro</div>
@@ -5425,11 +5422,11 @@ function _renderGraficosCiclo(serie) {
     const el = document.getElementById(id); if (!el) return;
     new Chart(el.getContext("2d"), { type: "line", data: { labels: serie.dias, datasets: [{ data, borderColor: cor, backgroundColor: fill || "transparent", fill: !!fill, tension: 0.3, pointRadius: 3, pointBackgroundColor: cor, borderWidth: 2 }] }, options: op() });
   };
+  // Relatório final: apenas Peso médio e Consumo acumulado de ração (sem
+  // gráficos estimados de FCA/biomassa).
   linha("rcPeso", serie.peso, "#16a34a", "rgba(22,163,74,.08)");
   const elR = document.getElementById("rcRacao");
   if (elR) new Chart(elR.getContext("2d"), { type: "bar", data: { labels: serie.dias, datasets: [{ data: serie.racaoAcum, backgroundColor: "rgb(6,107,99)" }] }, options: op() });
-  linha("rcFca", serie.fca, "#2563eb");
-  linha("rcBio", serie.biomassa, "#f59e0b", "rgba(245,158,11,.08)");
 }
 
 function gerarRelatorioImpressao() {
@@ -5709,10 +5706,7 @@ function gerarRelatorioImpressao() {
       <div class="charts">
         <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
-        <div class="chart-box"><h4>FCA acumulado estimado</h4><canvas id="cFca"></canvas></div>
-        <div class="chart-box"><h4>Biomassa estimada (kg)</h4><canvas id="cBio"></canvas></div>
       </div>
-      <p style="font-size:9.5px;color:#9ca3af;margin:8px 2px 0">Biomassa estimada com base na população povoada, nas despescas registradas e no peso médio das biometrias. O cálculo não incorpora mortalidade não registrada.</p>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">4. Distribuição dos custos</h2>
@@ -5772,8 +5766,6 @@ function gerarRelatorioImpressao() {
     if (typeof Chart === "undefined") { setTimeout(render, 100); return; }
     linha("cPeso", D.peso, "#16a34a", "rgba(22,163,74,.08)");
     new Chart(document.getElementById("cRacao"), { type: "bar", data: { labels: D.racao.labels, datasets: [{ data: D.racao.data, backgroundColor: "#0b6b63" }] }, options: { responsive: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
-    linha("cFca", D.fca, "#2563eb");
-    linha("cBio", D.biomassa, "#f59e0b", "rgba(245,158,11,.08)");
     if (document.getElementById("cDist") && D.dist.data.length) {
       new Chart(document.getElementById("cDist"), { type: "doughnut", data: { labels: D.dist.labels, datasets: [{ data: D.dist.data, backgroundColor: D.dist.cores, borderColor: "#fff", borderWidth: 2 }] }, options: { responsive: false, cutout: "62%", plugins: { legend: { display: false } } } });
     }
