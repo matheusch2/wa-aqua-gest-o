@@ -7610,7 +7610,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     ripple.style.left = x + "px";
     ripple.style.top = y + "px";
     btn.appendChild(ripple);
-    ripple.addEventListener("animationend", () => ripple.remove());
+    // Remove por tempo fixo (roda mesmo se o botão for escondido antes de a
+    // animação acabar) — evita a luzinha "pendurada" que rejogava ao reexibir.
+    setTimeout(() => ripple.remove(), 550);
   }
   document.addEventListener("pointerdown", criarRipple, true);
 })();
