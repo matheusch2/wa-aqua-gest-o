@@ -4758,11 +4758,27 @@ function mostrarCustosFinanceiro() {
   if (_financeiroModo === "resumido") {
     _finRenderPorTipo(resultado, custos, total);
   } else {
-    _finRenderDetalhado(resultado, custos, total);
+    _finRenderDetalhado(resultado, custos, total, porViveiro);
   }
 }
 
-function _finRenderDetalhado(resultado, custos, total) {
+// Agrupa custos por categoria (Larva, Ração, Mão de obra, Energia…), somando o
+// valor de todos os viveiros. Usado na visão consolidada de "Todos os viveiros".
+function _finGruposCategoria(custos) {
+  const grupos = {};
+  custos.forEach(c => {
+    const chave = c.tipo === "fixo" ? (c.categoria || "Custos fixos")
+      : (c.tipo === "outro" ? (c.categoria || c.nomeProduto || "Outro custo")
+        : (c.categoria || "Outros"));
+    if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0, viveiros: new Set() };
+    grupos[chave].total += Number(c.valor);
+    grupos[chave].qtd += 1;
+    if (c.viveiroNome) grupos[chave].viveiros.add(c.viveiroNome);
+  });
+  return Object.values(grupos).sort((a, b) => b.total - a.total);
+}
+
+function _finRenderDetalhado(resultado, custos, total, porViveiro) {
   // % do total geral (mesmo período, todos os viveiros) — inclui o rateio fixo
   let custosGeral = viveiros.flatMap(v => (v.custos || []));
   if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
@@ -4797,6 +4813,63 @@ function _finRenderDetalhado(resultado, custos, total) {
   if (_finPagina < 0) _finPagina = 0;
   const pagina = ordenados.slice(_finPagina * PP, _finPagina * PP + PP);
 
+  // Consolidação por categoria (visão "Todos os viveiros")
+  const grupos = !porViveiro ? _finGruposCategoria(custos) : null;
+  const maiorCat = grupos && grupos.length ? grupos[0] : null;
+
+  // 4º card: por viveiro mostra o maior lançamento; consolidado, a maior categoria
+  const cardMaiorHtml = porViveiro
+    ? `<div class="fin-card">
+        <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior lançamento</span></div>
+        <strong>R$ ${formatarNumeroBR(Number(maior.valor), 2)}</strong>
+        <small>${maior.nomeProduto || "—"} · ${formatarData(maior.data)}</small>
+      </div>`
+    : `<div class="fin-card">
+        <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior categoria</span></div>
+        <strong>R$ ${formatarNumeroBR(maiorCat ? maiorCat.total : 0, 2)}</strong>
+        <small>${maiorCat ? maiorCat.nome : "—"}</small>
+      </div>`;
+
+  // Lista: por viveiro = lançamento a lançamento (com ordenação/paginação);
+  // consolidado = um valor por categoria, somando todos os viveiros.
+  const listaBlocoHtml = porViveiro
+    ? `<div class="fin-lista-head">
+        <span>Lançamentos de custos</span>
+        <select class="fin-ordenar" onchange="_finOrdenacao=this.value;_finPagina=0;mostrarCustosFinanceiro()">
+          <option value="data" ${ord === "data" ? "selected" : ""}>Data</option>
+          <option value="valor" ${ord === "valor" ? "selected" : ""}>Valor</option>
+          <option value="descricao" ${ord === "descricao" ? "selected" : ""}>Descrição</option>
+        </select>
+      </div>
+      <div class="fin-lista">
+        ${pagina.map(c => `
+          <div class="fin-linha${c.virtual ? " fin-linha-virtual" : ""}">
+            <span class="fin-linha-data">${formatarData(c.data)}</span>
+            <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
+            <span class="fin-linha-desc">${c.nomeProduto || "—"}<small>${c.virtual ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
+            <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
+          </div>
+        `).join("")}
+      </div>
+      ${totalPag > 1 ? `
+        <div class="fin-paginacao">
+          <button ${_finPagina <= 0 ? "disabled" : ""} onclick="_finPagina--;mostrarCustosFinanceiro()">← Anterior</button>
+          <span>Pág. ${_finPagina + 1} / ${totalPag}</span>
+          <button ${_finPagina >= totalPag - 1 ? "disabled" : ""} onclick="_finPagina++;mostrarCustosFinanceiro()">Próxima →</button>
+        </div>` : ""}`
+    : `<div class="fin-lista-head">
+        <span>Custos por categoria</span>
+        <small class="fin-lista-hint">Todos os viveiros somados</small>
+      </div>
+      <div class="fin-lista">
+        ${grupos.map(g => `
+          <div class="fin-linha fin-linha-cat">
+            <span class="fin-linha-desc">${g.nome}<small>${g.qtd} lançamento${g.qtd > 1 ? "s" : ""} · ${g.viveiros.size} viveiro${g.viveiros.size > 1 ? "s" : ""}</small></span>
+            <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
+          </div>
+        `).join("")}
+      </div>`;
+
   resultado.innerHTML = `
     <div class="fin-cards">
       <div class="fin-card">
@@ -4814,37 +4887,10 @@ function _finRenderDetalhado(resultado, custos, total) {
         <strong>R$ ${formatarNumeroBR(mediaDia, 2)}</strong>
         <small>No período</small>
       </div>
-      <div class="fin-card">
-        <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior lançamento</span></div>
-        <strong>R$ ${formatarNumeroBR(Number(maior.valor), 2)}</strong>
-        <small>${maior.nomeProduto || "—"} · ${formatarData(maior.data)}</small>
-      </div>
+      ${cardMaiorHtml}
     </div>
 
-    <div class="fin-lista-head">
-      <span>Lançamentos de custos</span>
-      <select class="fin-ordenar" onchange="_finOrdenacao=this.value;_finPagina=0;mostrarCustosFinanceiro()">
-        <option value="data" ${ord === "data" ? "selected" : ""}>Data</option>
-        <option value="valor" ${ord === "valor" ? "selected" : ""}>Valor</option>
-        <option value="descricao" ${ord === "descricao" ? "selected" : ""}>Descrição</option>
-      </select>
-    </div>
-    <div class="fin-lista">
-      ${pagina.map(c => `
-        <div class="fin-linha${c.virtual ? " fin-linha-virtual" : ""}">
-          <span class="fin-linha-data">${formatarData(c.data)}</span>
-          <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
-          <span class="fin-linha-desc">${c.nomeProduto || "—"}<small>${c.virtual ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
-          <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
-        </div>
-      `).join("")}
-    </div>
-    ${totalPag > 1 ? `
-      <div class="fin-paginacao">
-        <button ${_finPagina <= 0 ? "disabled" : ""} onclick="_finPagina--;mostrarCustosFinanceiro()">← Anterior</button>
-        <span>Pág. ${_finPagina + 1} / ${totalPag}</span>
-        <button ${_finPagina >= totalPag - 1 ? "disabled" : ""} onclick="_finPagina++;mostrarCustosFinanceiro()">Próxima →</button>
-      </div>` : ""}
+    ${listaBlocoHtml}
     <div class="fin-total-geral">
       <div class="fin-total-geral-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       <div class="fin-total-geral-txt">
@@ -4920,19 +4966,33 @@ function _finRenderPorTipo(resultado, custos, total) {
 }
 
 function imprimirRelatorioFinanceiro() {
-  const { custos } = _finColetarCustos();
+  const { custos, porViveiro } = _finColetarCustos();
   if (!custos.length) { _toastErro("Nenhum custo no período para imprimir."); return; }
   const total = custos.reduce((s, c) => s + Number(c.valor), 0);
-  const ordenados = [...custos].sort((a, b) => b.data.localeCompare(a.data));
   const periodoTxt = (_finPeriodoIni || _finPeriodoFim)
     ? `${_finPeriodoIni ? formatarData(_finPeriodoIni) : "início"} até ${_finPeriodoFim ? formatarData(_finPeriodoFim) : "hoje"}`
     : "Todo o período";
-  const linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${c.viveiroNome || ""}</td><td>${c.nomeProduto || ""}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("");
+  let cabecalho, linhas, subtitulo;
+  if (porViveiro) {
+    // Um viveiro: detalhe lançamento a lançamento
+    subtitulo = custos[0].viveiroNome || "";
+    const ordenados = [...custos].sort((a, b) => b.data.localeCompare(a.data));
+    cabecalho = `<tr><th>Data</th><th>Viveiro</th><th>Descrição</th><th>Valor</th></tr>`;
+    linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${c.viveiroNome || ""}</td><td>${c.nomeProduto || ""}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("")
+      + `<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
+  } else {
+    // Todos os viveiros: consolidado por categoria
+    subtitulo = "Todos os viveiros";
+    const grupos = _finGruposCategoria(custos);
+    cabecalho = `<tr><th>Categoria</th><th style="text-align:center">Lançamentos</th><th style="text-align:center">Viveiros</th><th>Valor</th></tr>`;
+    linhas = grupos.map(g => `<tr><td>${g.nome}</td><td style="text-align:center">${g.qtd}</td><td style="text-align:center">${g.viveiros.size}</td><td style="text-align:right">R$ ${formatarNumeroBR(g.total, 2)}</td></tr>`).join("")
+      + `<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
+  }
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório financeiro</title>
-    <style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}h1{color:rgb(6,107,99);font-size:20px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:left}th{background:#f0fdf4}.total-row td{font-weight:700;border-top:2px solid rgb(6,107,99)}</style></head>
-    <body><h1>Relatório financeiro</h1><p>Período: ${periodoTxt}</p>
-    <table><thead><tr><th>Data</th><th>Viveiro</th><th>Descrição</th><th>Valor</th></tr></thead>
-    <tbody>${linhas}<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr></tbody></table></body></html>`;
+    <style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}h1{color:rgb(6,107,99);font-size:20px;margin-bottom:2px}.sub{color:#6b7280;font-size:13px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:left}th{background:#f0fdf4}.total-row td{font-weight:700;border-top:2px solid rgb(6,107,99)}</style></head>
+    <body><h1>Relatório financeiro</h1><p class="sub">${subtitulo}</p><p>Período: ${periodoTxt}</p>
+    <table><thead>${cabecalho}</thead>
+    <tbody>${linhas}</tbody></table></body></html>`;
   const janela = window.open("", "_blank");
   if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
   janela.document.write(html);

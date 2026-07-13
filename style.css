@@ -4860,6 +4860,20 @@ body.tema-escuro .fin-linha-virtual { background: #052e2b; border-color: #0f4d47
 }
 .fin-linha-valor { font-size: 13px; font-weight: 700; color: #1f2937; justify-self: end; }
 
+/* Linha consolidada por categoria (Todos os viveiros) */
+.fin-linha-cat {
+    grid-template-columns: 1fr auto;
+    padding: 12px;
+}
+.fin-linha-cat .fin-linha-desc {
+    font-size: 14px;
+    font-weight: 800;
+    white-space: normal;
+}
+.fin-linha-cat .fin-linha-valor { font-size: 14.5px; }
+.fin-lista-hint { font-size: 11px; color: #9ca3af; font-weight: 600; }
+body.tema-escuro .fin-lista-hint { color: #9ca3af; }
+
 /* Paginação */
 .fin-paginacao {
     display: flex;
