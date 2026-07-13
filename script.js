@@ -4701,12 +4701,11 @@ function _finItensRateioFixo(alvos) {
       if (pIni && pIni > ini) ini = pIni;
       if (pFim && pFim < fim) fim = pFim;
       if (ini > fim) continue;
-      // Acumula a parcela diária deste custo, dividida pelos viveiros ativos no dia
+      // Acumula a parcela diária deste custo (função-base compartilhada, dias reais do mês)
       let val = 0, cur = ini, guard = 0;
       while (cur <= fim && guard < 5000) {
         if (!cf.dataInicio || cf.dataInicio <= cur) {
-          const n = _viveirosAtivosNaData(cur, hoje);
-          if (n > 0) val += (Number(cf.valorMensal) || 0) / 30 / n;
+          val += _rateioFixoDia(cf.valorMensal, cur, _viveirosAtivosNaData(cur, hoje));
         }
         cur = _maAddDias(cur, 1); guard++;
       }
@@ -5905,8 +5904,18 @@ function _custoFixoMensalNaData(ymd) {
     return s + (Number(c.valorMensal) || 0);
   }, 0);
 }
+// Dias reais do mês civil de uma data (28/29/30/31)
+function _diasNoMes(ymd) {
+  const [y, m] = ymd.split("-").map(Number);
+  return new Date(y, m, 0).getDate(); // dia 0 do mês seguinte = último dia do mês m
+}
+// FUNÇÃO-BASE do rateio diário (fonte única): valor mensal ÷ dias reais do mês
+// ÷ viveiros ativos no dia. Sem arredondar aqui — o arredondamento é só na exibição.
+function _rateioFixoDia(valorMensal, ymd, nAtivos) {
+  return nAtivos > 0 ? (Number(valorMensal) || 0) / _diasNoMes(ymd) / nAtivos : 0;
+}
 function _custoFixoDiaTotalNaData(ymd) {
-  return _custoFixoMensalNaData(ymd) / 30;
+  return _custoFixoMensalNaData(ymd) / _diasNoMes(ymd);
 }
 
 // Quantos viveiros estavam ativos (preparação ou cultivo) numa data (YYYY-MM-DD)
@@ -5933,10 +5942,9 @@ function _custoFixoRateado(iniYmd, fimYmd) {
   const hoje = new Date().toISOString().split("T")[0];
   let total = 0, cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
-    const diaTotal = _custoFixoDiaTotalNaData(cur);
-    if (diaTotal > 0) {
-      const n = _viveirosAtivosNaData(cur, hoje);
-      if (n > 0) total += diaTotal / n;
+    const mensalNoDia = _custoFixoMensalNaData(cur); // soma dos custos que já valiam nesse dia
+    if (mensalNoDia > 0) {
+      total += _rateioFixoDia(mensalNoDia, cur, _viveirosAtivosNaData(cur, hoje));
     }
     cur = _maAddDias(cur, 1);
     guard++;
