@@ -1282,13 +1282,13 @@ function abrirViveiro(index) {
   const racoes = viveiro.racoes || [];
   const biometrias = viveiro.biometrias || [];
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
-  // Só os custos do ciclo atual (fallback: viveiros antigos sem ciclo_id somam tudo)
-  const custosLancados = (viveiro.custos || [])
-    .filter(c => viveiro.cicloId ? (c.cicloId === viveiro.cicloId) : true)
-    .reduce((s, c) => s + Number(c.valor), 0);
-  // Parcela de custos fixos (mão de obra, energia…) rateada até hoje, desde a preparação/povoamento
-  const custoFixoViveiro = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
-  const totalCustos = custosLancados + custoFixoViveiro;
+  // Fonte única: custos manuais do ciclo (inclui legados sem ciclo_id na janela)
+  // + custo fixo rateado, desde a preparação/povoamento até hoje.
+  const _inicioCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento;
+  const _cc = _custosCicloAtivo(viveiro, viveiro.cicloId, _inicioCiclo, new Date().toISOString().split("T")[0]);
+  const custosLancados = _cc.totalManuais;
+  const custoFixoViveiro = _cc.rateioFixo;
+  const totalCustos = _cc.total;
 
   // Última biometria e média de crescimento
   const biosSorted = [...biometrias].sort((a, b) => a.data.localeCompare(b.data));
@@ -5286,17 +5286,15 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const _precoVal = ciclo.precoVenda > 0 ? ciclo.precoVenda.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
   const custosBloco = (() => {
-    // Vincula por ciclo_id quando disponível; senão, cai no filtro por data (compatível)
-    const custosCiclo = (viveiros[index]?.custos || []).filter(c =>
-      ciclo.cicloId
-        ? c.cicloId === ciclo.cicloId
-        : (ciclo.dataPovoamento && ciclo.dataEncerramento &&
-           c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento)
+    // Fonte única: custos manuais do ciclo (por ciclo_id ou janela p/ legados) + rateio fixo
+    const _cc = _custosCicloAtivo(
+      viveiros[index] || { custos: [] }, ciclo.cicloId,
+      ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
     );
-    const totalProdutos = custosCiclo.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
-    const totalOutros = custosCiclo.filter(c => c.tipo === "outro").reduce((s, c) => s + Number(c.valor), 0);
-    const custoFixo = _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
-    const totalCustos = totalProdutos + totalOutros + custoFixo;
+    const totalProdutos = _cc.totalProdutos;
+    const totalOutros = _cc.totalOutros;
+    const custoFixo = _cc.rateioFixo;
+    const totalCustos = _cc.total;
     if (totalCustos === 0) return "";
     return `
       <div class="rc-secao">
@@ -5520,13 +5518,10 @@ function gerarRelatorioImpressao() {
 
   const precoKg = parseMoedaBR(document.getElementById("rc-preco-kg")?.value || "0") || 0;
 
-  // ── Custos do ciclo (no período) ──
-  // Vincula por ciclo_id quando disponível; senão, cai no filtro por data (compatível)
-  const custos = (viveiros[index]?.custos || []).filter(c =>
-    ciclo.cicloId
-      ? c.cicloId === ciclo.cicloId
-      : (ciclo.dataPovoamento && ciclo.dataEncerramento &&
-         c.data >= (ciclo.dataPreparacao || ciclo.dataPovoamento) && c.data <= ciclo.dataEncerramento)
+  // ── Custos do ciclo (fonte única: manuais por ciclo_id/janela + rateio fixo) ──
+  const custos = _custosManuaisDoCiclo(
+    viveiros[index]?.custos, ciclo.cicloId,
+    ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
   );
   const custoFixoRateado = _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFixoRateado;
@@ -5955,6 +5950,30 @@ function _custoFixoRateado(iniYmd, fimYmd) {
 // Rótulo amigável da categoria
 function _custoFixoCatLabel(cat) {
   return ({ mao_de_obra: "Mão de obra", energia: "Energia", aluguel: "Aluguel", agua: "Água", manutencao: "Manutenção", outro: "Outro" })[cat] || "Outro";
+}
+
+// Custos MANUAIS (reais) que pertencem a um ciclo. Casam pelo ciclo_id quando
+// ambos têm; senão (legados sem ciclo_id, criados antes do backfill) usam a
+// janela de datas [ini, fim]. Corrige a regressão em que o backfill deu ciclo_id
+// ao viveiro mas os custos antigos ficaram null e sumiam do filtro exato.
+function _custosManuaisDoCiclo(custos, cicloId, iniYmd, fimYmd) {
+  const dentroJanela = (c) => (!iniYmd || !fimYmd) ? true : (c.data >= iniYmd && c.data <= fimYmd);
+  return (custos || []).filter(c => {
+    if (cicloId && c.cicloId) return c.cicloId === cicloId; // ambos têm id → casa exato
+    return dentroJanela(c);                                  // legado/sem id → janela de datas
+  });
+}
+
+// FONTE ÚNICA dos custos de um ciclo: manuais válidos + custo fixo rateado.
+// Alimenta o card "Custo parcial", o "Custo por kg", o relatório do ciclo e a
+// impressão — garantindo o mesmo valor em todos os pontos para a mesma janela.
+function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd) {
+  const manuais = _custosManuaisDoCiclo(viveiro.custos, cicloId, iniYmd, fimYmd);
+  const totalProdutos = manuais.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
+  const totalOutros = manuais.filter(c => c.tipo !== "produto").reduce((s, c) => s + Number(c.valor), 0);
+  const totalManuais = totalProdutos + totalOutros;
+  const rateioFixo = _custoFixoRateado(iniYmd, fimYmd);
+  return { manuais, totalProdutos, totalOutros, totalManuais, rateioFixo, total: totalManuais + rateioFixo };
 }
 
 async function salvarProtocolos(index) {
