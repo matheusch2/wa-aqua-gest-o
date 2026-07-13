@@ -4049,6 +4049,11 @@ function abrirFormCustoFixo(index) {
   const editando = index !== undefined && index !== null;
   const c = editando ? custosFixos[index] : null;
   const area = document.getElementById("area-gestao");
+  // Para um custo novo, o padrão de "válido a partir de" é o início do cultivo
+  // ativo mais antigo — assim já cobre os cultivos em andamento automaticamente.
+  const _iniAtivos = viveiros.map(v => v.dataPreparacao || v.dataPovoamento).filter(Boolean).sort();
+  const _hojeYmd = new Date().toISOString().split("T")[0];
+  const _defaultInicio = _iniAtivos.length ? _iniAtivos[0] : _hojeYmd;
   const cats = [
     ["mao_de_obra", "Mão de obra"],
     ["energia", "Energia"],
@@ -4076,9 +4081,9 @@ function abrirFormCustoFixo(index) {
       </div>
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>Válido a partir de</label></div>
-        <input type="date" id="cfDataInicio" value="${editando ? (c.dataInicio || "") : new Date().toISOString().split("T")[0]}">
+        <input type="date" id="cfDataInicio" value="${editando ? (c.dataInicio || "") : _defaultInicio}">
       </div>
-      <p class="rc-print-dica" style="margin:2px 0 10px">O custo é rateado a partir dessa data. Coloque uma data passada para incluí-lo em cultivos que já estão em andamento.</p>
+      <p class="rc-print-dica" style="margin:2px 0 10px">O custo é rateado a partir dessa data. Já vem com o início do cultivo mais antigo para cobrir os viveiros em andamento — ajuste se quiser.</p>
       <div id="msg-cf-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" onclick="salvarCustoFixo(${editando ? index : "null"})">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
