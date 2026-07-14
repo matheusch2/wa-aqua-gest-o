@@ -5814,7 +5814,7 @@ body.tema-escuro .rc-graf-nota { color: #6b7280; }
 .rc2-periodo { font-size: 12.5px; color: #6b7280; margin-top: 3px; }
 .rc2-sec-tit { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: rgb(6,107,99); margin: 18px 0 8px; }
 .rc2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #eef0f2; border: 1px solid #eef0f2; border-radius: 10px; overflow: hidden; }
-.rc2-cell { background: #fff; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+.rc2-cell { background: #fff; padding: 9px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; }
 .rc2-cell small { font-size: 10.5px; color: #9ca3af; }
 .rc2-cell b { font-size: 14px; color: #111827; font-weight: 700; }
 .rc2-band { display: flex; border: 1px solid #eef0f2; border-radius: 10px; overflow: hidden; }
