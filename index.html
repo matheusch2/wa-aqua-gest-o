@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#066b63">
     <link rel="manifest" href="manifest.json?v=20260713b">
-    <link rel="stylesheet" href="style.css?v=20260713j">
+    <link rel="stylesheet" href="style.css?v=20260713k">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -28,6 +28,9 @@
     <div class="topo" style="display:none">
         <div class="topo-conteudo">
             <div class="topo-esquerda" onclick="voltarMenuGestao()" style="cursor:pointer">
+                <button id="btn-voltar-topo" class="topo-voltar" style="display:none" title="Voltar" aria-label="Voltar" onclick="event.stopPropagation(); irParaTelaAnterior()">
+                    <svg viewBox="0 0 24 24" class="topo-svg"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
                 <div class="logo-circulo">
                   <img 
                     src="https://i.postimg.cc/SKrJmL6V/Design-sem-nome-(4).png"
@@ -105,7 +108,7 @@
 
     </div>
 
-    <script src="script.js?v=20260713j"></script>
+    <script src="script.js?v=20260713k"></script>
 
 </body>
 </html>

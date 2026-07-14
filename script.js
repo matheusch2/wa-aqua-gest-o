@@ -952,6 +952,24 @@ function posicaoNaLista(index) {
 function esconderMenu() {
   document.getElementById("menuGestao").style.display = "none";
   _armarVoltarNavegador();
+  _toggleVoltarTopo(true);
+}
+
+// Mostra/esconde a setinha de voltar no topo (útil no iPhone em modo app,
+// onde não há botão/gesto de voltar do sistema).
+function _toggleVoltarTopo(mostrar) {
+  const b = document.getElementById("btn-voltar-topo");
+  if (b) b.style.display = mostrar ? "flex" : "none";
+}
+
+// Volta UMA tela (mesma ação do "Voltar" do celular). Usado pela setinha do topo.
+function irParaTelaAnterior() {
+  const btn = _voltarBotaoVisivel();
+  if (!btn) { voltarMenuGestao(); return; }
+  // Se há proteção de histórico armada, usa history.back() para manter tudo
+  // sincronizado (dispara o mesmo fluxo do voltar do celular); senão, clica direto.
+  if (history.state && history.state.wa) history.back();
+  else btn.click();
 }
 
 // ── Botão "voltar" do celular (Android) / gesto de voltar do navegador ──
@@ -983,6 +1001,7 @@ function voltarMenuGestao() {
   document.getElementById("menuGestao").style.display = "grid";
   limparAreaGestao();
   verificarBoletosVencendo();
+  _toggleVoltarTopo(false);
 }
 
 // ─── VIVEIRO ─────────────────────────────────────────────────────────────────

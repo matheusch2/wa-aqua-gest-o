@@ -110,6 +110,23 @@ body {
     height: 13px;
 }
 
+/* Setinha de voltar no topo (iPhone em modo app) */
+.topo-voltar {
+    width: 34px !important;
+    height: 34px;
+    min-width: 34px;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: rgba(255,255,255,0.16) !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.topo-voltar .topo-svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.topo-voltar:active { background: rgba(255,255,255,0.28) !important; }
+
 .topo-usuario-wrap {
     position: relative;
 }
