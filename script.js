@@ -951,6 +951,28 @@ function posicaoNaLista(index) {
 
 function esconderMenu() {
   document.getElementById("menuGestao").style.display = "none";
+  _armarVoltarNavegador();
+}
+
+// ── Botão "voltar" do celular (Android) / gesto de voltar do navegador ──
+// Em vez de sair do app, aciona o mesmo "Voltar" da tela atual. Só sai quando
+// estiver na raiz (menu principal). Reaproveita os botões .botao-voltar já
+// existentes, então o comportamento fica idêntico ao toque manual.
+function _armarVoltarNavegador() {
+  try {
+    if (!history.state || !history.state.wa) history.pushState({ wa: true }, "");
+  } catch (e) { /* ambientes sem history */ }
+}
+
+function _voltarBotaoVisivel() {
+  const area = document.getElementById("area-gestao");
+  if (!area) return null;
+  const botoes = area.querySelectorAll(".botao-voltar-form, .botao-voltar");
+  // Último botão visível (o "Voltar" costuma ficar no rodapé da tela).
+  for (let i = botoes.length - 1; i >= 0; i--) {
+    if (botoes[i].offsetParent !== null && !botoes[i].disabled) return botoes[i];
+  }
+  return null;
 }
 
 function voltarMenuGestao() {
@@ -7612,3 +7634,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   document.addEventListener("pointerdown", criarRipple, true);
 })();
+
+// Voltar do celular (Android) / gesto de voltar: aciona o "Voltar" da tela atual.
+window.addEventListener("popstate", function () {
+  const btn = _voltarBotaoVisivel();
+  if (!btn) return;                 // na raiz (menu): deixa o app sair normalmente
+  btn.click();                      // volta uma tela — mesma ação do botão Voltar
+  if (_voltarBotaoVisivel()) _armarVoltarNavegador(); // ainda em subtela → segue protegendo
+});
