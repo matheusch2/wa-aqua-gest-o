@@ -5818,7 +5818,7 @@ body.tema-escuro .rc-graf-nota { color: #6b7280; }
 .rc2-cell small { font-size: 10.5px; color: #9ca3af; }
 .rc2-cell b { font-size: 14px; color: #111827; font-weight: 700; }
 .rc2-band { display: flex; border: 1px solid #eef0f2; border-radius: 10px; overflow: hidden; }
-.rc2-band > div { flex: 1; min-width: 0; padding: 10px 5px; text-align: center; border-left: 1px solid #eef0f2; display: flex; flex-direction: column; gap: 1px; }
+.rc2-band > div { flex: 1; min-width: 0; padding: 10px 5px; text-align: center; border-left: 1px solid #eef0f2; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
 .rc2-band > div:first-child { border-left: none; }
 .rc2-band b { font-size: 15px; font-weight: 800; color: #111827; }
 .rc2-band small { font-size: 9.5px; color: #9ca3af; }
