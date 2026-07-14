@@ -5364,7 +5364,6 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const temPreco = receitaBruta > 0;
   const precoMedio = producaoTotal > 0 ? receitaBruta / producaoTotal : 0;
   const lucro = receitaBruta - custoTotal;
-  const roi = custoTotal > 0 ? (lucro / custoTotal) * 100 : 0;
   const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
   const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "—";
 
@@ -5418,10 +5417,9 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
         <div><small>Preço médio</small><b>${temPreco ? "R$ " + formatarNumeroBR(precoMedio, 2) + "/kg" : "—"}</b></div>
         <div><small>Receita bruta</small><b>${rs(receitaBruta)}</b></div>
         <div><small>Lucro líquido</small><b class="${temPreco ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${rs(lucro)}</b></div>
-        <div><small>ROI</small><b class="${temPreco && custoTotal > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && custoTotal > 0 ? formatarNumeroBR(roi, 1) + "%" : "—"}</b></div>
         <div><small>Custo por kg</small><b>${custoTotal > 0 ? "R$ " + formatarNumeroBR(custoPorKg, 2) : "—"}</b></div>
       </div>
-      ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita, lucro e ROI.</p>` : ""}
+      ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>` : ""}
 
       <div class="rc2-acoes">
         <button class="botao-voltar-form" style="margin:0;flex:1" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">← Voltar</button>
@@ -5533,7 +5531,6 @@ function gerarRelatorioImpressao() {
   const tamanhoNum = parseFloat(ciclo.tamanho) || 0;
   const lucroPorHa = tamanhoNum > 0 ? lucroLiquido / tamanhoNum : 0;
   const lucroPorKg = producaoTotal > 0 ? lucroLiquido / producaoTotal : 0;
-  const roi = custoTotal > 0 ? (lucroLiquido / custoTotal) * 100 : 0;
   const temPreco = receitaBruta > 0;
 
   // ── Séries (biometrias) — biomassa/FCA estimados descontando as despescas ──
@@ -5618,7 +5615,7 @@ function gerarRelatorioImpressao() {
   else if (_sob > 0 && _sob < 60) _alertas.push("A sobrevivência ficou abaixo de 60%.");
   if (_fca > 1.8) _alertas.push("O FCA final ficou elevado (acima de 1,8).");
   if (temPreco && lucroLiquido < 0) _alertas.push("O ciclo apresentou resultado financeiro negativo.");
-  if (!temPreco) _alertas.push("Preço de venda não informado — receita, lucro e ROI não foram calculados.");
+  if (!temPreco) _alertas.push("Preço de venda não informado — receita e lucro não foram calculados.");
   if (despescas.some(d => !(Number(d.pesoMedio) > 0))) _alertas.push("Há despesca sem peso médio informado: ela não pôde ser convertida em número estimado de animais e ficou de fora do cálculo de sobrevivência. A sobrevivência exibida pode estar subestimada.");
   if (custoTotal <= 0) _alertas.push("Nenhum custo do ciclo foi cadastrado.");
   if (bios.length < 2) _alertas.push("Não há biometrias suficientes para gerar gráficos confiáveis.");
@@ -5639,7 +5636,7 @@ function gerarRelatorioImpressao() {
     { ico: _ico.sobr, lbl: "Sobrevivência", val: fmt(ciclo.sobrevivencia, 1) + " %", sub: "", cls: "" },
     { ico: _ico.dollar, lbl: "Receita bruta", val: rs(receitaBruta), sub: "", cls: "" },
     { ico: _ico.wallet, lbl: "Custo total", val: "R$ " + fmt(custoTotal, 2), sub: "", cls: "amber" },
-    { ico: _ico.trend, lbl: "Lucro líquido", val: rs(lucroLiquido), sub: (temPreco && custoTotal > 0) ? fmt(roi, 1) + "% ROI" : "", cls: temPreco ? (lucroLiquido < 0 ? "danger" : "ok") : "" },
+    { ico: _ico.trend, lbl: "Lucro líquido", val: rs(lucroLiquido), sub: "", cls: temPreco ? (lucroLiquido < 0 ? "danger" : "ok") : "" },
   ];
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
@@ -5781,7 +5778,6 @@ function gerarRelatorioImpressao() {
       <div class="fin-row destaque"><span>Lucro líquido</span><b>${rs(lucroLiquido)}</b></div>
       <div class="fin-row"><span>Lucro por hectare</span><b>${rs(lucroPorHa)}</b></div>
       <div class="fin-row"><span>Lucro por kg produzido</span><b>${rs(lucroPorKg)}</b></div>
-      <div class="fin-row"><span>ROI (retorno sobre investimento)</span><b>${temPreco ? fmt(roi,1) + "%" : "—"}</b></div>
     </div>
   </div>
 
