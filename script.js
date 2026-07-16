@@ -5,6 +5,8 @@ let viveiros = [];
 let produtos = []; let tiposRacao = [];
 let boletos = [];
 let custosFixos = [];
+let assinatura = null;
+let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
@@ -4024,6 +4026,92 @@ function abrirMenuFinanceiro() {
   `;
 }
 
+// ─── ASSINATURA / PLANOS ────────────────────────────────────────────────────
+const _PLANOS_APP = [
+  { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros", mensal: 50,  anual: 500 },
+  { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros", mensal: 90,  anual: 900 },
+  { key: "avancado",      nome: "Avançado",      viveiros: "até 20 viveiros", mensal: 160, anual: 1600 },
+  { key: "pro",           nome: "Pro",           viveiros: "viveiros ilimitados", mensal: 250, anual: 2500 },
+];
+
+function _planoLabel(key) {
+  const p = _PLANOS_APP.find(x => x.key === key);
+  return p ? p.nome : "Grátis";
+}
+
+function abrirAssinatura() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const a = assinatura || { plano: "gratis", status: "ativo" };
+  const ehGratis = !a.plano || a.plano === "gratis";
+
+  let statusTxt, statusCls;
+  if (a.status === "ativo" && !ehGratis) { statusTxt = `Plano ativo: <b>${_planoLabel(a.plano)}</b>${a.ciclo ? " · " + a.ciclo : ""}`; statusCls = "ok"; }
+  else if (a.status === "pendente") { statusTxt = `Pagamento <b>pendente</b> — assim que confirmar, libera automaticamente`; statusCls = "pend"; }
+  else if (a.status === "cancelado") { statusTxt = `Assinatura <b>cancelada</b> — escolha um plano para reativar`; statusCls = "pend"; }
+  else { statusTxt = `Você está no plano <b>Grátis</b> (1 viveiro)`; statusCls = "free"; }
+
+  const ciclo = _planosCiclo;
+  const cards = _PLANOS_APP.map(p => {
+    const valor = ciclo === "anual" ? p.anual : p.mensal;
+    const atual = a.plano === p.key && a.status === "ativo";
+    return `
+      <div class="plano-card${atual ? " plano-card-atual" : ""}">
+        <div class="plano-card-top">
+          <span class="plano-nome">${p.nome}</span>
+          ${atual ? '<span class="plano-badge">Seu plano</span>' : ""}
+        </div>
+        <span class="plano-viv">${p.viveiros}</span>
+        <div class="plano-preco">R$ ${formatarNumeroBR(valor, 0)}<small>/${ciclo === "anual" ? "ano" : "mês"}</small></div>
+        <button class="plano-btn" ${atual ? "disabled" : ""} onclick="assinarPlano('${p.key}','${ciclo}', this)">
+          ${atual ? "Plano atual" : "Assinar"}
+        </button>
+      </div>`;
+  }).join("");
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Meu plano</h3>
+    <div class="cfg-wrap">
+      <div class="assin-status assin-status-${statusCls}">${statusTxt}</div>
+      <div class="assin-free-nota">🆓 <b>1 viveiro é grátis para sempre.</b> A cobrança vale a partir do 2º viveiro.</div>
+      <div class="assin-toggle">
+        <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
+        <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual · 2 meses grátis</button>
+      </div>
+      <div class="planos-grid">${cards}</div>
+      <p class="assin-obs">Pagamento via <b>Pix ou cartão</b> — você escolhe a forma no checkout seguro do Asaas.</p>
+      <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>
+    </div>
+  `;
+}
+
+async function assinarPlano(plano, ciclo, botao) {
+  if (botao && botao.disabled) return;
+  const restaurar = _travarBotao(botao, "Gerando pagamento...");
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("criar-assinatura", {
+      body: { plano, ciclo, billingType: "UNDEFINED" },
+    });
+    if (error || !data || data.error) {
+      console.log("Erro criar-assinatura:", error || (data && data.error));
+      _toastErro("Não foi possível gerar o pagamento. Tente de novo.");
+      restaurar();
+      return;
+    }
+    if (data.invoiceUrl) {
+      _toastSucesso("Redirecionando para o pagamento…");
+      setTimeout(() => { window.location.href = data.invoiceUrl; }, 600);
+    } else {
+      _toastErro("Assinatura criada, mas sem link de pagamento.");
+      restaurar();
+    }
+  } catch (e) {
+    console.log(e);
+    _toastErro("Erro ao gerar o pagamento.");
+    restaurar();
+  }
+}
+
 // ─── CUSTOS FIXOS MENSAIS — TELA E CRUD ─────────────────────────────────────
 
 function abrirCustosFixos() {
@@ -7429,6 +7517,11 @@ async function carregarViveiros() {
     dataInicio: c.data_inicio || null,
     ativo: c.ativo !== false,
   }));
+
+  // Carregar assinatura do usuário (gracioso se a tabela não existir ainda)
+  const { data: assinaturaData } = await supabaseClient
+    .from("assinaturas").select("*").eq("user_id", usuario.id).maybeSingle();
+  assinatura = assinaturaData || null;
 
   // Carregar custos (gracioso se a tabela não existir ainda)
   const { data: custosData } = await supabaseClient
