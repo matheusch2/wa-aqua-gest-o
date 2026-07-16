@@ -1392,7 +1392,8 @@ function abrirViveiro(index) {
       const biomassaProduzida = res.biomassa + despKgTotal;
       if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / biomassaProduzida, 2);
       biomassaAtualStr = formatarNumeroBR(biomassaAtual, 0) + " kg";
-      if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / res.biomassa, 2);
+      // Custo por kg PRODUZIDO usa a mesma base do FCA: biomassa atual + despescada.
+      if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / biomassaProduzida, 2);
       const pesoDespesca = Math.max(PESO_ALVO_DESPESCA, pesoUltimaBio);
       // Projeção final = remanescentes crescendo até a meta + o que já foi despescado
       biomassaDespescaStr = formatarNumeroBR(remanescentes * pesoDespesca / 1000 + despKgTotal, 0) + " kg";
