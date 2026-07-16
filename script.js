@@ -4077,41 +4077,73 @@ function abrirAssinatura() {
   const a = assinatura || { plano: "gratis", status: "ativo" };
   const ehGratis = !a.plano || a.plano === "gratis";
 
-  let statusTxt, statusCls;
-  if (a.status === "ativo" && !ehGratis) { statusTxt = `Plano ativo: <b>${_planoLabel(a.plano)}</b>${a.ciclo ? " · " + a.ciclo : ""}`; statusCls = "ok"; }
-  else if (a.status === "pendente") { statusTxt = `Pagamento <b>pendente</b> — assim que confirmar, libera automaticamente`; statusCls = "pend"; }
-  else if (a.status === "cancelado") { statusTxt = `Assinatura <b>cancelada</b> — escolha um plano para reativar`; statusCls = "pend"; }
-  else { statusTxt = `Você está no plano <b>Grátis</b> (1 viveiro)`; statusCls = "free"; }
+  // Bloco de status unificado (plano atual + info do grátis, sem repetir aviso)
+  let statusL1, statusL2, statusCls;
+  if (a.status === "ativo" && !ehGratis) {
+    statusL1 = `Plano atual: <b>${_planoLabel(a.plano)}</b>`;
+    statusL2 = a.ciclo ? `Cobrança ${a.ciclo} · ativa` : "Assinatura ativa";
+    statusCls = "ok";
+  } else if (a.status === "pendente") {
+    statusL1 = `Plano atual: <b>${_planoLabel(a.plano)}</b>`;
+    statusL2 = "Pagamento pendente — libera assim que confirmar";
+    statusCls = "pend";
+  } else if (a.status === "cancelado") {
+    statusL1 = `Plano atual: <b>Grátis</b>`;
+    statusL2 = "Assinatura cancelada — escolha um plano para reativar";
+    statusCls = "free";
+  } else {
+    statusL1 = `Plano atual: <b>Grátis</b>`;
+    statusL2 = "1 viveiro ativo · sem cobrança";
+    statusCls = "free";
+  }
 
   const ciclo = _planosCiclo;
   const cards = _PLANOS_APP.map(p => {
-    const valor = ciclo === "anual" ? p.anual : p.mensal;
     const atual = a.plano === p.key && a.status === "ativo";
+    let precoBloco;
+    if (ciclo === "anual") {
+      const equiv = p.anual / 12;
+      const economia = p.mensal * 12 - p.anual;
+      precoBloco = `
+        <div class="plano-preco">R$ ${formatarNumeroBR(p.anual, 0)}<small>por ano</small></div>
+        <div class="plano-preco-sub">equivale a R$ ${formatarNumeroBR(equiv, 2)}/mês</div>
+        <div class="plano-economia">economia de R$ ${formatarNumeroBR(economia, 0)} no ano</div>`;
+    } else {
+      precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(p.mensal, 0)}<small>por mês</small></div>`;
+    }
+    const rodape = atual
+      ? `<div class="plano-atual-tag">✓ Plano atual</div>`
+      : `<button class="plano-btn" onclick="assinarPlano('${p.key}','${ciclo}', this)">Assinar</button>`;
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
-        <div class="plano-card-top">
+        <div class="plano-card-corpo">
           <span class="plano-nome">${p.nome}</span>
-          ${atual ? '<span class="plano-badge">Seu plano</span>' : ""}
+          <span class="plano-viv">${p.viveiros}</span>
+          ${precoBloco}
+          <ul class="plano-recursos">
+            <li>Gestão completa dos ciclos</li>
+            <li>Financeiro e relatórios</li>
+            <li>Histórico de cultivo</li>
+          </ul>
         </div>
-        <span class="plano-viv">${p.viveiros}</span>
-        <div class="plano-preco">R$ ${formatarNumeroBR(valor, 0)}<small>/${ciclo === "anual" ? "ano" : "mês"}</small></div>
-        <button class="plano-btn" ${atual ? "disabled" : ""} onclick="assinarPlano('${p.key}','${ciclo}', this)">
-          ${atual ? "Plano atual" : "Assinar"}
-        </button>
+        <div class="plano-card-rodape">${rodape}</div>
       </div>`;
   }).join("");
 
   area.innerHTML = `
     <h3 class="titulo-secao">Meu plano</h3>
     <div class="cfg-wrap">
-      <div class="assin-status assin-status-${statusCls}">${statusTxt}</div>
-      <div class="assin-free-nota">🆓 <b>1 viveiro é grátis para sempre.</b> A cobrança vale a partir do 2º viveiro.</div>
+      <div class="assin-status assin-status-${statusCls}">
+        <div class="assin-status-l1">${statusL1}</div>
+        <div class="assin-status-l2">${statusL2}</div>
+        <div class="assin-status-hint">Escolha o plano conforme a quantidade de viveiros que deseja gerenciar.</div>
+      </div>
       <div class="assin-toggle">
         <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
-        <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual · 2 meses grátis</button>
+        <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
       </div>
       <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">Pagamento via <b>Pix ou cartão</b> — você escolhe a forma no checkout seguro do Asaas.</p>
+      <p class="assin-obs">Pagamento via <b>Pix ou cartão</b> no checkout seguro do Asaas.</p>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>
     </div>
   `;
