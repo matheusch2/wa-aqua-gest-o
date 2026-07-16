@@ -5949,3 +5949,16 @@ body.tema-escuro .sim-biomassa { background: #052e2b; border-color: #0f4d47; col
 body.tema-escuro .sim-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .sim-card strong { color: #f3f4f6; }
 body.tema-escuro .sim-card.sim-ok strong { color: #34d399; }
+
+/* ─── Detalhe da despesca (toque na linha) ────────────────────────────── */
+.despesca-clicavel { cursor: pointer; }
+.despesca-detalhe { background: #f0fdf9; border: 1px solid #99f6e4; border-radius: 10px; padding: 8px 13px; margin: 2px 0 8px; }
+.dd-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px dashed #cffafe; font-size: 13px; }
+.dd-row span { color: #6b7280; }
+.dd-row b { color: #111827; font-weight: 700; text-align: right; }
+.dd-total { border-top: 1.5px solid #066b63; border-bottom: none; margin-top: 2px; padding-top: 9px; }
+.dd-total span, .dd-total b { color: #066b63; font-weight: 800; font-size: 14px; }
+body.tema-escuro .despesca-detalhe { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .dd-row { border-bottom-color: #0f4d47; }
+body.tema-escuro .dd-row b { color: #f3f4f6; }
+body.tema-escuro .dd-row span { color: #9ca3af; }

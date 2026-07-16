@@ -3782,13 +3782,13 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
                 : despescas
                     .map((item, i) => `
-                    <div class="linha-historico-acoes" id="desp-row-${index}-${i}">
+                    <div class="linha-historico-acoes despesca-clicavel" id="desp-row-${index}-${i}" onclick="_toggleDetalheDespesca(${index}, ${i})" title="Toque para ver o detalhe">
                         <span>${formatarData(item.data)}</span>
                         <span class="col-centro">${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
                         <span class="col-centro">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
                         <span class="col-acoes">
-                          <button class="botao-editar" onclick="abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                          <button class="botao-editar botao-excluir" onclick="confirmarExcluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                          <button class="botao-editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
+                          <button class="botao-editar botao-excluir" onclick="event.stopPropagation(); confirmarExcluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
                         </span>
                     </div>
                 `)
@@ -3803,6 +3803,38 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
 
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">← Voltar</button>
     `;
+}
+
+// Abre/fecha o detalhe de uma despesca ao tocar na linha
+function _toggleDetalheDespesca(index, i) {
+  const row = document.getElementById(`desp-row-${index}-${i}`);
+  if (!row) return;
+  const jaAberto = document.getElementById(`desp-det-${index}-${i}`);
+  document.querySelectorAll(".despesca-detalhe").forEach(e => e.remove());
+  if (jaAberto) return; // clicou no que já estava aberto → só fecha
+
+  const viveiro = viveiros[index];
+  const despescas = [...(viveiro.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const d = despescas[i];
+  if (!d) return;
+  const kg = Number(d.quantidadeKg) || 0;
+  const peso = Number(d.pesoMedio) || 0;
+  const preco = Number(d.precoKg) || 0;
+  const animais = peso > 0 ? Math.round(kg / (peso / 1000)) : null;
+  const total = preco > 0 ? kg * preco : null;
+
+  const det = document.createElement("div");
+  det.id = `desp-det-${index}-${i}`;
+  det.className = "despesca-detalhe";
+  det.innerHTML = `
+    <div class="dd-row"><span>Data</span><b>${formatarData(d.data)}</b></div>
+    <div class="dd-row"><span>Quantidade despescada</span><b>${formatarNumeroBR(kg, 1)} kg</b></div>
+    <div class="dd-row"><span>Peso médio</span><b>${formatarNumeroBR(peso, 1)} g</b></div>
+    <div class="dd-row"><span>Nº de camarões</span><b>${animais != null ? formatarNumeroBR(animais, 0) : "—"}</b></div>
+    <div class="dd-row"><span>Preço de venda</span><b>${preco > 0 ? "R$ " + formatarNumeroBR(preco, 2) + "/kg" : "— não informado"}</b></div>
+    <div class="dd-row dd-total"><span>Total faturado</span><b>${total != null ? "R$ " + formatarNumeroBR(total, 2) : "—"}</b></div>
+  `;
+  row.after(det);
 }
 
 function abrirHistoricoDespescaDireto(index) {
