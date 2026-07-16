@@ -1387,7 +1387,10 @@ function abrirViveiro(index) {
       sobrevInconsistente = sobrevPct > 100;
 
       sobrevivenciaEstimada = formatarNumeroBR(sobrevPct, 1) + " %" + (sobrevInconsistente ? " ⚠️" : "");
-      if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / res.biomassa, 2);
+      // FCA = ração total ÷ biomassa PRODUZIDA (a que ficou + a que já foi despescada).
+      // Sem somar a despesca, o FCA fica artificialmente alto após uma despesca parcial.
+      const biomassaProduzida = res.biomassa + despKgTotal;
+      if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / biomassaProduzida, 2);
       biomassaAtualStr = formatarNumeroBR(biomassaAtual, 0) + " kg";
       if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / res.biomassa, 2);
       const pesoDespesca = Math.max(PESO_ALVO_DESPESCA, pesoUltimaBio);
