@@ -28,7 +28,9 @@ const _TABELA_TAXA = [
   {peso:29,taxa:1.30},{peso:30,taxa:1.30},
 ];
 function _obterTaxa(peso) {
-  if (peso < 1 || peso > 30) return null;
+  if (peso < 1) return null;
+  // Acima de 30 g usa a taxa do maior peso da tabela (não trava a estimativa).
+  if (peso >= 30) return _TABELA_TAXA[_TABELA_TAXA.length - 1].taxa;
   for (const item of _TABELA_TAXA) { if (peso === item.peso) return item.taxa; }
   for (let i = 0; i < _TABELA_TAXA.length - 1; i++) {
     const a = _TABELA_TAXA[i], b = _TABELA_TAXA[i + 1];
