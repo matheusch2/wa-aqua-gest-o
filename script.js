@@ -4139,10 +4139,6 @@ function abrirAssinatura() {
         <div class="assin-status-l2">${statusL2}</div>
         <div class="assin-status-hint">Escolha o plano conforme a quantidade de viveiros que deseja gerenciar.</div>
       </div>
-      <div class="assin-cpf-wrap">
-        <label class="assin-cpf-label">CPF ou CNPJ <span>(para a cobrança)</span></label>
-        <input type="text" inputmode="numeric" id="assin-cpf" class="assin-cpf-input" value="${_meuCpf}" oninput="_meuCpf=this.value" placeholder="Somente números" autocomplete="off">
-      </div>
       <div class="assin-toggle">
         <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
@@ -4154,15 +4150,19 @@ function abrirAssinatura() {
   `;
 }
 
-async function assinarPlano(plano, ciclo, botao) {
+function assinarPlano(plano, ciclo, botao) {
   if (botao && botao.disabled) return;
   const doc = String(_meuCpf || "").replace(/\D/g, "");
-  if (doc.length !== 11 && doc.length !== 14) {
-    _toastErro("Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) para a cobrança.");
-    const inp = document.getElementById("assin-cpf");
-    if (inp) inp.focus();
-    return;
+  if (doc.length === 11 || doc.length === 14) {
+    // já tem CPF/CNPJ salvo → segue direto
+    _criarAssinatura(plano, ciclo, botao, doc);
+  } else {
+    // pede o CPF/CNPJ na hora
+    _abrirModalCpf(plano, ciclo);
   }
+}
+
+async function _criarAssinatura(plano, ciclo, botao, doc) {
   const restaurar = _travarBotao(botao, "Gerando pagamento...");
   try {
     const { data, error } = await supabaseClient.functions.invoke("criar-assinatura", {
@@ -4175,6 +4175,7 @@ async function assinarPlano(plano, ciclo, botao) {
       return;
     }
     if (data.invoiceUrl) {
+      _meuCpf = doc;
       // Guarda o CPF/CNPJ para as próximas vezes (não bloqueia o fluxo se falhar)
       try { await supabaseClient.auth.updateUser({ data: { cpf_cnpj: doc } }); } catch (e) {}
       _toastSucesso("Redirecionando para o pagamento…");
@@ -4188,6 +4189,48 @@ async function assinarPlano(plano, ciclo, botao) {
     _toastErro("Erro ao gerar o pagamento.");
     restaurar();
   }
+}
+
+// Pop-up de CPF/CNPJ na hora de assinar (só aparece se ainda não estiver salvo)
+function _abrirModalCpf(plano, ciclo) {
+  _fecharModalCpf();
+  const ov = document.createElement("div");
+  ov.className = "modal-cpf-overlay";
+  ov.id = "modal-cpf";
+  ov.innerHTML = `
+    <div class="modal-cpf-card">
+      <h4>Digite seu CPF ou CNPJ</h4>
+      <p>Precisamos do documento para gerar a cobrança (Pix ou cartão).</p>
+      <input type="text" inputmode="numeric" id="modal-cpf-input" placeholder="Somente números" value="${_meuCpf || ""}" autocomplete="off">
+      <div class="modal-cpf-erro" id="modal-cpf-erro"></div>
+      <div class="modal-cpf-acoes">
+        <button class="modal-cpf-cancelar" onclick="_fecharModalCpf()">Cancelar</button>
+        <button class="modal-cpf-ok" onclick="_confirmarCpf('${plano}','${ciclo}', this)">Continuar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  setTimeout(() => { const i = document.getElementById("modal-cpf-input"); if (i) i.focus(); }, 60);
+}
+
+function _fecharModalCpf() {
+  const ov = document.getElementById("modal-cpf");
+  if (ov) ov.remove();
+}
+
+function _confirmarCpf(plano, ciclo, botao) {
+  if (botao && botao.disabled) return;
+  const inp = document.getElementById("modal-cpf-input");
+  const erro = document.getElementById("modal-cpf-erro");
+  const doc = String(inp ? inp.value : "").replace(/\D/g, "");
+  if (doc.length !== 11 && doc.length !== 14) {
+    if (erro) { erro.textContent = "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos)."; erro.style.display = "block"; }
+    if (inp) inp.focus();
+    return;
+  }
+  _meuCpf = doc;
+  // não fecha o modal aqui — o _criarAssinatura trava o botão e, no sucesso,
+  // o app redireciona (o modal some com a navegação); em erro, o botão volta.
+  _criarAssinatura(plano, ciclo, botao, doc);
 }
 
 // ─── SIMULAR VENDA ──────────────────────────────────────────────────────────

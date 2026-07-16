@@ -5992,3 +5992,20 @@ body.tema-escuro .dd-row span { color: #9ca3af; }
 .assin-cpf-input:focus { outline: none; border-color: rgb(6,107,99); box-shadow: 0 0 0 3px rgba(6,107,99,0.12); }
 body.tema-escuro .assin-cpf-label { color: #d1d5db; }
 body.tema-escuro .assin-cpf-input { background: #1f2937; border-color: #374151; color: #f3f4f6; }
+
+/* Pop-up de CPF/CNPJ ao assinar */
+.modal-cpf-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
+.modal-cpf-card { background: #fff; border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+.modal-cpf-card h4 { margin: 0 0 6px; font-size: 17px; font-weight: 800; color: #111827; }
+.modal-cpf-card p { margin: 0 0 14px; font-size: 13px; color: #6b7280; line-height: 1.4; }
+.modal-cpf-card input { width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 11px; font-size: 16px; box-sizing: border-box; }
+.modal-cpf-card input:focus { outline: none; border-color: rgb(6,107,99); box-shadow: 0 0 0 3px rgba(6,107,99,0.12); }
+.modal-cpf-erro { display: none; color: #dc2626; font-size: 12.5px; margin-top: 8px; font-weight: 600; }
+.modal-cpf-acoes { display: flex; gap: 10px; margin-top: 16px; }
+.modal-cpf-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 11px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.modal-cpf-ok { flex: 2; padding: 12px; background: rgb(6,107,99); color: #fff; border: none; border-radius: 11px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+body.tema-escuro .modal-cpf-card { background: #1f2937; }
+body.tema-escuro .modal-cpf-card h4 { color: #f3f4f6; }
+body.tema-escuro .modal-cpf-card p { color: #9ca3af; }
+body.tema-escuro .modal-cpf-card input { background: #111827; border-color: #374151; color: #f3f4f6; }
+body.tema-escuro .modal-cpf-cancelar { background: #374151; color: #e5e7eb; }
