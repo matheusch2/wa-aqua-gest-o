@@ -4134,7 +4134,8 @@ function _simularDadosViveiro(viveiro) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
     if (res && res.biomassa > 0) biomassa = res.biomassa + despKgTotal;
   }
-  return { biomassa, custoTotal, pesoUltimaBio, despKgTotal };
+  const dias = calcularDiasCultivo(viveiro.dataPovoamento) || 0;
+  return { biomassa, custoTotal, pesoUltimaBio, despKgTotal, dias };
 }
 
 function abrirSimularVenda() {
@@ -4211,6 +4212,8 @@ function _simVendaCalcular() {
   const faturamento = biomassa * preco;
   const lucro = faturamento - custoTotal;
   const lucroKg = biomassa > 0 ? lucro / biomassa : 0;
+  const meses = dados.dias > 0 ? dados.dias / 30 : 1;
+  const lucroMes = meses > 0 ? lucro / meses : lucro;
   const ok = lucro >= 0;
 
   resultado.innerHTML = cabecalho + `
@@ -4220,8 +4223,9 @@ function _simVendaCalcular() {
       <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro</small><strong>R$ ${formatarNumeroBR(lucro, 2)}</strong></div>
       <div class="sim-card"><small>Custo por kg</small><strong>R$ ${formatarNumeroBR(custoKg, 2)}</strong></div>
       <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por kg</small><strong>R$ ${formatarNumeroBR(lucroKg, 2)}</strong></div>
+      <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por mês</small><strong>R$ ${formatarNumeroBR(lucroMes, 2)}</strong></div>
     </div>
-    <div class="sim-hint">Estimativa com base na biomassa atual + despescas e nos custos já lançados no ciclo.</div>`;
+    <div class="sim-hint">Estimativa com base na biomassa atual + despescas e nos custos já lançados no ciclo. Lucro por mês = lucro ÷ ${formatarNumeroBR(meses, 1)} ${meses >= 2 ? "meses" : "mês"} de cultivo.</div>`;
 }
 
 // ─── CUSTOS FIXOS MENSAIS — TELA E CRUD ─────────────────────────────────────
