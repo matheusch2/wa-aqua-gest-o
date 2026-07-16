@@ -5983,3 +5983,12 @@ body.tema-escuro .despesca-detalhe { background: #052e2b; border-color: #0f4d47;
 body.tema-escuro .dd-row { border-bottom-color: #0f4d47; }
 body.tema-escuro .dd-row b { color: #f3f4f6; }
 body.tema-escuro .dd-row span { color: #9ca3af; }
+
+/* Campo de CPF/CNPJ na tela de planos */
+.assin-cpf-wrap { margin-bottom: 14px; }
+.assin-cpf-label { display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+.assin-cpf-label span { font-weight: 500; color: #9ca3af; }
+.assin-cpf-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 11px; font-size: 15px; box-sizing: border-box; }
+.assin-cpf-input:focus { outline: none; border-color: rgb(6,107,99); box-shadow: 0 0 0 3px rgba(6,107,99,0.12); }
+body.tema-escuro .assin-cpf-label { color: #d1d5db; }
+body.tema-escuro .assin-cpf-input { background: #1f2937; border-color: #374151; color: #f3f4f6; }
