@@ -4129,13 +4129,15 @@ function _simularDadosViveiro(viveiro) {
   const pesoUltimaBio = bios.length ? bios[bios.length - 1].gramatura : null;
   const despKgTotal = (viveiro.despescas || []).reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
 
-  let biomassa = null;
+  // Biomassa EM PÉ (só o que ainda está no viveiro) — a despesca já vendida
+  // entra depois pelo seu preço real, não é revalorizada pelo preço simulado.
+  let biomassaAtual = null;
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
-    if (res && res.biomassa > 0) biomassa = res.biomassa + despKgTotal;
+    if (res && res.biomassa > 0) biomassaAtual = res.biomassa;
   }
   const dias = calcularDiasCultivo(viveiro.dataPovoamento) || 0;
-  return { biomassa, custoTotal, pesoUltimaBio, despKgTotal, dias };
+  return { biomassaAtual, custoTotal, pesoUltimaBio, despKgTotal, dias };
 }
 
 function abrirSimularVenda() {
@@ -4184,20 +4186,23 @@ function _simVendaCalcular() {
   const idx = sel ? sel.value : "";
   if (idx === "") { resultado.innerHTML = ""; return; }
 
-  const dados = _simularDadosViveiro(viveiros[idx]);
-  if (!dados || !dados.biomassa) {
+  const viveiro = viveiros[idx];
+  const dados = _simularDadosViveiro(viveiro);
+  if (!dados || !dados.biomassaAtual) {
     resultado.innerHTML = `<div class="sim-aviso">Ainda não dá pra estimar a biomassa deste viveiro. É preciso ter pelo menos uma <b>biometria</b> e <b>ração</b> lançada.</div>`;
     return;
   }
 
-  const biomassa = dados.biomassa;
+  const biomassaAtual = dados.biomassaAtual;              // o que ainda está no viveiro (a vender)
+  const despKgTotal = dados.despKgTotal;                  // o que já foi despescado
+  const biomassaTotal = biomassaAtual + despKgTotal;      // produção total (base do custo/kg e lucro/kg)
   const custoTotal = dados.custoTotal;
-  const custoKg = biomassa > 0 ? custoTotal / biomassa : 0;
+  const custoKg = biomassaTotal > 0 ? custoTotal / biomassaTotal : 0;
   const precoRaw = document.getElementById("simVenda-preco").value;
   const preco = parseFloat(String(precoRaw).replace(",", ".")) || 0;
 
   const cabecalho = `
-    <div class="sim-biomassa">Biomassa estimada: <b>${formatarNumeroBR(biomassa, 0)} kg</b>${dados.pesoUltimaBio ? ` · peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g` : ""}</div>`;
+    <div class="sim-biomassa">Biomassa estimada: <b>${formatarNumeroBR(biomassaTotal, 0)} kg</b>${despKgTotal > 0 ? ` <small>(${formatarNumeroBR(biomassaAtual, 0)} kg em pé + ${formatarNumeroBR(despKgTotal, 0)} kg despescado)</small>` : ""}${dados.pesoUltimaBio ? ` · peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g` : ""}</div>`;
 
   if (preco <= 0) {
     resultado.innerHTML = cabecalho + `
@@ -4209,12 +4214,28 @@ function _simVendaCalcular() {
     return;
   }
 
-  const faturamento = biomassa * preco;
+  // Receita das despescas JÁ VENDIDAS: usa o preço REAL de cada despesca.
+  // Se alguma despesca não tiver preço salvo, cai no preço simulado (aproximação).
+  let kgSemPreco = 0;
+  const receitaDespesca = (viveiro.despescas || []).reduce((s, d) => {
+    const kg = Number(d.quantidadeKg) || 0;
+    const pk = Number(d.precoKg) || 0;
+    if (kg <= 0) return s;
+    if (pk > 0) return s + kg * pk;
+    kgSemPreco += kg;
+    return s + kg * preco;
+  }, 0);
+
+  const faturamento = biomassaAtual * preco + receitaDespesca;
   const lucro = faturamento - custoTotal;
-  const lucroKg = biomassa > 0 ? lucro / biomassa : 0;
+  const lucroKg = biomassaTotal > 0 ? lucro / biomassaTotal : 0;
   const meses = dados.dias > 0 ? dados.dias / 30 : 1;
   const lucroMes = meses > 0 ? lucro / meses : lucro;
   const ok = lucro >= 0;
+
+  const avisoSemPreco = kgSemPreco > 0
+    ? `<div class="sim-hint" style="color:#92400e">⚠️ ${formatarNumeroBR(kgSemPreco, 0)} kg de despesca sem preço de venda salvo — usei o preço simulado como aproximação. Informe o preço na despesca para o cálculo exato.</div>`
+    : "";
 
   resultado.innerHTML = cabecalho + `
     <div class="sim-cards">
@@ -4225,7 +4246,8 @@ function _simVendaCalcular() {
       <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por kg</small><strong>R$ ${formatarNumeroBR(lucroKg, 2)}</strong></div>
       <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por mês</small><strong>R$ ${formatarNumeroBR(lucroMes, 2)}</strong></div>
     </div>
-    <div class="sim-hint">Estimativa com base na biomassa atual + despescas e nos custos já lançados no ciclo. Lucro por mês = lucro ÷ ${formatarNumeroBR(meses, 1)} ${meses >= 2 ? "meses" : "mês"} de cultivo.</div>`;
+    <div class="sim-hint">Faturamento = biomassa em pé × preço simulado + receita real das despescas já vendidas. Lucro/mês = lucro ÷ ${formatarNumeroBR(meses, 1)} ${meses >= 2 ? "meses" : "mês"}.</div>
+    ${avisoSemPreco}`;
 }
 
 // ─── CUSTOS FIXOS MENSAIS — TELA E CRUD ─────────────────────────────────────
