@@ -4112,6 +4112,118 @@ async function assinarPlano(plano, ciclo, botao) {
   }
 }
 
+// ─── SIMULAR VENDA ──────────────────────────────────────────────────────────
+// Estima a biomassa produzida (atual + despescada) e o custo total do ciclo,
+// reaproveitando exatamente as mesmas contas da tela do viveiro.
+function _simularDadosViveiro(viveiro) {
+  if (!viveiro || !viveiro.dataPovoamento) return null;
+  const hoje = new Date().toISOString().split("T")[0];
+  const inicio = viveiro.dataPreparacao || viveiro.dataPovoamento;
+  const cc = _custosCicloAtivo(viveiro, viveiro.cicloId, inicio, hoje);
+  const custoTotal = cc.total;
+
+  const racoesSorted = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const ultimaRacaoNaoZero = [...racoesSorted].reverse().find(r => r.racao > 0);
+  const populacaoNum = viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")) : null;
+  const bios = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const pesoUltimaBio = bios.length ? bios[bios.length - 1].gramatura : null;
+  const despKgTotal = (viveiro.despescas || []).reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+
+  let biomassa = null;
+  if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
+    const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
+    if (res && res.biomassa > 0) biomassa = res.biomassa + despKgTotal;
+  }
+  return { biomassa, custoTotal, pesoUltimaBio, despKgTotal };
+}
+
+function abrirSimularVenda() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
+  if (!ativos.length) {
+    area.innerHTML = `
+      <h3 class="titulo-secao">Simular venda</h3>
+      <div class="cfg-wrap">
+        <p class="sobrevivencia-texto" style="margin:18px 0">Nenhum viveiro em cultivo ativo para simular.<br><small>Cadastre um ciclo e lance ração/biometria primeiro.</small></p>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+      </div>`;
+    return;
+  }
+  area.innerHTML = `
+    <h3 class="titulo-secao">Simular venda</h3>
+    <div class="cfg-wrap">
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+          <label>Viveiro</label>
+        </div>
+        <select id="simVenda-viveiro" onchange="_simVendaCalcular()">
+          <option value="">Selecione o viveiro</option>
+          ${ativos.map(o => `<option value="${o.i}">${o.v.nome}</option>`).join("")}
+        </select>
+      </div>
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <label>Preço de venda (R$/kg)</label>
+        </div>
+        <input type="number" inputmode="decimal" step="0.01" id="simVenda-preco" placeholder="Ex.: 15,00" oninput="_simVendaCalcular()">
+      </div>
+      <div id="simVenda-resultado"></div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>
+    </div>
+  `;
+}
+
+function _simVendaCalcular() {
+  const resultado = document.getElementById("simVenda-resultado");
+  if (!resultado) return;
+  const sel = document.getElementById("simVenda-viveiro");
+  const idx = sel ? sel.value : "";
+  if (idx === "") { resultado.innerHTML = ""; return; }
+
+  const dados = _simularDadosViveiro(viveiros[idx]);
+  if (!dados || !dados.biomassa) {
+    resultado.innerHTML = `<div class="sim-aviso">Ainda não dá pra estimar a biomassa deste viveiro. É preciso ter pelo menos uma <b>biometria</b> e <b>ração</b> lançada.</div>`;
+    return;
+  }
+
+  const biomassa = dados.biomassa;
+  const custoTotal = dados.custoTotal;
+  const custoKg = biomassa > 0 ? custoTotal / biomassa : 0;
+  const precoRaw = document.getElementById("simVenda-preco").value;
+  const preco = parseFloat(String(precoRaw).replace(",", ".")) || 0;
+
+  const cabecalho = `
+    <div class="sim-biomassa">Biomassa estimada: <b>${formatarNumeroBR(biomassa, 0)} kg</b>${dados.pesoUltimaBio ? ` · peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g` : ""}</div>`;
+
+  if (preco <= 0) {
+    resultado.innerHTML = cabecalho + `
+      <div class="sim-cards">
+        <div class="sim-card"><small>Custo total</small><strong>R$ ${formatarNumeroBR(custoTotal, 2)}</strong></div>
+        <div class="sim-card"><small>Custo por kg</small><strong>R$ ${formatarNumeroBR(custoKg, 2)}</strong></div>
+      </div>
+      <div class="sim-hint">Digite o preço por kg acima para ver faturamento e lucro.</div>`;
+    return;
+  }
+
+  const faturamento = biomassa * preco;
+  const lucro = faturamento - custoTotal;
+  const lucroKg = biomassa > 0 ? lucro / biomassa : 0;
+  const ok = lucro >= 0;
+
+  resultado.innerHTML = cabecalho + `
+    <div class="sim-cards">
+      <div class="sim-card"><small>Faturamento</small><strong>R$ ${formatarNumeroBR(faturamento, 2)}</strong></div>
+      <div class="sim-card"><small>Custo total</small><strong>R$ ${formatarNumeroBR(custoTotal, 2)}</strong></div>
+      <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro</small><strong>R$ ${formatarNumeroBR(lucro, 2)}</strong></div>
+      <div class="sim-card"><small>Custo por kg</small><strong>R$ ${formatarNumeroBR(custoKg, 2)}</strong></div>
+      <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por kg</small><strong>R$ ${formatarNumeroBR(lucroKg, 2)}</strong></div>
+    </div>
+    <div class="sim-hint">Estimativa com base na biomassa atual + despescas e nos custos já lançados no ciclo.</div>`;
+}
+
 // ─── CUSTOS FIXOS MENSAIS — TELA E CRUD ─────────────────────────────────────
 
 function abrirCustosFixos() {

@@ -5933,3 +5933,19 @@ body.tema-escuro .assin-toggle-btn.ativo { background: #1f2937; color: #34d399; 
 body.tema-escuro .plano-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .plano-nome { color: #f3f4f6; }
 body.tema-escuro .plano-preco { color: #34d399; }
+
+/* ─── Simular venda ───────────────────────────────────────────────────── */
+.sim-biomassa { font-size: 13.5px; color: #1f2937; background: #f0fdf9; border: 1px solid #99f6e4; border-radius: 10px; padding: 11px 13px; margin: 4px 0 12px; }
+.sim-biomassa b { color: #066b63; font-weight: 800; font-size: 15px; }
+.sim-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sim-card { background: #f9fafb; border: 1px solid #eef0f2; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.sim-card small { font-size: 11px; color: #9ca3af; font-weight: 600; }
+.sim-card strong { font-size: 16px; font-weight: 800; color: #1f2937; }
+.sim-card.sim-ok strong { color: #16a34a; }
+.sim-card.sim-neg strong { color: #dc2626; }
+.sim-hint { font-size: 11.5px; color: #9ca3af; margin-top: 10px; line-height: 1.4; }
+.sim-aviso { font-size: 13px; color: #92400e; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 12px 14px; margin-top: 4px; line-height: 1.4; }
+body.tema-escuro .sim-biomassa { background: #052e2b; border-color: #0f4d47; color: #f3f4f6; }
+body.tema-escuro .sim-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sim-card strong { color: #f3f4f6; }
+body.tema-escuro .sim-card.sim-ok strong { color: #34d399; }
