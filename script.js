@@ -4165,6 +4165,13 @@ function assinarPlano(plano, ciclo, botao) {
 async function _criarAssinatura(plano, ciclo, botao, doc) {
   const restaurar = _travarBotao(botao, "Gerando pagamento...");
   try {
+    // Link atual (para detectar quando um NOVO link chegar via webhook)
+    let urlAntes = null;
+    try {
+      const { data: pre } = await supabaseClient.from("assinaturas").select("checkout_url").maybeSingle();
+      urlAntes = (pre && pre.checkout_url) || null;
+    } catch (e) {}
+
     const { data, error } = await supabaseClient.functions.invoke("criar-assinatura", {
       body: { plano, ciclo, billingType: "UNDEFINED", cpfCnpj: doc },
     });
@@ -4174,14 +4181,20 @@ async function _criarAssinatura(plano, ciclo, botao, doc) {
       restaurar();
       return;
     }
-    if (data.invoiceUrl) {
-      _meuCpf = doc;
-      // Guarda o CPF/CNPJ para as próximas vezes (não bloqueia o fluxo se falhar)
-      try { await supabaseClient.auth.updateUser({ data: { cpf_cnpj: doc } }); } catch (e) {}
+
+    _meuCpf = doc;
+    // Guarda o CPF/CNPJ para as próximas vezes (não bloqueia o fluxo se falhar)
+    try { await supabaseClient.auth.updateUser({ data: { cpf_cnpj: doc } }); } catch (e) {}
+
+    // Caminho rápido: a função já devolveu o link. Senão, espera o webhook gravar.
+    let url = data.invoiceUrl || null;
+    if (!url) url = await _esperarCheckoutUrl(urlAntes, 45000);
+
+    if (url) {
       _toastSucesso("Redirecionando para o pagamento…");
-      setTimeout(() => { window.location.href = data.invoiceUrl; }, 600);
+      setTimeout(() => { window.location.href = url; }, 500);
     } else {
-      _toastErro("Assinatura criada, mas sem link de pagamento.");
+      _toastErro("A cobrança está sendo gerada — verifique seu e-mail ou tente de novo em instantes.");
       restaurar();
     }
   } catch (e) {
@@ -4189,6 +4202,21 @@ async function _criarAssinatura(plano, ciclo, botao, doc) {
     _toastErro("Erro ao gerar o pagamento.");
     restaurar();
   }
+}
+
+// Espera o webhook gravar o link do checkout na tabela assinaturas (checkout_url).
+// Retorna o link novo assim que aparecer, ou null se estourar o tempo.
+async function _esperarCheckoutUrl(urlAntes, timeoutMs) {
+  const inicio = Date.now();
+  while (Date.now() - inicio < timeoutMs) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const { data } = await supabaseClient.from("assinaturas").select("checkout_url").maybeSingle();
+      const url = data && data.checkout_url;
+      if (url && url !== urlAntes) return url;
+    } catch (e) { /* coluna pode não existir ainda */ }
+  }
+  return null;
 }
 
 // Pop-up de CPF/CNPJ na hora de assinar (só aparece se ainda não estiver salvo)
