@@ -4292,115 +4292,12 @@ function abrirAssinatura() {
   `;
 }
 
-function assinarPlano(plano, ciclo, botao) {
-  if (botao && botao.disabled) return;
-  const doc = String(_meuCpf || "").replace(/\D/g, "");
-  if (doc.length === 11 || doc.length === 14) {
-    // já tem CPF/CNPJ salvo → segue direto
-    _criarAssinatura(plano, ciclo, botao, doc);
-  } else {
-    // pede o CPF/CNPJ na hora
-    _abrirModalCpf(plano, ciclo);
-  }
-}
-
-async function _criarAssinatura(plano, ciclo, botao, doc) {
-  const restaurar = _travarBotao(botao, "Gerando pagamento...");
-  try {
-    // Link atual (para detectar quando um NOVO link chegar via webhook)
-    let urlAntes = null;
-    try {
-      const { data: pre } = await supabaseClient.from("assinaturas").select("checkout_url").maybeSingle();
-      urlAntes = (pre && pre.checkout_url) || null;
-    } catch (e) {}
-
-    const { data, error } = await supabaseClient.functions.invoke("criar-assinatura", {
-      body: { plano, ciclo, billingType: "UNDEFINED", cpfCnpj: doc },
-    });
-    if (error || !data || data.error) {
-      console.log("Erro criar-assinatura:", error || (data && data.error));
-      _toastErro("Não foi possível gerar o pagamento. Tente de novo.");
-      restaurar();
-      return;
-    }
-
-    _meuCpf = doc;
-    // Guarda o CPF/CNPJ para as próximas vezes (não bloqueia o fluxo se falhar)
-    try { await supabaseClient.auth.updateUser({ data: { cpf_cnpj: doc } }); } catch (e) {}
-
-    // Caminho rápido: a função já devolveu o link. Senão, espera o webhook gravar.
-    let url = data.invoiceUrl || null;
-    if (!url) url = await _esperarCheckoutUrl(urlAntes, 45000);
-
-    if (url) {
-      _toastSucesso("Redirecionando para o pagamento…");
-      setTimeout(() => { window.location.href = url; }, 500);
-    } else {
-      _toastErro("A cobrança está sendo gerada — verifique seu e-mail ou tente de novo em instantes.");
-      restaurar();
-    }
-  } catch (e) {
-    console.log(e);
-    _toastErro("Erro ao gerar o pagamento.");
-    restaurar();
-  }
-}
-
-// Espera o webhook gravar o link do checkout na tabela assinaturas (checkout_url).
-// Retorna o link novo assim que aparecer, ou null se estourar o tempo.
-async function _esperarCheckoutUrl(urlAntes, timeoutMs) {
-  const inicio = Date.now();
-  while (Date.now() - inicio < timeoutMs) {
-    await new Promise((r) => setTimeout(r, 2000));
-    try {
-      const { data } = await supabaseClient.from("assinaturas").select("checkout_url").maybeSingle();
-      const url = data && data.checkout_url;
-      if (url && url !== urlAntes) return url;
-    } catch (e) { /* coluna pode não existir ainda */ }
-  }
-  return null;
-}
-
-// Pop-up de CPF/CNPJ na hora de assinar (só aparece se ainda não estiver salvo)
-function _abrirModalCpf(plano, ciclo) {
-  _fecharModalCpf();
-  const ov = document.createElement("div");
-  ov.className = "modal-cpf-overlay";
-  ov.id = "modal-cpf";
-  ov.innerHTML = `
-    <div class="modal-cpf-card">
-      <h4>Digite seu CPF ou CNPJ</h4>
-      <p>Precisamos do documento para gerar a cobrança (Pix ou cartão).</p>
-      <input type="text" inputmode="numeric" id="modal-cpf-input" placeholder="Somente números" value="${_meuCpf || ""}" autocomplete="off">
-      <div class="modal-cpf-erro" id="modal-cpf-erro"></div>
-      <div class="modal-cpf-acoes">
-        <button class="modal-cpf-cancelar" onclick="_fecharModalCpf()">Cancelar</button>
-        <button class="modal-cpf-ok" onclick="_confirmarCpf('${plano}','${ciclo}', this)">Continuar</button>
-      </div>
-    </div>`;
-  document.body.appendChild(ov);
-  setTimeout(() => { const i = document.getElementById("modal-cpf-input"); if (i) i.focus(); }, 60);
-}
-
-function _fecharModalCpf() {
-  const ov = document.getElementById("modal-cpf");
-  if (ov) ov.remove();
-}
-
-function _confirmarCpf(plano, ciclo, botao) {
-  if (botao && botao.disabled) return;
-  const inp = document.getElementById("modal-cpf-input");
-  const erro = document.getElementById("modal-cpf-erro");
-  const doc = String(inp ? inp.value : "").replace(/\D/g, "");
-  if (doc.length !== 11 && doc.length !== 14) {
-    if (erro) { erro.textContent = "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos)."; erro.style.display = "block"; }
-    if (inp) inp.focus();
-    return;
-  }
-  _meuCpf = doc;
-  // não fecha o modal aqui — o _criarAssinatura trava o botão e, no sucesso,
-  // o app redireciona (o modal some com a navegação); em erro, o botão volta.
-  _criarAssinatura(plano, ciclo, botao, doc);
+// Contratação 100% via WhatsApp — o checkout do Asaas foi desativado.
+// Mantido como porta de entrada única: qualquer botão antigo cai aqui também.
+function assinarPlano(plano, ciclo) {
+  const p = _PLANOS_APP.find(x => x.key === plano);
+  const msgZap = encodeURIComponent(`Olá! Quero assinar o plano ${p ? p.nome : plano} (${ciclo || "mensal"}) do WA Aqua Gestão. 🦐`);
+  window.open(`https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msgZap}`, "_blank");
 }
 
 // ─── SIMULAR VENDA ──────────────────────────────────────────────────────────
