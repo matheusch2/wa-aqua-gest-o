@@ -958,7 +958,6 @@ function esconderMenu() {
   document.getElementById("menuGestao").style.display = "none";
   _armarVoltarNavegador();
   _toggleVoltarTopo(true);
-  if (typeof _navAtivo === "function") _navAtivo(null);
 }
 
 // Mostra/esconde a setinha de voltar no topo (útil no iPhone em modo app,
@@ -1008,8 +1007,6 @@ function voltarMenuGestao() {
   limparAreaGestao();
   verificarBoletosVencendo();
   _mostrarBannerLeitura();
-  atualizarDashboardResumo();
-  _navAtivo("inicio");
   _toggleVoltarTopo(false);
 }
 
@@ -1207,17 +1204,12 @@ async function salvarViveiro() {
 
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
-  _navAtivo("viveiros");
   const area = document.getElementById("area-gestao");
 
   if (viveiros.length === 0) {
     area.innerHTML = `
-        <div class="dash-vazio">
-          <div class="dash-vazio-ico">🦐</div>
-          <p>Nenhum viveiro cadastrado ainda.<br>Cadastre o primeiro para começar o cultivo.</p>
-          <button class="dash-vazio-btn" onclick="mostrarCadastroViveiro()">+ Cadastrar viveiro</button>
-        </div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
+        <p style="text-align:center;color:#9ca3af;padding:20px 0">Nenhum viveiro cadastrado.</p>
+        <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>
     `;
     return;
   }
@@ -4058,7 +4050,6 @@ function verificarBoletosVencendo() {
 
 function abrirMenuFinanceiro() {
   esconderMenu();
-  _navAtivo("financeiro");
   const area = document.getElementById("area-gestao");
   area.innerHTML = `
     <h3 class="titulo-secao">Financeiro</h3>
@@ -4209,153 +4200,6 @@ function _mostrarBannerLeitura() {
       <span class="leitura-banner-seta">›</span>
     </div>`;
   area.insertBefore(div, area.firstChild);
-}
-
-// ─── DASHBOARD (home) E BARRA INFERIOR ──────────────────────────────────────
-
-// Preenche o resumo do cultivo na home (viveiros em cultivo, biomassa, custo).
-function atualizarDashboardResumo() {
-  const el = document.getElementById("dash-resumo");
-  if (!el) return;
-  try {
-    if (!viveiros.length) {
-      el.innerHTML = `
-        <div class="dash-vazio">
-          <div class="dash-vazio-ico">🦐</div>
-          <p>Bem-vindo! Cadastre seu primeiro viveiro<br>para começar a acompanhar o cultivo.</p>
-          <button class="dash-vazio-btn" onclick="mostrarCadastroViveiro()">+ Cadastrar viveiro</button>
-        </div>`;
-      return;
-    }
-    let emCultivo = 0, biomassa = 0, custo = 0, temBio = false;
-    viveiros.forEach(v => {
-      if (v.dataPovoamento) emCultivo++;
-      try {
-        const d = _simularDadosViveiro(v);
-        if (d) {
-          if (d.biomassaAtual) { biomassa += d.biomassaAtual; temBio = true; }
-          if (d.custoTotal) custo += d.custoTotal;
-        }
-      } catch (e) { /* viveiro sem dados suficientes */ }
-    });
-    el.innerHTML = `
-      <div class="dash-card">
-        <div class="dash-card-tit">Resumo do cultivo</div>
-        <div class="dash-stats">
-          <div class="dash-stat">
-            <span class="dash-stat-num">${emCultivo}<small>/${viveiros.length}</small></span>
-            <span class="dash-stat-rot">Em cultivo</span>
-          </div>
-          <div class="dash-stat">
-            <span class="dash-stat-num">${temBio ? formatarNumeroBR(biomassa, 0) : "--"}<small>${temBio ? " kg" : ""}</small></span>
-            <span class="dash-stat-rot">Biomassa est.</span>
-          </div>
-          <div class="dash-stat">
-            <span class="dash-stat-num"><small>R$ </small>${formatarNumeroBR(custo, 0)}</span>
-            <span class="dash-stat-rot">Custo do ciclo</span>
-          </div>
-        </div>
-      </div>`;
-  } catch (e) { el.innerHTML = ""; }
-}
-
-// Marca o item ativo na barra inferior (null = nenhum).
-function _navAtivo(chave) {
-  document.querySelectorAll("#nav-inferior .nav-item").forEach(b => {
-    b.classList.toggle("ativo", !!chave && b.dataset.nav === chave);
-  });
-}
-
-function _toggleSheetLancar(abrir) {
-  const s = document.getElementById("sheet-lancar");
-  if (s) s.style.display = abrir ? "flex" : "none";
-}
-
-function _sheetIr(fn) {
-  _toggleSheetLancar(false);
-  fn();
-}
-
-// Atalho "Biometria": escolhe o viveiro e cai no formulário existente.
-function abrirBiometriaRapida() {
-  esconderMenu();
-  const area = document.getElementById("area-gestao");
-  const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
-  if (!ativos.length) {
-    area.innerHTML = `
-      <h3 class="titulo-secao">Biometria</h3>
-      <div class="cfg-wrap">
-        <div class="dash-vazio">
-          <div class="dash-vazio-ico">📏</div>
-          <p>Nenhum viveiro em cultivo.<br>Povoe um viveiro para lançar biometria.</p>
-          <button class="dash-vazio-btn" onclick="mostrarCadastroViveiro()">+ Cadastrar viveiro</button>
-        </div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">← Voltar</button>
-      </div>`;
-    return;
-  }
-  area.innerHTML = `
-    <h3 class="titulo-secao">Biometria</h3>
-    <div class="cfg-wrap">
-      <div class="cfg-lista">
-        ${ativos.map(o => `
-          <button class="cfg-item" onclick="abrirBiometria(${o.i})">
-            <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
-            <div class="cfg-item-texto"><span class="cfg-item-titulo">${o.v.nome}</span><span class="cfg-item-sub">Lançar biometria</span></div>
-            <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>`).join("")}
-      </div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>
-    </div>`;
-}
-
-// Tela "Mais": módulos que não estão na barra inferior.
-function abrirMenuMais() {
-  esconderMenu();
-  _navAtivo("mais");
-  const area = document.getElementById("area-gestao");
-  area.innerHTML = `
-    <h3 class="titulo-secao">Mais</h3>
-    <div class="cfg-wrap">
-      <div class="cfg-lista">
-        <button class="cfg-item" onclick="abrirRacoesCatalogo()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Rações</span><span class="cfg-item-sub">Catálogo e preços das rações</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="mostrarHistoricoCultivo()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Histórico</span><span class="cfg-item-sub">Ração, biometria e despescas do ciclo</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="mostrarHistoricoCiclos()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Histórico de ciclos</span><span class="cfg-item-sub">Ciclos encerrados e comparativos</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirCustosInsumos()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Insumos</span><span class="cfg-item-sub">Produtos e custos do cultivo</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirSimularVenda()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><polyline points="3 17 9 11 13 15 21 7"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Simular venda</span><span class="cfg-item-sub">Projete faturamento e lucro</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirAssinatura()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1 6.3-5.5-3-5.5 3 1-6.3L3 8.9 9 8z"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Meu plano</span><span class="cfg-item-sub">Assinatura e viveiros liberados</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirConfiguracoes()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Configurações</span><span class="cfg-item-sub">Perfil, fazenda e conta</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>
-    </div>`;
 }
 
 function abrirAssinatura() {
@@ -8276,8 +8120,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (session) {
       document.querySelector(".topo").style.display = "";
-      const navInf = document.getElementById("nav-inferior");
-      if (navInf) { navInf.style.display = ""; document.body.classList.add("com-nav"); }
       document.getElementById("area-gestao").innerHTML = `
         <div style="text-align:center;padding:40px 16px;color:#9ca3af">
           <svg class="spin-svg" viewBox="0 0 24 24" style="width:32px;height:32px;stroke:#d1d5db;fill:none;stroke-width:2;margin-bottom:12px;display:block;margin-inline:auto"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -8313,8 +8155,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("area-gestao").innerHTML = "";
         document.getElementById("menuGestao").style.display = "grid";
         _mostrarBannerLeitura();
-        atualizarDashboardResumo();
-        _navAtivo("inicio");
       }
     } else {
       window.location.replace("login.html");
