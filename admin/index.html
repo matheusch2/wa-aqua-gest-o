@@ -148,24 +148,29 @@
             el.textContent = m; el.style.display = "block";
         }
 
-        // Aceita a função com ou sem o hífen final no nome (admin-clientes / admin-clientes-)
+        // Aceita a função com ou sem o hífen final no nome (admin-clientes- / admin-clientes).
+        // Qualquer falha que não seja de permissão tenta o próximo nome.
         let _fnSlug = null;
         async function chamar(body) {
-            const slugs = _fnSlug ? [_fnSlug] : ["admin-clientes", "admin-clientes-"];
+            const slugs = _fnSlug ? [_fnSlug] : ["admin-clientes-", "admin-clientes"];
             let ultimoErro = null;
             for (const slug of slugs) {
-                const { data, error } = await sb.functions.invoke(slug, { body });
-                if (error) {
-                    const status = error.context && error.context.status;
-                    if (status === 404) { ultimoErro = new Error("Função admin-clientes não encontrada no Supabase."); continue; }
-                    if (status === 401 || status === 403) throw new Error("SEM_ACESSO");
-                    let det = "";
-                    try { det = (await error.context.json()).error || ""; } catch (e) {}
-                    throw new Error(det || "Erro ao falar com o servidor.");
+                try {
+                    const { data, error } = await sb.functions.invoke(slug, { body });
+                    if (error) {
+                        const status = error.context && error.context.status;
+                        if (status === 401 || status === 403) throw new Error("SEM_ACESSO");
+                        let det = "";
+                        try { det = (await error.context.json()).error || ""; } catch (e) {}
+                        throw new Error(det || `Não consegui falar com a função "${slug}".`);
+                    }
+                    if (data && data.error) throw new Error(data.error);
+                    _fnSlug = slug;
+                    return data;
+                } catch (e) {
+                    if (e.message === "SEM_ACESSO") throw e;
+                    ultimoErro = e;
                 }
-                if (data && data.error) throw new Error(data.error);
-                _fnSlug = slug;
-                return data;
             }
             throw ultimoErro || new Error("Erro ao falar com o servidor.");
         }
