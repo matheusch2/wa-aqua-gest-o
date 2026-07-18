@@ -429,6 +429,25 @@ async function abrirConfiguracoes() {
           <button class="cfg-sair-confirmar" onclick="sairUsuario(this)">Sim, sair</button>
         </div>
       </div>
+      <button class="cfg-item cfg-item-sair" onclick="confirmarExcluirConta()">
+        <div class="cfg-item-ico cfg-item-ico-sair">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </div>
+        <div class="cfg-item-texto">
+          <span class="cfg-item-titulo">Excluir minha conta</span>
+          <span class="cfg-item-sub">Apaga a conta e todos os dados</span>
+        </div>
+      </button>
+      <div id="cfg-excluir-confirm" class="cfg-sair-confirm" style="display:none">
+        <p><b>⚠️ Atenção:</b> isso apaga sua conta e <b>TODOS os dados</b> — viveiros, lançamentos, histórico, tudo. <b>Não tem volta.</b></p>
+        <p style="margin-top:8px">Digite <b>EXCLUIR</b> para confirmar:</p>
+        <input type="text" id="cfg-excluir-input" autocomplete="off" autocapitalize="characters"
+               style="width:100%;margin-top:6px;border:1.5px solid #fca5a5;border-radius:10px;padding:10px;font-size:15px;text-align:center;outline:none">
+        <div class="cfg-sair-botoes" style="margin-top:10px">
+          <button class="cfg-sair-cancelar" onclick="document.getElementById('cfg-excluir-confirm').style.display='none'">Cancelar</button>
+          <button class="cfg-sair-confirmar" onclick="excluirMinhaConta(this)">Excluir tudo</button>
+        </div>
+      </div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">← Voltar</button>
     </div>
   `;
@@ -437,6 +456,39 @@ async function abrirConfiguracoes() {
 function confirmarSairConta() {
   const el = document.getElementById("cfg-sair-confirm");
   if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function confirmarExcluirConta() {
+  const el = document.getElementById("cfg-excluir-confirm");
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+// Exclusão da própria conta: apaga todos os dados no servidor (Edge Function
+// excluir-conta, com service role) e encerra a sessão.
+async function excluirMinhaConta(botao) {
+  if (botao && botao.disabled) return;
+  const inp = document.getElementById("cfg-excluir-input");
+  if (!inp || inp.value.trim().toUpperCase() !== "EXCLUIR") {
+    _toastErro('Digite EXCLUIR no campo para confirmar.');
+    if (inp) inp.focus();
+    return;
+  }
+  const restaurar = _travarBotao(botao, "Excluindo...");
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("excluir-conta", { body: {} });
+    if (error || (data && data.error)) {
+      console.log("excluir-conta:", error || data.error);
+      _toastErro("Não foi possível excluir a conta. Tente de novo ou fale com o suporte.");
+      restaurar();
+      return;
+    }
+    try { await supabaseClient.auth.signOut(); } catch (e) {}
+    window.location.replace("login.html");
+  } catch (e) {
+    console.log(e);
+    _toastErro("Erro ao excluir a conta.");
+    restaurar();
+  }
 }
 
 // ─── Fazenda ───────────────────────────────────────────────────────────────

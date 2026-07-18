@@ -72,6 +72,8 @@
         .a-bloquear { background: #fee2e2; color: #991b1b; }
         .a-reativar { background: #d1fae5; color: #065f46; }
         .a-hist { background: #f1f5f9; color: #334155; }
+        .a-excluir { background: #fff; color: #b91c1c; border: 1.5px dashed #fca5a5; grid-column: 1 / -1; }
+        .a-excluir.armado { background: #dc2626; color: #fff; border-style: solid; }
 
         .hist-lista { margin-top: 12px; border-top: 1px dashed #dde5e3; padding-top: 10px; }
         .hist-item { font-size: 12px; color: #45565f; padding: 6px 0; border-bottom: 1px solid #eef3f2; }
@@ -307,6 +309,7 @@
                             <button class="acao-btn a-hist" onclick="verHistorico(this, '${c.id}')">Histórico</button>
                             <button class="acao-btn a-reativar" onclick="acao(this, 'reativar', '${c.id}')">Reativar</button>
                             <button class="acao-btn a-bloquear" onclick="acao(this, 'bloquear', '${c.id}')">Bloquear</button>
+                            <button class="acao-btn a-excluir" onclick="excluirCliente(this, '${c.id}')">🗑️ Excluir conta e todos os dados</button>
                         </div>
                         <div class="hist-lista" id="hist-${c.id}" style="display:none"></div>
                     </div>
@@ -342,6 +345,40 @@
             } catch (e) {
                 toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
                 btn.disabled = false; btn.textContent = txt;
+            }
+        }
+
+        // Exclusão definitiva de um cliente (conta + todos os dados).
+        // Precisa de dois toques: o primeiro arma, o segundo executa.
+        async function excluirCliente(btn, alvo) {
+            if (btn.disabled) return;
+            if (btn.dataset.armado !== "1") {
+                btn.dataset.armado = "1";
+                btn.classList.add("armado");
+                btn.textContent = "⚠️ Toque de novo para EXCLUIR DEFINITIVAMENTE";
+                setTimeout(() => {
+                    btn.dataset.armado = "";
+                    btn.classList.remove("armado");
+                    btn.textContent = "🗑️ Excluir conta e todos os dados";
+                }, 4000);
+                return;
+            }
+            btn.disabled = true; btn.textContent = "Excluindo…";
+            try {
+                const { data, error } = await sb.functions.invoke("excluir-conta", { body: { alvo } });
+                if (error) {
+                    let det = "";
+                    try { det = (await error.context.json()).error || ""; } catch (e) {}
+                    throw new Error(det || "Erro ao excluir.");
+                }
+                if (data && data.error) throw new Error(data.error);
+                abertos.delete(alvo);
+                await carregarClientes();
+                toast("Conta excluída definitivamente.", "ok");
+            } catch (e) {
+                toast("Erro: " + e.message, "erro");
+                btn.disabled = false; btn.classList.remove("armado"); btn.dataset.armado = "";
+                btn.textContent = "🗑️ Excluir conta e todos os dados";
             }
         }
 
