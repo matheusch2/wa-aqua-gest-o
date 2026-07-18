@@ -3667,6 +3667,15 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
 
   viveiros[viveiroIndex].racoes.splice(racaoIndex, 1);
 
+  // Desconta o lançamento excluído do custo acumulado de Ração do ciclo
+  // (a edição já fazia esse ajuste; a exclusão deixava o custo inflado)
+  try {
+    const tipoDel = racao.tipoRacaoId ? (tiposRacao.find(t => t.id === racao.tipoRacaoId) || null) : null;
+    if (tipoDel && racao.racao > 0) {
+      await ajustarCustoRacaoEdicao(viveiroIndex, tipoDel, racao.racao, null, 0, racao.data, usuario);
+    }
+  } catch (e) { console.log("Ajuste custo ração (exclusão):", e); }
+
   const paginaAjustada = Math.min(pagina, Math.max(0, Math.ceil((viveiros[viveiroIndex].racoes.length) / 30) - 1));
   renderizarHistoricoRacao(viveiroIndex, elementoId, direto, paginaAjustada);
   restaurarScroll();
@@ -8027,7 +8036,62 @@ async function carregarViveiros() {
     return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
   });
 
+  // Autocorreção: garante que o custo acumulado de Ração do ciclo ativo bate
+  // com os lançamentos reais (conserta registros inflados por exclusões antigas)
+  try { await _reconciliarCustoRacao(usuario); } catch (e) { console.log("Reconciliar ração:", e); }
+
   console.log("Viveiros carregados:", viveiros);
+}
+
+// O custo de "Ração" de cada ciclo é um registro acumulado. Antigamente,
+// excluir um lançamento de ração não descontava desse acumulado — o custo e a
+// quantidade ficavam maiores que a ração realmente lançada. Esta rotina
+// recalcula o registro do CICLO ATIVO a partir dos lançamentos reais e corrige
+// o banco quando a quantidade diverge. Ciclos encerrados não são tocados.
+async function _reconciliarCustoRacao(usuario) {
+  for (const v of viveiros) {
+    const cicloId = v.cicloId || null;
+    if (!cicloId) continue;
+    // Dado legado: se algum ciclo encerrado compartilha o mesmo id, não mexe
+    // (o registro serve ao histórico e não dá para separar com segurança)
+    if ((v.ciclosFinalizados || []).some(c => (c.cicloId || null) === cicloId)) continue;
+
+    const lancs = (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0);
+    // Se algum tipo de ração foi apagado do catálogo, não dá pra recalcular o valor
+    if (lancs.some(r => !tiposRacao.find(t => t.id === r.tipoRacaoId))) continue;
+
+    const qtdCertaG = lancs.reduce((s, r) => s + r.racao * 1000, 0);
+    const valorCerto = lancs.reduce((s, r) => s + r.racao * (tiposRacao.find(t => t.id === r.tipoRacaoId).custoPorKg || 0), 0);
+
+    const custos = v.custos || [];
+    const entry = custos.find(c => c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === cicloId);
+    const qtdAtualG = entry ? (entry.quantidadeG || 0) : 0;
+    if (Math.abs(qtdAtualG - qtdCertaG) < 1) continue; // já bate (tolerância de 1 g)
+
+    if (entry && qtdCertaG <= 0) {
+      // Não há lançamentos com tipo de ração → o registro não deveria existir
+      const { error } = await supabaseClient.from("custos").delete().eq("id", entry.id).eq("user_id", usuario.id);
+      if (!error) custos.splice(custos.indexOf(entry), 1);
+    } else if (entry) {
+      const { error } = await supabaseClient.from("custos")
+        .update({ valor: valorCerto, quantidade_g: qtdCertaG })
+        .eq("id", entry.id).eq("user_id", usuario.id);
+      if (!error) { entry.valor = valorCerto; entry.quantidadeG = qtdCertaG; }
+      console.log(`Ração corrigida (${v.nome}): ${Math.round(qtdAtualG / 1000)}kg → ${Math.round(qtdCertaG / 1000)}kg`);
+    } else if (qtdCertaG > 0) {
+      // Lançamentos existem mas o registro sumiu → recria
+      const dataIni = lancs.map(r => r.data).sort()[0];
+      const { data: salvo, error } = await supabaseClient.from("custos").insert([{
+        user_id: usuario.id, viveiro_id: v.id, tipo: "produto", produto_id: null,
+        nome_produto: "Ração", quantidade_g: qtdCertaG, valor: valorCerto,
+        categoria: "Ração", data: dataIni, ciclo_id: cicloId,
+      }]).select();
+      if (!error && salvo) {
+        custos.push({ id: salvo[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: qtdCertaG, valor: valorCerto, categoria: "Ração", data: dataIni, observacao: null, cicloId });
+        if (!v.custos) v.custos = custos;
+      }
+    }
+  }
 }
 
 // Garante que todo viveiro ATIVO antigo (sem ciclo_id) receba um identificador,
