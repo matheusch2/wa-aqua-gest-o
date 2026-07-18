@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR" translate="no">
+<head>
+    <meta charset="utf-8">
+    <meta name="google" content="notranslate">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#066b63">
+    <title>WA Aqua — Administração</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f2f6f5; color: #16323c; min-height: 100vh; }
+
+        .adm-topo { background: rgb(6,107,99); color: #fff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+        .adm-topo h1 { font-size: 16px; font-weight: 800; letter-spacing: 0.3px; }
+        .adm-topo small { display: block; font-size: 11px; opacity: 0.85; font-weight: 500; }
+        .adm-sair { background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+        .adm-wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+
+        /* Login */
+        .adm-login { max-width: 380px; margin: 8vh auto 0; background: #fff; border-radius: 18px; padding: 26px 22px; box-shadow: 0 4px 24px rgba(2,44,40,0.10); }
+        .adm-login h2 { font-size: 18px; color: rgb(6,107,99); margin-bottom: 4px; text-align: center; }
+        .adm-login p { font-size: 13px; color: #7b8a92; text-align: center; margin-bottom: 18px; }
+        .adm-login label { display: block; font-size: 12.5px; font-weight: 700; color: #45565f; margin: 12px 0 5px; }
+        .adm-login input { width: 100%; border: 1.5px solid #dde5e3; border-radius: 11px; padding: 12px; font-size: 15px; outline: none; }
+        .adm-login input:focus { border-color: rgb(6,107,99); }
+        .adm-entrar { width: 100%; margin-top: 18px; background: rgb(6,107,99); color: #fff; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .adm-entrar:disabled { opacity: 0.7; }
+        .adm-msg { display: none; margin-top: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #dc2626; }
+
+        /* Resumo */
+        .adm-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+        .adm-chip { background: #fff; border: 1px solid #e6ecea; border-radius: 13px; padding: 10px 6px; text-align: center; }
+        .adm-chip b { display: block; font-size: 18px; }
+        .adm-chip span { font-size: 10.5px; color: #7b8a92; font-weight: 600; }
+        .adm-chip.verde b { color: #059669; } .adm-chip.ambar b { color: #d97706; } .adm-chip.verm b { color: #dc2626; }
+
+        .adm-busca { width: 100%; border: 1.5px solid #dde5e3; border-radius: 12px; padding: 12px 14px; font-size: 15px; outline: none; margin-bottom: 14px; background: #fff; }
+        .adm-busca:focus { border-color: rgb(6,107,99); }
+
+        /* Cliente */
+        .cli-card { background: #fff; border: 1px solid #e6ecea; border-radius: 15px; margin-bottom: 10px; overflow: hidden; }
+        .cli-cab { display: flex; align-items: center; gap: 11px; padding: 13px 14px; cursor: pointer; }
+        .cli-avatar { flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; background: #e3f2ef; color: rgb(6,107,99); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+        .cli-info { flex: 1; min-width: 0; }
+        .cli-nome { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cli-email { font-size: 12px; color: #7b8a92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cli-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .badge { font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 2.5px 9px; }
+        .b-plano { background: #e3f2ef; color: rgb(6,107,99); }
+        .b-ativo { background: #d1fae5; color: #065f46; }
+        .b-pend { background: #fef3c7; color: #92400e; }
+        .b-canc { background: #fee2e2; color: #991b1b; }
+        .b-venc-ok { background: #f1f5f9; color: #475569; }
+        .b-venc-perto { background: #fef3c7; color: #92400e; }
+        .b-vencido { background: #fee2e2; color: #991b1b; }
+        .b-viv { background: #ede9fe; color: #5b21b6; }
+        .cli-seta { color: #b8c4c9; font-size: 18px; transition: transform 0.15s; }
+        .cli-card.aberto .cli-seta { transform: rotate(90deg); }
+
+        .cli-corpo { display: none; border-top: 1px solid #eef3f2; padding: 14px; background: #fafcfb; }
+        .cli-card.aberto .cli-corpo { display: block; }
+        .cli-linha { display: flex; gap: 8px; margin-bottom: 10px; }
+        .cli-corpo select { flex: 1; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 10px; font-size: 14px; background: #fff; outline: none; }
+        .cli-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .acao-btn { border: none; border-radius: 11px; padding: 11px 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .acao-btn:disabled { opacity: 0.6; }
+        .a-liberar { background: rgb(6,107,99); color: #fff; grid-column: 1 / -1; }
+        .a-trocar { background: #ede9fe; color: #5b21b6; }
+        .a-bloquear { background: #fee2e2; color: #991b1b; }
+        .a-reativar { background: #d1fae5; color: #065f46; }
+        .a-hist { background: #f1f5f9; color: #334155; }
+
+        .hist-lista { margin-top: 12px; border-top: 1px dashed #dde5e3; padding-top: 10px; }
+        .hist-item { font-size: 12px; color: #45565f; padding: 6px 0; border-bottom: 1px solid #eef3f2; }
+        .hist-item b { color: rgb(6,107,99); text-transform: capitalize; }
+        .hist-item small { color: #94a3b8; display: block; }
+
+        .adm-carregando { text-align: center; color: #94a3b8; padding: 40px 0; font-size: 14px; }
+
+        /* Toast */
+        .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #16323c; color: #fff; font-size: 13.5px; font-weight: 600; border-radius: 12px; padding: 12px 18px; z-index: 50; max-width: 90vw; text-align: center; animation: sobe 0.2s ease; }
+        .toast.ok { background: #065f46; }
+        .toast.erro { background: #991b1b; }
+        @keyframes sobe { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    </style>
+</head>
+<body class="notranslate">
+
+    <div id="tela-login" style="display:none">
+        <div class="adm-login">
+            <h2>WA Aqua · Administração</h2>
+            <p>Acesso restrito ao administrador</p>
+            <label>E-mail</label>
+            <input type="email" id="adm-email" autocomplete="username" placeholder="admin@waaqua.com.br">
+            <label>Senha</label>
+            <input type="password" id="adm-senha" autocomplete="current-password" placeholder="Sua senha">
+            <button class="adm-entrar" id="adm-btn-entrar" onclick="entrarAdmin()">Entrar</button>
+            <div class="adm-msg" id="adm-msg"></div>
+        </div>
+    </div>
+
+    <div id="tela-painel" style="display:none">
+        <div class="adm-topo">
+            <div>
+                <h1>Administração</h1>
+                <small id="adm-quem"></small>
+            </div>
+            <button class="adm-sair" onclick="sairAdmin()">Sair</button>
+        </div>
+        <div class="adm-wrap">
+            <div class="adm-chips" id="adm-chips"></div>
+            <input type="search" class="adm-busca" id="adm-busca" placeholder="Buscar por nome ou e-mail…" oninput="renderClientes()">
+            <div id="adm-lista"><div class="adm-carregando">Carregando clientes…</div></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const PLANOS = [
+            { key: "gratis",        nome: "Grátis (1 viveiro)" },
+            { key: "basico",        nome: "Básico (5 viveiros)" },
+            { key: "intermediario", nome: "Intermediário (10 viveiros)" },
+            { key: "avancado",      nome: "Avançado (20 viveiros)" },
+            { key: "pro",           nome: "Pro (ilimitado)" },
+        ];
+        const NOME_PLANO = { gratis: "Grátis", basico: "Básico", intermediario: "Intermediário", avancado: "Avançado", pro: "Pro" };
+
+        let clientes = [];
+        let abertos = new Set();
+
+        function toast(msg, tipo) {
+            document.querySelectorAll(".toast").forEach(t => t.remove());
+            const t = document.createElement("div");
+            t.className = "toast " + (tipo || "");
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3200);
+        }
+
+        function msgLogin(m) {
+            const el = document.getElementById("adm-msg");
+            el.textContent = m; el.style.display = "block";
+        }
+
+        async function chamar(body) {
+            const { data, error } = await sb.functions.invoke("admin-clientes", { body });
+            if (error) {
+                const status = error.context && error.context.status;
+                if (status === 401 || status === 403) throw new Error("SEM_ACESSO");
+                let det = "";
+                try { det = (await error.context.json()).error || ""; } catch (e) {}
+                throw new Error(det || "Erro ao falar com o servidor.");
+            }
+            if (data && data.error) throw new Error(data.error);
+            return data;
+        }
+
+        async function init() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) { document.getElementById("tela-login").style.display = "block"; return; }
+            entrarPainel(session);
+        }
+
+        async function entrarAdmin() {
+            const btn = document.getElementById("adm-btn-entrar");
+            if (btn.disabled) return;
+            const email = document.getElementById("adm-email").value.trim();
+            const senha = document.getElementById("adm-senha").value;
+            if (!email || !senha) { msgLogin("Preencha e-mail e senha."); return; }
+            btn.disabled = true; btn.textContent = "Entrando…";
+            const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+            btn.disabled = false; btn.textContent = "Entrar";
+            if (error) { msgLogin("E-mail ou senha incorretos."); return; }
+            entrarPainel(data.session);
+        }
+
+        async function entrarPainel(session) {
+            document.getElementById("tela-login").style.display = "none";
+            document.getElementById("tela-painel").style.display = "block";
+            document.getElementById("adm-quem").textContent = session.user.email;
+            try {
+                await carregarClientes();
+            } catch (e) {
+                if (e.message === "SEM_ACESSO") {
+                    document.getElementById("tela-painel").style.display = "none";
+                    document.getElementById("tela-login").style.display = "block";
+                    msgLogin("Esta conta não tem acesso administrativo.");
+                    await sb.auth.signOut();
+                } else {
+                    document.getElementById("adm-lista").innerHTML = `<div class="adm-carregando">Erro: ${e.message}</div>`;
+                }
+            }
+        }
+
+        async function sairAdmin() {
+            await sb.auth.signOut();
+            location.reload();
+        }
+
+        async function carregarClientes() {
+            const data = await chamar({ action: "listar" });
+            clientes = data.clientes || [];
+            renderChips();
+            renderClientes();
+        }
+
+        function infoVencimento(a) {
+            if (!a || !a.proximo_vencimento) return null;
+            const m = String(a.proximo_vencimento).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return null;
+            const venc = new Date(+m[1], +m[2] - 1, +m[3]);
+            const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+            const dias = Math.round((venc - hoje) / 86400000);
+            const fmt = venc.toLocaleDateString("pt-BR");
+            if (dias < 0) return { cls: "b-vencido", txt: `Vencido há ${-dias}d (${fmt})` };
+            if (dias === 0) return { cls: "b-venc-perto", txt: `Vence hoje (${fmt})` };
+            if (dias <= 7) return { cls: "b-venc-perto", txt: `Vence em ${dias}d (${fmt})` };
+            return { cls: "b-venc-ok", txt: `Vence ${fmt}` };
+        }
+
+        function renderChips() {
+            const total = clientes.length;
+            let ativos = 0, pend = 0, vencidos = 0;
+            clientes.forEach(c => {
+                const a = c.assinatura;
+                if (a && a.status === "ativo" && a.plano && a.plano !== "gratis") ativos++;
+                if (a && a.status === "pendente") pend++;
+                const v = infoVencimento(a);
+                if (v && v.cls === "b-vencido") vencidos++;
+            });
+            document.getElementById("adm-chips").innerHTML = `
+                <div class="adm-chip"><b>${total}</b><span>Clientes</span></div>
+                <div class="adm-chip verde"><b>${ativos}</b><span>Pagantes</span></div>
+                <div class="adm-chip ambar"><b>${pend}</b><span>Pendentes</span></div>
+                <div class="adm-chip verm"><b>${vencidos}</b><span>Vencidos</span></div>`;
+        }
+
+        function renderClientes() {
+            const filtro = (document.getElementById("adm-busca").value || "").toLowerCase();
+            const lista = clientes.filter(c =>
+                !filtro ||
+                (c.nome || "").toLowerCase().includes(filtro) ||
+                (c.email || "").toLowerCase().includes(filtro)
+            );
+            const el = document.getElementById("adm-lista");
+            if (!lista.length) { el.innerHTML = `<div class="adm-carregando">Nenhum cliente encontrado.</div>`; return; }
+            el.innerHTML = lista.map(c => {
+                const a = c.assinatura;
+                const plano = a && a.plano ? a.plano : "gratis";
+                const status = a ? a.status : "ativo";
+                const stBadge = plano === "gratis" ? "" :
+                    status === "ativo" ? `<span class="badge b-ativo">Ativo</span>` :
+                    status === "pendente" ? `<span class="badge b-pend">Pendente</span>` :
+                    `<span class="badge b-canc">Bloqueado</span>`;
+                const v = infoVencimento(a);
+                const ini = ((c.nome || c.email || "?").trim()[0] || "?").toUpperCase();
+                const aberto = abertos.has(c.id);
+                return `
+                <div class="cli-card${aberto ? " aberto" : ""}" id="cli-${c.id}">
+                    <div class="cli-cab" onclick="toggleCliente('${c.id}')">
+                        <div class="cli-avatar">${ini}</div>
+                        <div class="cli-info">
+                            <div class="cli-nome">${c.nome || c.email}</div>
+                            ${c.nome ? `<div class="cli-email">${c.email}</div>` : ""}
+                            <div class="cli-badges">
+                                <span class="badge b-plano">${NOME_PLANO[plano] || plano}</span>
+                                ${stBadge}
+                                ${v ? `<span class="badge ${v.cls}">${v.txt}</span>` : ""}
+                                <span class="badge b-viv">${c.viveiros} viveiro${c.viveiros === 1 ? "" : "s"}</span>
+                            </div>
+                        </div>
+                        <span class="cli-seta">›</span>
+                    </div>
+                    <div class="cli-corpo">
+                        <div class="cli-linha">
+                            <select id="plano-${c.id}">
+                                ${PLANOS.map(p => `<option value="${p.key}" ${p.key === plano ? "selected" : ""}>${p.nome}</option>`).join("")}
+                            </select>
+                            <select id="ciclo-${c.id}">
+                                <option value="mensal" ${a && a.ciclo === "anual" ? "" : "selected"}>Mensal (+30 dias)</option>
+                                <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
+                            </select>
+                        </div>
+                        <div class="cli-acoes">
+                            <button class="acao-btn a-liberar" onclick="acao(this, 'liberar', '${c.id}')">💰 Registrar pagamento / Liberar</button>
+                            <button class="acao-btn a-trocar" onclick="acao(this, 'trocar', '${c.id}')">Trocar plano</button>
+                            <button class="acao-btn a-hist" onclick="verHistorico(this, '${c.id}')">Histórico</button>
+                            <button class="acao-btn a-reativar" onclick="acao(this, 'reativar', '${c.id}')">Reativar</button>
+                            <button class="acao-btn a-bloquear" onclick="acao(this, 'bloquear', '${c.id}')">Bloquear</button>
+                        </div>
+                        <div class="hist-lista" id="hist-${c.id}" style="display:none"></div>
+                    </div>
+                </div>`;
+            }).join("");
+        }
+
+        function toggleCliente(id) {
+            if (abertos.has(id)) abertos.delete(id); else abertos.add(id);
+            renderClientes();
+        }
+
+        async function acao(btn, tipo, alvo) {
+            if (btn.disabled) return;
+            const txt = btn.textContent;
+            btn.disabled = true; btn.textContent = "Aguarde…";
+            try {
+                const body = { action: tipo, alvo };
+                if (tipo === "liberar") {
+                    body.plano = document.getElementById("plano-" + alvo).value;
+                    body.ciclo = document.getElementById("ciclo-" + alvo).value;
+                } else if (tipo === "trocar") {
+                    body.plano = document.getElementById("plano-" + alvo).value;
+                }
+                await chamar(body);
+                await carregarClientes();
+                toast(
+                    tipo === "liberar" ? "Pagamento registrado — plano liberado! ✅" :
+                    tipo === "trocar" ? "Plano trocado." :
+                    tipo === "bloquear" ? "Cliente bloqueado." : "Cliente reativado.",
+                    tipo === "bloquear" ? "" : "ok"
+                );
+            } catch (e) {
+                toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
+                btn.disabled = false; btn.textContent = txt;
+            }
+        }
+
+        async function verHistorico(btn, alvo) {
+            const box = document.getElementById("hist-" + alvo);
+            if (box.style.display !== "none") { box.style.display = "none"; return; }
+            box.style.display = "block";
+            box.innerHTML = `<div class="hist-item">Carregando…</div>`;
+            try {
+                const data = await chamar({ action: "historico", alvo });
+                const h = data.historico || [];
+                box.innerHTML = h.length ? h.map(i => {
+                    const d = new Date(i.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+                    const det = i.detalhes && i.detalhes.plano ? ` — ${NOME_PLANO[i.detalhes.plano] || i.detalhes.plano}${i.detalhes.ciclo ? " · " + i.detalhes.ciclo : ""}${i.detalhes.vencimento ? " · vence " + i.detalhes.vencimento.split("-").reverse().join("/") : ""}` : "";
+                    return `<div class="hist-item"><b>${i.acao}</b>${det}<small>${d}</small></div>`;
+                }).join("") : `<div class="hist-item">Nenhum registro ainda.</div>`;
+            } catch (e) {
+                box.innerHTML = `<div class="hist-item">Erro ao carregar histórico.</div>`;
+            }
+        }
+
+        document.getElementById("adm-senha").addEventListener("keydown", e => { if (e.key === "Enter") entrarAdmin(); });
+        init();
+    </script>
+</body>
+</html>

@@ -4087,6 +4087,10 @@ function abrirMenuFinanceiro() {
 }
 
 // ─── ASSINATURA / PLANOS ────────────────────────────────────────────────────
+// Contratação manual via WhatsApp (enquanto o Asaas não for reativado).
+// Preencher com DDI+DDD+número, ex: "5584999999999". Vazio = checkout Asaas.
+const _WHATSAPP_COMERCIAL = "";
+
 const _PLANOS_APP = [
   { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros", mensal: 50,  anual: 500 },
   { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros", mensal: 90,  anual: 900 },
@@ -4242,9 +4246,15 @@ function abrirAssinatura() {
     } else {
       precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(p.mensal, 0)}<small>por mês</small></div>`;
     }
-    const rodape = atual
-      ? `<div class="plano-atual-tag">✓ Plano atual</div>`
-      : `<button class="plano-btn" onclick="assinarPlano('${p.key}','${ciclo}', this)">Assinar</button>`;
+    let rodape;
+    if (atual) {
+      rodape = `<div class="plano-atual-tag">✓ Plano atual</div>`;
+    } else if (_WHATSAPP_COMERCIAL) {
+      const msgZap = encodeURIComponent(`Olá! Quero assinar o plano ${p.nome} (${ciclo}) do WA Aqua Gestão. 🦐`);
+      rodape = `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msgZap}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`;
+    } else {
+      rodape = `<button class="plano-btn" onclick="assinarPlano('${p.key}','${ciclo}', this)">Assinar</button>`;
+    }
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
         <div class="plano-card-corpo">
@@ -4274,7 +4284,9 @@ function abrirAssinatura() {
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
       </div>
       <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">Pagamento via <b>Pix ou cartão</b> no checkout seguro do Asaas.</p>
+      <p class="assin-obs">${_WHATSAPP_COMERCIAL
+        ? `Contratação pelo <b>WhatsApp</b> com pagamento via <b>Pix</b> — seu plano é liberado assim que o pagamento for confirmado.`
+        : `Pagamento via <b>Pix ou cartão</b> no checkout seguro do Asaas.`}</p>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>
     </div>
   `;

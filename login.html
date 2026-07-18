@@ -86,6 +86,16 @@
         // Detecta o fluxo de recuperação de senha (link recebido por e-mail)
         const _ehRecuperacao = (window.location.hash || "").includes("type=recovery");
 
+        // Redireciona conforme o papel da conta: admin → painel /admin, user → sistema.
+        // Se a tabela de perfis ainda não existir, cai no fluxo normal.
+        async function _irPorPerfil() {
+            try {
+                const { data } = await supabaseClient.from("perfis").select("role").maybeSingle();
+                if (data && data.role === "admin") { window.location.replace("admin/"); return; }
+            } catch (e) { /* segue o fluxo normal */ }
+            window.location.replace("index.html");
+        }
+
         // Supabase dispara este evento ao processar o token do link de recuperação
         supabaseClient.auth.onAuthStateChange((event) => {
             if (event === "PASSWORD_RECOVERY") mostrarDefinirNovaSenha();
@@ -95,7 +105,7 @@
         // replace() não deixa entrada de login navegável no histórico.
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (_ehRecuperacao) { mostrarDefinirNovaSenha(); return; }
-            if (session) window.location.replace("index.html");
+            if (session) _irPorPerfil();
             else mostrarLogin();
         });
 
@@ -117,7 +127,7 @@
             if (!event.persisted) return; // só quando a página volta do bfcache
             restaurarEstadoVisualDoLogin();
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                if (session && !_ehRecuperacao) window.location.replace("index.html");
+                if (session && !_ehRecuperacao) _irPorPerfil();
             });
         });
 
@@ -263,7 +273,7 @@
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
             if (error) { restaurar(); msgLogin("E-mail ou senha incorretos."); return; }
             // replace() evita que o botão "Voltar" reabra a tela de login "Entrando..."
-            window.location.replace("index.html");
+            _irPorPerfil();
         }
 
         async function cadastrarUsuario(botao) {
@@ -340,7 +350,7 @@
             const { error } = await supabaseClient.auth.updateUser({ password: nova });
             if (error) { restaurar(); msgLogin("Erro ao salvar: " + error.message); return; }
             msgLogin("Senha alterada! Entrando...", "ok");
-            setTimeout(() => { window.location.href = "index.html"; }, 900);
+            setTimeout(() => { _irPorPerfil(); }, 900);
         }
     </script>
 
