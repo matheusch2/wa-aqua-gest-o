@@ -4089,7 +4089,7 @@ function abrirMenuFinanceiro() {
 // ─── ASSINATURA / PLANOS ────────────────────────────────────────────────────
 // Contratação manual via WhatsApp (enquanto o Asaas não for reativado).
 // Preencher com DDI+DDD+número, ex: "5584999999999". Vazio = checkout Asaas.
-const _WHATSAPP_COMERCIAL = "";
+const _WHATSAPP_COMERCIAL = "5588992498067";
 
 const _PLANOS_APP = [
   { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros", mensal: 50,  anual: 500 },
