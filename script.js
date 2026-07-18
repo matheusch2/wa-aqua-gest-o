@@ -1006,6 +1006,7 @@ function voltarMenuGestao() {
   document.getElementById("menuGestao").style.display = "grid";
   limparAreaGestao();
   verificarBoletosVencendo();
+  _mostrarBannerLeitura();
   _toggleVoltarTopo(false);
 }
 
@@ -1106,6 +1107,16 @@ function _cadModo(modo) {
 async function salvarViveiro() {
   const botao = document.getElementById("btnSalvarViveiro");
   if (botao && botao.disabled) return; // trava contra duplo toque
+  if (_bloqueioEdicao()) return;
+
+  // Gate de criação: respeita o limite de viveiros do plano.
+  const limite = _planoLimiteEfetivo();
+  if (viveiros.length >= limite) {
+    _toastErro(limite <= 1
+      ? "O plano grátis permite 1 viveiro. Assine um plano em \"Meu plano\" para cadastrar mais."
+      : `Seu plano permite ${limite} viveiros. Faça upgrade em \"Meu plano\" para cadastrar mais.`);
+    return;
+  }
 
   const nome = document.getElementById("nomeViveiro").value.trim();
   const modo = document.getElementById("cadModo")?.value || "cultivo";
@@ -1691,6 +1702,7 @@ function mostrarErroTipoRacao(msg) {
 }
 
 async function salvarTipoRacao() {
+  if (_bloqueioEdicao()) return;
   const nome = document.getElementById("nomeTipoRacao").value.trim();
   const pesoSacoKg = parseFloat(document.getElementById("pesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("valorSacoRacao").value);
@@ -1795,6 +1807,7 @@ function confirmarExcluirTipoRacao(i) {
 }
 
 async function excluirTipoRacao(i, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
@@ -1857,6 +1870,7 @@ function abrirEdicaoTipoRacao(i) {
 }
 
 async function salvarEdicaoTipoRacao(i) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const nome = document.getElementById("editNomeTipoRacao").value.trim();
@@ -1997,6 +2011,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 }
 
 async function salvarLancamentoRacao(indexDireto = "") {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -2193,6 +2208,7 @@ function abrirBiometria(index) {
 }
 
 async function salvarBiometria(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -2339,6 +2355,7 @@ function abrirDespesca(index) {
 }
 
 async function salvarDespesca(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -3185,6 +3202,7 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
 }
 
 async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoBio").value;
@@ -3260,6 +3278,7 @@ function confirmarExcluirBiometria(viveiroIndex, bioIndex, elementoId, direto) {
 }
 
 async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const bio = viveiros[viveiroIndex].biometrias[bioIndex];
@@ -3349,6 +3368,7 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
 }
 
 async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoDesp").value;
@@ -3422,6 +3442,7 @@ function confirmarExcluirDespesca(viveiroIndex, despIndex, elementoId, direto) {
 }
 
 async function excluirDespesca(viveiroIndex, despIndex, elementoId, direto, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const desp = viveiros[viveiroIndex].despescas[despIndex];
@@ -3444,6 +3465,7 @@ function voltarParaHistoricoRacaoDireto(viveiroIndex, paginaAtual = 0) {
 }
 
 async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAtual = 0) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoRacao").value;
@@ -3557,6 +3579,7 @@ function confirmarExcluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pag
 }
 
 async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina = 0, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
 
@@ -3660,6 +3683,7 @@ function mostrarFormularioReinicio(index, modo = "reiniciar") {
 
 // CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
 async function salvarNovoCiclo(index, modo = "reiniciar") {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -3728,6 +3752,7 @@ function confirmarExcluirViveiro(index) {
 }
 
 async function excluirViveiro(index, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return; // trava contra duplo toque
   const viveiro = viveiros[index];
   if (!viveiro) return;
@@ -3942,6 +3967,7 @@ function cancelarExcluirCiclo(viveiroIndex, cicloIndex) {
 }
 
 async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const viveiro = viveiros[viveiroIndex];
   const ciclo = viveiro.ciclosFinalizados[cicloIndex];
@@ -4070,6 +4096,85 @@ const _PLANOS_APP = [
 function _planoLabel(key) {
   const p = _PLANOS_APP.find(x => x.key === key);
   return p ? p.nome : "Grátis";
+}
+
+// ─── TRAVA / MODO SOMENTE LEITURA ───────────────────────────────────────────
+// Regra do produto:
+//  • 1 viveiro é grátis para sempre. A partir do 2º, precisa de um plano.
+//  • Se o pagamento de um plano pago parar, a conta entra em "somente leitura":
+//    a pessoa continua vendo TUDO (relatórios, ração, biometria, histórico),
+//    mas não consegue lançar nem editar até regularizar.
+//  • Há uma carência de alguns dias após o vencimento antes de travar.
+const _DIAS_CARENCIA = 5;
+
+// Limite de viveiros do plano vigente. Grátis / sem plano pago ativo = 1.
+function _planoLimiteEfetivo() {
+  const a = assinatura;
+  if (a && a.status === "ativo" && a.plano && a.plano !== "gratis") {
+    const lim = Number(a.limite_viveiros);
+    if (lim > 0) return lim;
+  }
+  return 1; // free tier
+}
+
+// Converte "YYYY-MM-DD" (ou timestamp) numa Data local, ou null.
+function _parseVenc(str) {
+  if (!str) return null;
+  const m = String(str).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// A conta está em modo somente leitura?
+// Só trava plano PAGO cujo pagamento parou (pendente/cancelado) e que já
+// passou da carência. Nunca trava quem está no grátis nem quem está em dia.
+function _contaBloqueada() {
+  const a = assinatura;
+  if (!a) return false;                                // sem assinatura → não trava
+  if (!a.plano || a.plano === "gratis") return false;  // grátis não trava
+  if (a.status === "ativo") return false;              // pagamento em dia
+  if (viveiros.length <= 1) return false;              // dentro do grátis (1 viveiro)
+  if (a.status === "cancelado") return true;           // assinatura cancelada → só leitura
+  // pendente/atrasado: só trava se houver vencimento conhecido e vencido além da carência
+  const venc = _parseVenc(a.proximo_vencimento);
+  if (!venc) return false;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const diasAtraso = Math.floor((hoje - venc) / 86400000);
+  return diasAtraso > _DIAS_CARENCIA;
+}
+
+// Guarda de escrita: retorna true (e avisa) quando a conta está travada.
+// Usado no topo de toda função que lança ou edita dados do cultivo.
+function _bloqueioEdicao() {
+  if (_contaBloqueada()) {
+    _toastErro("Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.");
+    return true;
+  }
+  return false;
+}
+
+// Banner de aviso no menu quando a conta está em somente leitura.
+function _mostrarBannerLeitura() {
+  const area = document.getElementById("area-gestao");
+  if (!area) return;
+  const existente = document.getElementById("banner-leitura");
+  if (existente) existente.remove();
+  if (!_contaBloqueada()) return;
+  const div = document.createElement("div");
+  div.id = "banner-leitura";
+  div.innerHTML = `
+    <div class="leitura-banner" onclick="abrirAssinatura()">
+      <div class="leitura-banner-icone">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="leitura-banner-texto">
+        <strong>Modo somente leitura</strong>
+        <span>Você continua vendo tudo. Para voltar a lançar e editar, regularize seu plano.</span>
+      </div>
+      <span class="leitura-banner-seta">›</span>
+    </div>`;
+  area.insertBefore(div, area.firstChild);
 }
 
 function abrirAssinatura() {
@@ -4518,6 +4623,7 @@ function abrirFormCustoFixo(index) {
 }
 
 async function salvarCustoFixo(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const editando = index !== null && index !== undefined;
@@ -4574,6 +4680,7 @@ function confirmarExcluirCustoFixo(index) {
 }
 
 async function excluirCustoFixo(index, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const c = custosFixos[index];
@@ -4947,6 +5054,7 @@ function _calcVencimentoForm() {
 }
 
 async function salvarBoleto(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -4991,6 +5099,7 @@ async function salvarBoleto(index) {
 }
 
 async function excluirBoleto(index, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const { error } = await supabaseClient.from("boletos")
@@ -5518,6 +5627,7 @@ function abrirEncerrarCiclo(index) {
 }
 
 async function salvarEncerramentoCiclo(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -6371,6 +6481,7 @@ function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd) {
 }
 
 async function salvarProtocolos(index) {
+  if (_bloqueioEdicao()) return;
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return false;
   const { error } = await supabaseClient.from("viveiros")
@@ -6515,6 +6626,7 @@ async function toggleProtocolo(index, protId) {
 }
 
 async function excluirProtocolo(index, protId, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   _travarBotao(botao, "…");
   viveiros[index].protocolos = (viveiros[index].protocolos || []).filter(x => x.id !== protId);
@@ -6588,6 +6700,7 @@ function _protToggleTipo() {
 }
 
 async function salvarProtocolo(index, protId) {
+  if (_bloqueioEdicao()) return;
   const msg = document.getElementById("msg-prot-erro");
   const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
   if (msg) msg.style.display = "none";
@@ -6757,6 +6870,7 @@ function calcularPreviaKg() {
 }
 
 async function salvarProduto() {
+  if (_bloqueioEdicao()) return;
   const nome = document.getElementById("nomeProduto").value.trim();
   const categoria = document.getElementById("categoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("pesoKgProduto").value);
@@ -6856,6 +6970,7 @@ function confirmarExcluirProduto(i) {
 }
 
 async function excluirProduto(i, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
@@ -6930,6 +7045,7 @@ function abrirEdicaoProduto(i) {
 }
 
 async function salvarEdicaoProduto(i) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const nome = document.getElementById("editNomeProduto").value.trim();
@@ -7119,6 +7235,7 @@ function atualizarPreviaCusto() {
 }
 
 async function salvarCustoProduto(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -7215,6 +7332,7 @@ function abrirLancarOutroCusto(index) {
 }
 
 async function salvarOutroCusto(index) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
 
@@ -7391,6 +7509,7 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
 }
 
 async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const chave = decodeURIComponent(chaveEnc);
@@ -7457,6 +7576,7 @@ function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
 }
 
 async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const chave = decodeURIComponent(chaveEnc);
@@ -7523,6 +7643,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
 }
 
 async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
+  if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoCusto").value;
@@ -7625,6 +7746,7 @@ function confirmarExcluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
 }
 
 async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto, botao) {
+  if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
@@ -8007,6 +8129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         document.getElementById("area-gestao").innerHTML = "";
         document.getElementById("menuGestao").style.display = "grid";
+        _mostrarBannerLeitura();
       }
     } else {
       window.location.replace("login.html");
