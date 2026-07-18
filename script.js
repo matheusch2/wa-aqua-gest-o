@@ -4144,11 +4144,35 @@ function _contaBloqueada() {
   return diasAtraso > _DIAS_CARENCIA;
 }
 
-// Guarda de escrita: retorna true (e avisa) quando a conta está travada.
-// Usado no topo de toda função que lança ou edita dados do cultivo.
+// Guarda de escrita GLOBAL: retorna true (e avisa) quando a conta inteira
+// está travada (plano pago vencido). Usado em funções que não são de um
+// viveiro específico (catálogos, boletos, custos fixos, produtos).
 function _bloqueioEdicao() {
   if (_contaBloqueada()) {
     _toastErro("Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.");
+    return true;
+  }
+  return false;
+}
+
+// Um viveiro (pela POSIÇÃO na lista ordenada) está fora do limite do plano?
+// Ex.: no grátis (limite 1), só o 1º viveiro fica liberado; do 2º em diante
+// fica em modo leitura, mesmo já estando cadastrado.
+function _viveiroForaDoLimite(idx) {
+  const i = Number(idx);
+  if (!Number.isFinite(i) || i < 0) return false;
+  return i >= _planoLimiteEfetivo();
+}
+
+// Guarda de escrita POR VIVEIRO: bloqueia se a conta está travada OU se este
+// viveiro específico está além do limite do plano.
+function _bloqueioViveiro(idx) {
+  if (_contaBloqueada()) {
+    _toastErro("Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.");
+    return true;
+  }
+  if (_viveiroForaDoLimite(idx)) {
+    _toastErro(`Viveiro bloqueado no seu plano. Assine um plano em "Meu plano" para liberar este viveiro.`);
     return true;
   }
   return false;
