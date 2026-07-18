@@ -8036,13 +8036,8 @@ async function carregarViveiros() {
     return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
   });
 
-  // Autocorreção: garante que o custo acumulado de Ração do ciclo ativo bate
-  // com os lançamentos reais (conserta registros inflados por exclusões antigas
-  // e separa a ração de ciclos encerrados que compartilhavam o mesmo ciclo_id)
-  try {
-    const corrigidos = await _reconciliarCustoRacao(usuario);
-    if (corrigidos > 0) setTimeout(() => _toastSucesso("Custos de ração recalculados ✓"), 900);
-  } catch (e) { console.log("Reconciliar ração:", e); }
+  // (Autocorreção de custo de ração DESATIVADA — em diagnóstico com dados reais.
+  //  A função _reconciliarCustoRacao fica disponível, mas não roda sozinha.)
 
   console.log("Viveiros carregados:", viveiros);
 }
