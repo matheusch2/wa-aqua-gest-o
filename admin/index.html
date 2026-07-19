@@ -150,12 +150,14 @@
             el.textContent = m; el.style.display = "block";
         }
 
-        // Aceita a função com ou sem o hífen final no nome (admin-clientes- / admin-clientes).
-        // Qualquer falha que não seja de permissão tenta o próximo nome.
-        let _fnSlug = null;
-        async function chamar(body) {
-            const slugs = _fnSlug ? [_fnSlug] : ["admin-clientes-", "admin-clientes"];
-            let ultimoErro = null;
+        // Chama uma Edge Function aceitando o nome com ou sem hífen final (tolera
+        // nome digitado errado no deploy) e memoriza o que funcionou por função.
+        // Erros de permissão (401/403) e erros devolvidos pela própria função
+        // interrompem na hora; ao falhar tudo, reporta o erro mais informativo.
+        const _slugOk = {};
+        async function chamar(body, fn = "admin-clientes") {
+            const slugs = _slugOk[fn] ? [_slugOk[fn]] : [fn + "-", fn];
+            let erroDetalhado = null, ultimoErro = null;
             for (const slug of slugs) {
                 try {
                     const { data, error } = await sb.functions.invoke(slug, { body });
@@ -164,17 +166,24 @@
                         if (status === 401 || status === 403) throw new Error("SEM_ACESSO");
                         let det = "";
                         try { det = (await error.context.json()).error || ""; } catch (e) {}
-                        throw new Error(det || `função "${slug}" → ${status ? "status " + status : (error.name || "sem resposta") + ": " + (error.message || "")}`);
+                        const err = new Error(det || `função "${slug}" → ${status ? "status " + status : (error.name || "sem resposta") + ": " + (error.message || "")}`);
+                        if (det) err.temDetalhe = true;
+                        throw err;
                     }
-                    if (data && data.error) throw new Error(data.error);
-                    _fnSlug = slug;
+                    if (data && data.error) {
+                        const err = new Error(data.error);
+                        err.definitivo = true;
+                        throw err;
+                    }
+                    _slugOk[fn] = slug;
                     return data;
                 } catch (e) {
-                    if (e.message === "SEM_ACESSO") throw e;
+                    if (e.message === "SEM_ACESSO" || e.definitivo) throw e;
+                    if (e.temDetalhe && !erroDetalhado) erroDetalhado = e;
                     ultimoErro = e;
                 }
             }
-            throw ultimoErro || new Error("Erro ao falar com o servidor.");
+            throw erroDetalhado || ultimoErro || new Error("Erro ao falar com o servidor.");
         }
 
         async function init() {
@@ -365,18 +374,12 @@
             }
             btn.disabled = true; btn.textContent = "Excluindo…";
             try {
-                const { data, error } = await sb.functions.invoke("excluir-conta", { body: { alvo } });
-                if (error) {
-                    let det = "";
-                    try { det = (await error.context.json()).error || ""; } catch (e) {}
-                    throw new Error(det || "Erro ao excluir.");
-                }
-                if (data && data.error) throw new Error(data.error);
+                await chamar({ alvo }, "excluir-conta");
                 abertos.delete(alvo);
                 await carregarClientes();
                 toast("Conta excluída definitivamente.", "ok");
             } catch (e) {
-                toast("Erro: " + e.message, "erro");
+                toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
                 btn.disabled = false; btn.classList.remove("armado"); btn.dataset.armado = "";
                 btn.textContent = "🗑️ Excluir conta e todos os dados";
             }

@@ -7,7 +7,6 @@ let boletos = [];
 let custosFixos = [];
 let assinatura = null;
 let _planosCiclo = "mensal";
-let _meuCpf = "";
 let _financeiroModo = "detalhado";
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
@@ -1862,12 +1861,20 @@ function confirmarExcluirTipoRacao(i) {
 async function excluirTipoRacao(i, botao) {
   if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
+  // Trava: ração com lançamentos no ciclo atual não pode sair do catálogo —
+  // o custo derivado (preço × kg) zeraria os kg já lançados dela.
+  const emUso = viveiros.some(v => (v.racoes || []).some(r => r.tipoRacaoId === tiposRacao[i].id));
+  if (emUso) {
+    _toastErro("Esta ração tem lançamentos no ciclo atual e não pode ser excluída (o custo dos lançamentos zeraria).");
+    return;
+  }
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
   const { error } = await supabaseClient.from("tipos_racao").delete().eq("id", tiposRacao[i].id).eq("user_id", usuario.id);
   if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
   tiposRacao.splice(i, 1);
+  _montarCustoRacaoVirtual(); // catálogo mudou → custo derivado atualiza
   abrirVerTiposRacao();
 }
 
@@ -1948,6 +1955,7 @@ async function salvarEdicaoTipoRacao(i) {
   if (error) { _erroEdit("Erro ao salvar: " + error.message); return; }
 
   tiposRacao[i] = { ...tiposRacao[i], nome, pesoSacoKg, valorSaco, custoPorKg };
+  _montarCustoRacaoVirtual(); // preço mudou → custo derivado atualiza na hora
   abrirVerTiposRacao();
 }
 
@@ -3492,8 +3500,6 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   const novoTipoIdx = document.getElementById("tipoRacaoEdicaoSelect")?.value;
   const novoTipo = (novoTipoIdx !== "" && novoTipoIdx !== undefined)
     ? tiposRacao[novoTipoIdx] : null;
-  const velhoTipo = racao.tipoRacaoId
-    ? tiposRacao.find(t => t.id === racao.tipoRacaoId) || null : null;
 
   // DELETE + INSERT contorna restrição de RLS em UPDATE
   const { error: erroDel } = await supabaseClient
@@ -3537,33 +3543,42 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   restaurarScroll();
 }
 
-// Custo de "Ração" é sempre DERIVADO dos lançamentos: preço do catálogo × kg
-// lançados no ciclo ativo. Este helper (re)monta um registro em memória por
-// viveiro e descarta registros gravados de Ração do ciclo ativo (o modelo
-// antigo acumulava no banco e divergia após exclusões/edições/reinícios).
-// Registros de Ração de ciclos ENCERRADOS permanecem como estão.
+// Ração derivada de um viveiro: preço do catálogo × kg lançados no ciclo
+// ativo. Fonte única usada pelo registro em memória E pelo congelamento no
+// encerramento — os dois nunca podem divergir.
+function _racaoDerivada(v) {
+  const lancs = (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0);
+  if (!lancs.length) return null;
+  const qtdG = lancs.reduce((s, r) => s + r.racao * 1000, 0);
+  const valor = lancs.reduce((s, r) => {
+    const t = tiposRacao.find(x => x.id === r.tipoRacaoId);
+    return s + r.racao * (t ? (t.custoPorKg || 0) : 0);
+  }, 0);
+  return { qtdG, valor, data: lancs.map(r => r.data).sort()[0] };
+}
+
+// Custo de "Ração" é sempre DERIVADO dos lançamentos. Este helper (re)monta um
+// registro em memória por viveiro (marcado com `derivado: true` — a flag
+// `virtual` é reservada ao rateio de custo fixo no financeiro) e descarta
+// registros gravados de Ração do ciclo ativo (o modelo antigo acumulava no
+// banco e divergia). Registros de ciclos ENCERRADOS permanecem como estão.
 function _montarCustoRacaoVirtual() {
   for (const v of viveiros) {
     const cicloId = v.cicloId || null;
     const ini = v.dataPreparacao || v.dataPovoamento || null;
     v.custos = (v.custos || []).filter(c => {
-      if (c.virtual) return false; // remonta sempre
+      if (c.derivado) return false; // remonta sempre
       if (!(c.categoria === "Ração" && c.nomeProduto === "Ração")) return true;
       if (cicloId && (c.cicloId || null) === cicloId) return false;   // substituído pelo derivado
       if (!c.cicloId && ini && c.data >= ini) return false;           // cairia na janela do ciclo ativo
       return true;
     });
-    const lancs = (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0);
-    if (!lancs.length) continue;
-    const qtdG = lancs.reduce((s, r) => s + r.racao * 1000, 0);
-    const valor = lancs.reduce((s, r) => {
-      const t = tiposRacao.find(x => x.id === r.tipoRacaoId);
-      return s + r.racao * (t ? (t.custoPorKg || 0) : 0);
-    }, 0);
+    const der = _racaoDerivada(v);
+    if (!der) continue;
     v.custos.push({
-      id: null, virtual: true, tipo: "produto", produtoId: null,
-      nomeProduto: "Ração", quantidadeG: qtdG, valor,
-      categoria: "Ração", data: lancs.map(r => r.data).sort()[0],
+      id: null, derivado: true, tipo: "produto", produtoId: null,
+      nomeProduto: "Ração", quantidadeG: der.qtdG, valor: der.valor,
+      categoria: "Ração", data: der.data,
       observacao: null, cicloId,
     });
   }
@@ -4095,9 +4110,15 @@ function abrirMenuFinanceiro() {
 }
 
 // ─── ASSINATURA / PLANOS ────────────────────────────────────────────────────
-// Contratação manual via WhatsApp (enquanto o Asaas não for reativado).
-// Preencher com DDI+DDD+número, ex: "5584999999999". Vazio = checkout Asaas.
+// Contratação manual via WhatsApp: cliente chama, paga por Pix e o admin
+// libera pelo painel /admin. Número obrigatório (DDI+DDD+número).
 const _WHATSAPP_COMERCIAL = "5588992498067";
+
+// Link único de contratação — mensagem e número num lugar só.
+function _linkWhatsAppPlano(nomePlano, ciclo) {
+  const msg = encodeURIComponent(`Olá! Quero assinar o plano ${nomePlano} (${ciclo || "mensal"}) do WA Aqua Gestão. 🦐`);
+  return `https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msg}`;
+}
 
 const _PLANOS_APP = [
   { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros", mensal: 50,  anual: 500 },
@@ -4120,23 +4141,39 @@ function _planoLabel(key) {
 //  • Há uma carência de alguns dias após o vencimento antes de travar.
 const _DIAS_CARENCIA = 5;
 
-// Limite de viveiros do plano vigente. Grátis / sem plano pago ativo = 1.
-function _planoLimiteEfetivo() {
-  const a = assinatura;
-  if (a && a.status === "ativo" && a.plano && a.plano !== "gratis") {
-    const lim = Number(a.limite_viveiros);
-    if (lim > 0) return lim;
-  }
-  return 1; // free tier
-}
+// Limite de viveiros de cada plano (espelha a Edge Function admin-clientes)
+const _LIMITES_PLANO = { gratis: 1, basico: 5, intermediario: 10, avancado: 20, pro: 999999 };
 
-// Converte "YYYY-MM-DD" (ou timestamp) numa Data local, ou null.
+// Converte "YYYY-MM-DD" (ou timestamp) numa Data local à meia-noite, ou null.
 function _parseVenc(str) {
   if (!str) return null;
-  const m = String(str).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  const d = new Date(str);
+  const d = _parseDataLocal(str);
   return isNaN(d.getTime()) ? null : d;
+}
+
+// Pagamento pendente ainda dentro da carência? (não pune enquanto o
+// vencimento não passou de _DIAS_CARENCIA; sem vencimento conhecido, não pune)
+function _dentroDaCarencia(a) {
+  if (!a || a.status !== "pendente") return false;
+  const venc = _parseVenc(a.proximo_vencimento);
+  if (!venc) return true;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  return Math.floor((hoje - venc) / 86400000) <= _DIAS_CARENCIA;
+}
+
+// Limite de viveiros do plano vigente. Grátis / plano pago bloqueado = 1.
+// O plano pago vale enquanto está ativo OU pendente dentro da carência
+// (a carência protege o limite por viveiro igual protege a trava geral).
+// Se o campo limite_viveiros vier vazio (linhas antigas), usa o limite
+// padrão do plano — nunca rebaixa um pagante em dia para o grátis.
+function _planoLimiteEfetivo() {
+  const a = assinatura;
+  if (a && a.plano && a.plano !== "gratis" && (a.status === "ativo" || _dentroDaCarencia(a))) {
+    const lim = Number(a.limite_viveiros);
+    if (lim > 0) return lim;
+    return _LIMITES_PLANO[a.plano] || 1;
+  }
+  return 1; // free tier
 }
 
 // A conta está em modo somente leitura?
@@ -4149,12 +4186,7 @@ function _contaBloqueada() {
   if (a.status === "ativo") return false;              // pagamento em dia
   if (viveiros.length <= 1) return false;              // dentro do grátis (1 viveiro)
   if (a.status === "cancelado") return true;           // assinatura cancelada → só leitura
-  // pendente/atrasado: só trava se houver vencimento conhecido e vencido além da carência
-  const venc = _parseVenc(a.proximo_vencimento);
-  if (!venc) return false;
-  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-  const diasAtraso = Math.floor((hoje - venc) / 86400000);
-  return diasAtraso > _DIAS_CARENCIA;
+  return !_dentroDaCarencia(a);                        // pendente: trava só após a carência
 }
 
 // Guarda de escrita GLOBAL: retorna true (e avisa) quando a conta inteira
@@ -4254,15 +4286,9 @@ function abrirAssinatura() {
     } else {
       precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(p.mensal, 0)}<small>por mês</small></div>`;
     }
-    let rodape;
-    if (atual) {
-      rodape = `<div class="plano-atual-tag">✓ Plano atual</div>`;
-    } else if (_WHATSAPP_COMERCIAL) {
-      const msgZap = encodeURIComponent(`Olá! Quero assinar o plano ${p.nome} (${ciclo}) do WA Aqua Gestão. 🦐`);
-      rodape = `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msgZap}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`;
-    } else {
-      rodape = `<button class="plano-btn" onclick="assinarPlano('${p.key}','${ciclo}', this)">Assinar</button>`;
-    }
+    const rodape = atual
+      ? `<div class="plano-atual-tag">✓ Plano atual</div>`
+      : `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`;
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
         <div class="plano-card-corpo">
@@ -4292,20 +4318,16 @@ function abrirAssinatura() {
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
       </div>
       <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">${_WHATSAPP_COMERCIAL
-        ? `Contratação pelo <b>WhatsApp</b> com pagamento via <b>Pix</b> — seu plano é liberado assim que o pagamento for confirmado.`
-        : `Pagamento via <b>Pix ou cartão</b> no checkout seguro do Asaas.`}</p>
+      <p class="assin-obs">Contratação pelo <b>WhatsApp</b> com pagamento via <b>Pix</b> — seu plano é liberado assim que o pagamento for confirmado.</p>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">← Voltar</button>
     </div>
   `;
 }
 
-// Contratação 100% via WhatsApp — o checkout do Asaas foi desativado.
-// Mantido como porta de entrada única: qualquer botão antigo cai aqui também.
+// Porta de entrada legada: qualquer botão antigo "Assinar" cai no WhatsApp.
 function assinarPlano(plano, ciclo) {
   const p = _PLANOS_APP.find(x => x.key === plano);
-  const msgZap = encodeURIComponent(`Olá! Quero assinar o plano ${p ? p.nome : plano} (${ciclo || "mensal"}) do WA Aqua Gestão. 🦐`);
-  window.open(`https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msgZap}`, "_blank");
+  window.open(_linkWhatsAppPlano(p ? p.nome : plano, ciclo), "_blank");
 }
 
 // ─── SIMULAR VENDA ──────────────────────────────────────────────────────────
@@ -5685,26 +5707,31 @@ async function salvarEncerramentoCiclo(index) {
   // banco (no dia a dia ele é derivado dos lançamentos; ao encerrar, os
   // lançamentos são apagados, então o valor precisa ficar gravado p/ histórico)
   try {
-    const lancsEnc = (viveiro.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0);
-    if (lancsEnc.length && viveiro.cicloId) {
-      // remove qualquer registro antigo de Ração deste ciclo para não duplicar
+    const der = _racaoDerivada(viveiro);
+    if (der && viveiro.cicloId) {
+      const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || null;
+      // remove qualquer registro antigo de Ração deste ciclo para não duplicar:
+      // tanto os com o ciclo_id do ciclo que fecha…
       await supabaseClient.from("custos").delete()
         .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
         .eq("categoria", "Ração").eq("ciclo_id", viveiro.cicloId);
-      const qtdEncG = lancsEnc.reduce((s, r) => s + r.racao * 1000, 0);
-      const valorEnc = lancsEnc.reduce((s, r) => {
-        const t = tiposRacao.find(x => x.id === r.tipoRacaoId);
-        return s + r.racao * (t ? (t.custoPorKg || 0) : 0);
-      }, 0);
-      const dataEnc = lancsEnc.map(r => r.data).sort()[0];
+      // …quanto os legados SEM ciclo_id dentro da janela do ciclo (senão eles
+      // ressurgem pela janela de datas e dobram a ração no relatório fechado)
+      if (iniCiclo) {
+        await supabaseClient.from("custos").delete()
+          .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
+          .eq("categoria", "Ração").eq("nome_produto", "Ração")
+          .is("ciclo_id", null)
+          .gte("data", iniCiclo).lte("data", dataEncerramento);
+      }
       const { data: salvoSnap } = await supabaseClient.from("custos").insert([{
         user_id: usuario.id, viveiro_id: viveiro.id, tipo: "produto", produto_id: null,
-        nome_produto: "Ração", quantidade_g: qtdEncG, valor: valorEnc,
-        categoria: "Ração", data: dataEnc, ciclo_id: viveiro.cicloId,
+        nome_produto: "Ração", quantidade_g: der.qtdG, valor: der.valor,
+        categoria: "Ração", data: der.data, ciclo_id: viveiro.cicloId,
       }]).select();
       if (salvoSnap) {
         viveiro.custos = (viveiro.custos || []).filter(c => !(c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === viveiro.cicloId));
-        viveiro.custos.push({ id: salvoSnap[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: qtdEncG, valor: valorEnc, categoria: "Ração", data: dataEnc, observacao: null, cicloId: viveiro.cicloId });
+        viveiro.custos.push({ id: salvoSnap[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: der.qtdG, valor: der.valor, categoria: "Ração", data: der.data, observacao: null, cicloId: viveiro.cicloId });
       }
     }
   } catch (e) { console.log("Congelar custo de ração:", e); }
@@ -7372,6 +7399,12 @@ function _chaveCusto(c) {
   return c.produtoId ? ("id:" + c.produtoId) : ("nome:" + (c.nomeProduto || c.categoria || "Outros"));
 }
 
+// Registro de custo de Ração (derivado do ciclo ativo OU snapshot de ciclo
+// encerrado): gerenciado pelo sistema, não editável nas telas de custo.
+function _ehCustoRacao(c) {
+  return !!(c && (c.derivado || (c.categoria === "Ração" && c.nomeProduto === "Ração")));
+}
+
 function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
@@ -7388,6 +7421,9 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     if (!grupos[chave]) grupos[chave] = { chave, nome: c.nomeProduto || c.categoria || "Custo", quantidadeG: 0, valor: 0 };
     grupos[chave].valor += Number(c.valor) || 0;
     if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
+    // Ração é calculada dos lançamentos (e inclui snapshots de ciclos
+    // encerrados) — não pode ser editada/excluída por esta tela
+    if (_ehCustoRacao(c)) grupos[chave].soLeitura = true;
   });
   const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
 
@@ -7407,9 +7443,10 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
                 <span class="custo-card-qtd">${qtd || "—"}</span>
               </div>
               <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
-              <div class="custo-card-acoes">
-                <button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">✏️</button>
-                <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>
+              <div class="custo-card-acoes">${g.soLeitura
+                ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
+                : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">✏️</button>
+                <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>`}
               </div>
             </div>`;
           }).join("")
@@ -7437,6 +7474,10 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
   const v = viveiros[index];
   const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
+  if (grupo.some(_ehCustoRacao)) {
+    _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
+    return;
+  }
   const isProduto = chave.startsWith("id:");
   const nome = grupo[0].nomeProduto || grupo[0].categoria || "Custo";
   const valor = grupo.reduce((s, c) => s + (Number(c.valor) || 0), 0);
@@ -7489,6 +7530,10 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   const v = viveiros[index];
   const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
+  if (grupo.some(_ehCustoRacao)) {
+    _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
+    return;
+  }
   const isProduto = chave.startsWith("id:");
   const novoNome = isProduto ? (grupo[0].nomeProduto || grupo[0].categoria) : document.getElementById("editCustoNome").value.trim();
   const novoValor = parseMoedaBR(document.getElementById("editCustoValor").value);
@@ -7504,7 +7549,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   } else {
     somaQtd = grupo.reduce((s, c) => s + (Number(c.quantidadeG) || 0), 0);
   }
-  const ids = grupo.map(c => c.id);
+  const ids = grupo.map(c => c.id).filter(Boolean);
 
   const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
@@ -7549,12 +7594,16 @@ function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
 async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
   if (_bloqueioViveiro(index)) return;
   if (botao?.disabled) return;
-  const restaurar = _travarBotao(botao, "Excluindo...");
   const chave = decodeURIComponent(chaveEnc);
+  const v = viveiros[index];
+  if ((v.custos || []).filter(c => _chaveCusto(c) === chave).some(_ehCustoRacao)) {
+    _toastErro("O custo de Ração é calculado dos lançamentos — exclua os lançamentos de ração.");
+    return;
+  }
+  const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
-  const v = viveiros[index];
-  const ids = (v.custos || []).filter(c => _chaveCusto(c) === chave).map(c => c.id);
+  const ids = (v.custos || []).filter(c => _chaveCusto(c) === chave).map(c => c.id).filter(Boolean);
   if (ids.length) {
     const { error } = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
     if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
@@ -7566,6 +7615,10 @@ async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
 function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
   salvarScroll();
   const custo = viveiros[viveiroIndex].custos[custoIndex];
+  if (_ehCustoRacao(custo)) {
+    _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
+    return;
+  }
   const resultado = document.getElementById(elementoId);
   const acaoVoltar = `renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${direto}); restaurarScroll()`;
 
@@ -7785,9 +7838,6 @@ async function carregarViveiros() {
   const usuario = await pegarUsuarioLogado();
 
   if (!usuario) return;
-
-  // CPF/CNPJ salvo do usuário (para pré-preencher o campo de cobrança)
-  _meuCpf = (usuario.user_metadata && usuario.user_metadata.cpf_cnpj) || "";
 
   const { data: viveirosData, error: erroViveiros } =
     await supabaseClient
