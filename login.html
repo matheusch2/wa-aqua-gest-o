@@ -91,7 +91,7 @@
         async function _irPorPerfil() {
             try {
                 const { data } = await supabaseClient.from("perfis").select("role").maybeSingle();
-                if (data && data.role === "admin") { window.location.replace("admin/"); return; }
+                if (data && data.role === "admin") { window.location.replace("ch2/"); return; }
             } catch (e) { /* segue o fluxo normal */ }
             window.location.replace("index.html");
         }
