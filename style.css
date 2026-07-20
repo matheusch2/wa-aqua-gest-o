@@ -6102,3 +6102,10 @@ body.tema-escuro .bt-card-saldo b { color: #34d399; }
 body.tema-escuro .bt-card-forn, body.tema-escuro .bt-card-aux { color: #9ca3af; }
 body.tema-escuro .bt-badge-fin-aberto { background: #374151; color: #d1d5db; border-color: #4b5563; }
 body.tema-escuro .bt-badge-fin-parcial { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }
+
+/* Excluir minha conta — discreto (zona de perigo), não compete com "Sair" */
+.cfg-perigo { margin-top: 16px; padding-top: 12px; border-top: 1px solid #eef0f2; text-align: center; }
+.cfg-excluir-link { background: none; border: none; color: #b91c1c; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 6px 10px; opacity: .8; }
+.cfg-excluir-link:active { opacity: 1; text-decoration: underline; }
+body.tema-escuro .cfg-perigo { border-top-color: #374151; }
+body.tema-escuro .cfg-excluir-link { color: #fca5a5; }

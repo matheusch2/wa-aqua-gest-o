@@ -428,15 +428,9 @@ async function abrirConfiguracoes() {
           <button class="cfg-sair-confirmar" onclick="sairUsuario(this)">Sim, sair</button>
         </div>
       </div>
-      <button class="cfg-item cfg-item-sair" onclick="confirmarExcluirConta()">
-        <div class="cfg-item-ico cfg-item-ico-sair">
-          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-        </div>
-        <div class="cfg-item-texto">
-          <span class="cfg-item-titulo">Excluir minha conta</span>
-          <span class="cfg-item-sub">Apaga a conta e todos os dados</span>
-        </div>
-      </button>
+      <div class="cfg-perigo">
+        <button class="cfg-excluir-link" onclick="confirmarExcluirConta()">Excluir minha conta</button>
+      </div>
       <div id="cfg-excluir-confirm" class="cfg-sair-confirm" style="display:none">
         <p><b>⚠️ Atenção:</b> isso apaga sua conta e <b>TODOS os dados</b> — viveiros, lançamentos, histórico, tudo. <b>Não tem volta.</b></p>
         <p style="margin-top:8px">Digite <b>EXCLUIR</b> para confirmar:</p>
