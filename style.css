@@ -6085,3 +6085,20 @@ body.tema-escuro .bt-prog-topo b { color: #f3f4f6; }
 body.tema-escuro .bt-pagform { background: #1f2937; border-color: #374151; }
 body.tema-escuro .bt-pagform input { background: #111827; border-color: #374151; color: #f3f4f6; }
 body.tema-escuro .bt-pag-cancelar { background: #374151; color: #e5e7eb; }
+
+/* ── Boleto card: saldo em destaque + badges separados (spec ChatGPT) ── */
+.bt-badges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+.bt-badge-fin-aberto  { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.bt-badge-fin-parcial { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.bt-badge-fin-pago    { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+.bt-card-forn { font-size: 11.5px; color: #6b7280; margin: 1px 0 6px; }
+.bt-card-saldo { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+.bt-card-saldo b { font-size: 20px; font-weight: 800; color: #066b63; line-height: 1; }
+.bt-card-saldo small { font-size: 11px; color: #9ca3af; font-weight: 600; }
+.bt-card-saldo.quit b { color: #16a34a; }
+.bt-card-aux { font-size: 10.5px; color: #9ca3af; margin-bottom: 6px; }
+.bt-card-verdet { font-size: 11px; color: #066b63; font-weight: 700; }
+body.tema-escuro .bt-card-saldo b { color: #34d399; }
+body.tema-escuro .bt-card-forn, body.tema-escuro .bt-card-aux { color: #9ca3af; }
+body.tema-escuro .bt-badge-fin-aberto { background: #374151; color: #d1d5db; border-color: #4b5563; }
+body.tema-escuro .bt-badge-fin-parcial { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }

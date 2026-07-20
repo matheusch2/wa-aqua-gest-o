@@ -4698,21 +4698,33 @@ function abrirBoletos(filtro) {
     const vencDate = new Date(ano, mes - 1, dia);
     vencDate.setDate(vencDate.getDate() + b.prazoDias);
     const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const _rs = v => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rest = _boletoRestante(b);
     const parcial = !b.pago && (b.valorPago || 0) > 0 && b.valor;
-    const badgeTipo = b.pago ? "pago" : (parcial ? "proximo" : st.tipo);
-    const badgeLabel = b.pago ? "✓ Pago" : (parcial ? "Parcial" : st.label);
-    const restLista = parcial ? _boletoRestante(b) : 0;
+    // Badges independentes: situação FINANCEIRA (aberto/parcial/pago) + PRAZO
+    const finCls = b.pago ? "pago" : (parcial ? "parcial" : "aberto");
+    const finLabel = b.pago ? "✓ Pago" : (parcial ? "Parcial" : "Aberto");
+    // Valor em destaque = saldo restante (ou valor pago, se quitado)
+    const saldoVal = b.pago ? (b.valorPago || b.valor || 0) : rest;
+    const saldoLbl = b.pago ? "valor pago" : "restante";
     return `
-      <div class="bt-card${b.pago ? " bt-card-pago" : ""}" data-busca="${(b.nome + " " + (b.fornecedor || "")).toLowerCase()}">
+      <div class="bt-card${b.pago ? " bt-card-pago" : ""}"
+           data-busca="${(b.nome + " " + (b.fornecedor || "")).toLowerCase()}"
+           data-pago="${b.pago ? 1 : 0}" data-rest="${rest}" data-vpago="${b.valorPago || 0}" data-valor="${b.valor || 0}">
         <div class="bt-card-main" onclick="verDetalhesBoleto(${i})">
           <div class="bt-card-head">
             <span class="bt-card-nome">${b.nome}</span>
-            <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
+            <div class="bt-badges">
+              <span class="bt-badge bt-badge-fin-${finCls}">${finLabel}</span>
+              ${b.pago ? "" : `<span class="bt-badge bt-badge-${st.tipo}">${st.label}</span>`}
+            </div>
           </div>
-          <div class="bt-card-sub">Fornecedor: ${b.fornecedor || "—"}${parcial ? ` · falta R$ ${restLista.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : ""}</div>
+          <div class="bt-card-forn">${b.fornecedor || "—"}</div>
+          ${b.valor ? `<div class="bt-card-saldo${b.pago ? " quit" : ""}"><b>${_rs(saldoVal)}</b><small>${saldoLbl}</small></div>` : ""}
+          ${parcial ? `<div class="bt-card-aux">Valor original: ${_rs(b.valor)} · Pago: ${_rs(b.valorPago || 0)}</div>` : ""}
           <div class="bt-card-foot">
-            <span class="bt-card-venc">Vencimento: ${vencFmt}</span>
-            <span class="bt-card-valor">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}</span>
+            <span class="bt-card-venc">Vence ${vencFmt}</span>
+            <span class="bt-card-verdet">Ver detalhes ›</span>
           </div>
         </div>
         <div class="bt-menu-wrap" onclick="event.stopPropagation()">
@@ -4784,8 +4796,8 @@ function abrirBoletos(filtro) {
         <p id="bt-busca-vazio" class="bt-empty" style="display:none">Nenhum boleto encontrado.</p>
       </div>
       ${filtrados.length ? `<div class="bt-total-bar">
-        <span>Total ${labelFiltro} <small>(${filtrados.length} boleto${filtrados.length > 1 ? "s" : ""})</small></span>
-        <strong>R$ ${formatarNumeroBR(totalFiltrado, 2)}</strong>
+        <span>Total ${labelFiltro} <small id="bt-total-qtd">(${filtrados.length} boleto${filtrados.length > 1 ? "s" : ""})</small></span>
+        <strong id="bt-total-val">R$ ${formatarNumeroBR(totalFiltrado, 2)}</strong>
       </div>` : ""}
       <button class="botao-voltar-form" style="margin-top:6px" onclick="abrirMenuFinanceiro()">← Voltar</button>
     </div>
@@ -4797,14 +4809,24 @@ function abrirBoletos(filtro) {
 
 function _filtrarBoletosBusca(termo) {
   const t = (termo || "").trim().toLowerCase();
-  let vis = 0;
+  let vis = 0, total = 0;
+  const ehPagos = _boletosFiltro === "pagos";
   document.querySelectorAll(".bt-lista .bt-card").forEach(el => {
     const ok = !t || (el.dataset.busca || "").includes(t);
     el.style.display = ok ? "" : "none";
-    if (ok) vis++;
+    if (!ok) return;
+    vis++;
+    // Recalcula o total só com os cards VISÍVEIS (coerência busca × total)
+    const pago = el.dataset.pago === "1";
+    if (ehPagos) total += Number(el.dataset.vpago) || Number(el.dataset.valor) || 0;
+    else if (!pago) total += Number(el.dataset.rest) || 0;
   });
   const vazio = document.getElementById("bt-busca-vazio");
   if (vazio) vazio.style.display = vis === 0 ? "block" : "none";
+  const qtdEl = document.getElementById("bt-total-qtd");
+  const valEl = document.getElementById("bt-total-val");
+  if (qtdEl) qtdEl.textContent = `(${vis} boleto${vis === 1 ? "" : "s"})`;
+  if (valEl) valEl.textContent = "R$ " + formatarNumeroBR(total, 2);
 }
 
 function _toggleMenuBoleto(index) {
