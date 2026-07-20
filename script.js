@@ -4694,8 +4694,10 @@ function abrirBoletos(filtro) {
     const vencDate = new Date(ano, mes - 1, dia);
     vencDate.setDate(vencDate.getDate() + b.prazoDias);
     const vencFmt = vencDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const badgeTipo = b.pago ? "pago" : st.tipo;
-    const badgeLabel = b.pago ? "✓ Pago" : st.label;
+    const parcial = !b.pago && (b.valorPago || 0) > 0 && b.valor;
+    const badgeTipo = b.pago ? "pago" : (parcial ? "proximo" : st.tipo);
+    const badgeLabel = b.pago ? "✓ Pago" : (parcial ? "Parcial" : st.label);
+    const restLista = parcial ? _boletoRestante(b) : 0;
     return `
       <div class="bt-card${b.pago ? " bt-card-pago" : ""}" data-busca="${(b.nome + " " + (b.fornecedor || "")).toLowerCase()}">
         <div class="bt-card-main" onclick="verDetalhesBoleto(${i})">
@@ -4703,7 +4705,7 @@ function abrirBoletos(filtro) {
             <span class="bt-card-nome">${b.nome}</span>
             <span class="bt-badge bt-badge-${badgeTipo}">${badgeLabel}</span>
           </div>
-          <div class="bt-card-sub">Fornecedor: ${b.fornecedor || "—"}</div>
+          <div class="bt-card-sub">Fornecedor: ${b.fornecedor || "—"}${parcial ? ` · falta R$ ${restLista.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : ""}</div>
           <div class="bt-card-foot">
             <span class="bt-card-venc">Vencimento: ${vencFmt}</span>
             <span class="bt-card-valor">${b.valor ? "R$ " + b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""}</span>
@@ -4886,6 +4888,108 @@ function _mostrarConfirmarExcluir(index) {
   if (row) row.style.display = "flex";
 }
 
+// Quanto ainda falta pagar de um boleto (0 se não tiver valor total definido)
+function _boletoRestante(b) {
+  if (!b.valor || b.valor <= 0) return 0;
+  return Math.max(0, b.valor - (b.valorPago || 0));
+}
+
+// Barra de progresso "pago X de Y · falta Z" (só quando há valor total)
+function _boletoProgressoHtml(b) {
+  if (!b.valor || b.valor <= 0) return "";
+  const pago = b.valorPago || 0;
+  const rest = _boletoRestante(b);
+  const pct = Math.min(100, Math.round((pago / b.valor) * 100));
+  const rs = v => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `
+    <div class="bt-prog">
+      <div class="bt-prog-topo">
+        <span>Pago <b>${rs(pago)}</b> de ${rs(b.valor)}</span>
+        <span class="bt-prog-falta">${rest > 0 ? "Falta " + rs(rest) : "✓ Quitado"}</span>
+      </div>
+      <div class="bt-prog-barra"><div class="bt-prog-fill${rest <= 0 ? " cheio" : ""}" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+// Botões de pagamento conforme o estado do boleto
+function _boletoAcoesPagamentoHtml(index, b) {
+  if (b.pago) {
+    return `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desfazerUltimoPagamento(${index})">↩️ Desfazer último pagamento</button>`;
+  }
+  const temTotal = b.valor && b.valor > 0;
+  const jaPagouAlgo = (b.valorPago || 0) > 0;
+  const rest = _boletoRestante(b);
+  return `
+    ${temTotal ? `
+    <button class="botao-salvar" style="margin-top:14px;background:#066b63" onclick="abrirPagamentoParcial(${index})">💵 Registrar pagamento</button>
+    <div id="bt-pagform-${index}" class="bt-pagform" style="display:none">
+      <label>Valor do pagamento (R$)</label>
+      <input type="text" inputmode="decimal" id="bt-pagvalor-${index}" placeholder="Ex: 200,00" onblur="formatarMoedaBlur(this)">
+      <div class="bt-pagform-dica">Falta pagar R$ ${rest.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="bt-pagform-btns">
+        <button class="bt-pag-cancelar" onclick="document.getElementById('bt-pagform-${index}').style.display='none'">Cancelar</button>
+        <button class="bt-pag-ok" onclick="salvarPagamentoParcial(${index}, this)">Confirmar</button>
+      </div>
+    </div>` : ""}
+    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✓ ${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
+    ${!temTotal ? `<p class="rc-print-dica" style="margin-top:8px">Para pagar em partes, edite o boleto e informe o <b>valor total</b>.</p>` : ""}`;
+}
+
+function abrirPagamentoParcial(index) {
+  const form = document.getElementById("bt-pagform-" + index);
+  if (form) { form.style.display = form.style.display === "none" ? "block" : "none"; if (form.style.display === "block") document.getElementById("bt-pagvalor-" + index)?.focus(); }
+}
+
+async function salvarPagamentoParcial(index, botao) {
+  if (_bloqueioEdicao()) return;
+  if (botao?.disabled) return;
+  const b = boletos[index];
+  const inp = document.getElementById("bt-pagvalor-" + index);
+  let valor = parseMoedaBR(inp ? inp.value : "");
+  if (isNaN(valor) || valor <= 0) { _toastErro("Informe um valor de pagamento válido."); if (inp) inp.focus(); return; }
+  const rest = _boletoRestante(b);
+  if (rest > 0 && valor > rest + 0.005) valor = rest; // nunca paga mais que o restante
+  valor = Math.round(valor * 100) / 100;
+
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+  const hoje = new Date().toISOString().split("T")[0];
+  const novosPagamentos = [...(b.pagamentos || []), { data: hoje, valor }];
+  const novoValorPago = Math.round(((b.valorPago || 0) + valor) * 100) / 100;
+  const quitou = b.valor && novoValorPago >= b.valor - 0.005;
+
+  const patch = { valor_pago: novoValorPago, pagamentos: novosPagamentos };
+  if (quitou) { patch.pago = true; patch.data_pagamento = hoje; }
+
+  const { error } = await supabaseClient.from("boletos").update(patch).eq("id", b.id).eq("user_id", usuario.id);
+  restaurar();
+  if (error) { _toastErro("Erro ao registrar pagamento: " + error.message); return; }
+  b.valorPago = novoValorPago; b.pagamentos = novosPagamentos;
+  if (quitou) { b.pago = true; b.dataPagamento = hoje; }
+  _toastSucesso(quitou ? "Boleto quitado! ✓" : "Pagamento de R$ " + valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " registrado.");
+  verDetalhesBoleto(index);
+}
+
+async function desfazerUltimoPagamento(index) {
+  if (_bloqueioEdicao()) return;
+  const b = boletos[index];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+  const pgs = [...(b.pagamentos || [])];
+  const ultimo = pgs.pop();
+  const novoValorPago = Math.max(0, Math.round(((b.valorPago || 0) - (ultimo ? Number(ultimo.valor) : 0)) * 100) / 100);
+  // Se não havia parcelas registradas (quitação direta), apenas reabre o boleto
+  const { error } = await supabaseClient.from("boletos")
+    .update({ pago: false, data_pagamento: null, valor_pago: ultimo ? novoValorPago : 0, pagamentos: pgs })
+    .eq("id", b.id).eq("user_id", usuario.id);
+  if (error) { _toastErro("Erro ao desfazer: " + error.message); return; }
+  b.pago = false; b.dataPagamento = null;
+  b.valorPago = ultimo ? novoValorPago : 0;
+  b.pagamentos = pgs;
+  verDetalhesBoleto(index);
+}
+
 function verDetalhesBoleto(index) {
   const area = document.getElementById("area-gestao");
   const b = boletos[index];
@@ -4910,12 +5014,11 @@ function verDetalhesBoleto(index) {
         <div class="bt-det-linha"><span>Data da compra</span><strong>${dataCompraFmt}</strong></div>
         <div class="bt-det-linha"><span>Prazo</span><strong>${b.prazoDias} dias</strong></div>
         <div class="bt-det-linha"><span>Vencimento</span><strong>${st.dataFmt}</strong></div>
-        ${b.pago && b.dataPagamento ? `<div class="bt-det-linha"><span>Pago em</span><strong>${formatarData(b.dataPagamento)}</strong></div>` : ""}
-        ${b.valor ? `<div class="bt-det-linha bt-det-valor"><span>Valor</span><strong>R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>` : ""}
+        ${b.pago && b.dataPagamento ? `<div class="bt-det-linha"><span>Quitado em</span><strong>${formatarData(b.dataPagamento)}</strong></div>` : ""}
+        ${b.valor ? `<div class="bt-det-linha bt-det-valor"><span>Valor total</span><strong>R$ ${b.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>` : ""}
       </div>
-      ${b.pago
-        ? `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desmarcarBoletoPago(${index}, true)">↩️ Desfazer pagamento</button>`
-        : `<button class="botao-salvar" style="margin-top:14px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✓ Marcar como pago</button>`}
+      ${_boletoProgressoHtml(b)}
+      ${_boletoAcoesPagamentoHtml(index, b)}
       <div style="display:flex;gap:10px;margin-top:10px">
         <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
         <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'">🗑️ Excluir</button>
@@ -4931,7 +5034,8 @@ function verDetalhesBoleto(index) {
         <h4>Histórico</h4>
         <div class="bt-hist-linha"><span class="bt-hist-data">${dataCompraFmt}</span><span class="bt-hist-txt">Boleto cadastrado</span></div>
         <div class="bt-hist-linha"><span class="bt-hist-data">${dataCompraFmt}</span><span class="bt-hist-txt">Vencimento definido: ${st.dataFmt}</span></div>
-        ${b.pago && b.dataPagamento ? `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(b.dataPagamento)}</span><span class="bt-hist-txt">Marcado como pago</span></div>` : ""}
+        ${(b.pagamentos || []).map(p => `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(p.data)}</span><span class="bt-hist-txt">Pagamento de R$ ${Number(p.valor).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>`).join("")}
+        ${b.pago && b.dataPagamento ? `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(b.dataPagamento)}</span><span class="bt-hist-txt">✓ Boleto quitado</span></div>` : ""}
       </div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirBoletos()">← Voltar</button>
     </div>
@@ -5074,28 +5178,41 @@ async function excluirBoleto(index, botao) {
 }
 
 async function marcarBoletoPago(index, voltarDetalhe) {
+  if (_bloqueioEdicao()) return;
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
+  const b = boletos[index];
   const hoje = new Date().toISOString().split("T")[0];
+  const patch = { pago: true, data_pagamento: hoje };
+  // Se tem valor total, quita o restante e registra esse pagamento no histórico
+  if (b.valor && b.valor > 0) {
+    const rest = _boletoRestante(b);
+    patch.valor_pago = b.valor;
+    patch.pagamentos = rest > 0 ? [...(b.pagamentos || []), { data: hoje, valor: Math.round(rest * 100) / 100 }] : (b.pagamentos || []);
+  }
   const { error } = await supabaseClient.from("boletos")
-    .update({ pago: true, data_pagamento: hoje })
-    .eq("id", boletos[index].id).eq("user_id", usuario.id);
+    .update(patch).eq("id", b.id).eq("user_id", usuario.id);
   if (error) { console.error(error); _toastErro("Erro ao marcar como pago: " + error.message); return; }
-  boletos[index].pago = true;
-  boletos[index].dataPagamento = hoje;
-  _toastSucesso("Boleto marcado como pago.");
+  b.pago = true;
+  b.dataPagamento = hoje;
+  if (patch.valor_pago != null) { b.valorPago = patch.valor_pago; b.pagamentos = patch.pagamentos; }
+  _toastSucesso("Boleto quitado.");
   if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
 }
 
 async function desmarcarBoletoPago(index, voltarDetalhe) {
+  if (_bloqueioEdicao()) return;
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
+  // Reabre e zera os pagamentos (ação rápida de "desfazer" a partir da lista)
   const { error } = await supabaseClient.from("boletos")
-    .update({ pago: false, data_pagamento: null })
+    .update({ pago: false, data_pagamento: null, valor_pago: 0, pagamentos: [] })
     .eq("id", boletos[index].id).eq("user_id", usuario.id);
   if (error) { console.error(error); _toastErro("Erro ao desfazer: " + error.message); return; }
   boletos[index].pago = false;
   boletos[index].dataPagamento = null;
+  boletos[index].valorPago = 0;
+  boletos[index].pagamentos = [];
   if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
 }
 
@@ -7937,6 +8054,8 @@ async function carregarViveiros() {
     valor: b.valor ? Number(b.valor) : null,
     pago: !!b.pago,
     dataPagamento: b.data_pagamento || null,
+    valorPago: b.valor_pago ? Number(b.valor_pago) : 0,
+    pagamentos: Array.isArray(b.pagamentos) ? b.pagamentos : [],
   }));
 
   // Carregar custos fixos mensais (gracioso se a tabela não existir ainda)

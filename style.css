@@ -6063,3 +6063,25 @@ body.tema-escuro .dd-row span { color: #9ca3af; }
 }
 
 body.tema-escuro .vc-badge-bloqueado { background: #3f1d1d; border-color: #7f1d1d; color: #fca5a5; }
+
+/* ── Boleto: pagamento parcial ── */
+.bt-prog { margin-top: 14px; }
+.bt-prog-topo { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: #6b7280; margin-bottom: 6px; }
+.bt-prog-topo b { color: #16323c; }
+.bt-prog-falta { font-weight: 700; color: #b45309; }
+.bt-prog-barra { height: 9px; background: #eef2f4; border-radius: 6px; overflow: hidden; }
+.bt-prog-fill { height: 100%; background: #f59e0b; border-radius: 6px; transition: width .3s; }
+.bt-prog-fill.cheio { background: #16a34a; }
+.bt-pagform { margin-top: 10px; background: #f8fafb; border: 1px solid #e6ecea; border-radius: 12px; padding: 12px; }
+.bt-pagform label { display: block; font-size: 12.5px; font-weight: 700; color: #45565f; margin-bottom: 5px; }
+.bt-pagform input { width: 100%; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 11px; font-size: 15px; outline: none; }
+.bt-pagform input:focus { border-color: #066b63; }
+.bt-pagform-dica { font-size: 11.5px; color: #9ca3af; margin-top: 6px; }
+.bt-pagform-btns { display: flex; gap: 8px; margin-top: 10px; }
+.bt-pag-cancelar { flex: 1; padding: 11px; background: #f1f5f9; color: #475569; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.bt-pag-ok { flex: 2; padding: 11px; background: #066b63; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+body.tema-escuro .bt-prog-barra { background: #374151; }
+body.tema-escuro .bt-prog-topo b { color: #f3f4f6; }
+body.tema-escuro .bt-pagform { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-pagform input { background: #111827; border-color: #374151; color: #f3f4f6; }
+body.tema-escuro .bt-pag-cancelar { background: #374151; color: #e5e7eb; }
