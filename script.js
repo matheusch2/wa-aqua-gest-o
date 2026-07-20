@@ -6319,6 +6319,43 @@ function gerarRelatorioImpressao() {
     { ico: _ico.trend, lbl: "Lucro líquido", val: rs(lucroLiquido), sub: "", cls: temPreco ? (lucroLiquido < 0 ? "danger" : "ok") : "" },
   ];
 
+  // ── Alimentação (só dado real: ração lançada e seu custo) ──
+  const custoRacao = custos.filter(c => c.categoria === "Ração").reduce((s, c) => s + Number(c.valor), 0);
+  const racaoKg = Number(ciclo.racaoConsumida) || 0;
+  const alimentacaoHtml = `
+  <h2 class="sec">8. Alimentação</h2>
+  <div class="grid info6">
+    <div class="cel"><small>Ração consumida</small><b>${fmt(racaoKg, 1)} kg</b></div>
+    <div class="cel"><small>Custo da ração</small><b>R$ ${fmt(custoRacao, 2)}</b></div>
+    <div class="cel"><small>% do custo total</small><b>${custoTotal > 0 ? fmt(custoRacao / custoTotal * 100, 1) : "0"}%</b></div>
+    <div class="cel"><small>Custo ração / kg produzido</small><b>${producaoTotal > 0 ? "R$ " + fmt(custoRacao / producaoTotal, 2) : "-"}</b></div>
+    <div class="cel"><small>Preço médio da ração</small><b>${racaoKg > 0 ? "R$ " + fmt(custoRacao / racaoKg, 2) + "/kg" : "-"}</b></div>
+    <div class="cel"><small>Produção total</small><b>${fmt(producaoTotal, 1)} kg</b></div>
+  </div>`;
+
+  // ── Linha do tempo (eventos reais, em ordem cronológica) ──
+  const _eventos = [];
+  if (ciclo.dataPovoamento) _eventos.push({ d: ciclo.dataPovoamento, t: "Povoamento", i: `${Number(String(ciclo.totalPovoado).replace(/\./g, "") || 0).toLocaleString("pt-BR")} PLs` });
+  bios.forEach(b => _eventos.push({ d: b.data, t: "Biometria", i: `Peso médio ${fmt(Number(b.gramatura), 1)} g` }));
+  despescasArr.forEach(d => _eventos.push({ d: d.data, t: "Despesca", i: `${fmt(Number(d.quantidadeKg) || 0, 1)} kg · ${fmt(Number(d.pesoMedio) || 0, 1)} g` }));
+  if (ciclo.dataEncerramento) _eventos.push({ d: ciclo.dataEncerramento, t: "Encerramento", i: `Produção ${fmt(producaoTotal, 1)} kg` });
+  _eventos.sort((a, b) => String(a.d).localeCompare(String(b.d)));
+  const timelineHtml = _eventos.length ? `
+  <h2 class="sec">9. Linha do tempo</h2>
+  <table><thead><tr><th style="width:92px">Data</th><th class="num" style="width:46px">Dia</th><th>Evento</th><th>Detalhe</th></tr></thead>
+  <tbody>${_eventos.map(e => `<tr><td>${formatarData(e.d)}</td><td class="num">${calcularDiasCultivo(ciclo.dataPovoamento, e.d)}</td><td><b>${e.t}</b></td><td>${e.i}</td></tr>`).join("")}</tbody></table>` : "";
+
+  // ── Comparação com ciclos anteriores (métricas reais já armazenadas) ──
+  const _hist = (viveiros[index] && viveiros[index].ciclosFinalizados) ? [...viveiros[index].ciclosFinalizados] : [];
+  _hist.sort((a, b) => String(a.dataEncerramento).localeCompare(String(b.dataEncerramento)));
+  const comparacaoHtml = _hist.length >= 2 ? `
+  <h2 class="sec">10. Comparação com ciclos anteriores</h2>
+  <table><thead><tr><th>Encerramento</th><th class="num">Dias</th><th class="num">Produção (kg)</th><th class="num">Produtividade (kg/ha)</th><th class="num">Peso médio (g)</th></tr></thead>
+  <tbody>${_hist.map(c => {
+    const atual = c === ciclo || (c.cicloId && ciclo.cicloId && c.cicloId === ciclo.cicloId && c.dataEncerramento === ciclo.dataEncerramento);
+    return `<tr${atual ? ` style="background:#f0fdf4;font-weight:700"` : ""}><td>${formatarData(c.dataEncerramento)}${atual ? " (este)" : ""}</td><td class="num">${c.diasCultivo || "-"}</td><td class="num">${fmt(Number(c.producaoTotal) || 0, 1)}</td><td class="num">${fmt(Number(c.produtividade) || 0, 1)}</td><td class="num">${fmt(Number(c.pesoFinal) || 0, 1)}</td></tr>`;
+  }).join("")}</tbody></table>` : "";
+
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>Relatório Final do Ciclo — ${ciclo.nomeViveiro}</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
@@ -6470,9 +6507,13 @@ function gerarRelatorioImpressao() {
   <tbody>${(linhasDespesca + linhaFinal) || `<tr><td colspan="6" style="text-align:center;color:#9ca3af">Sem despescas.</td></tr>`}
   <tr style="font-weight:800;background:#f8fafc"><td colspan="2">TOTAL</td><td class="num">${fmt(totDespQtd,1)}</td><td></td><td></td><td class="num">${precoGeral > 0 ? "R$ "+fmt(totReceita,2) : "-"}</td></tr></tbody></table>
 
+  ${alimentacaoHtml}
+  ${timelineHtml}
+  ${comparacaoHtml}
+
   <div class="obs-duas">
     <div>
-      <h2 class="sec" style="margin-top:0">8. Observações</h2>
+      <h2 class="sec" style="margin-top:0">11. Observações</h2>
       <div class="obs-box">${(ciclo.observacoes || "").trim() || "—"}</div>
     </div>
     <div>
