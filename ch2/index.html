@@ -109,8 +109,18 @@
         .a-bloquear { background: #fee2e2; color: #991b1b; }
         .a-reativar { background: #d1fae5; color: #065f46; }
         .a-hist { background: #f1f5f9; color: #334155; }
-        .a-excluir { background: #fff; color: #b91c1c; border: 1.5px dashed #fca5a5; grid-column: 1 / -1; }
-        .a-excluir.armado { background: #dc2626; color: #fff; border-style: solid; }
+
+        /* Zona de perigo — excluir conta (discreto até confirmar) */
+        .cli-perigo { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef3f2; }
+        .cli-excluir-link { background: none; border: none; color: #b91c1c; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 4px 2px; opacity: .85; }
+        .cli-excluir-link:hover { text-decoration: underline; opacity: 1; }
+        .cli-excluir-conf { margin-top: 8px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 11px; padding: 12px; }
+        .cli-excluir-txt { font-size: 12.5px; color: #991b1b; line-height: 1.45; }
+        .cli-excluir-txt b { font-weight: 800; }
+        .cli-excluir-btns { display: flex; gap: 8px; margin-top: 10px; }
+        .exc-cancelar { flex: 1; background: #fff; border: 1px solid #e5e7eb; border-radius: 9px; padding: 10px; font-weight: 700; font-size: 13px; cursor: pointer; color: #475569; }
+        .exc-ok { flex: 1; background: #dc2626; border: none; border-radius: 9px; padding: 10px; font-weight: 700; font-size: 13px; cursor: pointer; color: #fff; }
+        .exc-ok:disabled { opacity: .6; }
 
         .hist-lista { margin-top: 12px; border-top: 1px dashed #dde5e3; padding-top: 10px; }
         .hist-item { font-size: 12px; color: #45565f; padding: 6px 0; border-bottom: 1px solid #eef3f2; }
@@ -184,6 +194,19 @@
         ];
         const NOME_PLANO = { gratis: "Grátis", basico: "Básico", intermediario: "Intermediário", avancado: "Avançado", pro: "Pro" };
         const COR_PLANO  = { gratis: "#94a3b8", basico: "#066b63", intermediario: "#2563eb", avancado: "#7c3aed", pro: "#d97706" };
+        // Preços (espelham o app) para calcular MRR/ARR
+        const PRECO_PLANO = {
+            basico: { mensal: 50, anual: 500 }, intermediario: { mensal: 90, anual: 900 },
+            avancado: { mensal: 160, anual: 1600 }, pro: { mensal: 250, anual: 2500 },
+        };
+        // Receita mensal recorrente de um cliente pagante (anual convertido p/ mês)
+        function _mrrCliente(c) {
+            if (!ehPagante(c)) return 0;
+            const a = c.assinatura, p = PRECO_PLANO[a.plano];
+            if (!p) return 0;
+            return a.ciclo === "anual" ? p.anual / 12 : p.mensal;
+        }
+        const _rs0 = v => "R$ " + Math.round(v).toLocaleString("pt-BR");
         const FILTROS = [
             { key: "todos",    nome: "Todos" },
             { key: "ativos",   nome: "Ativos (7d)" },
@@ -333,6 +356,8 @@
             const ativos7 = clientes.filter(c => { const d = _dias(c.ultimo_acesso); return d != null && d <= 7; }).length;
             const viveiros = clientes.reduce((s, c) => s + (c.viveiros || 0), 0);
             const lancamentos = clientes.reduce((s, c) => s + (c.lancamentos || 0), 0);
+            const mrr = clientes.reduce((s, c) => s + _mrrCliente(c), 0);
+            const ticket = pagantes > 0 ? mrr / pagantes : 0;
 
             const tile = (ico, cls, num, sub, lbl) =>
                 `<div class="stat"><div class="stat-ico ${cls}">${ico}</div><div class="stat-num">${num}${sub ? `<small>${sub}</small>` : ""}</div><div class="stat-lbl">${lbl}</div></div>`;
@@ -340,6 +365,9 @@
                 tile("👥", "i-azul", total, "", "Clientes") +
                 tile("🟢", "i-verde", ativos7, "", "Ativos (7 dias)") +
                 tile("💳", "i-verde", pagantes, "", "Pagantes") +
+                tile("💰", "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
+                tile("📅", "i-azul", _rs0(mrr * 12), "", "Receita/ano (ARR)") +
+                tile("🎯", "i-roxo", _rs0(ticket), "", "Ticket médio") +
                 tile("⏳", "i-ambar", pend, "", "Pendentes") +
                 tile("⚠️", "i-verm", vencidos, "", "Vencidos") +
                 tile("🦐", "i-roxo", viveiros, "", "Viveiros") +
@@ -456,9 +484,18 @@
                             <button class="acao-btn a-hist" onclick="verHistorico(this,'${esc(c.id)}')">Histórico</button>
                             <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">Reativar</button>
                             <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">Bloquear</button>
-                            <button class="acao-btn a-excluir" onclick="excluirCliente(this,'${esc(c.id)}')">🗑️ Excluir conta e todos os dados</button>
                         </div>
                         <div class="hist-lista" id="hist-${esc(c.id)}" style="display:none"></div>
+                        <div class="cli-perigo">
+                            <button class="cli-excluir-link" onclick="pedirExcluir('${esc(c.id)}')">Excluir conta e todos os dados</button>
+                            <div class="cli-excluir-conf" id="exc-${esc(c.id)}" style="display:none">
+                                <div class="cli-excluir-txt">⚠️ Isso apaga <b>a conta e todos os dados</b> deste cliente. Não tem volta.</div>
+                                <div class="cli-excluir-btns">
+                                    <button class="exc-cancelar" onclick="document.getElementById('exc-${esc(c.id)}').style.display='none'">Cancelar</button>
+                                    <button class="exc-ok" onclick="excluirCliente(this,'${esc(c.id)}')">Sim, excluir tudo</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>`;
             }).join("");
@@ -492,15 +529,15 @@
             }
         }
 
-        // Exclusão definitiva (dois toques: o 1º arma, o 2º executa)
+        // Abre a confirmação de exclusão (painel inline discreto)
+        function pedirExcluir(id) {
+            const el = document.getElementById("exc-" + id);
+            if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+        }
+
+        // Exclusão definitiva (já confirmada pelo painel)
         async function excluirCliente(btn, alvo) {
             if (btn.disabled) return;
-            if (btn.dataset.armado !== "1") {
-                btn.dataset.armado = "1"; btn.classList.add("armado");
-                btn.textContent = "⚠️ Toque de novo para EXCLUIR DEFINITIVAMENTE";
-                setTimeout(() => { btn.dataset.armado = ""; btn.classList.remove("armado"); btn.textContent = "🗑️ Excluir conta e todos os dados"; }, 4000);
-                return;
-            }
             btn.disabled = true; btn.textContent = "Excluindo…";
             try {
                 await chamar({ alvo }, "excluir-conta");
@@ -509,8 +546,7 @@
                 toast("Conta excluída definitivamente.", "ok");
             } catch (e) {
                 toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
-                btn.disabled = false; btn.classList.remove("armado"); btn.dataset.armado = "";
-                btn.textContent = "🗑️ Excluir conta e todos os dados";
+                btn.disabled = false; btn.textContent = "Sim, excluir tudo";
             }
         }
 
