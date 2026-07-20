@@ -6312,8 +6312,8 @@ function gerarRelatorioImpressao() {
   </div>
 
   <h2 class="sec">6. Biometrias realizadas</h2>
-  <table><thead><tr><th>Data</th><th class="num">Dias</th><th class="num">Peso médio (g)</th><th class="num">Crescimento (g)</th><th class="num">Biomassa (kg)</th><th>Observações</th></tr></thead>
-  <tbody>${bios.map((b,i)=>`<tr><td>${serieDatas[i]}</td><td class="num">${serieDias[i]}</td><td class="num">${fmt(seriePeso[i],1)}</td><td class="num">${serieCresc[i]===null?"-":fmt(serieCresc[i],1)}</td><td class="num">${fmt(serieBiomassa[i],1)}</td><td>${serieObs[i]}</td></tr>`).join("") || `<tr><td colspan="6" style="text-align:center;color:#9ca3af">Sem biometrias.</td></tr>`}</tbody></table>
+  <table><thead><tr><th>Data</th><th class="num">Dias</th><th class="num">Peso médio (g)</th><th class="num">Crescimento (g)</th><th>Observações</th></tr></thead>
+  <tbody>${bios.map((b,i)=>`<tr><td>${serieDatas[i]}</td><td class="num">${serieDias[i]}</td><td class="num">${fmt(seriePeso[i],1)}</td><td class="num">${serieCresc[i]===null?"-":fmt(serieCresc[i],1)}</td><td>${serieObs[i]}</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;color:#9ca3af">Sem biometrias.</td></tr>`}</tbody></table>
 
   <h2 class="sec">7. Despescas realizadas</h2>
   <table><thead><tr><th>Data</th><th>Tipo</th><th class="num">Quantidade (kg)</th><th class="num">Peso médio (g)</th><th class="num">Preço/kg</th><th class="num">Receita (R$)</th></tr></thead>
