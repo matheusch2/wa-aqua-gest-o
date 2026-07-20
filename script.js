@@ -4665,7 +4665,8 @@ function abrirBoletos(filtro) {
 
   const todos = boletos.map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }));
   const naoPagos = todos.filter(x => !x.b.pago);
-  const valorTotal = naoPagos.reduce((s, x) => s + (x.b.valor || 0), 0);
+  // Total A PAGAR = o que ainda falta (já abate os pagamentos parciais)
+  const valorTotal = naoPagos.reduce((s, x) => s + _boletoRestante(x.b), 0);
   const qtdVencendo = naoPagos.filter(x => x.st.tipo === "proximo" || x.st.tipo === "hoje").length;
   const qtdVencidos = naoPagos.filter(x => x.st.tipo === "vencido").length;
 
@@ -4686,8 +4687,11 @@ function abrirBoletos(filtro) {
   if (_boletosFornecedor) filtrados = filtrados.filter(x => (x.b.fornecedor || "").trim() === _boletosFornecedor);
 
   const qtdPagos = todos.filter(x => x.b.pago).length;
-  const totalFiltrado = filtrados.reduce((s, x) => s + (x.b.valor || 0), 0);
-  const labelFiltro = { todos: "geral", vencendo: "vencendo", vencidos: "vencidos", pagos: "pagos" }[_boletosFiltro] || "geral";
+  // Nos boletos pagos, mostra o total pago; nos demais, o que ainda falta pagar
+  const totalFiltrado = _boletosFiltro === "pagos"
+    ? filtrados.reduce((s, x) => s + (x.b.valorPago || x.b.valor || 0), 0)
+    : filtrados.reduce((s, x) => s + (x.b.pago ? 0 : _boletoRestante(x.b)), 0);
+  const labelFiltro = { todos: "a pagar", vencendo: "vencendo", vencidos: "vencidos", pagos: "pagos" }[_boletosFiltro] || "a pagar";
 
   const rows = filtrados.map(({ b, i, st }) => {
     const [ano, mes, dia] = b.dataCompra.split("-").map(Number);
@@ -4834,12 +4838,19 @@ function imprimirBoletos() {
 
   if (!filtrados.length) { _toastErro("Nenhum boleto para imprimir nessa seleção."); return; }
 
-  const total = filtrados.reduce((s, x) => s + (x.b.valor || 0), 0);
+  // TOTAL da impressão: pagos → total pago; demais → o que ainda falta pagar
+  const total = _boletosFiltro === "pagos"
+    ? filtrados.reduce((s, x) => s + (x.b.valorPago || x.b.valor || 0), 0)
+    : filtrados.reduce((s, x) => s + (x.b.pago ? 0 : _boletoRestante(x.b)), 0);
+  const totalLbl = _boletosFiltro === "pagos" ? "TOTAL PAGO" : "TOTAL A PAGAR";
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const linhas = filtrados.map(({ b, st }) => {
-    const situacao = b.pago ? "Pago" : st.label;
-    const valor = b.valor ? "R$ " + formatarNumeroBR(b.valor, 2) : "-";
+    const situacao = b.pago ? "Pago" : ((b.valorPago || 0) > 0 && b.valor ? "Parcial" : st.label);
+    const rest = _boletoRestante(b);
+    const valor = b.valor
+      ? "R$ " + formatarNumeroBR(b.pago ? b.valor : rest, 2) + (!b.pago && (b.valorPago || 0) > 0 ? `<br><small style="color:#888">de R$ ${formatarNumeroBR(b.valor, 2)}</small>` : "")
+      : "-";
     return `<tr>
       <td>${b.nome}</td>
       <td>${b.fornecedor || "-"}</td>
@@ -4867,7 +4878,7 @@ function imprimirBoletos() {
     <thead><tr><th>Nome</th><th>Fornecedor</th><th style="text-align:center">Vencimento</th><th style="text-align:center">Situação</th><th style="text-align:right">Valor</th></tr></thead>
     <tbody>
       ${linhas}
-      <tr class="total-row"><td colspan="4">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>
+      <tr class="total-row"><td colspan="4">${totalLbl}</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>
     </tbody>
   </table>
   </body></html>`;
