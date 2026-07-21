@@ -7064,6 +7064,12 @@ async function salvarProduto() {
     if (erroProd) { erroProd.textContent = "Preencha todos os campos."; erroProd.style.display = "block"; }
     return;
   }
+  // Trava contra duplicado: mesmo nome na mesma categoria
+  const nomeNorm = nome.toLowerCase();
+  if (produtos.some(p => (p.nome || "").trim().toLowerCase() === nomeNorm && p.categoria === categoria)) {
+    if (erroProd) { erroProd.textContent = `Já existe um produto "${nome}" nessa categoria. Edite o existente em vez de duplicar.`; erroProd.style.display = "block"; }
+    return;
+  }
   if (erroProd) erroProd.style.display = "none";
 
   const usuario = await pegarUsuarioLogado();
@@ -7158,8 +7164,14 @@ async function excluirProduto(i, botao) {
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
-  const { error } = await supabaseClient.from("produtos").delete().eq("id", produtos[i].id).eq("user_id", usuario.id);
+  const { data: del, error } = await supabaseClient.from("produtos")
+    .delete().eq("id", produtos[i].id).eq("user_id", usuario.id).select();
   if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
+  if (!del || del.length === 0) {
+    restaurar();
+    _toastErro("Não foi possível excluir no banco (falta a política de exclusão em 'produtos'). Rode o SQL enviado.");
+    return;
+  }
   produtos.splice(i, 1);
   abrirVerProdutos();
 }
