@@ -70,6 +70,11 @@
         .filtros { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
         .filtro-chip { flex-shrink: 0; background: #fff; border: 1.5px solid var(--linha); color: #56666e; border-radius: 20px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
         .filtro-chip.ativo { background: var(--verde); border-color: var(--verde); color: #fff; }
+        .adm-emails-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
+        .adm-emails-bar span { font-size: 12.5px; color: var(--cinza); font-weight: 600; }
+        .adm-emails-bar b { color: var(--tinta); }
+        .adm-emails-btn { background: var(--verde-cl); color: var(--verde); border: none; border-radius: 9px; padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+        .adm-emails-btn:active { background: #cdeae3; }
 
         /* ── Cliente ── */
         .cli-card { background: #fff; border: 1px solid var(--linha); border-radius: 15px; margin-bottom: 10px; overflow: hidden; transition: box-shadow .15s; }
@@ -157,7 +162,7 @@
             <div class="adm-topo-tit">
                 <div class="adm-logo">🦐</div>
                 <div>
-                    <h1>Administração <span style="font-size:10px;opacity:.6;font-weight:700">v5</span></h1>
+                    <h1>Administração <span style="font-size:10px;opacity:.6;font-weight:700">v6</span></h1>
                     <small id="adm-quem"></small>
                 </div>
             </div>
@@ -176,6 +181,10 @@
             <div class="sec-tit">Clientes</div>
             <input type="search" class="adm-busca" id="adm-busca" placeholder="Buscar por nome ou e-mail…" oninput="renderLista()">
             <div class="filtros" id="adm-filtros"></div>
+            <div class="adm-emails-bar" id="adm-emails-bar" style="display:none">
+                <span><b id="adm-emails-qtd">0</b> na seleção</span>
+                <button class="adm-emails-btn" onclick="copiarEmails()">📋 Copiar e-mails</button>
+            </div>
             <div id="adm-lista"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
         </div>
     </div>
@@ -431,11 +440,32 @@
         }
 
         // ── Lista de clientes ──
-        function renderLista() {
+        // Lista atualmente filtrada (usada pela lista e pela cópia de e-mails)
+        function _clientesFiltrados() {
             const filtro = (document.getElementById("adm-busca").value || "").toLowerCase();
-            const lista = clientes.filter(c => passaFiltro(c) && (!filtro ||
+            return clientes.filter(c => passaFiltro(c) && (!filtro ||
                 (c.nome || "").toLowerCase().includes(filtro) || (c.email || "").toLowerCase().includes(filtro)));
+        }
+
+        // Copia os e-mails dos clientes filtrados (ex.: filtro "Inativos")
+        async function copiarEmails() {
+            const emails = _clientesFiltrados().map(c => c.email).filter(Boolean);
+            if (!emails.length) { toast("Nenhum e-mail nesta seleção."); return; }
+            const txt = emails.join("; ");
+            try {
+                await navigator.clipboard.writeText(txt);
+                toast(`${emails.length} e-mail(s) copiado(s) ✅`, "ok");
+            } catch (e) {
+                // Fallback: mostra pra copiar na mão
+                prompt("Copie os e-mails:", txt);
+            }
+        }
+
+        function renderLista() {
+            const lista = _clientesFiltrados();
             const el = document.getElementById("adm-lista");
+            document.getElementById("adm-emails-bar").style.display = lista.length ? "flex" : "none";
+            document.getElementById("adm-emails-qtd").textContent = lista.length;
             if (!lista.length) { el.innerHTML = `<div class="adm-carregando">Nenhum cliente encontrado.</div>`; return; }
             el.innerHTML = lista.map(c => {
                 const a = c.assinatura;
