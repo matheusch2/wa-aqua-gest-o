@@ -7,6 +7,8 @@
 <html lang="pt-BR" translate="no">
 <head>
     <meta name="google" content="notranslate">
+    <!-- Anti-clickjacking: se alguém tentar embutir o site num iframe, quebra pra fora -->
+    <script>if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.style.display = "none"; } }</script>
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260713">
     <link rel="icon" type="image/png" href="icon-512.png?v=20260713">
     <meta name="apple-mobile-web-app-title" content="WA Aqua">
@@ -15,7 +17,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#066b63">
     <link rel="manifest" href="manifest.json?v=20260713b">
-    <link rel="stylesheet" href="style.css?v=20260719g">
+    <link rel="stylesheet" href="style.css?v=20260719m">
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
@@ -303,10 +305,10 @@
             const restaurar = _travarBtnLogin(botao, "Enviando...");
             // Faz o link do e-mail voltar para esta própria página de login
             const redirectTo = window.location.href.split("#")[0].split("?")[0];
-            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
-            if (error) { restaurar(); msgLogin(error.message); return; }
+            await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+            // Anti-enumeração: sempre a mesma resposta, exista o e-mail ou não
             mostrarLogin();
-            msgLogin("E-mail enviado! Verifique sua caixa de entrada.", "ok");
+            msgLogin("Se este e-mail estiver cadastrado, enviamos o link de recuperação.", "ok");
         }
 
         // Tela mostrada ao abrir o link de recuperação recebido por e-mail
