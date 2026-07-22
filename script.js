@@ -1755,6 +1755,9 @@ function mostrarErroTipoRacao(msg) {
 
 async function salvarTipoRacao() {
   if (_bloqueioEdicao()) return;
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque (evita rações duplicadas)
+
   const nome = document.getElementById("nomeTipoRacao").value.trim();
   const pesoSacoKg = parseFloat(document.getElementById("pesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("valorSacoRacao").value);
@@ -1765,20 +1768,26 @@ async function salvarTipoRacao() {
   if (!pesoSacoKg || pesoSacoKg <= 0) { mostrarErroTipoRacao("Digite o peso do saco."); return; }
   if (!valorSaco || valorSaco <= 0) { mostrarErroTipoRacao("Digite o valor do saco."); return; }
 
+  // Trava contra nome duplicado (mesmo nome = já existe; mude o nome para cadastrar outra)
+  const nomeNorm = nome.toLowerCase();
+  if (tiposRacao.some(t => (t.nome || "").trim().toLowerCase() === nomeNorm)) {
+    mostrarErroTipoRacao(`Já existe uma ração chamada "${nome}". Use outro nome ou edite a existente.`);
+    return;
+  }
+
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
   const custoPorKg = valorSaco / pesoSacoKg;
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  const restaurar = _travarBotao(botao, "Salvando...");
 
   const { data: salvo, error } = await supabaseClient
     .from("tipos_racao")
     .insert([{ user_id: usuario.id, nome, peso_saco_kg: pesoSacoKg, valor_saco: valorSaco, custo_por_kg: custoPorKg }])
     .select();
 
-  if (botao) { botao.disabled = false; botao.style.opacity = ""; }
   if (error) {
+    restaurar();
     mostrarErroTipoRacao(
       error.code === "42P01"
         ? "Tabela 'tipos_racao' não existe. Execute o SQL no Supabase primeiro."
