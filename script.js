@@ -2160,7 +2160,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   // Protocolos automáticos atrelados à ração (ex.: potássio por kg)
   // Protegido: nunca pode quebrar o lançamento de ração nem o feedback.
-  try { await _aplicarProtocolosRacao(index, racao, data); } catch (e) { console.log("Protocolo ração:", e); }
+  let _protAplicados = [];
+  try { _protAplicados = (await _aplicarProtocolosRacao(index, racao, data)) || []; } catch (e) { console.log("Protocolo ração:", e); }
 
   // Mostra mensagem de sucesso e avança a data para o dia seguinte (sequência)
   const [ay, am, ad] = data.split("-").map(Number);
@@ -2174,6 +2175,12 @@ async function salvarLancamentoRacao(indexDireto = "") {
   if (msgSucesso) {
     msgSucesso.style.display = "flex";
     setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
+  }
+
+  // Avisa quais protocolos automáticos entraram junto (custo já lançado)
+  if (_protAplicados.length) {
+    const txt = _protAplicados.map(a => `${a.nome} (${_fmtQtdCusto(a.quantidadeG)})`).join(", ");
+    setTimeout(() => _toastSucesso("Protocolo aplicado: " + txt), 500);
   }
 }
 
@@ -6713,14 +6720,17 @@ async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
 async function _aplicarProtocolosRacao(index, racaoKg, data) {
   const prots = (viveiros[index].protocolos || []).filter(p => p.ativo && p.tipo === "racao");
   const wd = _maParse(data).getDay();
+  const aplicados = [];
   for (const p of prots) {
     if (p.inicio && data < p.inicio) continue;
     if (Array.isArray(p.dias) && p.dias.length > 0 && !p.dias.includes(wd)) continue;
     const produto = produtos.find(pr => pr.id === p.produtoId);
     if (!produto) continue;
     const quantidadeG = (Number(p.dosePorKgG) || 0) * racaoKg;
-    await _lancarCustoAuto(index, produto, quantidadeG, data, "Automático (ração)");
+    const ok = await _lancarCustoAuto(index, produto, quantidadeG, data, "Automático (ração)");
+    if (ok) aplicados.push({ nome: produto.nome, quantidadeG, valor: (produto.custoPorGrama || 0) * quantidadeG });
   }
+  return aplicados;
 }
 
 // Aplica um protocolo de ração aos lançamentos de ração já existentes
