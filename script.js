@@ -6733,21 +6733,25 @@ async function _aplicarProtocolosRacao(index, racaoKg, data) {
   return aplicados;
 }
 
-// Aplica um protocolo de ração aos lançamentos de ração já existentes
+// Aplica um protocolo de ração aos lançamentos de ração já existentes.
+// Retorna { n: quantos custos criou, valor: soma, pulados: já existentes, total: rações no período }
 async function _aplicarProtocoloRacaoRetroativo(index, prot) {
   const produto = produtos.find(pr => pr.id === prot.produtoId);
-  if (!produto) return;
+  if (!produto) return { n: 0, valor: 0, pulados: 0, total: 0 };
   const v = viveiros[index];
   const minData = prot.inicio || v.dataPovoamento || "0000-00-00";
-  const racoes = (v.racoes || []).filter(r => r.data >= minData).sort((a, b) => a.data.localeCompare(b.data));
+  const racoes = (v.racoes || []).filter(r => r.data >= minData && r.racao > 0).sort((a, b) => a.data.localeCompare(b.data));
+  let n = 0, valor = 0, pulados = 0;
   for (const r of racoes) {
     const wd = _maParse(r.data).getDay();
     if (Array.isArray(prot.dias) && prot.dias.length > 0 && !prot.dias.includes(wd)) continue;
     const jaTem = (v.custos || []).some(c => c.data === r.data && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
-    if (jaTem) continue;
+    if (jaTem) { pulados++; continue; }
     const quantidadeG = (Number(prot.dosePorKgG) || 0) * r.racao;
-    await _lancarCustoAuto(index, produto, quantidadeG, r.data, "Automático (ração)");
+    const ok = await _lancarCustoAuto(index, produto, quantidadeG, r.data, "Automático (ração)");
+    if (ok) { n++; valor += (produto.custoPorGrama || 0) * quantidadeG; }
   }
+  return { n, valor, pulados, total: racoes.length };
 }
 
 // Põe em dia os protocolos semanais ao abrir o app
@@ -6985,16 +6989,21 @@ async function salvarProtocolo(index, protId) {
   }
   const ok = await salvarProtocolos(index);
   if (!ok) return;
-  // Feedback imediato + volta pra lista
   _toastSucesso("Manejo salvo!");
-  abrirManejoAutomatico(index);
-  // Aplica lançamentos (pode envolver vários custos) sem travar o retorno
+  // Aplica lançamentos (pode envolver vários custos)
   if (tipo === "semanal") {
     await aplicarProtocolosSemanais();
-    abrirManejoAutomatico(index);
   } else if (retro) {
-    await _aplicarProtocoloRacaoRetroativo(index, prot);
+    const r = await _aplicarProtocoloRacaoRetroativo(index, prot);
+    if (r.n > 0) {
+      setTimeout(() => _toastSucesso(`${r.n} lançamento(s) anterior(es) aplicados no custo — R$ ${formatarNumeroBR(r.valor, 2)}.`), 500);
+    } else if (r.pulados > 0) {
+      setTimeout(() => _toastErro("Esses lançamentos já tinham o custo aplicado (nada novo a lançar)."), 500);
+    } else {
+      setTimeout(() => _toastErro('Nenhuma ração anterior encontrada. Confira a data em "Aplicar a partir de" e se há ração lançada.'), 500);
+    }
   }
+  abrirManejoAutomatico(index);
 }
 
 // ─── CUSTOS E INSUMOS ─────────────────────────────────────────────────────────
