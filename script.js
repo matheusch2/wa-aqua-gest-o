@@ -1,3 +1,9 @@
+/*!
+ * WA Aqua Gestão
+ * Copyright © 2026 Matheus. Todos os direitos reservados / All rights reserved.
+ * Uso, cópia, modificação ou distribuição proibidos sem autorização por escrito.
+ * Contato: matheuswitalo86@gmail.com
+ */
 const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
