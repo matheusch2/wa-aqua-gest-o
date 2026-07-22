@@ -6779,7 +6779,10 @@ function _maResumoProtocolo(p) {
   const dias = (p.dias || []).map(d => _MA_DIAS[d]).join(", ");
   const desde = p.inicio ? ` · desde ${formatarData(p.inicio)}` : "";
   if (p.tipo === "racao") {
-    return `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração · ${dias || "todos os dias"}${desde}`;
+    const doseTxt = (p.doseModo === "pct" && p.dosePct)
+      ? `${formatarNumeroBR(p.dosePct, 2)}% da ração`
+      : `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de ração`;
+    return `${doseTxt} · ${dias || "todos os dias"}${desde}`;
   }
   return `${formatarNumeroBR(p.quantidadeG, 0)} g · ${dias || "—"}${desde}`;
 }
@@ -6836,6 +6839,7 @@ function abrirFormProtocolo(index, protId) {
   const viveiro = viveiros[index];
   const p = protId ? (viveiro.protocolos || []).find(x => x.id === protId) : null;
   const tipo = p ? p.tipo : "racao";
+  const _protDoseModo = (p && p.tipo === "racao" && p.doseModo === "pct") ? "pct" : "gkg";
   const diasSel = p && p.dias ? p.dias : [];
   const area = document.getElementById("area-gestao");
   area.innerHTML = `
@@ -6857,10 +6861,22 @@ function abrirFormProtocolo(index, protId) {
 
       <div id="prot-racao" style="display:${tipo === "racao" ? "block" : "none"}">
         <div class="campo-form">
-          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/></svg><label>Dose por kg de ração (g)</label></div>
-          <input type="number" inputmode="decimal" id="protDosePorKg" step="any" placeholder="Ex: 5" value="${p && p.tipo === "racao" ? p.dosePorKgG : ""}">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/></svg><label>Como calcular a dose</label></div>
+          <select id="protDoseModo" onchange="_protToggleDose()">
+            <option value="gkg" ${_protDoseModo !== "pct" ? "selected" : ""}>Gramas por kg de ração (g/kg)</option>
+            <option value="pct" ${_protDoseModo === "pct" ? "selected" : ""}>Porcentagem da ração (%)</option>
+          </select>
         </div>
-        <p class="rc-print-dica">Ex.: 5 g de produto para cada kg de ração lançada.</p>
+        <div class="campo-form" id="prot-dose-gkg" style="display:${_protDoseModo === "pct" ? "none" : "block"}">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/></svg><label>Dose por kg de ração (g)</label></div>
+          <input type="number" inputmode="decimal" id="protDosePorKg" step="any" placeholder="Ex: 5" value="${_protDoseModo !== "pct" && p && p.tipo === "racao" ? (p.dosePorKgG ?? "") : ""}">
+          <p class="rc-print-dica">Ex.: 5 g de produto para cada kg de ração lançada.</p>
+        </div>
+        <div class="campo-form" id="prot-dose-pct" style="display:${_protDoseModo === "pct" ? "block" : "none"}">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg><label>Porcentagem da ração (%)</label></div>
+          <input type="number" inputmode="decimal" id="protDosePct" step="any" placeholder="Ex: 2" value="${_protDoseModo === "pct" && p ? (p.dosePct ?? "") : ""}">
+          <p class="rc-print-dica">Ex.: 2% → 2 g de produto para cada 100 g de ração.</p>
+        </div>
       </div>
 
       <div id="prot-semanal" style="display:${tipo === "semanal" ? "block" : "none"}">
@@ -6897,6 +6913,12 @@ function _protToggleTipo() {
   document.getElementById("prot-semanal").style.display = tipo === "semanal" ? "block" : "none";
 }
 
+function _protToggleDose() {
+  const modo = document.getElementById("protDoseModo").value;
+  document.getElementById("prot-dose-gkg").style.display = modo === "pct" ? "none" : "block";
+  document.getElementById("prot-dose-pct").style.display = modo === "pct" ? "block" : "none";
+}
+
 async function salvarProtocolo(index, protId) {
   if (_bloqueioViveiro(index)) return;
   const msg = document.getElementById("msg-prot-erro");
@@ -6919,9 +6941,20 @@ async function salvarProtocolo(index, protId) {
   prot.inicio = document.getElementById("protInicio").value || null;
   const dias = [...document.querySelectorAll(".ma-dia.sel")].map(b => Number(b.dataset.dia));
   if (tipo === "racao") {
-    const dose = parseFloat(document.getElementById("protDosePorKg").value);
-    if (!dose || dose <= 0) { erro("Informe a dose por kg de ração."); return; }
-    prot.dosePorKgG = dose;
+    const modo = document.getElementById("protDoseModo").value;
+    if (modo === "pct") {
+      const pct = parseFloat(document.getElementById("protDosePct").value);
+      if (!pct || pct <= 0) { erro("Informe a porcentagem da ração."); return; }
+      prot.doseModo = "pct";
+      prot.dosePct = pct;
+      prot.dosePorKgG = pct * 10; // pct% de 1000 g de ração = pct×10 g por kg
+    } else {
+      const dose = parseFloat(document.getElementById("protDosePorKg").value);
+      if (!dose || dose <= 0) { erro("Informe a dose por kg de ração."); return; }
+      prot.doseModo = "gkg";
+      prot.dosePct = null;
+      prot.dosePorKgG = dose;
+    }
     prot.dias = dias; // vazio = todo dia que lançar ração
   } else {
     const qtd = parseFloat(document.getElementById("protQtd").value);
