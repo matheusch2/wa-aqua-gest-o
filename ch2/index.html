@@ -76,6 +76,11 @@
         .adm-emails-bar b { color: var(--tinta); }
         .adm-emails-btn { background: var(--verde-cl); color: var(--verde); border: none; border-radius: 9px; padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
         .adm-emails-btn:active { background: #cdeae3; }
+        .backup-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border: 1px solid var(--linha); border-radius: 14px; padding: 14px; }
+        .backup-txt b { display: block; font-size: 13.5px; color: var(--tinta); }
+        .backup-txt span { font-size: 11.5px; color: var(--cinza); }
+        .backup-btn { flex-shrink: 0; background: var(--verde); color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .backup-btn:disabled { opacity: .6; }
 
         /* ── Cliente ── */
         .cli-card { background: #fff; border: 1px solid var(--linha); border-radius: 15px; margin-bottom: 10px; overflow: hidden; transition: box-shadow .15s; }
@@ -163,7 +168,7 @@
             <div class="adm-topo-tit">
                 <div class="adm-logo">🦐</div>
                 <div>
-                    <h1>Administração <span style="font-size:10px;opacity:.6;font-weight:700">v6</span></h1>
+                    <h1>Administração <span style="font-size:10px;opacity:.6;font-weight:700">v7</span></h1>
                     <small id="adm-quem"></small>
                 </div>
             </div>
@@ -177,6 +182,14 @@
                 <div class="grafs">
                     <div class="graf-card"><h3>Novos usuários por mês</h3><div class="graf-box"><canvas id="graf-novos"></canvas></div></div>
                     <div class="graf-card"><h3>Distribuição de planos</h3><div class="graf-box"><canvas id="graf-planos"></canvas></div><div class="graf-legenda" id="graf-planos-leg"></div></div>
+                </div>
+                <div class="sec-tit">Segurança dos dados</div>
+                <div class="backup-card">
+                    <div class="backup-txt">
+                        <b>Backup dos dados</b>
+                        <span>Baixe uma cópia de tudo (clientes, viveiros, financeiro). Guarde 1×/semana.</span>
+                    </div>
+                    <button class="backup-btn" id="btn-backup" onclick="baixarBackup(this)">💾 Baixar backup</button>
                 </div>
             </div>
             <div class="sec-tit">Clientes</div>
@@ -349,6 +362,28 @@
         }
 
         async function sairAdmin() { await sb.auth.signOut(); location.reload(); }
+
+        // Baixa uma cópia de todos os dados (JSON) via Edge Function admin-clientes
+        async function baixarBackup(btn) {
+            if (btn.disabled) return;
+            const txt = btn.textContent;
+            btn.disabled = true; btn.textContent = "Gerando…";
+            try {
+                const dump = await chamar({ action: "backup" });
+                const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                const d = new Date();
+                const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                a.href = url; a.download = `wa-aqua-backup-${ymd}.json`;
+                document.body.appendChild(a); a.click(); a.remove();
+                URL.revokeObjectURL(url);
+                toast("Backup baixado ✅", "ok");
+            } catch (e) {
+                toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
+            }
+            btn.disabled = false; btn.textContent = txt;
+        }
 
         async function carregarClientes() {
             const data = await chamar({ action: "listar" });
