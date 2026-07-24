@@ -4038,7 +4038,7 @@ body.tema-escuro .proj-card-linha strong { color: #34d399; }
   }
 
   #area-gestao.resultado:empty::before {
-    content: "← Selecione uma opção no menu lateral";
+    content: "Selecione uma opção no menu lateral";
     display: block;
     text-align: center;
     color: #b0c4be;
