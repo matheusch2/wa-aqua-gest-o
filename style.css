@@ -4042,10 +4042,30 @@ body.tema-escuro .proj-card-linha strong { color: #34d399; }
     display: block;
     text-align: center;
     color: #b0c4be;
-    font-size: 14px;
+    font-size: 15px;
     margin-top: 100px;
     font-weight: 500;
   }
+
+  /* ── Ajustes só do PC ── */
+  /* A setinha de voltar do topo é navegação de celular (Android/iPhone).
+     No computador a navegação é pela barra lateral, então ela some. */
+  #btn-voltar-topo { display: none !important; }
+
+  /* Conteúdo maior, aproveitando a tela grande do notebook */
+  #area-gestao { font-size: 15px !important; }
+  #area-gestao .titulo-secao { font-size: 23px !important; margin-bottom: 18px !important; }
+  #area-gestao .viveiro-card { max-width: 760px; margin-left: auto; margin-right: auto; padding: 28px !important; }
+  #area-gestao .viveiro-card h3 { font-size: 24px !important; }
+  #area-gestao .vc-info-item strong { font-size: 14.5px !important; }
+  #area-gestao .vc-info-item p { font-size: 16px !important; }
+  #area-gestao .vc-pls-badge { font-size: 14px !important; }
+  #area-gestao .botao-abrir { font-size: 17px !important; padding: 16px !important; }
+  #area-gestao .nav-viveiros { max-width: 760px; margin-left: auto; margin-right: auto; }
+  #area-gestao .botao-voltar-form { max-width: 760px; margin-left: auto; margin-right: auto; font-size: 15px !important; }
+  /* Cartões de configuração/menus internos um pouco maiores */
+  #area-gestao .cfg-item-titulo { font-size: 15px !important; }
+  #area-gestao .cfg-item-sub { font-size: 12.5px !important; }
 }
 
 /* ─── DARK MODE no desktop ────────────────────────────────────────────────── */
