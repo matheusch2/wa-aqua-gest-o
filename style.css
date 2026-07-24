@@ -3910,7 +3910,7 @@ body.tema-escuro .proj-card-linha strong { color: #34d399; }
 /* ─── LAYOUT DESKTOP (≥ 900px) ───────────────────────────────────────────── */
 @media (min-width: 900px) {
 
-  /* Fundo = mesma cor do topo/sidebar → tudo vira um bloco verde contínuo */
+  /* Fundo = mesma cor do topo/sidebar  tudo vira um bloco verde contínuo */
   body {
     background: rgb(4,75,70);
     display: flex;

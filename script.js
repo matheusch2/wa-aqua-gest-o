@@ -24,7 +24,7 @@ let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
 
-// ”€”€ Tabela de taxas de alimentaÃ§Ã£o WA Aqua ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€ Tabela de taxas de alimentaÃ§Ã£o WA Aqua â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _TABELA_TAXA = [
   {peso:1,taxa:8.00},{peso:2,taxa:8.00},{peso:3,taxa:7.00},{peso:4,taxa:6.50},
   {peso:5,taxa:5.50},{peso:6,taxa:5.10},{peso:7,taxa:4.44},{peso:8,taxa:4.22},
@@ -336,9 +336,9 @@ document.addEventListener("click", function(e) {
   }
 });
 
-// •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  CONFIGURAÃ‡Ã•ES
-// •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const _ICO = {
   fazenda:  `<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
@@ -368,9 +368,9 @@ function _cfgItem(ico, titulo, sub, onclick) {
 }
 
 function _fmtDataISO(iso) {
-  if (!iso) return "€”";
+  if (!iso) return "â€”";
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return "€”";
+  if (isNaN(d.getTime())) return "â€”";
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
@@ -389,7 +389,7 @@ async function atualizarAvatarTopo() {
   }
 }
 
-// ”€”€”€ Hub de ConfiguraÃ§Ãµes ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ Hub de ConfiguraÃ§Ãµes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function abrirConfiguracoes() {
   fecharMenuUsuario();
   esconderMenu();
@@ -409,7 +409,7 @@ async function abrirConfiguracoes() {
         <div class="cfg-header-info">
           <span class="cfg-header-nome">${nome}</span>
           <span class="cfg-header-email">${email}</span>
-          <span class="cfg-header-online">— Online</span>
+          <span class="cfg-header-online">â— Online</span>
         </div>
       </div>
       <div class="cfg-lista">
@@ -438,7 +438,7 @@ async function abrirConfiguracoes() {
         <button class="cfg-excluir-link" onclick="confirmarExcluirConta()">Excluir minha conta</button>
       </div>
       <div id="cfg-excluir-confirm" class="cfg-sair-confirm" style="display:none">
-        <p><b>š ï¸ AtenÃ§Ã£o:</b> isso apaga sua conta e <b>TODOS os dados</b> €” viveiros, lanÃ§amentos, histÃ³rico, tudo. <b>NÃ£o tem volta.</b></p>
+        <p><b>âš ï¸ AtenÃ§Ã£o:</b> isso apaga sua conta e <b>TODOS os dados</b> â€” viveiros, lanÃ§amentos, histÃ³rico, tudo. <b>NÃ£o tem volta.</b></p>
         <p style="margin-top:8px">Digite <b>EXCLUIR</b> para confirmar:</p>
         <input type="text" id="cfg-excluir-input" autocomplete="off" autocapitalize="characters"
                style="width:100%;margin-top:6px;border:1.5px solid #fca5a5;border-radius:10px;padding:10px;font-size:15px;text-align:center;outline:none">
@@ -490,7 +490,7 @@ async function excluirMinhaConta(botao) {
   }
 }
 
-// ”€”€”€ Fazenda ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ Fazenda â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function abrirFazenda() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -594,7 +594,7 @@ async function excluirFotoFazenda() {
   abrirFazenda();
 }
 
-// ”€”€”€ SeguranÃ§a ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ SeguranÃ§a â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function abrirSeguranca() {
   esconderMenu();
   const lock = `<svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
@@ -655,7 +655,7 @@ async function salvarNovaSenha() {
   abrirConfiguracoes();
 }
 
-// ”€”€”€ AparÃªncia ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ AparÃªncia â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function abrirAparencia() {
   esconderMenu();
   const escuro = document.body.classList.contains("tema-escuro");
@@ -689,13 +689,13 @@ function setTema(modo) {
   abrirAparencia();
 }
 
-// ”€”€”€ Minha conta ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ Minha conta â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function abrirMinhaConta() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
   const { data: { user } } = await supabaseClient.auth.getUser();
   const cadastroStr = _fmtDataISO(user?.created_at);
-  let vencStr = "€”", proxStr = "€”";
+  let vencStr = "â€”", proxStr = "â€”";
   if (user?.created_at) {
     const venc = new Date(user.created_at);
     if (!isNaN(venc.getTime())) {
@@ -733,13 +733,13 @@ function renovarAssinatura() {
   _toastSucesso("Em breve vocÃª poderÃ¡ renovar sua assinatura por aqui.");
 }
 
-// ”€”€”€ Perguntas frequentes (FAQ) ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ Perguntas frequentes (FAQ) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _FAQ = [
   { q: "Como cadastrar um viveiro?", a: "Para cadastrar um novo viveiro, acesse Cadastrar viveiro no menu principal. Informe o nome do viveiro, a data de povoamento, a quantidade de pÃ³s-larvas, o tamanho do viveiro e o laboratÃ³rio de origem. ApÃ³s salvar, o viveiro estarÃ¡ disponÃ­vel para lanÃ§amentos de raÃ§Ã£o, biometria, despesca e acompanhamento do ciclo." },
   { q: "Como lanÃ§ar uma biometria?", a: "Abra o viveiro desejado e selecione LanÃ§ar biometria. Informe o peso mÃ©dio obtido na biometria e confirme o lanÃ§amento. O sistema atualizarÃ¡ automaticamente o histÃ³rico de crescimento, o ganho semanal e a projeÃ§Ã£o de crescimento do cultivo." },
   { q: "Como encerrar um ciclo?", a: "ApÃ³s finalizar a despesca, acesse o viveiro e toque em Encerrar ciclo. O sistema encerrarÃ¡ o cultivo atual, mantendo todas as informaÃ§Ãµes armazenadas no histÃ³rico. Os dados poderÃ£o ser consultados posteriormente sempre que necessÃ¡rio." },
   { q: "Como funciona a projeÃ§Ã£o de crescimento?", a: "A projeÃ§Ã£o utiliza as biometrias registradas para calcular o ganho mÃ©dio semanal do lote. Com base nesse histÃ³rico, o sistema estima a data em que o peso-alvo serÃ¡ atingido, o dia estimado de cultivo e a biomassa prevista. Quanto maior o nÃºmero de biometrias registradas, maior serÃ¡ a precisÃ£o da estimativa." },
-  { q: "Como alterar o peso-alvo?", a: "Na tela de projeÃ§Ã£o de crescimento, utilize os botÃµes + e ˆ para definir o peso desejado para a despesca. Todas as previsÃµes serÃ£o recalculadas automaticamente com base no novo peso-alvo." },
+  { q: "Como alterar o peso-alvo?", a: "Na tela de projeÃ§Ã£o de crescimento, utilize os botÃµes + e âˆ’ para definir o peso desejado para a despesca. Todas as previsÃµes serÃ£o recalculadas automaticamente com base no novo peso-alvo." },
   { q: "Como renovar minha assinatura?", a: "Acesse ConfiguraÃ§Ãµes Minha conta e selecione Renovar assinatura. Escolha o plano desejado e siga as instruÃ§Ãµes para concluir a renovaÃ§Ã£o." },
   { q: "Esqueci minha senha. O que fazer?", a: "Na tela de login, selecione Esqueci minha senha. Informe o e-mail cadastrado e siga as instruÃ§Ãµes enviadas para redefinir sua senha. Se nÃ£o conseguir recuperar o acesso, entre em contato com o suporte do WA Aqua GestÃ£o." },
   { q: "Como lanÃ§ar uma despesca?", a: "Acesse o viveiro desejado e selecione LanÃ§ar despesca. Informe a quantidade despescada e o peso mÃ©dio dos camarÃµes. O sistema calcularÃ¡ automaticamente a biomassa despescada e registrarÃ¡ a operaÃ§Ã£o no histÃ³rico do ciclo." },
@@ -795,7 +795,7 @@ function filtrarFAQ(termo) {
   if (vazio) vazio.style.display = visiveis === 0 ? "block" : "none";
 }
 
-// ”€”€”€ Suporte ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ Suporte â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function abrirSuporte() {
   esconderMenu();
   const wa = "5588992498067";
@@ -858,7 +858,7 @@ function _erroCarregamento(msg) {
   if (!area) return;
   area.innerHTML = `
     <div class="resultado-box" style="text-align:center;padding:28px 16px">
-      <p style="font-size:30px;margin:0 0 8px">š ï¸</p>
+      <p style="font-size:30px;margin:0 0 8px">âš ï¸</p>
       <p style="font-weight:600;color:#dc2626;margin:0 0 4px">${msg}</p>
       <p style="font-size:13px;color:#9ca3af;margin:0 0 16px">Verifique sua conexÃ£o e tente novamente.</p>
       <button class="botao-salvar" style="max-width:220px;margin:0 auto" onclick="location.reload()">Recarregar</button>
@@ -970,7 +970,7 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
   return dias > 0 ? dias : 0;
 }
 
-// ”€”€”€ FUNÃ‡Ã•ES UTILITÃRIAS (antes ausentes) ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ FUNÃ‡Ã•ES UTILITÃRIAS (antes ausentes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function toggleSenha(inputId, botao) {
   const input = document.getElementById(inputId);
@@ -1028,7 +1028,7 @@ function irParaTelaAnterior() {
   else btn.click();
 }
 
-// ”€”€ BotÃ£o "voltar" do celular (Android) / gesto de voltar do navegador ”€”€
+// â”€â”€ BotÃ£o "voltar" do celular (Android) / gesto de voltar do navegador â”€â”€
 // Em vez de sair do app, aciona o mesmo "Voltar" da tela atual. SÃ³ sai quando
 // estiver na raiz (menu principal). Reaproveita os botÃµes .botao-voltar jÃ¡
 // existentes, entÃ£o o comportamento fica idÃªntico ao toque manual.
@@ -1061,7 +1061,7 @@ function voltarMenuGestao() {
   _toggleVoltarTopo(false);
 }
 
-// ”€”€”€ VIVEIRO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ VIVEIRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function mostrarCadastroViveiro() {
   esconderMenu();
@@ -1227,7 +1227,7 @@ async function salvarViveiro() {
     return;
   }
 
-  // Insere direto no estado local €” sem recarregar tudo do banco.
+  // Insere direto no estado local â€” sem recarregar tudo do banco.
   // Um viveiro novo nÃ£o tem lanÃ§amentos, entÃ£o os arrays vÃªm vazios.
   const it = viveiroSalvo[0];
   viveiros.push({
@@ -1290,16 +1290,16 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     <div class="viveiro-card">
 
       <div class="vc-topo">
-        <div class="vc-icone-box">ğŸ¦</div>
+        <div class="vc-icone-box">ğŸ¦</div>
         <div class="vc-titulo-area">
           <h3>${viveiro.nome}</h3>
           ${viveiro.dataPovoamento
-            ? `<span class="vc-badge-cultivo">— Em cultivo</span>`
-            : `<span class="vc-badge-vazio">— Vazio</span>`}
-          ${_viveiroForaDoLimite(indexOriginal) ? `<span class="vc-badge-bloqueado" onclick="abrirAssinatura()">ğŸ” Fora do plano €” sÃ³ leitura</span>` : ""}
+            ? `<span class="vc-badge-cultivo">â— Em cultivo</span>`
+            : `<span class="vc-badge-vazio">â— Vazio</span>`}
+          ${_viveiroForaDoLimite(indexOriginal) ? `<span class="vc-badge-bloqueado" onclick="abrirAssinatura()">ğŸ”’ Fora do plano â€” sÃ³ leitura</span>` : ""}
         </div>
         <div class="vc-pls-badge">
-          ğŸ¦ ${viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR") : "--"} PLs
+          ğŸ¦ ${viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR") : "--"} PLs
         </div>
       </div>
 
@@ -1321,7 +1321,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
           </div>
         </div>
         <div class="vc-info-item">
-          <div class="vc-info-icone roxo">ğŸ“</div>
+          <div class="vc-info-icone roxo">ğŸ“</div>
           <div>
             <strong>Tamanho</strong>
             <p>${viveiro.tamanho || "--"} ha</p>
@@ -1353,7 +1353,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     setTimeout(() => toast.remove(), 3000);
   }
 
-  // Swipe para navegar entre viveiros €” cancela listeners anteriores antes de registrar novos
+  // Swipe para navegar entre viveiros â€” cancela listeners anteriores antes de registrar novos
   if (_swipeViveirosAbort) _swipeViveirosAbort.abort();
   _swipeViveirosAbort = new AbortController();
   const _swipeSig = _swipeViveirosAbort.signal;
@@ -1424,7 +1424,7 @@ function abrirViveiro(index) {
     : null;
   const pesoUltimaBio = biosSorted.length > 0 ? biosSorted[biosSorted.length - 1].gramatura : null;
 
-  // Despescas parciais jÃ¡ realizadas €” a raÃ§Ã£o atual jÃ¡ reflete sÃ³ o que ficou,
+  // Despescas parciais jÃ¡ realizadas â€” a raÃ§Ã£o atual jÃ¡ reflete sÃ³ o que ficou,
   // entÃ£o a despesca NÃƒO Ã© descontada da biomassa; ela apenas volta a contar na
   // sobrevivÃªncia (quem saiu estava vivo) e na projeÃ§Ã£o final.
   const _despescas = viveiro.despescas || [];
@@ -1440,7 +1440,7 @@ function abrirViveiro(index) {
   let biomassaAtualStr = "--";
   let biomassaDespescaStr = "--";
   let custoKgProduzidoStr = "--";
-  const PESO_ALVO_DESPESCA = 20; // g €” meta padrÃ£o de despesca
+  const PESO_ALVO_DESPESCA = 20; // g â€” meta padrÃ£o de despesca
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
     if (res && res.biomassa > 0) {
@@ -1454,7 +1454,7 @@ function abrirViveiro(index) {
       const sobrevPct = populacaoNum > 0 ? sobreviventes / populacaoNum * 100 : 0;
       sobrevInconsistente = sobrevPct > 100;
 
-      sobrevivenciaEstimada = formatarNumeroBR(sobrevPct, 1) + " %" + (sobrevInconsistente ? " š ï¸" : "");
+      sobrevivenciaEstimada = formatarNumeroBR(sobrevPct, 1) + " %" + (sobrevInconsistente ? " âš ï¸" : "");
       // FCA = raÃ§Ã£o total Ã· biomassa PRODUZIDA (a que ficou + a que jÃ¡ foi despescada).
       // Sem somar a despesca, o FCA fica artificialmente alto apÃ³s uma despesca parcial.
       const biomassaProduzida = res.biomassa + despKgTotal;
@@ -1586,7 +1586,7 @@ function abrirViveiro(index) {
 
       ${sobrevInconsistente ? `<div class="vv-alerta-inconsistencia">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span>SobrevivÃªncia estimada acima de 100% €” verifique povoamento, raÃ§Ã£o, taxa alimentar, peso mÃ©dio ou o cadastro das despescas.</span>
+        <span>SobrevivÃªncia estimada acima de 100% â€” verifique povoamento, raÃ§Ã£o, taxa alimentar, peso mÃ©dio ou o cadastro das despescas.</span>
       </div>` : ""}
 
       <div class="vv-secao-lbl">AÃ§Ãµes de manejo</div>
@@ -1651,7 +1651,7 @@ function abrirViveiro(index) {
   `;
 }
 
-// ”€”€”€ RAÃ‡Ã•ES CATÃLOGO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ RAÃ‡Ã•ES CATÃLOGO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirRacoesCatalogo() {
   esconderMenu();
@@ -1721,7 +1721,7 @@ function abrirCadastrarTipoRacao() {
           </div>
         </div>
         <div id="previa-saco-racao" class="custo-por-grama-preview" style="display:none">
-          Custo por kg: <strong id="previa-saco-racao-valor">€”</strong>
+          Custo por kg: <strong id="previa-saco-racao-valor">â€”</strong>
         </div>
         <div id="erro-tipo-racao" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;font-size:13px;color:#b91c1c;margin-bottom:4px"></div>
         <button class="botao-salvar" onclick="salvarTipoRacao()">
@@ -1841,7 +1841,7 @@ function abrirVerTiposRacao() {
                 <span class="produto-detalhe">${formatarNumeroBR(t.pesoSacoKg, 0)} kg/saco Â· R$ ${formatarNumeroBR(t.valorSaco, 2)}/saco Â· R$ ${formatarNumeroBR(t.custoPorKg, 2)}/kg</span>
               </div>
               <span class="col-acoes">
-                <button class="botao-editar" onclick="abrirEdicaoTipoRacao(${i})">œï¸</button>
+                <button class="botao-editar" onclick="abrirEdicaoTipoRacao(${i})">âœï¸</button>
                 <button class="botao-editar botao-excluir" onclick="confirmarExcluirTipoRacao(${i})">ğŸ—‘ï¸</button>
               </span>
             </div>
@@ -1870,7 +1870,7 @@ function confirmarExcluirTipoRacao(i) {
 async function excluirTipoRacao(i, botao) {
   if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
-  // Trava: raÃ§Ã£o com lanÃ§amentos no ciclo atual nÃ£o pode sair do catÃ¡logo €”
+  // Trava: raÃ§Ã£o com lanÃ§amentos no ciclo atual nÃ£o pode sair do catÃ¡logo â€”
   // o custo derivado (preÃ§o Ã— kg) zeraria os kg jÃ¡ lanÃ§ados dela.
   const emUso = viveiros.some(v => (v.racoes || []).some(r => r.tipoRacaoId === tiposRacao[i].id));
   if (emUso) {
@@ -1968,7 +1968,7 @@ async function salvarEdicaoTipoRacao(i) {
   abrirVerTiposRacao();
 }
 
-// ”€”€”€ RAÃ‡ÃƒO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ RAÃ‡ÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function mostrarLancamentoRacao(indexSelecionado = "") {
   if (indexSelecionado === "") esconderMenu();
@@ -2044,7 +2044,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <label>Tipo de raÃ§Ã£o</label>
           </div>
           <select id="tipoRacaoSelect">
-            <option value="">€” NÃ£o especificado €”</option>
+            <option value="">â€” NÃ£o especificado â€”</option>
             ${tiposRacao.map((t, i) => `<option value="${i}">${t.nome}</option>`).join("")}
           </select>
         </div>
@@ -2063,7 +2063,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         <div id="msg-racao-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
 
         <div id="msg-racao-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">œ…</span>
+          <span class="msg-emoji">âœ…</span>
           <span class="msg-texto">RaÃ§Ã£o lanÃ§ada com sucesso!</span>
         </div>
 
@@ -2155,7 +2155,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   });
 
   // Custo de raÃ§Ã£o Ã© DERIVADO: preÃ§o do catÃ¡logo Ã— kg lanÃ§ados no ciclo.
-  // Nada Ã© gravado na tabela de custos €” sÃ³ recalcula o registro em memÃ³ria.
+  // Nada Ã© gravado na tabela de custos â€” sÃ³ recalcula o registro em memÃ³ria.
   _montarCustoRacaoVirtual();
 
   // Protocolos automÃ¡ticos atrelados Ã  raÃ§Ã£o (ex.: potÃ¡ssio por kg)
@@ -2184,7 +2184,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   }
 }
 
-// ”€”€”€ BIOMETRIA ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ BIOMETRIA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirBiometria(index) {
   const viveiro = viveiros[index];
@@ -2222,7 +2222,7 @@ function abrirBiometria(index) {
 
         <div id="msg-bio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <div id="msg-bio-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">œ…</span>
+          <span class="msg-emoji">âœ…</span>
           <span class="msg-texto">Biometria lanÃ§ada!</span>
         </div>
 
@@ -2308,7 +2308,7 @@ async function salvarBiometria(index) {
   }
 }
 
-// ”€”€”€ DESPESCA ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ DESPESCA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirDespesca(index) {
   const viveiro = viveiros[index];
@@ -2369,7 +2369,7 @@ function abrirDespesca(index) {
         <div id="msg-despesca-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
 
         <div id="msg-despesca-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">œ…</span>
+          <span class="msg-emoji">âœ…</span>
           <span class="msg-texto">Despesca lanÃ§ada com sucesso!</span>
         </div>
 
@@ -2457,7 +2457,7 @@ async function salvarDespesca(index) {
   }
 }
 
-// ”€”€”€ HISTÃ“RICO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ HISTÃ“RICO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function mostrarHistoricoCultivo(indexSelecionado = "") {
   esconderMenu();
@@ -2667,7 +2667,7 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                             <span class="col-centro">${fmtG(item.gramatura)} g</span>
                             <span class="col-centro">${crescimento}</span>
                             <span class="col-acoes">
-                              <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${i}, '${elementoId}', ${direto})">œï¸</button>
+                              <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${i}, '${elementoId}', ${direto})">âœï¸</button>
                               <button class="botao-editar botao-excluir" onclick="confirmarExcluirBiometria(${index}, ${i}, '${elementoId}', ${direto})">ğŸ—‘ï¸</button>
                             </span>
                         </div>
@@ -2727,7 +2727,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
     if (res && res.quantidade > 0) {
       // A raÃ§Ã£o atual jÃ¡ reflete sÃ³ os camarÃµes remanescentes (pÃ³s-despesca),
-      // entÃ£o res.quantidade JÃ Ã© a populaÃ§Ã£o que ficou €” nÃ£o se desconta a despesca.
+      // entÃ£o res.quantidade JÃ Ã© a populaÃ§Ã£o que ficou â€” nÃ£o se desconta a despesca.
       estimatedPopulation = res.quantidade;
       // projeÃ§Ã£o na despesca = remanescentes na meta + o que jÃ¡ saiu
       biomasaAlvoStr = formatarNumeroBR(estimatedPopulation * alvo / 1000 + _despKg, 0) + " kg";
@@ -2823,7 +2823,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   } else if (!dataPovoamento) {
     cardProj = `<p class="proj-obs">Defina a data de povoamento para projetar a despesca.</p>`;
   } else if (gDia <= 0) {
-    cardProj = `<p class="proj-obs">Sem ganho de peso positivo entre as biometrias €” nÃ£o dÃ¡ para projetar.</p>`;
+    cardProj = `<p class="proj-obs">Sem ganho de peso positivo entre as biometrias â€” nÃ£o dÃ¡ para projetar.</p>`;
   } else {
     progresso = 100;
     cardProj = `<p class="proj-obs">O camarÃ£o jÃ¡ estÃ¡ com ${fmtG(pesoAtual)} g, igual ou acima do alvo de ${fmtG(alvo)} g.</p>`;
@@ -2832,7 +2832,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const area = document.getElementById("resultado-historico") || document.getElementById("area-gestao");
 
   area.innerHTML = `
-    <h3 class="titulo-secao">Curva de crescimento €” ${abreviarViveiro(viveiro.nome)}</h3>
+    <h3 class="titulo-secao">Curva de crescimento â€” ${abreviarViveiro(viveiro.nome)}</h3>
     <div class="cresc-cards">
       <div class="cresc-card">
         <svg class="cresc-card-ico" viewBox="0 0 24 24"><path d="M12 3a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.72V8h4l3 11a3 3 0 0 1-3 4H7a3 3 0 0 1-3-4L7 8h4V6.72A2 2 0 0 1 10 5a2 2 0 0 1 2-2z"/></svg>
@@ -2863,7 +2863,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     <div class="proj-alvo-row">
       <span class="proj-alvo-lbl">Peso-alvo</span>
       <div class="proj-alvo-ctrl">
-        <button class="proj-alvo-btn" onclick="(function(){var v=Math.max(1,parseFloat(document.getElementById('proj-alvo').value||20)-0.5);document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">ˆ</button>
+        <button class="proj-alvo-btn" onclick="(function(){var v=Math.max(1,parseFloat(document.getElementById('proj-alvo').value||20)-0.5);document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">âˆ’</button>
         <div class="proj-alvo-val-wrap">
           <input type="number" id="proj-alvo" value="${alvo}" min="1" step="0.5"
             onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value) || 20)">
@@ -2881,7 +2881,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
           ? `<span class="bio-hist-ganho ${dif >= 0 ? "pos" : "neg"}">${dif >= 0
               ? `<svg class="bio-hist-seta" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`
               : `<svg class="bio-hist-seta" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`}${dif >= 0 ? "+" : ""}${fmtG(dif)}g</span>`
-          : `<span class="bio-hist-ganho neutro">€”</span>`;
+          : `<span class="bio-hist-ganho neutro">â€”</span>`;
         return `<div class="bio-hist-linha">
           <span class="bio-hist-dia">${labels[i]}</span>
           <span class="bio-hist-peso">${fmtG(b.gramatura)} g</span>
@@ -3065,7 +3065,7 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
                 <span class="col-centro">${formatarData(item.data)}</span>
                 <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${item.nomeRacao}</small>` : ""}</span>
                 <span class="col-acoes">
-                  <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">œï¸</button>
+                  <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">âœï¸</button>
                   <button class="botao-editar botao-excluir" onclick="confirmarExcluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">ğŸ—‘ï¸</button>
                 </span>
               </div>`;
@@ -3095,7 +3095,7 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     if (tabela) tabela.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
   }
 
-  // Swipe para trocar pÃ¡gina €” cancela listeners anteriores para nÃ£o acumular
+  // Swipe para trocar pÃ¡gina â€” cancela listeners anteriores para nÃ£o acumular
   if (_swipeRacaoAbort) _swipeRacaoAbort.abort();
   if (totalPaginas > 1) {
     _swipeRacaoAbort = new AbortController();
@@ -3154,7 +3154,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAt
             <label>Tipo de raÃ§Ã£o</label>
           </div>
           <select id="tipoRacaoEdicaoSelect">
-            <option value="">€” NÃ£o especificado €”</option>
+            <option value="">â€” NÃ£o especificado â€”</option>
             ${tiposRacao.map((t, i) => `<option value="${i}" ${i === tipoAtualIdx ? "selected" : ""}>${t.nome}</option>`).join("")}
           </select>
         </div>
@@ -3180,7 +3180,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAt
   `;
 }
 
-// ”€”€”€ EDITAR / EXCLUIR BIOMETRIA ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ EDITAR / EXCLUIR BIOMETRIA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
   salvarScroll();
@@ -3326,7 +3326,7 @@ async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto, bota
   restaurarScroll();
 }
 
-// ”€”€”€ EDITAR / EXCLUIR DESPESCA ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ EDITAR / EXCLUIR DESPESCA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
   salvarScroll();
@@ -3547,7 +3547,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     tipoRacaoId: novoTipo ? novoTipo.id : null,
   };
 
-  // Custo de raÃ§Ã£o derivado dos lanÃ§amentos €” recalcula em memÃ³ria
+  // Custo de raÃ§Ã£o derivado dos lanÃ§amentos â€” recalcula em memÃ³ria
   _montarCustoRacaoVirtual();
 
   if (direto) {
@@ -3561,7 +3561,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
 
 // RaÃ§Ã£o derivada de um viveiro: preÃ§o do catÃ¡logo Ã— kg lanÃ§ados no ciclo
 // ativo. Fonte Ãºnica usada pelo registro em memÃ³ria E pelo congelamento no
-// encerramento €” os dois nunca podem divergir.
+// encerramento â€” os dois nunca podem divergir.
 function _racaoDerivada(v) {
   const lancs = (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0);
   if (!lancs.length) return null;
@@ -3574,7 +3574,7 @@ function _racaoDerivada(v) {
 }
 
 // Custo de "RaÃ§Ã£o" Ã© sempre DERIVADO dos lanÃ§amentos. Este helper (re)monta um
-// registro em memÃ³ria por viveiro (marcado com `derivado: true` €” a flag
+// registro em memÃ³ria por viveiro (marcado com `derivado: true` â€” a flag
 // `virtual` Ã© reservada ao rateio de custo fixo no financeiro) e descarta
 // registros gravados de RaÃ§Ã£o do ciclo ativo (o modelo antigo acumulava no
 // banco e divergia). Registros de ciclos ENCERRADOS permanecem como estÃ£o.
@@ -3650,7 +3650,7 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
 
   viveiros[viveiroIndex].racoes.splice(racaoIndex, 1);
 
-  // Custo de raÃ§Ã£o derivado dos lanÃ§amentos €” recalcula em memÃ³ria
+  // Custo de raÃ§Ã£o derivado dos lanÃ§amentos â€” recalcula em memÃ³ria
   _montarCustoRacaoVirtual();
 
   const paginaAjustada = Math.min(pagina, Math.max(0, Math.ceil((viveiros[viveiroIndex].racoes.length) / 30) - 1));
@@ -3658,7 +3658,7 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
   restaurarScroll();
 }
 
-// ”€”€”€ CICLO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ CICLO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function reiniciarCiclo(index) {
   mostrarFormularioReinicio(index);
@@ -3853,7 +3853,7 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
                         <span class="col-centro">${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
                         <span class="col-centro">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
                         <span class="col-acoes">
-                          <button class="botao-editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">œï¸</button>
+                          <button class="botao-editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">âœï¸</button>
                           <button class="botao-editar botao-excluir" onclick="event.stopPropagation(); confirmarExcluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">ğŸ—‘ï¸</button>
                         </span>
                     </div>
@@ -3896,9 +3896,9 @@ function _toggleDetalheDespesca(index, i) {
     <div class="dd-row"><span>Data</span><b>${formatarData(d.data)}</b></div>
     <div class="dd-row"><span>Quantidade despescada</span><b>${formatarNumeroBR(kg, 1)} kg</b></div>
     <div class="dd-row"><span>Peso mÃ©dio</span><b>${formatarNumeroBR(peso, 1)} g</b></div>
-    <div class="dd-row"><span>NÂº de camarÃµes</span><b>${animais != null ? formatarNumeroBR(animais, 0) : "€”"}</b></div>
-    <div class="dd-row"><span>PreÃ§o de venda</span><b>${preco > 0 ? "R$ " + formatarNumeroBR(preco, 2) + "/kg" : "€” nÃ£o informado"}</b></div>
-    <div class="dd-row dd-total"><span>Total faturado</span><b>${total != null ? "R$ " + formatarNumeroBR(total, 2) : "€”"}</b></div>
+    <div class="dd-row"><span>NÂº de camarÃµes</span><b>${animais != null ? formatarNumeroBR(animais, 0) : "â€”"}</b></div>
+    <div class="dd-row"><span>PreÃ§o de venda</span><b>${preco > 0 ? "R$ " + formatarNumeroBR(preco, 2) + "/kg" : "â€” nÃ£o informado"}</b></div>
+    <div class="dd-row dd-total"><span>Total faturado</span><b>${total != null ? "R$ " + formatarNumeroBR(total, 2) : "â€”"}</b></div>
   `;
   row.after(det);
 }
@@ -4047,7 +4047,7 @@ async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
   mostrarHistoricoCiclos();
 }
 
-// ”€”€”€ BOLETOS A VENCER ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ BOLETOS A VENCER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function _statusBoleto(dataCompra, prazoDias) {
   const hoje = new Date();
@@ -4081,7 +4081,7 @@ function verificarBoletosVencendo() {
         <strong>${alertas.length} boleto${alertas.length > 1 ? "s" : ""} ${alertas.length > 1 ? "precisam" : "precisa"} de atenÃ§Ã£o</strong>
         <span>${alertas.map(a => a.nome).join(", ")}</span>
       </div>
-      <span class="boleto-banner-seta">€º</span>
+      <span class="boleto-banner-seta">â€º</span>
     </div>
   `;
   area.insertBefore(div, area.firstChild);
@@ -4116,7 +4116,7 @@ function abrirMenuFinanceiro() {
         </button>
         <button class="cfg-item" onclick="abrirCustosFixos()">
           <div class="cfg-item-ico cfg-item-ico-verde"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">MÃ£o de obra, energia€¦ rateados entre os viveiros</span></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">MÃ£o de obra, energiaâ€¦ rateados entre os viveiros</span></div>
           <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -4125,14 +4125,14 @@ function abrirMenuFinanceiro() {
   `;
 }
 
-// ”€”€”€ ASSINATURA / PLANOS ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ ASSINATURA / PLANOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ContrataÃ§Ã£o manual via WhatsApp: cliente chama, paga por Pix e o admin
 // libera pelo painel /admin. NÃºmero obrigatÃ³rio (DDI+DDD+nÃºmero).
 const _WHATSAPP_COMERCIAL = "5588992498067";
 
-// Link Ãºnico de contrataÃ§Ã£o €” mensagem e nÃºmero num lugar sÃ³.
+// Link Ãºnico de contrataÃ§Ã£o â€” mensagem e nÃºmero num lugar sÃ³.
 function _linkWhatsAppPlano(nomePlano, ciclo) {
-  const msg = encodeURIComponent(`OlÃ¡! Quero assinar o plano ${nomePlano} (${ciclo || "mensal"}) do WA Aqua GestÃ£o. ğŸ¦`);
+  const msg = encodeURIComponent(`OlÃ¡! Quero assinar o plano ${nomePlano} (${ciclo || "mensal"}) do WA Aqua GestÃ£o. ğŸ¦`);
   return `https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msg}`;
 }
 
@@ -4148,13 +4148,13 @@ function _planoLabel(key) {
   return p ? p.nome : "GrÃ¡tis";
 }
 
-// ”€”€”€ TRAVA / MODO SOMENTE LEITURA ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ TRAVA / MODO SOMENTE LEITURA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Regra do produto:
-//  €¢ 1 viveiro Ã© grÃ¡tis para sempre. A partir do 2Âº, precisa de um plano.
-//  €¢ Se o pagamento de um plano pago parar, a conta entra em "somente leitura":
+//  â€¢ 1 viveiro Ã© grÃ¡tis para sempre. A partir do 2Âº, precisa de um plano.
+//  â€¢ Se o pagamento de um plano pago parar, a conta entra em "somente leitura":
 //    a pessoa continua vendo TUDO (relatÃ³rios, raÃ§Ã£o, biometria, histÃ³rico),
 //    mas nÃ£o consegue lanÃ§ar nem editar atÃ© regularizar.
-//  €¢ HÃ¡ uma carÃªncia de alguns dias apÃ³s o vencimento antes de travar.
+//  â€¢ HÃ¡ uma carÃªncia de alguns dias apÃ³s o vencimento antes de travar.
 const _DIAS_CARENCIA = 5;
 
 // Limite de viveiros de cada plano (espelha a Edge Function admin-clientes)
@@ -4181,7 +4181,7 @@ function _dentroDaCarencia(a) {
 // O plano pago vale enquanto estÃ¡ ativo OU pendente dentro da carÃªncia
 // (a carÃªncia protege o limite por viveiro igual protege a trava geral).
 // Se o campo limite_viveiros vier vazio (linhas antigas), usa o limite
-// padrÃ£o do plano €” nunca rebaixa um pagante em dia para o grÃ¡tis.
+// padrÃ£o do plano â€” nunca rebaixa um pagante em dia para o grÃ¡tis.
 function _planoLimiteEfetivo() {
   const a = assinatura;
   if (a && a.plano && a.plano !== "gratis" && (a.status === "ativo" || _dentroDaCarencia(a))) {
@@ -4257,7 +4257,7 @@ function _mostrarBannerLeitura() {
         <strong>Modo somente leitura</strong>
         <span>VocÃª continua vendo tudo. Para voltar a lanÃ§ar e editar, regularize seu plano.</span>
       </div>
-      <span class="leitura-banner-seta">€º</span>
+      <span class="leitura-banner-seta">â€º</span>
     </div>`;
   area.insertBefore(div, area.firstChild);
 }
@@ -4276,11 +4276,11 @@ function abrirAssinatura() {
     statusCls = "ok";
   } else if (a.status === "pendente") {
     statusL1 = `Plano atual: <b>${_planoLabel(a.plano)}</b>`;
-    statusL2 = "Pagamento pendente €” libera assim que confirmar";
+    statusL2 = "Pagamento pendente â€” libera assim que confirmar";
     statusCls = "pend";
   } else if (a.status === "cancelado") {
     statusL1 = `Plano atual: <b>GrÃ¡tis</b>`;
-    statusL2 = "Assinatura cancelada €” escolha um plano para reativar";
+    statusL2 = "Assinatura cancelada â€” escolha um plano para reativar";
     statusCls = "free";
   } else {
     statusL1 = `Plano atual: <b>GrÃ¡tis</b>`;
@@ -4303,7 +4303,7 @@ function abrirAssinatura() {
       precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(p.mensal, 0)}<small>por mÃªs</small></div>`;
     }
     const rodape = atual
-      ? `<div class="plano-atual-tag">œ“ Plano atual</div>`
+      ? `<div class="plano-atual-tag">âœ“ Plano atual</div>`
       : `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`;
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
@@ -4334,7 +4334,7 @@ function abrirAssinatura() {
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">Â· 2 meses grÃ¡tis</span></button>
       </div>
       <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">ContrataÃ§Ã£o pelo <b>WhatsApp</b> com pagamento via <b>Pix</b> €” seu plano Ã© liberado assim que o pagamento for confirmado.</p>
+      <p class="assin-obs">ContrataÃ§Ã£o pelo <b>WhatsApp</b> com pagamento via <b>Pix</b> â€” seu plano Ã© liberado assim que o pagamento for confirmado.</p>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
   `;
@@ -4346,7 +4346,7 @@ function assinarPlano(plano, ciclo) {
   window.open(_linkWhatsAppPlano(p ? p.nome : plano, ciclo), "_blank");
 }
 
-// ”€”€”€ SIMULAR VENDA ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ SIMULAR VENDA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Estima a biomassa produzida (atual + despescada) e o custo total do ciclo,
 // reaproveitando exatamente as mesmas contas da tela do viveiro.
 function _simularDadosViveiro(viveiro) {
@@ -4363,7 +4363,7 @@ function _simularDadosViveiro(viveiro) {
   const pesoUltimaBio = bios.length ? bios[bios.length - 1].gramatura : null;
   const despKgTotal = (viveiro.despescas || []).reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
 
-  // Biomassa EM PÃ‰ (sÃ³ o que ainda estÃ¡ no viveiro) €” a despesca jÃ¡ vendida
+  // Biomassa EM PÃ‰ (sÃ³ o que ainda estÃ¡ no viveiro) â€” a despesca jÃ¡ vendida
   // entra depois pelo seu preÃ§o real, nÃ£o Ã© revalorizada pelo preÃ§o simulado.
   let biomassaAtual = null;
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
@@ -4468,7 +4468,7 @@ function _simVendaCalcular() {
   const ok = lucro >= 0;
 
   const avisoSemPreco = kgSemPreco > 0
-    ? `<div class="sim-hint" style="color:#92400e">š ï¸ ${formatarNumeroBR(kgSemPreco, 0)} kg de despesca sem preÃ§o de venda salvo €” usei o preÃ§o simulado como aproximaÃ§Ã£o. Informe o preÃ§o na despesca para o cÃ¡lculo exato.</div>`
+    ? `<div class="sim-hint" style="color:#92400e">âš ï¸ ${formatarNumeroBR(kgSemPreco, 0)} kg de despesca sem preÃ§o de venda salvo â€” usei o preÃ§o simulado como aproximaÃ§Ã£o. Informe o preÃ§o na despesca para o cÃ¡lculo exato.</div>`
     : "";
 
   resultado.innerHTML = cabecalho + `
@@ -4484,7 +4484,7 @@ function _simVendaCalcular() {
     ${avisoSemPreco}`;
 }
 
-// ”€”€”€ CUSTOS FIXOS MENSAIS €” TELA E CRUD ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ CUSTOS FIXOS MENSAIS â€” TELA E CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirCustosFixos() {
   esconderMenu();
@@ -4558,7 +4558,7 @@ function abrirFormCustoFixo(index) {
   const c = editando ? custosFixos[index] : null;
   const area = document.getElementById("area-gestao");
   // Para um custo novo, o padrÃ£o de "vÃ¡lido a partir de" Ã© o inÃ­cio do cultivo
-  // ativo mais antigo €” assim jÃ¡ cobre os cultivos em andamento automaticamente.
+  // ativo mais antigo â€” assim jÃ¡ cobre os cultivos em andamento automaticamente.
   const _iniAtivos = viveiros.map(v => v.dataPreparacao || v.dataPovoamento).filter(Boolean).sort();
   const _hojeYmd = new Date().toISOString().split("T")[0];
   const _defaultInicio = _iniAtivos.length ? _iniAtivos[0] : _hojeYmd;
@@ -4575,7 +4575,7 @@ function abrirFormCustoFixo(index) {
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><label>Nome</label></div>
-        <input type="text" id="cfNome" placeholder="Ex: FuncionÃ¡rio, Conta de luz€¦" value="${editando ? (c.nome || "").replace(/"/g, "&quot;") : ""}">
+        <input type="text" id="cfNome" placeholder="Ex: FuncionÃ¡rio, Conta de luzâ€¦" value="${editando ? (c.nome || "").replace(/"/g, "&quot;") : ""}">
       </div>
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg><label>Categoria</label></div>
@@ -4591,7 +4591,7 @@ function abrirFormCustoFixo(index) {
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>VÃ¡lido a partir de</label></div>
         <input type="date" id="cfDataInicio" value="${editando ? (c.dataInicio || "") : _defaultInicio}">
       </div>
-      <p class="rc-print-dica" style="margin:2px 0 10px">O custo Ã© rateado a partir dessa data. JÃ¡ vem com o inÃ­cio do cultivo mais antigo para cobrir os viveiros em andamento €” ajuste se quiser.</p>
+      <p class="rc-print-dica" style="margin:2px 0 10px">O custo Ã© rateado a partir dessa data. JÃ¡ vem com o inÃ­cio do cultivo mais antigo para cobrir os viveiros em andamento â€” ajuste se quiser.</p>
       <div id="msg-cf-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" onclick="salvarCustoFixo(${editando ? index : "null"})">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -4719,7 +4719,7 @@ function abrirBoletos(filtro) {
     const parcial = !b.pago && (b.valorPago || 0) > 0 && b.valor;
     // Badges independentes: situaÃ§Ã£o FINANCEIRA (aberto/parcial/pago) + PRAZO
     const finCls = b.pago ? "pago" : (parcial ? "parcial" : "aberto");
-    const finLabel = b.pago ? "œ“ Pago" : (parcial ? "Parcial" : "Aberto");
+    const finLabel = b.pago ? "âœ“ Pago" : (parcial ? "Parcial" : "Aberto");
     // Valor em destaque = saldo restante (ou valor pago, se quitado)
     const saldoVal = b.pago ? (b.valorPago || b.valor || 0) : rest;
     const saldoLbl = b.pago ? "valor pago" : "restante";
@@ -4735,21 +4735,21 @@ function abrirBoletos(filtro) {
               ${b.pago ? "" : `<span class="bt-badge bt-badge-${st.tipo}">${st.label}</span>`}
             </div>
           </div>
-          <div class="bt-card-forn">${b.fornecedor || "€”"}</div>
+          <div class="bt-card-forn">${b.fornecedor || "â€”"}</div>
           ${b.valor ? `<div class="bt-card-saldo${b.pago ? " quit" : ""}"><b>${_rs(saldoVal)}</b><small>${saldoLbl}</small></div>` : ""}
           ${parcial ? `<div class="bt-card-aux">Valor original: ${_rs(b.valor)} Â· Pago: ${_rs(b.valorPago || 0)}</div>` : ""}
           <div class="bt-card-foot">
             <span class="bt-card-venc">Vence ${vencFmt}</span>
-            <span class="bt-card-verdet">Ver detalhes €º</span>
+            <span class="bt-card-verdet">Ver detalhes â€º</span>
           </div>
         </div>
         <div class="bt-menu-wrap" onclick="event.stopPropagation()">
-          <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">‹®</button>
+          <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">â‹®</button>
           <div id="bt-menu-${i}" class="bt-menu-drop" style="display:none">
             ${b.pago
-              ? `<button onclick="_toggleMenuBoleto(${i});desmarcarBoletoPago(${i})">©ï¸ Desfazer pagamento</button>`
-              : `<button onclick="_toggleMenuBoleto(${i});marcarBoletoPago(${i})">œ… Marcar como pago</button>`}
-            <button onclick="_toggleMenuBoleto(${i});abrirFormBoleto(${i})">œï¸ Editar</button>
+              ? `<button onclick="_toggleMenuBoleto(${i});desmarcarBoletoPago(${i})">â†©ï¸ Desfazer pagamento</button>`
+              : `<button onclick="_toggleMenuBoleto(${i});marcarBoletoPago(${i})">âœ… Marcar como pago</button>`}
+            <button onclick="_toggleMenuBoleto(${i});abrirFormBoleto(${i})">âœï¸ Editar</button>
             <button class="bt-menu-excluir" onclick="_toggleMenuBoleto(${i});_mostrarConfirmarExcluir(${i})">ğŸ—‘ï¸ Excluir</button>
           </div>
         </div>
@@ -4871,7 +4871,7 @@ function imprimirBoletos() {
   // Aplica tambÃ©m o filtro de fornecedor selecionado
   if (_boletosFornecedor) {
     filtrados = filtrados.filter(x => (x.b.fornecedor || "").trim() === _boletosFornecedor);
-    titulo += ` €” ${_boletosFornecedor}`;
+    titulo += ` â€” ${_boletosFornecedor}`;
   }
 
   if (!filtrados.length) { _toastErro("Nenhum boleto para imprimir nessa seleÃ§Ã£o."); return; }
@@ -4954,7 +4954,7 @@ function _boletoProgressoHtml(b) {
     <div class="bt-prog">
       <div class="bt-prog-topo">
         <span>Pago <b>${rs(pago)}</b> de ${rs(b.valor)}</span>
-        <span class="bt-prog-falta">${rest > 0 ? "Falta " + rs(rest) : "œ“ Quitado"}</span>
+        <span class="bt-prog-falta">${rest > 0 ? "Falta " + rs(rest) : "âœ“ Quitado"}</span>
       </div>
       <div class="bt-prog-barra"><div class="bt-prog-fill${rest <= 0 ? " cheio" : ""}" style="width:${pct}%"></div></div>
     </div>`;
@@ -4963,14 +4963,14 @@ function _boletoProgressoHtml(b) {
 // BotÃµes de pagamento conforme o estado do boleto
 function _boletoAcoesPagamentoHtml(index, b) {
   if (b.pago) {
-    return `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desfazerUltimoPagamento(${index})">©ï¸ Desfazer Ãºltimo pagamento</button>`;
+    return `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desfazerUltimoPagamento(${index})">â†©ï¸ Desfazer Ãºltimo pagamento</button>`;
   }
   const temTotal = b.valor && b.valor > 0;
   const jaPagouAlgo = (b.valorPago || 0) > 0;
   const rest = _boletoRestante(b);
   return `
     ${temTotal ? `
-    <button class="botao-salvar" style="margin-top:14px;background:#066b63" onclick="abrirPagamentoParcial(${index})">ğŸµ Registrar pagamento</button>
+    <button class="botao-salvar" style="margin-top:14px;background:#066b63" onclick="abrirPagamentoParcial(${index})">ğŸ’µ Registrar pagamento</button>
     <div id="bt-pagform-${index}" class="bt-pagform" style="display:none">
       <label>Valor do pagamento (R$)</label>
       <input type="text" inputmode="decimal" id="bt-pagvalor-${index}" placeholder="Ex: 200,00" onblur="formatarMoedaBlur(this)">
@@ -4980,7 +4980,7 @@ function _boletoAcoesPagamentoHtml(index, b) {
         <button class="bt-pag-ok" onclick="salvarPagamentoParcial(${index}, this)">Confirmar</button>
       </div>
     </div>` : ""}
-    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">œ“ ${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
+    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">âœ“ ${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
     ${!temTotal ? `<p class="rc-print-dica" style="margin-top:8px">Para pagar em partes, edite o boleto e informe o <b>valor total</b>.</p>` : ""}`;
 }
 
@@ -5016,7 +5016,7 @@ async function salvarPagamentoParcial(index, botao) {
   if (error) { _toastErro("Erro ao registrar pagamento: " + error.message); return; }
   b.valorPago = novoValorPago; b.pagamentos = novosPagamentos;
   if (quitou) { b.pago = true; b.dataPagamento = hoje; }
-  _toastSucesso(quitou ? "Boleto quitado! œ“" : "Pagamento de R$ " + valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " registrado.");
+  _toastSucesso(quitou ? "Boleto quitado! âœ“" : "Pagamento de R$ " + valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " registrado.");
   verDetalhesBoleto(index);
 }
 
@@ -5054,12 +5054,12 @@ function verDetalhesBoleto(index) {
         <div class="bt-det-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
         <div class="bt-det-status">
           ${b.pago
-            ? `<span class="boleto-badge boleto-badge-pago" style="font-size:13px;padding:6px 14px">œ“ Pago</span>`
+            ? `<span class="boleto-badge boleto-badge-pago" style="font-size:13px;padding:6px 14px">âœ“ Pago</span>`
             : `<span class="boleto-badge boleto-badge-${st.tipo}" style="font-size:13px;padding:6px 14px">${st.label}</span>`}
         </div>
       </div>
       <div class="bt-det-info">
-        <div class="bt-det-linha"><span>Fornecedor</span><strong>${b.fornecedor || "€”"}</strong></div>
+        <div class="bt-det-linha"><span>Fornecedor</span><strong>${b.fornecedor || "â€”"}</strong></div>
         <div class="bt-det-linha"><span>Data da compra</span><strong>${dataCompraFmt}</strong></div>
         <div class="bt-det-linha"><span>Prazo</span><strong>${b.prazoDias} dias</strong></div>
         <div class="bt-det-linha"><span>Vencimento</span><strong>${st.dataFmt}</strong></div>
@@ -5069,7 +5069,7 @@ function verDetalhesBoleto(index) {
       ${_boletoProgressoHtml(b)}
       ${_boletoAcoesPagamentoHtml(index, b)}
       <div style="display:flex;gap:10px;margin-top:10px">
-        <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">œï¸ Editar</button>
+        <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">âœï¸ Editar</button>
         <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'">ğŸ—‘ï¸ Excluir</button>
       </div>
       <div id="confirmar-excluir-det" class="painel-confirmar-boleto" style="display:none;margin-top:10px">
@@ -5084,7 +5084,7 @@ function verDetalhesBoleto(index) {
         <div class="bt-hist-linha"><span class="bt-hist-data">${dataCompraFmt}</span><span class="bt-hist-txt">Boleto cadastrado</span></div>
         <div class="bt-hist-linha"><span class="bt-hist-data">${dataCompraFmt}</span><span class="bt-hist-txt">Vencimento definido: ${st.dataFmt}</span></div>
         ${(b.pagamentos || []).map(p => `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(p.data)}</span><span class="bt-hist-txt">Pagamento de R$ ${Number(p.valor).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>`).join("")}
-        ${b.pago && b.dataPagamento ? `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(b.dataPagamento)}</span><span class="bt-hist-txt">œ“ Boleto quitado</span></div>` : ""}
+        ${b.pago && b.dataPagamento ? `<div class="bt-hist-linha"><span class="bt-hist-data">${formatarData(b.dataPagamento)}</span><span class="bt-hist-txt">âœ“ Boleto quitado</span></div>` : ""}
       </div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirBoletos()">Voltar</button>
     </div>
@@ -5142,7 +5142,7 @@ function abrirFormBoleto(index) {
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Vencimento
         </div>
-        <span class="fin-venc-valor" id="boleto-vencimento">€”</span>
+        <span class="fin-venc-valor" id="boleto-vencimento">â€”</span>
       </div>
       <p class="fin-venc-dica">Calculado automaticamente pela data da compra + prazo.</p>
 
@@ -5166,7 +5166,7 @@ function _calcVencimentoForm() {
     venc.setDate(venc.getDate() + p);
     out.textContent = venc.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
   } else {
-    out.textContent = "€”";
+    out.textContent = "â€”";
   }
 }
 
@@ -5270,7 +5270,7 @@ function confirmarExcluirBoleto(index) {
   if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
 }
 
-// ”€”€”€ FINANCEIRO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ FINANCEIRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirFinanceiro() {
   esconderMenu();
@@ -5342,8 +5342,8 @@ function _finTipoLabel(c) {
   return c.tipo === "produto" ? "Produto" : "Outro custo";
 }
 
-// Gera itens VIRTUAIS de rateio dos custos fixos (funcionÃ¡rio, energia€¦) para a
-// tela financeira. NÃ£o materializa linhas na tabela custos €” sÃ£o calculados na
+// Gera itens VIRTUAIS de rateio dos custos fixos (funcionÃ¡rio, energiaâ€¦) para a
+// tela financeira. NÃ£o materializa linhas na tabela custos â€” sÃ£o calculados na
 // hora. Cada custo fixo vira um item por viveiro, com o valor rateado no perÃ­odo.
 function _finItensRateioFixo(alvos) {
   if (!custosFixos.some(c => c.ativo !== false)) return [];
@@ -5374,7 +5374,7 @@ function _finItensRateioFixo(alvos) {
       if (val > 0.005) {
         itens.push({
           tipo: "fixo", produtoId: null,
-          nomeProduto: cf.nome + " €” rateio automÃ¡tico",
+          nomeProduto: cf.nome + " â€” rateio automÃ¡tico",
           categoria: _custoFixoCatLabel(cf.categoria),
           quantidadeG: null, valor: Number(val.toFixed(2)),
           data: fim, viveiroNome: v.nome, virtual: true,
@@ -5423,7 +5423,7 @@ function mostrarCustosFinanceiro() {
   }
 }
 
-// Agrupa custos por categoria (Larva, RaÃ§Ã£o, MÃ£o de obra, Energia€¦), somando o
+// Agrupa custos por categoria (Larva, RaÃ§Ã£o, MÃ£o de obra, Energiaâ€¦), somando o
 // valor de todos os viveiros. Usado na visÃ£o consolidada de "Todos os viveiros".
 function _finGruposCategoria(custos) {
   const grupos = {};
@@ -5440,7 +5440,7 @@ function _finGruposCategoria(custos) {
 }
 
 function _finRenderDetalhado(resultado, custos, total, porViveiro) {
-  // % do total geral (mesmo perÃ­odo, todos os viveiros) €” inclui o rateio fixo
+  // % do total geral (mesmo perÃ­odo, todos os viveiros) â€” inclui o rateio fixo
   let custosGeral = viveiros.flatMap(v => (v.custos || []));
   if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
   if (_finPeriodoFim) custosGeral = custosGeral.filter(c => c.data <= _finPeriodoFim);
@@ -5483,12 +5483,12 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
     ? `<div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior lanÃ§amento</span></div>
         <strong>R$ ${formatarNumeroBR(Number(maior.valor), 2)}</strong>
-        <small>${maior.nomeProduto || "€”"} Â· ${formatarData(maior.data)}</small>
+        <small>${maior.nomeProduto || "â€”"} Â· ${formatarData(maior.data)}</small>
       </div>`
     : `<div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior categoria</span></div>
         <strong>R$ ${formatarNumeroBR(maiorCat ? maiorCat.total : 0, 2)}</strong>
-        <small>${maiorCat ? maiorCat.nome : "€”"}</small>
+        <small>${maiorCat ? maiorCat.nome : "â€”"}</small>
       </div>`;
 
   // Lista: por viveiro = lanÃ§amento a lanÃ§amento (com ordenaÃ§Ã£o/paginaÃ§Ã£o);
@@ -5507,7 +5507,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
           <div class="fin-linha${c.virtual ? " fin-linha-virtual" : ""}">
             <span class="fin-linha-data">${formatarData(c.data)}</span>
             <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
-            <span class="fin-linha-desc">${c.nomeProduto || "€”"}<small>${c.virtual ? "Rateio Â· " + formatarData(c.periodoIni) + "€“" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
+            <span class="fin-linha-desc">${c.nomeProduto || "â€”"}<small>${c.virtual ? "Rateio Â· " + formatarData(c.periodoIni) + "â€“" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
             <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
           </div>
         `).join("")}
@@ -5565,7 +5565,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
 function _finRenderPorTipo(resultado, custos, total) {
   const grupos = {};
   custos.forEach(c => {
-    // Custos fixos agrupam pela categoria (MÃ£o de obra, Energia€¦); outros como antes
+    // Custos fixos agrupam pela categoria (MÃ£o de obra, Energiaâ€¦); outros como antes
     const chave = c.tipo === "fixo" ? (c.categoria || "Custos fixos")
       : (c.tipo === "outro" ? "Outro custo" : (c.categoria || "Outros"));
     if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0 };
@@ -5866,7 +5866,7 @@ async function salvarEncerramentoCiclo(index) {
 
   if (erroDelRacao || erroDelBio || erroDelDesp) {
     console.error("Erro ao limpar lanÃ§amentos:", erroDelRacao || erroDelBio || erroDelDesp);
-    // Continua mesmo assim €” o ciclo foi salvo, tentamos limpar o mÃ¡ximo possÃ­vel
+    // Continua mesmo assim â€” o ciclo foi salvo, tentamos limpar o mÃ¡ximo possÃ­vel
   }
 
   // Congela o custo de RaÃ§Ã£o do ciclo encerrado como registro definitivo no
@@ -5877,11 +5877,11 @@ async function salvarEncerramentoCiclo(index) {
     if (der && viveiro.cicloId) {
       const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || null;
       // remove qualquer registro antigo de RaÃ§Ã£o deste ciclo para nÃ£o duplicar:
-      // tanto os com o ciclo_id do ciclo que fecha€¦
+      // tanto os com o ciclo_id do ciclo que fechaâ€¦
       await supabaseClient.from("custos").delete()
         .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
         .eq("categoria", "RaÃ§Ã£o").eq("ciclo_id", viveiro.cicloId);
-      // €¦quanto os legados SEM ciclo_id dentro da janela do ciclo (senÃ£o eles
+      // â€¦quanto os legados SEM ciclo_id dentro da janela do ciclo (senÃ£o eles
       // ressurgem pela janela de datas e dobram a raÃ§Ã£o no relatÃ³rio fechado)
       if (iniCiclo) {
         await supabaseClient.from("custos").delete()
@@ -5933,7 +5933,7 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.biometrias = [];
   viveiro.despescas = [];
 
-  // Novo ciclo_id para a preparaÃ§Ã£o que comeÃ§a agora €” assim, se outro ciclo
+  // Novo ciclo_id para a preparaÃ§Ã£o que comeÃ§a agora â€” assim, se outro ciclo
   // iniciar no mesmo dia, os custos nÃ£o se misturam com o ciclo recÃ©m-encerrado.
   const novoCicloIdPrep = _novoCicloId();
 
@@ -6041,7 +6041,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   _relImpIndex = index;
   const _serieRel = _seriesCiclo(ciclo);
 
-  // ”€”€ Custos (fonte Ãºnica) e financeiro automÃ¡tico (preÃ§os das despescas) ”€”€
+  // â”€â”€ Custos (fonte Ãºnica) e financeiro automÃ¡tico (preÃ§os das despescas) â”€â”€
   const _cc = _custosCicloAtivo(
     viveiros[index] || { custos: [] }, ciclo.cicloId,
     ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
@@ -6061,7 +6061,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   const precoMedio = producaoTotal > 0 ? receitaBruta / producaoTotal : 0;
   const lucro = receitaBruta - custoTotal;
   const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
-  const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "€”";
+  const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "â€”";
 
   area.innerHTML = `
     <div class="rc2-report">
@@ -6076,7 +6076,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc2-grid">
         <div class="rc2-cell"><small>Povoamento</small><b>${formatarData(ciclo.dataPovoamento)}</b></div>
         <div class="rc2-cell"><small>PLs</small><b>${Number(ciclo.totalPovoado).toLocaleString("pt-BR")}</b></div>
-        <div class="rc2-cell"><small>LaboratÃ³rio</small><b>${ciclo.laboratorio || "€”"}</b></div>
+        <div class="rc2-cell"><small>LaboratÃ³rio</small><b>${ciclo.laboratorio || "â€”"}</b></div>
         <div class="rc2-cell"><small>Ãrea</small><b>${ciclo.tamanho} ha</b></div>
         ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `<div class="rc2-cell"><small>PreparaÃ§Ã£o</small><b>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</b></div>` : ""}
       </div>
@@ -6110,10 +6110,10 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc2-sec-tit">ProduÃ§Ã£o e desempenho financeiro</div>
       <div class="rc2-prodfinal"><span>ProduÃ§Ã£o final do ciclo</span><b>${formatarNumeroBR(producaoTotal, 1)} kg</b></div>
       <div class="rc2-fin">
-        <div><small>PreÃ§o mÃ©dio</small><b>${temPreco ? "R$ " + formatarNumeroBR(precoMedio, 2) + "/kg" : "€”"}</b></div>
+        <div><small>PreÃ§o mÃ©dio</small><b>${temPreco ? "R$ " + formatarNumeroBR(precoMedio, 2) + "/kg" : "â€”"}</b></div>
         <div><small>Receita bruta</small><b>${rs(receitaBruta)}</b></div>
         <div><small>Lucro lÃ­quido</small><b class="${temPreco ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${rs(lucro)}</b></div>
-        <div><small>Custo por kg</small><b>${custoTotal > 0 ? "R$ " + formatarNumeroBR(custoPorKg, 2) : "€”"}</b></div>
+        <div><small>Custo por kg</small><b>${custoTotal > 0 ? "R$ " + formatarNumeroBR(custoPorKg, 2) : "â€”"}</b></div>
       </div>
       ${!temPreco ? `<p class="rc2-fin-nota">Informe o preÃ§o de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>` : ""}
 
@@ -6131,7 +6131,7 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   setTimeout(() => _renderGraficosCiclo(_serieRel), 60);
 }
 
-// SÃ©ries do ciclo para os grÃ¡ficos €” biomassa/FCA estimados descontando as
+// SÃ©ries do ciclo para os grÃ¡ficos â€” biomassa/FCA estimados descontando as
 // despescas parciais reais (cada uma com seu peso mÃ©dio) atÃ© cada data.
 function _seriesCiclo(ciclo) {
   const bios = [...(ciclo.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
@@ -6141,7 +6141,7 @@ function _seriesCiclo(ciclo) {
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
   const diaDe = d => calcularDiasCultivo(ciclo.dataPovoamento, d);
   const racaoAcumAte = ds => racoesSorted.filter(r => r.data <= ds).reduce((s, r) => s + r.racao, 0);
-  // Animais jÃ¡ despescados (parciais) atÃ© uma data €” cada despesca com seu peso mÃ©dio
+  // Animais jÃ¡ despescados (parciais) atÃ© uma data â€” cada despesca com seu peso mÃ©dio
   const qtdDespescadaAte = ds => despescasSorted.filter(d => d.data <= ds).reduce((s, d) => {
     const kg = Number(d.quantidadeKg) || 0;
     const peso = Number(d.pesoMedio || d.gramatura || 0);
@@ -6193,7 +6193,7 @@ function gerarRelatorioImpressao() {
   // parcial pode ter o seu prÃ³prio preÃ§o (tratado abaixo no cÃ¡lculo da receita).
   const precoKg = Number(ciclo.precoVenda) || 0;
 
-  // ”€”€ Custos do ciclo (fonte Ãºnica: manuais por ciclo_id/janela + rateio fixo) ”€”€
+  // â”€â”€ Custos do ciclo (fonte Ãºnica: manuais por ciclo_id/janela + rateio fixo) â”€â”€
   const custos = _custosManuaisDoCiclo(
     viveiros[index]?.custos, ciclo.cicloId,
     ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
@@ -6209,7 +6209,7 @@ function gerarRelatorioImpressao() {
   if (custoFixoRateado > 0) grupos["MÃ£o de obra e custos fixos"] = (grupos["MÃ£o de obra e custos fixos"] || 0) + custoFixoRateado;
   const distLista = Object.entries(grupos).map(([nome, total]) => ({ nome, total })).sort((a, b) => b.total - a.total);
 
-  // ”€”€ Indicadores ”€”€
+  // â”€â”€ Indicadores â”€â”€
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
   const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
   // Receita: cada despesca parcial usa o SEU preÃ§o (quando informado), senÃ£o o
@@ -6229,7 +6229,7 @@ function gerarRelatorioImpressao() {
   const lucroPorKg = producaoTotal > 0 ? lucroLiquido / producaoTotal : 0;
   const temPreco = receitaBruta > 0;
 
-  // ”€”€ SÃ©ries (biometrias) €” biomassa/FCA estimados descontando as despescas ”€”€
+  // â”€â”€ SÃ©ries (biometrias) â€” biomassa/FCA estimados descontando as despescas â”€â”€
   const _serie = _seriesCiclo(ciclo);
   const bios = _serie.bios;
   const popNum = _serie.popNum;
@@ -6237,7 +6237,7 @@ function gerarRelatorioImpressao() {
   const serieBiomassa = _serie.biomassa, serieFca = _serie.fca, serieRacaoAcum = _serie.racaoAcum;
   const serieObs = _serie.obs, serieDatas = _serie.datas;
 
-  // ”€”€ Despescas ”€”€ (parciais com preÃ§o prÃ³prio + despesca final como Ãºltima linha)
+  // â”€â”€ Despescas â”€â”€ (parciais com preÃ§o prÃ³prio + despesca final como Ãºltima linha)
   const despescas = [...(ciclo.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
   const linhasDespesca = despescas.map(d => {
     const kg = Number(d.quantidadeKg) || 0;
@@ -6253,7 +6253,7 @@ function gerarRelatorioImpressao() {
   const totReceita = receitaBruta;
 
   const fmt = (v, d = 2) => formatarNumeroBR(v, d);
-  const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "€”";
+  const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "â€”";
   const cores = ["#0b6b63", "#2563eb", "#f59e0b", "#10b981", "#a16207", "#9ca3af", "#ec4899", "#84cc16", "#06b6d4"];
 
   const dados = {
@@ -6290,7 +6290,7 @@ function gerarRelatorioImpressao() {
   const VERSAO_SISTEMA = "2.6";
   const codRel = `${(ciclo.nomeViveiro || "V").replace(/\s+/g, "").toUpperCase().slice(0, 6)}-${String(hoje.getDate()).padStart(2, "0")}${String(hoje.getMonth() + 1).padStart(2, "0")}${String(hoje.getFullYear()).slice(-2)}`;
 
-  // ConclusÃ£o tÃ©cnica automÃ¡tica €” linguagem cautelosa, sem julgar sem critÃ©rio
+  // ConclusÃ£o tÃ©cnica automÃ¡tica â€” linguagem cautelosa, sem julgar sem critÃ©rio
   const _dc = Number(ciclo.diasCultivo) || 0;
   const _sob = Number(ciclo.sobrevivencia) || 0;
   const _fca = Number(ciclo.fca) || 0;
@@ -6311,7 +6311,7 @@ function gerarRelatorioImpressao() {
   else if (_sob > 0 && _sob < 60) _alertas.push("A sobrevivÃªncia ficou abaixo de 60%.");
   if (_fca > 1.8) _alertas.push("O FCA final ficou elevado (acima de 1,8).");
   if (temPreco && lucroLiquido < 0) _alertas.push("O ciclo apresentou resultado financeiro negativo.");
-  if (!temPreco) _alertas.push("PreÃ§o de venda nÃ£o informado €” receita e lucro nÃ£o foram calculados.");
+  if (!temPreco) _alertas.push("PreÃ§o de venda nÃ£o informado â€” receita e lucro nÃ£o foram calculados.");
   if (despescas.some(d => !(Number(d.pesoMedio) > 0))) _alertas.push("HÃ¡ despesca sem peso mÃ©dio informado: ela nÃ£o pÃ´de ser convertida em nÃºmero estimado de animais e ficou de fora do cÃ¡lculo de sobrevivÃªncia. A sobrevivÃªncia exibida pode estar subestimada.");
   if (custoTotal <= 0) _alertas.push("Nenhum custo do ciclo foi cadastrado.");
   if (bios.length < 2) _alertas.push("NÃ£o hÃ¡ biometrias suficientes para gerar grÃ¡ficos confiÃ¡veis.");
@@ -6335,7 +6335,7 @@ function gerarRelatorioImpressao() {
     { ico: _ico.trend, lbl: "Lucro lÃ­quido", val: rs(lucroLiquido), sub: "", cls: temPreco ? (lucroLiquido < 0 ? "danger" : "ok") : "" },
   ];
 
-  // ”€”€ AlimentaÃ§Ã£o (sÃ³ dado real: raÃ§Ã£o lanÃ§ada e seu custo) ”€”€
+  // â”€â”€ AlimentaÃ§Ã£o (sÃ³ dado real: raÃ§Ã£o lanÃ§ada e seu custo) â”€â”€
   const custoRacao = custos.filter(c => c.categoria === "RaÃ§Ã£o").reduce((s, c) => s + Number(c.valor), 0);
   const racaoKg = Number(ciclo.racaoConsumida) || 0;
   const alimentacaoHtml = `
@@ -6349,7 +6349,7 @@ function gerarRelatorioImpressao() {
     <div class="cel"><small>ProduÃ§Ã£o total</small><b>${fmt(producaoTotal, 1)} kg</b></div>
   </div>`;
 
-  // ”€”€ Linha do tempo (eventos reais, em ordem cronolÃ³gica) ”€”€
+  // â”€â”€ Linha do tempo (eventos reais, em ordem cronolÃ³gica) â”€â”€
   const _eventos = [];
   if (ciclo.dataPovoamento) _eventos.push({ d: ciclo.dataPovoamento, t: "Povoamento", i: `${Number(String(ciclo.totalPovoado).replace(/\./g, "") || 0).toLocaleString("pt-BR")} PLs` });
   bios.forEach(b => _eventos.push({ d: b.data, t: "Biometria", i: `Peso mÃ©dio ${fmt(Number(b.gramatura), 1)} g` }));
@@ -6361,7 +6361,7 @@ function gerarRelatorioImpressao() {
   <table><thead><tr><th style="width:92px">Data</th><th class="num" style="width:46px">Dia</th><th>Evento</th><th>Detalhe</th></tr></thead>
   <tbody>${_eventos.map(e => `<tr><td>${formatarData(e.d)}</td><td class="num">${calcularDiasCultivo(ciclo.dataPovoamento, e.d)}</td><td><b>${e.t}</b></td><td>${e.i}</td></tr>`).join("")}</tbody></table>` : "";
 
-  // ”€”€ ComparaÃ§Ã£o com ciclos anteriores (mÃ©tricas reais jÃ¡ armazenadas) ”€”€
+  // â”€â”€ ComparaÃ§Ã£o com ciclos anteriores (mÃ©tricas reais jÃ¡ armazenadas) â”€â”€
   const _hist = (viveiros[index] && viveiros[index].ciclosFinalizados) ? [...viveiros[index].ciclosFinalizados] : [];
   _hist.sort((a, b) => String(a.dataEncerramento).localeCompare(String(b.dataEncerramento)));
   const comparacaoHtml = _hist.length >= 2 ? `
@@ -6373,7 +6373,7 @@ function gerarRelatorioImpressao() {
   }).join("")}</tbody></table>` : "";
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
-<title>RelatÃ³rio Final do Ciclo €” ${ciclo.nomeViveiro}</title>
+<title>RelatÃ³rio Final do Ciclo â€” ${ciclo.nomeViveiro}</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
 <style>
   @page { size: A4; margin: 12mm; }
@@ -6437,7 +6437,7 @@ function gerarRelatorioImpressao() {
   .insights { border: 1px solid #eef0f2; border-radius: 10px; padding: 12px 14px; }
   .insights ul { margin: 0; padding: 0; }
   .insights li { font-size: 10.5px; color: #374151; margin: 5px 0; list-style: none; padding-left: 16px; position: relative; }
-  .insights li::before { content: "€º"; position: absolute; left: 2px; color: #0b6b63; font-weight: 800; }
+  .insights li::before { content: "â€º"; position: absolute; left: 2px; color: #0b6b63; font-weight: 800; }
   .cab-centro .viv { display: inline-block; background: #0b6b63; color: #fff; padding: 4px 18px; border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
   .obs-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; page-break-inside: avoid; }
   .conclusao { font-size: 11px; line-height: 1.6; color: #374151; margin: 0; text-align: justify; }
@@ -6530,7 +6530,7 @@ function gerarRelatorioImpressao() {
   <div class="obs-duas">
     <div>
       <h2 class="sec" style="margin-top:0">11. ObservaÃ§Ãµes</h2>
-      <div class="obs-box">${(ciclo.observacoes || "").trim() || "€”"}</div>
+      <div class="obs-box">${(ciclo.observacoes || "").trim() || "â€”"}</div>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">ConclusÃ£o tÃ©cnica</h2>
@@ -6575,9 +6575,9 @@ function gerarRelatorioImpressao() {
   win.document.close();
 }
 
-// •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  MANEJO AUTOMÃTICO (protocolos por viveiro)
-// •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const _MA_DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "SÃ¡b"];
 
@@ -6592,7 +6592,7 @@ function _maAddDias(s, n) {
   const d = _maParse(s); d.setDate(d.getDate() + n); return _maYmd(d);
 }
 
-// ”€”€”€ CUSTOS FIXOS MENSAIS (mÃ£o de obra, energia€¦) ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ CUSTOS FIXOS MENSAIS (mÃ£o de obra, energiaâ€¦) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Cada custo fixo tem um valor mensal. O sistema rateia esse valor por dia
 // entre os viveiros que estavam ativos (em preparaÃ§Ã£o OU em cultivo) em cada
 // data, e acumula a parcela de cada viveiro ao longo do seu ciclo.
@@ -6614,7 +6614,7 @@ function _diasNoMes(ymd) {
   return new Date(y, m, 0).getDate(); // dia 0 do mÃªs seguinte = Ãºltimo dia do mÃªs m
 }
 // FUNÃ‡ÃƒO-BASE do rateio diÃ¡rio (fonte Ãºnica): valor mensal Ã· dias reais do mÃªs
-// Ã· viveiros ativos no dia. Sem arredondar aqui €” o arredondamento Ã© sÃ³ na exibiÃ§Ã£o.
+// Ã· viveiros ativos no dia. Sem arredondar aqui â€” o arredondamento Ã© sÃ³ na exibiÃ§Ã£o.
 function _rateioFixoDia(valorMensal, ymd, nAtivos) {
   return nAtivos > 0 ? (Number(valorMensal) || 0) / _diasNoMes(ymd) / nAtivos : 0;
 }
@@ -6675,7 +6675,7 @@ function _custosManuaisDoCiclo(custos, cicloId, iniYmd, fimYmd) {
 
 // FONTE ÃšNICA dos custos de um ciclo: manuais vÃ¡lidos + custo fixo rateado.
 // Alimenta o card "Custo parcial", o "Custo por kg", o relatÃ³rio do ciclo e a
-// impressÃ£o €” garantindo o mesmo valor em todos os pontos para a mesma janela.
+// impressÃ£o â€” garantindo o mesmo valor em todos os pontos para a mesma janela.
 function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd) {
   const manuais = _custosManuaisDoCiclo(viveiro.custos, cicloId, iniYmd, fimYmd);
   const totalProdutos = manuais.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
@@ -6716,7 +6716,7 @@ async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
   return true;
 }
 
-// Dispara ao lanÃ§ar raÃ§Ã£o (tipo "racao") €” dose por kg de raÃ§Ã£o
+// Dispara ao lanÃ§ar raÃ§Ã£o (tipo "racao") â€” dose por kg de raÃ§Ã£o
 async function _aplicarProtocolosRacao(index, racaoKg, data) {
   const prots = (viveiros[index].protocolos || []).filter(p => p.ativo && p.tipo === "racao");
   const wd = _maParse(data).getDay();
@@ -6798,7 +6798,7 @@ function _maResumoProtocolo(p) {
       : `${formatarNumeroBR(p.dosePorKgG, 2)} g por kg de raÃ§Ã£o`;
     return `${doseTxt} Â· ${dias || "todos os dias"}${desde}`;
   }
-  return `${formatarNumeroBR(p.quantidadeG, 0)} g Â· ${dias || "€”"}${desde}`;
+  return `${formatarNumeroBR(p.quantidadeG, 0)} g Â· ${dias || "â€”"}${desde}`;
 }
 
 function abrirManejoAutomatico(index) {
@@ -6806,7 +6806,7 @@ function abrirManejoAutomatico(index) {
   const area = document.getElementById("area-gestao");
   const prots = viveiro.protocolos || [];
   area.innerHTML = `
-    <h3 class="titulo-secao">Manejo automÃ¡tico €” ${abreviarViveiro(viveiro.nome)}</h3>
+    <h3 class="titulo-secao">Manejo automÃ¡tico â€” ${abreviarViveiro(viveiro.nome)}</h3>
     <div class="cfg-wrap">
       <p class="cfg-secao-desc">Produtos lanÃ§ados automaticamente neste viveiro. Os lanÃ§amentos viram custos e podem ser editados/excluÃ­dos no histÃ³rico de custos.</p>
       ${produtos.length === 0 ? `<div class="viveiro-sem-ciclo-msg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Cadastre um produto em Insumos antes de criar um protocolo.</span></div>` : ""}
@@ -6820,7 +6820,7 @@ function abrirManejoAutomatico(index) {
             </div>
             <div class="ma-item-acoes">
               <button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}')" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>
-              <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">œï¸</button>
+              <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">âœï¸</button>
               <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}', this)">ğŸ—‘ï¸</button>
             </div>
           </div>`;
@@ -6843,7 +6843,7 @@ async function toggleProtocolo(index, protId) {
 async function excluirProtocolo(index, protId, botao) {
   if (_bloqueioViveiro(index)) return;
   if (botao?.disabled) return;
-  _travarBotao(botao, "€¦");
+  _travarBotao(botao, "â€¦");
   viveiros[index].protocolos = (viveiros[index].protocolos || []).filter(x => x.id !== protId);
   await salvarProtocolos(index);
   abrirManejoAutomatico(index);
@@ -6996,7 +6996,7 @@ async function salvarProtocolo(index, protId) {
   } else if (retro) {
     const r = await _aplicarProtocoloRacaoRetroativo(index, prot);
     if (r.n > 0) {
-      setTimeout(() => _toastSucesso(`${r.n} lanÃ§amento(s) anterior(es) aplicados no custo €” R$ ${formatarNumeroBR(r.valor, 2)}.`), 500);
+      setTimeout(() => _toastSucesso(`${r.n} lanÃ§amento(s) anterior(es) aplicados no custo â€” R$ ${formatarNumeroBR(r.valor, 2)}.`), 500);
     } else if (r.pulados > 0) {
       setTimeout(() => _toastErro("Esses lanÃ§amentos jÃ¡ tinham o custo aplicado (nada novo a lanÃ§ar)."), 500);
     } else {
@@ -7006,7 +7006,7 @@ async function salvarProtocolo(index, protId) {
   abrirManejoAutomatico(index);
 }
 
-// ”€”€”€ CUSTOS E INSUMOS ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ CUSTOS E INSUMOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function abrirCustosInsumos() {
   esconderMenu();
@@ -7088,10 +7088,10 @@ function abrirCadastrarProduto() {
           </div>
         </div>
         <div id="previa-custo-kg" class="custo-por-grama-preview" style="display:none">
-          Custo por kg: <strong id="previa-custo-kg-valor">€”</strong>
+          Custo por kg: <strong id="previa-custo-kg-valor">â€”</strong>
         </div>
         <div id="msg-produto-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">œ…</span>
+          <span class="msg-emoji">âœ…</span>
           <span class="msg-texto">Produto cadastrado!</span>
         </div>
         <div id="erro-produto" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:12px"></div>
@@ -7197,7 +7197,7 @@ function abrirVerProdutos() {
                     <span class="produto-detalhe">${p.categoria} Â· ${formatarNumeroBR(p.pesoKg, 0)} kg Â· R$ ${formatarNumeroBR(p.valorPago, 2)} Â· R$ ${formatarNumeroBR(p.valorPago / p.pesoKg, 2)}/kg</span>
                   </div>
                   <span class="col-acoes">
-                    <button class="botao-editar" onclick="abrirEdicaoProduto(${i})">œï¸</button>
+                    <button class="botao-editar" onclick="abrirEdicaoProduto(${i})">âœï¸</button>
                     <button class="botao-editar botao-excluir" onclick="confirmarExcluirProduto(${i})">ğŸ—‘ï¸</button>
                   </span>
                 </div>
@@ -7434,7 +7434,7 @@ function abrirLancarCustoProduto(index) {
           <input type="number" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
         </div>
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
-          Valor calculado: <strong id="previa-custo-valor">€”</strong>
+          Valor calculado: <strong id="previa-custo-valor">â€”</strong>
         </div>
         <div id="msg-custo-produto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar" onclick="salvarCustoProduto(${index})">
@@ -7539,7 +7539,7 @@ async function salvarCustoProduto(index) {
   if (prev) prev.style.display = "none";
   reabilitar();
 
-  _toastSucesso(`Custo lanÃ§ado: ${prod.nome} €” R$ ${formatarNumeroBR(valor, 2)}`);
+  _toastSucesso(`Custo lanÃ§ado: ${prod.nome} â€” R$ ${formatarNumeroBR(valor, 2)}`);
 }
 
 function abrirLancarOutroCusto(index) {
@@ -7633,7 +7633,7 @@ async function salvarOutroCusto(index) {
   document.getElementById("valorOutroCusto").value = "";
   reabilitar();
 
-  _toastSucesso(`Custo lanÃ§ado: ${descricao} €” R$ ${formatarNumeroBR(valor, 2)}`);
+  _toastSucesso(`Custo lanÃ§ado: ${descricao} â€” R$ ${formatarNumeroBR(valor, 2)}`);
 }
 
 function abrirHistoricoCustosDireto(index) {
@@ -7673,12 +7673,12 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
   const custos = viveiro.custos || [];
-  // Rateio dos custos fixos (funcionÃ¡rio/energia) do ciclo atual €” sÃ³ de leitura,
+  // Rateio dos custos fixos (funcionÃ¡rio/energia) do ciclo atual â€” sÃ³ de leitura,
   // para o total desta tela bater com o "Custo parcial" do viveiro.
   const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
-  // Agrupa por produto/nome €” soma quantidade e valor (sem datas)
+  // Agrupa por produto/nome â€” soma quantidade e valor (sem datas)
   const grupos = {};
   custos.forEach(c => {
     const chave = _chaveCusto(c);
@@ -7686,14 +7686,14 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     grupos[chave].valor += Number(c.valor) || 0;
     if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
     // RaÃ§Ã£o Ã© calculada dos lanÃ§amentos (e inclui snapshots de ciclos
-    // encerrados) €” nÃ£o pode ser editada/excluÃ­da por esta tela
+    // encerrados) â€” nÃ£o pode ser editada/excluÃ­da por esta tela
     if (_ehCustoRacao(c)) grupos[chave].soLeitura = true;
   });
   const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
 
   const dolarIco = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M14.5 9.5a2 2 0 0 0-2-1.5h-1a1.8 1.8 0 0 0 0 3.6h1a1.8 1.8 0 0 1 0 3.6h-1.2a2 2 0 0 1-2-1.5"/></svg>`;
   resultado.innerHTML = `
-    <h3 class="custo-titulo">Custos €” ${abreviarViveiro(viveiro.nome)}</h3>
+    <h3 class="custo-titulo">Custos â€” ${abreviarViveiro(viveiro.nome)}</h3>
     ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
     <div class="custo-grupo-lista">
       ${lista.length === 0
@@ -7704,12 +7704,12 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
               <div class="custo-card-ico">${dolarIco}</div>
               <div class="custo-card-info">
                 <span class="custo-card-nome">${g.nome}</span>
-                <span class="custo-card-qtd">${qtd || "€”"}</span>
+                <span class="custo-card-qtd">${qtd || "â€”"}</span>
               </div>
               <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
               <div class="custo-card-acoes">${g.soLeitura
                 ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lanÃ§amentos de raÃ§Ã£o">auto</span>`
-                : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">œï¸</button>
+                : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">âœï¸</button>
                 <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">ğŸ—‘ï¸</button>`}
               </div>
             </div>`;
@@ -7739,7 +7739,7 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
   const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
   if (grupo.some(_ehCustoRacao)) {
-    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos €” edite os lanÃ§amentos de raÃ§Ã£o.");
+    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos â€” edite os lanÃ§amentos de raÃ§Ã£o.");
     return;
   }
   const isProduto = chave.startsWith("id:");
@@ -7795,7 +7795,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
   if (grupo.some(_ehCustoRacao)) {
-    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos €” edite os lanÃ§amentos de raÃ§Ã£o.");
+    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos â€” edite os lanÃ§amentos de raÃ§Ã£o.");
     return;
   }
   const isProduto = chave.startsWith("id:");
@@ -7861,7 +7861,7 @@ async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
   const chave = decodeURIComponent(chaveEnc);
   const v = viveiros[index];
   if ((v.custos || []).filter(c => _chaveCusto(c) === chave).some(_ehCustoRacao)) {
-    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos €” exclua os lanÃ§amentos de raÃ§Ã£o.");
+    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos â€” exclua os lanÃ§amentos de raÃ§Ã£o.");
     return;
   }
   const restaurar = _travarBotao(botao, "Excluindo...");
@@ -7880,7 +7880,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
   salvarScroll();
   const custo = viveiros[viveiroIndex].custos[custoIndex];
   if (_ehCustoRacao(custo)) {
-    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos €” edite os lanÃ§amentos de raÃ§Ã£o.");
+    _toastErro("O custo de RaÃ§Ã£o Ã© calculado dos lanÃ§amentos â€” edite os lanÃ§amentos de raÃ§Ã£o.");
     return;
   }
   const resultado = document.getElementById(elementoId);
@@ -8001,7 +8001,7 @@ function imprimirCustos(viveiroIndex) {
     .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63}
     @media print{body{padding:0}}
   </style></head><body>
-  <h1>Custos €” ${viveiro.nome}</h1>
+  <h1>Custos â€” ${viveiro.nome}</h1>
   <table>
     <thead><tr><th>DescriÃ§Ã£o</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
     <tbody>
@@ -8096,7 +8096,7 @@ function abrirHistoricoGeralCustos() {
   `;
 }
 
-// ”€”€”€ CARREGAR DADOS ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ CARREGAR DADOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function carregarViveiros() {
   const usuario = await pegarUsuarioLogado();
@@ -8340,7 +8340,7 @@ async function carregarViveiros() {
 // histÃ³ricos encerrados nem no fallback por data.
 async function _garantirCicloIdViveirosAtivos() {
   const semId = viveiros.filter(v => !v.cicloId);
-  if (!semId.length) return; // nada a migrar €” idempotente
+  if (!semId.length) return; // nada a migrar â€” idempotente
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -8372,7 +8372,7 @@ async function _garantirCicloIdViveirosAtivos() {
   }
 }
 
-// ”€”€”€ INICIALIZAÃ‡ÃƒO ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
+// â”€â”€â”€ INICIALIZAÃ‡ÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (localStorage.getItem("tema") === "escuro") {
@@ -8451,7 +8451,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ripple.style.top = y + "px";
     btn.appendChild(ripple);
     // Remove por tempo fixo (roda mesmo se o botÃ£o for escondido antes de a
-    // animaÃ§Ã£o acabar) €” evita a luzinha "pendurada" que rejogava ao reexibir.
+    // animaÃ§Ã£o acabar) â€” evita a luzinha "pendurada" que rejogava ao reexibir.
     setTimeout(() => ripple.remove(), 550);
   }
   document.addEventListener("pointerdown", criarRipple, true);
@@ -8461,6 +8461,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 window.addEventListener("popstate", function () {
   const btn = _voltarBotaoVisivel();
   if (!btn) return;                 // na raiz (menu): deixa o app sair normalmente
-  btn.click();                      // volta uma tela €” mesma aÃ§Ã£o do botÃ£o Voltar
+  btn.click();                      // volta uma tela â€” mesma aÃ§Ã£o do botÃ£o Voltar
   if (_voltarBotaoVisivel()) _armarVoltarNavegador(); // ainda em subtela segue protegendo
 });
