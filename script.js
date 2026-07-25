@@ -14,6 +14,7 @@ let custosFixos = [];
 let assinatura = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
+let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalhado"
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
 let _finOrdenacao = "data";
@@ -7692,37 +7693,73 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
 
   const dolarIco = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M14.5 9.5a2 2 0 0 0-2-1.5h-1a1.8 1.8 0 0 0 0 3.6h1a1.8 1.8 0 0 1 0 3.6h-1.2a2 2 0 0 1-2-1.5"/></svg>`;
-  resultado.innerHTML = `
-    <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
-    ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
-    <div class="custo-grupo-lista">
-      ${lista.length === 0
-        ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
-        : lista.map((g, gi) => {
-            const qtd = _fmtQtdCusto(g.quantidadeG);
-            return `<div class="custo-card" id="cg-${index}-${gi}">
-              <div class="custo-card-ico">${dolarIco}</div>
-              <div class="custo-card-info">
-                <span class="custo-card-nome">${g.nome}</span>
-                <span class="custo-card-qtd">${qtd || "—"}</span>
-              </div>
-              <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
-              <div class="custo-card-acoes">${g.soLeitura
-                ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
-                : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">✏️</button>
-                <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>`}
-              </div>
-            </div>`;
-          }).join("")
-      }
-      ${rateioFixo > 0 ? `<div class="custo-card custo-card-rateio">
+
+  // Corpo conforme o modo escolhido
+  let corpo;
+  if (_custoModo === "detalhado") {
+    // Cada lançamento com a sua data (mais recente primeiro)
+    const itens = custos.map((c, i) => ({ c, i }))
+      .sort((a, b) => String(b.c.data || "").localeCompare(String(a.c.data || "")));
+    corpo = itens.length === 0
+      ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
+      : itens.map(({ c, i }) => {
+          const qtd = _fmtQtdCusto(c.quantidadeG);
+          const racao = _ehCustoRacao(c);
+          return `<div class="custo-card" id="custo-row-${index}-${i}">
+            <div class="custo-card-ico">${dolarIco}</div>
+            <div class="custo-card-info">
+              <span class="custo-card-nome">${c.nomeProduto || c.categoria || "Custo"}</span>
+              <span class="custo-card-qtd">${formatarData(c.data)}${qtd ? " · " + qtd : ""}</span>
+            </div>
+            <span class="custo-card-valor">R$ ${formatarNumeroBR(Number(c.valor) || 0, 2)}</span>
+            <div class="custo-card-acoes">${racao
+              ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
+              : `<button class="botao-editar" onclick="abrirEdicaoCusto(${index},${i},'${elementoId}',${direto})">✏️</button>
+              <button class="botao-editar botao-excluir" onclick="confirmarExcluirCusto(${index},${i},'${elementoId}',${direto})">🗑️</button>`}
+            </div>
+          </div>`;
+        }).join("");
+  } else {
+    // GERAL: cada produto somado num total só (sem datas)
+    corpo = lista.length === 0
+      ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
+      : lista.map((g, gi) => {
+          const qtd = _fmtQtdCusto(g.quantidadeG);
+          return `<div class="custo-card" id="cg-${index}-${gi}">
+            <div class="custo-card-ico">${dolarIco}</div>
+            <div class="custo-card-info">
+              <span class="custo-card-nome">${g.nome}</span>
+              <span class="custo-card-qtd">${qtd || "—"}</span>
+            </div>
+            <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
+            <div class="custo-card-acoes">${g.soLeitura
+              ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
+              : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">✏️</button>
+              <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>`}
+            </div>
+          </div>`;
+        }).join("");
+  }
+
+  const rateioCard = rateioFixo > 0 ? `<div class="custo-card custo-card-rateio">
         <div class="custo-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
         <div class="custo-card-info">
           <span class="custo-card-nome">Mão de obra e custos fixos</span>
           <span class="custo-card-qtd">Rateio automático</span>
         </div>
         <span class="custo-card-valor">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
-      </div>` : ""}
+      </div>` : "";
+
+  resultado.innerHTML = `
+    <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
+    ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
+    <div class="custo-modo-toggle">
+      <button class="cmt-btn ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Geral</button>
+      <button class="cmt-btn ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Detalhado</button>
+    </div>
+    <div class="custo-grupo-lista">
+      ${corpo}
+      ${rateioCard}
     </div>
     <div class="custo-total">
       <div class="custo-total-ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l1.5 11a2 2 0 0 1-2 2.3H5.5A2 2 0 0 1 3.5 19z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/><circle cx="12" cy="13.5" r="1.5"/></svg></div>

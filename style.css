@@ -6134,3 +6134,10 @@ body.tema-escuro .bt-badge-fin-parcial { background: #1e3a5f; color: #93c5fd; bo
 .cfg-excluir-link:active { opacity: 1; text-decoration: underline; }
 body.tema-escuro .cfg-perigo { border-top-color: #374151; }
 body.tema-escuro .cfg-excluir-link { color: #fca5a5; }
+
+/* Relatório de custos: alternar Geral / Detalhado */
+.custo-modo-toggle { display: flex; gap: 8px; margin: 4px 0 12px; }
+.custo-modo-toggle .cmt-btn { flex: 1; background: #fff; border: 1.5px solid #e5e7eb; color: #4b5563; border-radius: 10px; padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.custo-modo-toggle .cmt-btn.ativo { background: rgb(6,107,99); border-color: rgb(6,107,99); color: #fff; }
+body.tema-escuro .custo-modo-toggle .cmt-btn { background: #1f2937; border-color: #374151; color: #d1d5db; }
+body.tema-escuro .custo-modo-toggle .cmt-btn.ativo { background: rgb(6,107,99); border-color: rgb(6,107,99); color: #fff; }
