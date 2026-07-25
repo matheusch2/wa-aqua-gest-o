@@ -7972,19 +7972,13 @@ function imprimirCustos(viveiroIndex) {
   const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
-  // Agrupa por produto/nome (igual à tela): uma linha por item
-  const grupos = {};
-  custos.forEach(c => {
-    const chave = _chaveCusto(c);
-    if (!grupos[chave]) grupos[chave] = { nome: c.nomeProduto || c.categoria || "Custo", quantidadeG: 0, valor: 0 };
-    grupos[chave].valor += Number(c.valor) || 0;
-    if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
-  });
-  const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
+  // Uma linha por lançamento (não agrupado) para mostrar a data de cada aplicação
+  const lista = [...custos].sort((a, b) => (a.data || "").localeCompare(b.data || ""));
 
-  const linhas = lista.map(g => {
-    const qtd = _fmtQtdCusto(g.quantidadeG);
-    return `<tr><td>${g.nome}</td><td>${qtd || "-"}</td><td>R$ ${formatarNumeroBR(g.valor, 2)}</td></tr>`;
+  const linhas = lista.map(c => {
+    const qtd = _fmtQtdCusto(c.quantidadeG);
+    const nome = c.nomeProduto || c.categoria || "Custo";
+    return `<tr><td>${formatarData(c.data) || "-"}</td><td>${nome}</td><td>${qtd || "-"}</td><td>R$ ${formatarNumeroBR(c.valor, 2)}</td></tr>`;
   }).join("");
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custos - ${viveiro.nome}</title>
@@ -7996,18 +7990,18 @@ function imprimirCustos(viveiroIndex) {
     th:last-child{text-align:right}
     td{padding:8px 12px;border-bottom:1px solid #e5e7eb}
     td:last-child{text-align:right;font-weight:600}
-    td:nth-child(2){text-align:center;color:#555}
+    td:nth-child(1),td:nth-child(3){text-align:center;color:#555}
     tr:nth-child(even) td{background:#f6fafa}
     .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63}
     @media print{body{padding:0}}
   </style></head><body>
   <h1>Custos — ${viveiro.nome}</h1>
   <table>
-    <thead><tr><th>Descrição</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
+    <thead><tr><th style="text-align:center">Data</th><th>Descrição</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
     <tbody>
       ${linhas}
-      ${rateioFixo > 0 ? `<tr><td>Mão de obra e custos fixos</td><td>rateio</td><td>R$ ${formatarNumeroBR(rateioFixo, 2)}</td></tr>` : ""}
-      <tr class="total-row"><td colspan="2">TOTAL</td><td>R$ ${formatarNumeroBR(total, 2)}</td></tr>
+      ${rateioFixo > 0 ? `<tr><td>-</td><td>Mão de obra e custos fixos</td><td>rateio</td><td>R$ ${formatarNumeroBR(rateioFixo, 2)}</td></tr>` : ""}
+      <tr class="total-row"><td colspan="3">TOTAL</td><td>R$ ${formatarNumeroBR(total, 2)}</td></tr>
     </tbody>
   </table>
   </body></html>`;
