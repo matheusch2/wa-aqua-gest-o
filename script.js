@@ -58,56 +58,6 @@ function _calcularBiomassa(populacao, consumoKg, pesoG) {
 let _swipeViveirosAbort = null;
 let _swipeRacaoAbort = null;
 
-async function toggleMenuUsuario() {
-  const menu = document.getElementById("menu-usuario");
-  if (menu.classList.contains("aberto")) {
-    fecharMenuUsuario();
-    return;
-  }
-
-  // Carregar dados do usuário
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) return;
-
-  const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "Usuário";
-  const email = user.email || "";
-  const fotoUrl = user.user_metadata?.avatar_url || null;
-
-  document.getElementById("menu-usuario-nome").textContent = nome;
-  document.getElementById("menu-usuario-email").textContent = email;
-
-  // Avatar no menu
-  const avatarMenu = document.getElementById("menu-avatar");
-  if (fotoUrl) {
-    avatarMenu.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  } else {
-    const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    avatarMenu.innerHTML = `<span class="menu-avatar-iniciais">${iniciais}</span>`;
-  }
-
-  // Avatar no topo
-  const avatarTopo = document.getElementById("avatar-topo");
-  if (fotoUrl) {
-    avatarTopo.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  } else {
-    const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${iniciais || "?"}</span>`;
-  }
-
-  // Tema
-  const temaDark = document.body.classList.contains("tema-escuro");
-  document.getElementById("tema-toggle").querySelector(".menu-tema-bolinha").style.left = temaDark ? "21px" : "3px";
-
-  // Fechar foto opcoes
-  document.getElementById("menu-foto-opcoes").style.display = "none";
-
-  menu.classList.add("aberto");
-}
-
-function abrirOpcoesFoto() {
-  const opcoes = document.getElementById("menu-foto-opcoes");
-  opcoes.style.display = opcoes.style.display === "none" ? "flex" : "none";
-}
 
 function _toastErro(msg) {
   const el = document.createElement("div");
@@ -148,169 +98,6 @@ function _novoCicloId() {
   });
 }
 
-async function uploadFotoPerfil(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  // Comprimir para 80x80 JPEG
-  const canvas = document.createElement("canvas");
-  canvas.width = 80; canvas.height = 80;
-  const img = new Image();
-  const url = URL.createObjectURL(file);
-  img.onload = async () => {
-    const ctx = canvas.getContext("2d");
-    const size = Math.min(img.width, img.height);
-    const x = (img.width - size) / 2;
-    const y = (img.height - size) / 2;
-    ctx.drawImage(img, x, y, size, size, 0, 0, 80, 80);
-    URL.revokeObjectURL(url);
-
-    const base64 = canvas.toDataURL("image/jpeg", 0.5);
-
-    const { error } = await supabaseClient.auth.updateUser({
-      data: { avatar_url: base64 }
-    });
-
-    if (error) { _toastErro("Erro ao salvar foto."); return; }
-
-    // Atualizar UI
-    document.getElementById("menu-avatar").innerHTML =
-      `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    document.getElementById("avatar-topo").innerHTML =
-      `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    document.getElementById("menu-foto-opcoes").style.display = "none";
-  };
-  img.src = url;
-}
-
-async function excluirFotoPerfil() {
-  const { error } = await supabaseClient.auth.updateUser({ data: { avatar_url: null } });
-  if (error) { _toastErro("Erro ao excluir foto."); return; }
-
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "?";
-  const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
-
-  document.getElementById("menu-avatar").innerHTML = `<span class="menu-avatar-iniciais">${iniciais}</span>`;
-  document.getElementById("avatar-topo").innerHTML = `<span class="avatar-topo-iniciais">${iniciais}</span>`;
-  document.getElementById("menu-foto-opcoes").style.display = "none";
-}
-
-function abrirPerfilUsuario() {
-  fecharMenuUsuario();
-  supabaseClient.auth.getUser().then(({ data: { user } }) => {
-    const nome = user?.user_metadata?.nome || "";
-    const area = document.getElementById("area-gestao");
-    esconderMenu();
-    area.innerHTML = `
-      <div class="form-lancamento">
-        <div class="form-topo">
-          <div class="form-icone-circulo">
-            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <h2 class="form-titulo">Perfil</h2>
-        </div>
-        <div class="form-corpo">
-          <div class="campo-form">
-            <div class="campo-label">
-              <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              <label>Nome da fazenda</label>
-            </div>
-            <input type="text" id="inputNomePerfil" placeholder="Ex: Fazenda São João" value="${nome}">
-          </div>
-          <div id="msg-perfil-erro" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-          <button class="botao-salvar" onclick="salvarNomePerfil()">
-            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Salvar
-          </button>
-          <div class="separador-ou"><span>ou</span></div>
-          <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-        </div>
-      </div>
-    `;
-  });
-}
-
-async function salvarNomePerfil() {
-  const nome = document.getElementById("inputNomePerfil").value.trim();
-  const msgErro = document.getElementById("msg-perfil-erro");
-  function _erroPerfil(msg) { if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; } }
-  if (msgErro) msgErro.style.display = "none";
-
-  if (!nome) { _erroPerfil("Digite um nome para a fazenda."); return; }
-
-  const { error } = await supabaseClient.auth.updateUser({ data: { nome } });
-  if (error) { _erroPerfil("Erro ao salvar. Tente novamente."); return; }
-
-  voltarMenuGestao();
-}
-
-function abrirSegurancaUsuario() {
-  fecharMenuUsuario();
-  const area = document.getElementById("area-gestao");
-  esconderMenu();
-  area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h2 class="form-titulo">Segurança</h2>
-      </div>
-      <div class="form-corpo">
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <label>Nova senha</label>
-          </div>
-          <input type="password" id="inputNovaSenha" placeholder="Mínimo 6 caracteres">
-        </div>
-        <div class="campo-form">
-          <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <label>Confirmar nova senha</label>
-          </div>
-          <input type="password" id="inputConfirmarSenha" placeholder="Repita a nova senha">
-        </div>
-        <div id="msg-senha-erro" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarSenha()">
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Salvar nova senha
-        </button>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-      </div>
-    </div>
-  `;
-}
-
-async function salvarSenha() {
-  const nova = document.getElementById("inputNovaSenha").value;
-  const confirmar = document.getElementById("inputConfirmarSenha").value;
-  const msgErro = document.getElementById("msg-senha-erro");
-  function _erroSenha(msg) { if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; } }
-  if (msgErro) msgErro.style.display = "none";
-
-  if (!nova || nova.length < 6) { _erroSenha("A senha deve ter no mínimo 6 caracteres."); return; }
-  if (nova !== confirmar) { _erroSenha("As senhas não coincidem."); return; }
-
-  const { error } = await supabaseClient.auth.updateUser({ password: nova });
-  if (error) { _erroSenha("Erro ao alterar senha: " + error.message); return; }
-
-  _toastSucesso("Senha alterada com sucesso!");
-  voltarMenuGestao();
-}
-
-function toggleTema() {
-  document.body.classList.toggle("tema-escuro");
-  const escuro = document.body.classList.contains("tema-escuro");
-  localStorage.setItem("tema", escuro ? "escuro" : "claro");
-  const bolinha = document.querySelector("#tema-toggle .menu-tema-bolinha");
-  if (bolinha) bolinha.style.left = escuro ? "21px" : "3px";
-  document.querySelector(".menu-tema-toggle") &&
-    (document.querySelector(".menu-tema-toggle").style.background = escuro ? "rgb(6,107,99)" : "");
-}
-
 
 async function sairUsuario(botao) {
   if (botao?.disabled) return; // evita duplo toque
@@ -321,7 +108,6 @@ async function sairUsuario(botao) {
   // replace(): Voltar/Avançar não devem reabrir o app autenticado após o logout
   window.location.replace("login.html");
 }
-
 
 
 function fecharMenuUsuario() {
@@ -4342,10 +4128,6 @@ function abrirAssinatura() {
 }
 
 // Porta de entrada legada: qualquer botão antigo "Assinar" cai no WhatsApp.
-function assinarPlano(plano, ciclo) {
-  const p = _PLANOS_APP.find(x => x.key === plano);
-  window.open(_linkWhatsAppPlano(p ? p.nome : plano, ciclo), "_blank");
-}
 
 // ─── SIMULAR VENDA ──────────────────────────────────────────────────────────
 // Estima a biomassa produzida (atual + despescada) e o custo total do ciclo,
@@ -5266,10 +5048,6 @@ async function desmarcarBoletoPago(index, voltarDetalhe) {
   if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
 }
 
-function confirmarExcluirBoleto(index) {
-  const painel = document.getElementById(`confirmar-excluir-boleto-${index}`);
-  if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
-}
 
 // ─── FINANCEIRO ───────────────────────────────────────────────────────────────
 
@@ -5662,28 +5440,6 @@ function imprimirRelatorioFinanceiro() {
   janela.onload = () => janela.print();
 }
 
-function abrirEstoque() {
-  esconderMenu();
-  const area = document.getElementById("area-gestao");
-  area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><path d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8m-9 4h4"/></svg>
-        </div>
-        <h2 class="form-titulo">Estoque</h2>
-      </div>
-      <div class="form-corpo">
-        <div style="text-align:center;padding:24px 16px;background:#f8fafc;border-radius:14px;border:1px solid #e5e7eb;margin-bottom:12px">
-          <p style="font-size:32px;margin:0 0 8px">🚧</p>
-          <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 4px">Em desenvolvimento</p>
-          <p style="font-size:13px;color:#9ca3af;margin:0">Em breve você poderá controlar o estoque dos seus insumos.</p>
-        </div>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-      </div>
-    </div>
-  `;
-}
 
 function abrirEncerrarCiclo(index) {
   const viveiro = viveiros[index];
@@ -8144,55 +7900,6 @@ async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto, botao)
   renderizarHistoricoCustos(viveiroIndex, elementoId, direto);
 }
 
-function abrirHistoricoGeralCustos() {
-  const area = document.getElementById("area-gestao");
-
-  const todosCustos = viveiros.flatMap(v =>
-    (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }))
-  ).sort((a, b) => a.data.localeCompare(b.data));
-
-  const totalGeral = todosCustos.reduce((s, c) => s + Number(c.valor), 0);
-
-  area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-        </div>
-        <h2 class="form-titulo">Histórico geral de custos</h2>
-      </div>
-      <div class="form-corpo">
-        <div class="tabela-historico">
-          <div class="linha-hist-custo-geral cabecalho">
-            <span>DATA</span>
-            <span class="col-centro">VIVEIRO</span>
-            <span class="col-centro">DESCRIÇÃO</span>
-            <span class="col-centro">VALOR</span>
-          </div>
-          ${todosCustos.length === 0
-            ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
-            : todosCustos.map(c => `
-                <div class="linha-hist-custo-geral">
-                  <span style="font-size:12px">${formatarData(c.data)}</span>
-                  <span class="col-centro" style="font-size:12px">${abreviarViveiro(c.viveiroNome)}</span>
-                  <span class="col-centro" style="font-size:13px;font-weight:500">${c.nomeProduto}</span>
-                  <span class="col-centro" style="font-size:12px">R$&nbsp;${formatarNumeroBR(c.valor, 2)}</span>
-                </div>
-              `).join("")
-          }
-        </div>
-        ${totalGeral > 0 ? `
-          <div class="total-chip">
-            <span class="total-chip-label">Total geral</span>
-            <span class="total-chip-valor">R$ ${formatarNumeroBR(totalGeral, 2)}</span>
-          </div>
-        ` : ""}
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirCustosInsumos()">Voltar</button>
-      </div>
-    </div>
-  `;
-}
 
 // ─── CARREGAR DADOS ───────────────────────────────────────────────────────────
 
