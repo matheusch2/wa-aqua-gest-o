@@ -7670,6 +7670,27 @@ function _ehCustoRacao(c) {
   return !!(c && (c.derivado || (c.categoria === "Ração" && c.nomeProduto === "Ração")));
 }
 
+// Cabeçalho de data do extrato Detalhado: "24 JUL 2026"
+function _cdDataHeader(dataStr) {
+  const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  const d = _parseDataLocal(dataStr);
+  if (!d || isNaN(d.getTime())) return "Sem data";
+  return d.getDate() + " " + meses[d.getMonth()] + " " + d.getFullYear();
+}
+
+// Menu de 3 pontinhos de cada lançamento do extrato Detalhado
+function _cdToggleMenu(id) {
+  _cdFecharMenus(id);
+  const m = document.getElementById(id);
+  if (m) m.classList.toggle("aberto");
+}
+function _cdFecharMenus(exceto) {
+  document.querySelectorAll(".cd-menu.aberto").forEach(m => { if (m.id !== exceto) m.classList.remove("aberto"); });
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".cd-menu-wrap")) _cdFecharMenus();
+});
+
 function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
@@ -7697,28 +7718,68 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   // Corpo conforme o modo escolhido
   let corpo;
   if (_custoModo === "detalhado") {
-    // Cada lançamento com a sua data (mais recente primeiro)
+    // Extrato: cada lançamento com a sua data (mais recente primeiro),
+    // agrupado por dia. Sem ícone; nome + valor na 1ª linha, categoria na 2ª,
+    // quantidade + menu de 3 pontinhos na 3ª.
     const itens = custos.map((c, i) => ({ c, i }))
       .sort((a, b) => String(b.c.data || "").localeCompare(String(a.c.data || "")));
-    corpo = itens.length === 0
-      ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
-      : itens.map(({ c, i }) => {
-          const qtd = _fmtQtdCusto(c.quantidadeG);
-          const racao = _ehCustoRacao(c);
-          return `<div class="custo-card" id="custo-row-${index}-${i}">
-            <div class="custo-card-ico">${dolarIco}</div>
-            <div class="custo-card-info">
-              <span class="custo-card-nome">${c.nomeProduto || c.categoria || "Custo"}</span>
-              <span class="custo-card-qtd">${formatarData(c.data)}${qtd ? " · " + qtd : ""}</span>
+    if (itens.length === 0) {
+      corpo = `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`;
+    } else {
+      const totalListado = itens.reduce((s, x) => s + (Number(x.c.valor) || 0), 0);
+      let html = `<div class="cd-resumo">
+        <span>${itens.length} lançamento${itens.length !== 1 ? "s" : ""}</span>
+        <span class="cd-resumo-val">R$ ${formatarNumeroBR(totalListado, 2)}</span>
+      </div>`;
+      let dataAtual = null;
+      itens.forEach(({ c, i }) => {
+        const chaveData = String(c.data || "");
+        if (chaveData !== dataAtual) {
+          dataAtual = chaveData;
+          html += `<div class="cd-data-header">${_cdDataHeader(c.data)}</div>`;
+        }
+        const qtd = _fmtQtdCusto(c.quantidadeG);
+        const racao = _ehCustoRacao(c);
+        const menuId = `cd-menu-${index}-${i}`;
+        const l3 = (qtd || !racao)
+          ? `<div class="cd-l3">
+              <span class="cd-meta">${qtd || ""}</span>
+              ${racao ? "" : `<div class="cd-menu-wrap">
+                <button class="cd-menu-btn" onclick="_cdToggleMenu('${menuId}')" aria-label="Opções">⋮</button>
+                <div class="cd-menu" id="${menuId}">
+                  <button onclick="_cdFecharMenus();abrirEdicaoCusto(${index},${i},'${elementoId}',${direto})">Editar lançamento</button>
+                  <button class="cd-menu-excluir" onclick="_cdFecharMenus();confirmarExcluirCusto(${index},${i},'${elementoId}',${direto})">Excluir lançamento</button>
+                </div>
+              </div>`}
+            </div>`
+          : "";
+        html += `<div class="cd-card${racao ? " cd-card-auto" : ""}" id="custo-row-${index}-${i}">
+          <div class="cd-l1">
+            <span class="cd-nome">${c.nomeProduto || c.categoria || "Custo"}</span>
+            <span class="cd-valor">R$ ${formatarNumeroBR(Number(c.valor) || 0, 2)}</span>
+          </div>
+          <div class="cd-l2">
+            <span class="cd-cat">${racao ? "Lançamento automático" : (c.categoria || "Insumo")}</span>
+            ${racao ? `<span class="cd-badge">Automático</span>` : ""}
+          </div>
+          ${l3}
+        </div>`;
+      });
+      if (rateioFixo > 0) {
+        html += `<div class="cd-data-header">Custos fixos</div>
+          <div class="cd-card cd-card-auto">
+            <div class="cd-l1">
+              <span class="cd-nome">Mão de obra e custos fixos</span>
+              <span class="cd-valor">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
             </div>
-            <span class="custo-card-valor">R$ ${formatarNumeroBR(Number(c.valor) || 0, 2)}</span>
-            <div class="custo-card-acoes">${racao
-              ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
-              : `<button class="botao-editar" onclick="abrirEdicaoCusto(${index},${i},'${elementoId}',${direto})">✏️</button>
-              <button class="botao-editar botao-excluir" onclick="confirmarExcluirCusto(${index},${i},'${elementoId}',${direto})">🗑️</button>`}
+            <div class="cd-l2">
+              <span class="cd-cat">Rateio automático</span>
+              <span class="cd-badge">Automático</span>
             </div>
           </div>`;
-        }).join("");
+      }
+      corpo = html;
+    }
   } else {
     // GERAL: cada produto somado num total só (sem datas)
     corpo = lista.length === 0
@@ -7757,9 +7818,9 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
       <button class="cmt-btn ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Geral</button>
       <button class="cmt-btn ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Detalhado</button>
     </div>
-    <div class="custo-grupo-lista">
+    <div class="custo-grupo-lista${_custoModo === "detalhado" ? " custo-grupo-lista-det" : ""}">
       ${corpo}
-      ${rateioCard}
+      ${_custoModo === "detalhado" ? "" : rateioCard}
     </div>
     <div class="custo-total">
       <div class="custo-total-ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l1.5 11a2 2 0 0 1-2 2.3H5.5A2 2 0 0 1 3.5 19z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/><circle cx="12" cy="13.5" r="1.5"/></svg></div>
