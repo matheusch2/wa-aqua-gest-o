@@ -339,12 +339,8 @@ button {
     box-shadow: 0 1px 4px rgba(6,107,99,0.16);
 }
 
-/* "Verde inteligente": os cards seguem todos verdes; o ícone é que ganha o tom
-   do módulo, pra o olho identificar o grupo sem perder a identidade da marca. */
-.botao-gestao.g-cultivo    .btn-svg { stroke: #ffffff; }  /* identidade */
-.botao-gestao.g-historico  .btn-svg { stroke: #8fd3f4; }  /* azul petróleo */
-.botao-gestao.g-financeiro .btn-svg { stroke: #fcd34d; }  /* âmbar / dourado */
-.botao-gestao.g-conta      .btn-svg { stroke: #c9b8ff; }  /* roxo discreto */
+/* Decisão do Matheus: tudo verde mesmo — ícones brancos em todos os grupos.
+   As classes g-* seguem no HTML caso um dia a gente queira variar. */
 
 .btn-svg {
     width: 34px;
