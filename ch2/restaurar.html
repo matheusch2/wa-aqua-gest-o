@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!--
+  WA Aqua Gestão — Restauração de backup. Copyright © 2026 Matheus.
+  Ferramenta 100% local: lê o arquivo de backup .json e gera o SQL de
+  restauração. NÃO acessa a internet, NÃO contém nenhuma chave.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>WA Aqua — Restaurar backup</title>
+<style>
+  :root { --verde: rgb(6,107,99); --tinta: #1f2937; --cinza: #6b7280; --linha: #e5e7eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif; background: #f3f5f4; color: var(--tinta); padding: 16px; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 8px 0 4px; }
+  .sub { color: var(--cinza); font-size: 13px; margin: 0 0 18px; }
+  .card { background: #fff; border: 1px solid var(--linha); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .aviso { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+  .aviso b { color: #7c2d12; }
+  label.file { display: block; border: 2px dashed var(--linha); border-radius: 12px; padding: 22px; text-align: center; color: var(--cinza); cursor: pointer; font-size: 14px; }
+  label.file:hover { border-color: var(--verde); color: var(--verde); }
+  input[type=file] { display: none; }
+  .btn { width: 100%; background: var(--verde); color: #fff; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-2 { background: #fff; color: var(--verde); border: 1.5px solid var(--verde); }
+  .resumo { font-size: 13px; }
+  .resumo table { width: 100%; border-collapse: collapse; }
+  .resumo td { padding: 5px 0; border-bottom: 1px solid #f1f2f2; }
+  .resumo td:last-child { text-align: right; font-weight: 700; color: var(--verde); }
+  .passos { font-size: 13.5px; line-height: 1.7; padding-left: 20px; }
+  .passos code { background: #f3f4f6; padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+  .oculto { display: none; }
+  .erro { color: #dc2626; font-size: 13px; margin-top: 10px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔄 Restaurar backup — WA Aqua</h1>
+  <p class="sub">Transforma o arquivo <b>wa-aqua-backup-….json</b> em um comando SQL pra recolocar os dados no banco. Tudo acontece aqui no seu aparelho — nada é enviado pra internet.</p>
+
+  <div class="aviso">
+    <b>Leia antes:</b> isto restaura os <b>dados do app</b> (viveiros, rações, custos, etc.).
+    Não recria os <b>logins</b> (a lista de e-mails/senhas fica no sistema de login do Supabase, à parte).
+    Use quando os dados forem apagados/corrompidos mas o projeto ainda existir. Em dúvida, me chame no chat antes de rodar.
+  </div>
+
+  <div class="card">
+    <label class="file" id="lbl">
+      <input type="file" id="arq" accept=".json,application/json">
+      📁 Toque para escolher o arquivo de backup (.json)
+    </label>
+    <button class="btn" id="btnGerar" disabled onclick="gerar()">Gerar SQL de restauração</button>
+    <div class="erro oculto" id="erro"></div>
+  </div>
+
+  <div class="card oculto" id="cardResultado">
+    <div class="resumo" id="resumo"></div>
+    <button class="btn" onclick="baixar()">⬇️ Baixar arquivo restauracao.sql</button>
+    <button class="btn btn-2" onclick="copiar()" style="margin-top:10px">📋 Copiar SQL</button>
+    <div id="copiado" style="text-align:center;color:var(--verde);font-size:12px;margin-top:8px"></div>
+  </div>
+
+  <div class="card oculto" id="cardPassos">
+    <b style="font-size:14px">Como aplicar no Supabase</b>
+    <ol class="passos">
+      <li>Abra o painel do Supabase e entre no seu projeto.</li>
+      <li>No menu, clique em <b>SQL Editor</b>.</li>
+      <li>Clique em <b>Baixar</b> aqui, abra o arquivo <code>restauracao.sql</code> e cole todo o conteúdo (ou use <b>Copiar</b>).</li>
+      <li>Clique em <b>Run</b>. Espere terminar — pode levar alguns segundos.</li>
+      <li>Se aparecer erro na linha <code>session_replication_role</code>, me mande o print no chat que eu ajusto.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+const PK = {
+  perfis: ["user_id"], assinaturas: ["user_id"],
+  viveiros: ["id"], racoes: ["id"], biometrias: ["id"], despescas: ["id"],
+  custos: ["id"], ciclos: ["id"], boletos: ["id"], custos_fixos: ["id"],
+  produtos: ["id"], tipos_racao: ["id"], admin_historico: ["id"],
+};
+const ORDEM = ["perfis","assinaturas","produtos","tipos_racao","custos_fixos",
+  "viveiros","ciclos","racoes","biometrias","despescas","custos","boletos","admin_historico"];
+const CHUNK = 200;
+
+let _sql = "";
+let _dump = null;
+
+function q(s){ return "'" + String(s).replace(/'/g, "''") + "'"; }
+function ident(s){ return '"' + String(s).replace(/"/g, '""') + '"'; }
+function sqlVal(v){
+  if (v === null || v === undefined) return "NULL";
+  if (typeof v === "boolean") return v ? "true" : "false";
+  if (typeof v === "number") return Number.isFinite(v) ? String(v) : "NULL";
+  if (typeof v === "object") return q(JSON.stringify(v)) + "::jsonb";
+  return q(String(v));
+}
+
+function gerarSQL(dump){
+  const tabelas = dump.tabelas || {};
+  const out = [];
+  out.push("-- Restauração WA Aqua — gerado a partir do backup de " + (dump.gerado_em || "?"));
+  out.push("-- Cole tudo no SQL Editor do Supabase e clique em RUN.");
+  out.push("-- Idempotente: pode rodar de novo sem duplicar (atualiza pela chave).");
+  out.push("-- NÃO recria os logins (auth.users).");
+  out.push("");
+  out.push("BEGIN;");
+  out.push("SET session_replication_role = replica;  -- desliga FK e triggers durante a carga");
+  out.push("");
+
+  let total = 0;
+  const resumo = [];
+  for (const nome of ORDEM){
+    const rows = tabelas[nome];
+    if (!Array.isArray(rows) || rows.length === 0) continue;
+    const cols = []; const vis = new Set();
+    for (const r of rows) for (const k of Object.keys(r)) if (!vis.has(k)){ vis.add(k); cols.push(k); }
+    const pk = (PK[nome] || ["id"]).filter(c => vis.has(c));
+    const colList = cols.map(ident).join(", ");
+    const upd = cols.filter(c => !pk.includes(c));
+    const conflict = pk.length
+      ? " ON CONFLICT (" + pk.map(ident).join(", ") + ") DO UPDATE SET " +
+        upd.map(c => ident(c) + " = EXCLUDED." + ident(c)).join(", ")
+      : "";
+    out.push("-- " + nome + " (" + rows.length + " registros)");
+    for (let i = 0; i < rows.length; i += CHUNK){
+      const bloco = rows.slice(i, i + CHUNK);
+      const vals = bloco.map(r => "  (" + cols.map(c => sqlVal(r[c])).join(", ") + ")").join(",\n");
+      out.push("INSERT INTO public." + ident(nome) + " (" + colList + ") VALUES");
+      out.push(vals);
+      out.push(conflict + ";");
+    }
+    out.push("");
+    total += rows.length;
+    resumo.push({ nome, n: rows.length });
+  }
+  out.push("SET session_replication_role = DEFAULT;");
+  out.push("COMMIT;");
+  out.push("-- Fim. " + total + " registros restaurados.");
+  return { sql: out.join("\n"), resumo, total };
+}
+
+const arq = document.getElementById("arq");
+const lbl = document.getElementById("lbl");
+const btnGerar = document.getElementById("btnGerar");
+const erroEl = document.getElementById("erro");
+
+arq.addEventListener("change", () => {
+  erroEl.classList.add("oculto");
+  if (!arq.files.length){ return; }
+  const f = arq.files[0];
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      _dump = JSON.parse(rd.result);
+      if (!_dump.tabelas) throw new Error("Arquivo não parece um backup do WA Aqua (falta 'tabelas').");
+      lbl.textContent = "✅ " + f.name;
+      btnGerar.disabled = false;
+    } catch(e){
+      _dump = null; btnGerar.disabled = true;
+      erroEl.textContent = "Não consegui ler: " + e.message;
+      erroEl.classList.remove("oculto");
+    }
+  };
+  rd.readAsText(f);
+});
+
+function gerar(){
+  if (!_dump) return;
+  try {
+    const r = gerarSQL(_dump);
+    _sql = r.sql;
+    let html = "<table>";
+    html += "<tr><td><b>Backup de</b></td><td>" + (_dump.gerado_em ? _dump.gerado_em.split("T")[0] : "?") + "</td></tr>";
+    r.resumo.forEach(x => { html += "<tr><td>" + x.nome + "</td><td>" + x.n + "</td></tr>"; });
+    html += "<tr><td><b>Total</b></td><td>" + r.total + "</td></tr></table>";
+    document.getElementById("resumo").innerHTML = html;
+    document.getElementById("cardResultado").classList.remove("oculto");
+    document.getElementById("cardPassos").classList.remove("oculto");
+  } catch(e){
+    erroEl.textContent = "Erro ao gerar: " + e.message;
+    erroEl.classList.remove("oculto");
+  }
+}
+
+function baixar(){
+  const blob = new Blob([_sql], { type: "text/sql" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "restauracao.sql";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function copiar(){
+  try { await navigator.clipboard.writeText(_sql); document.getElementById("copiado").textContent = "Copiado! ✅"; }
+  catch(e){ document.getElementById("copiado").textContent = "Não deu pra copiar automático — use o botão Baixar."; }
+}
+</script>
+</body>
+</html>
