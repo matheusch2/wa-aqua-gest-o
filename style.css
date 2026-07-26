@@ -15,7 +15,7 @@ body {
 }
 
 .topo {
-    background: linear-gradient(135deg, #065f59 0%, #0b7a70 55%, #14998e 100%);
+    background: linear-gradient(135deg, #04433f 0%, #055a53 50%, #066b63 100%);
     padding: 14px 18px 18px;
     width: 100%;
     box-sizing: border-box;
@@ -318,7 +318,7 @@ button {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: rgb(8, 118, 108);
+    background: #0b7a70;
     color: white;
     border: none;
     border-radius: 14px;
@@ -330,20 +330,21 @@ button {
     text-align: center;
     min-height: 80px;
     box-shadow: 0 3px 9px rgba(6,107,99,0.20);
-    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .botao-gestao:active {
     transform: scale(0.98);
-    filter: brightness(0.93);
+    filter: brightness(0.95);
     box-shadow: 0 1px 4px rgba(6,107,99,0.16);
 }
 
-/* Hierarquia por grupo de funcionalidade — variações sutis de tom (celular) */
-.botao-gestao.g-cultivo    { background: rgb(9, 122, 111); }
-.botao-gestao.g-historico  { background: rgb(7, 104, 96); }
-.botao-gestao.g-financeiro { background: rgb(11, 128, 117); }
-.botao-gestao.g-conta      { background: rgb(6, 92, 86); }
+/* "Verde inteligente": os cards seguem todos verdes; o ícone é que ganha o tom
+   do módulo, pra o olho identificar o grupo sem perder a identidade da marca. */
+.botao-gestao.g-cultivo    .btn-svg { stroke: #ffffff; }  /* identidade */
+.botao-gestao.g-historico  .btn-svg { stroke: #8fd3f4; }  /* azul petróleo */
+.botao-gestao.g-financeiro .btn-svg { stroke: #fcd34d; }  /* âmbar / dourado */
+.botao-gestao.g-conta      .btn-svg { stroke: #c9b8ff; }  /* roxo discreto */
 
 .btn-svg {
     width: 34px;
