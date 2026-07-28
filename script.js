@@ -1621,7 +1621,7 @@ function abrirVerTiposRacao() {
       </div>
       <div class="form-corpo">
         <div class="lista-produtos">
-          ${tiposRacao.map((t, i) => `
+          ${tiposRacao.map((t, i) => ({ t, i })).sort((a, b) => a.t.nome.localeCompare(b.t.nome, "pt-BR", { sensitivity: "base" })).map(({ t, i }) => `
             <div class="produto-item" id="tipo-racao-item-${i}">
               <div class="produto-info">
                 <span class="produto-nome">${t.nome}</span>
@@ -6954,7 +6954,7 @@ function abrirVerProdutos() {
         ${produtos.length === 0
           ? `<p class="sobrevivencia-texto">Nenhum produto cadastrado.</p>`
           : `<div class="lista-produtos">
-              ${produtos.map((p, i) => `
+              ${produtos.map((p, i) => ({ p, i })).sort((a, b) => a.p.nome.localeCompare(b.p.nome, "pt-BR", { sensitivity: "base" })).map(({ p, i }) => `
                 <div class="produto-item" id="produto-item-${i}">
                   <div class="produto-info">
                     <span class="produto-nome">${p.nome}</span>
