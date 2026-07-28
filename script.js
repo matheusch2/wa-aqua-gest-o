@@ -3852,21 +3852,28 @@ function _statusBoleto(dataCompra, prazoDias) {
 
 function verificarBoletosVencendo() {
   if (!boletos.length) return;
-  const alertas = boletos.filter(b => !b.pago && _statusBoleto(b.dataCompra, b.prazoDias).tipo !== "ok");
+  const alertas = boletos
+    .filter(b => !b.pago)
+    .map(b => ({ b, st: _statusBoleto(b.dataCompra, b.prazoDias) }))
+    .filter(x => x.st.tipo !== "ok");
   if (!alertas.length) return;
+  // Ao tocar no aviso, vai DIRETO pros boletos — já filtrado pelo que precisa de atenção
+  const temVencido = alertas.some(x => x.st.tipo === "vencido");
+  const temVencendo = alertas.some(x => x.st.tipo === "hoje" || x.st.tipo === "proximo");
+  const filtroBanner = temVencido && temVencendo ? "todos" : (temVencido ? "vencidos" : "vencendo");
   const area = document.getElementById("area-gestao");
   const existente = document.getElementById("banner-boletos-alerta");
   if (existente) existente.remove();
   const div = document.createElement("div");
   div.id = "banner-boletos-alerta";
   div.innerHTML = `
-    <div class="boleto-banner" onclick="abrirMenuFinanceiro()">
+    <div class="boleto-banner" onclick="abrirBoletos('${filtroBanner}')">
       <div class="boleto-banner-icone">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </div>
       <div class="boleto-banner-texto">
         <strong>${alertas.length} boleto${alertas.length > 1 ? "s" : ""} ${alertas.length > 1 ? "precisam" : "precisa"} de atenção</strong>
-        <span>${alertas.map(a => a.nome).join(", ")}</span>
+        <span>${alertas.map(x => x.b.nome).join(", ")}</span>
       </div>
       <span class="boleto-banner-seta">›</span>
     </div>
