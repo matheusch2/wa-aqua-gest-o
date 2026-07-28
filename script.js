@@ -1079,7 +1079,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       <div class="vc-topo">
         <div class="vc-icone-box">🦐</div>
         <div class="vc-titulo-area">
-          <h3>${viveiro.nome}</h3>
+          <h3>${viveiro.nome}<button class="vc-editar-nome" onclick="editarNomeViveiro(${indexOriginal})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></h3>
           ${viveiro.dataPovoamento
             ? `<span class="vc-badge-cultivo">● Em cultivo</span>`
             : `<span class="vc-badge-vazio">● Vazio</span>`}
@@ -1163,6 +1163,69 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   if (card && direcao) {
     card.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
   }
+}
+
+function editarNomeViveiro(index) {
+  if (_bloqueioViveiro(index)) return;
+  const v = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <h2 class="form-titulo">Editar nome do viveiro</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Nome do viveiro</label>
+          </div>
+          <input type="text" id="editNomeViveiro" value="${(v.nome || "").replace(/"/g, "&quot;")}" placeholder="Ex: Viveiro - 2">
+        </div>
+        <div id="msg-edit-nome-viv" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
+        <button class="botao-salvar" onclick="salvarNomeViveiro(${index}, this)">Salvar</button>
+        <button class="botao-voltar-form" style="margin-top:10px" onclick="mostrarListaViveiros(${_posicaoViveiro(index)})">Cancelar</button>
+      </div>
+    </div>
+  `;
+  setTimeout(() => document.getElementById("editNomeViveiro")?.focus(), 60);
+}
+
+// Posição do viveiro na lista ordenada (mesma ordem de mostrarListaViveiros)
+function _posicaoViveiro(index) {
+  const alvo = viveiros[index];
+  const ordenados = [...viveiros].sort((a, b) => {
+    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
+    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
+    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
+  });
+  return Math.max(0, ordenados.indexOf(alvo));
+}
+
+async function salvarNomeViveiro(index, botao) {
+  if (botao?.disabled) return;
+  if (_bloqueioViveiro(index)) return;
+  const novo = (document.getElementById("editNomeViveiro")?.value || "").trim();
+  const msg = document.getElementById("msg-edit-nome-viv");
+  const erro = (m) => { if (msg) { msg.textContent = m; msg.style.display = "block"; } };
+  if (msg) msg.style.display = "none";
+  if (!novo) { erro("Digite um nome para o viveiro."); return; }
+  if (viveiros.some((vv, i) => i !== index && (vv.nome || "").trim().toLowerCase() === novo.toLowerCase())) {
+    erro("Já existe um viveiro com esse nome."); return;
+  }
+  if (novo === (viveiros[index].nome || "").trim()) { mostrarListaViveiros(_posicaoViveiro(index)); return; }
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); erro("Sessão expirada. Entre novamente."); return; }
+  const { error } = await supabaseClient.from("viveiros")
+    .update({ nome: novo }).eq("id", viveiros[index].id).eq("user_id", usuario.id);
+  if (error) { restaurar(); erro("Erro ao salvar: " + error.message); return; }
+  viveiros[index].nome = novo;
+  _toastSucesso("Nome do viveiro atualizado!");
+  mostrarListaViveiros(_posicaoViveiro(index));
 }
 
 function abrirViveiro(index) {

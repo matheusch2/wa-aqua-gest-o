@@ -385,6 +385,29 @@ button {
     font-weight: 800;
 }
 
+.vc-editar-nome {
+    background: none;
+    border: none;
+    padding: 3px;
+    margin-left: 7px;
+    cursor: pointer;
+    vertical-align: middle;
+    line-height: 0;
+    border-radius: 6px;
+}
+.vc-editar-nome svg {
+    width: 15px;
+    height: 15px;
+    stroke: #9ca3af;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.vc-editar-nome:active { background: #f1f5f4; }
+.vc-editar-nome:hover svg { stroke: rgb(6,107,99); }
+body.tema-escuro .vc-editar-nome svg { stroke: #6b7280; }
+
 .vc-badge-cultivo {
     background: #dcfce7;
     color: #16a34a;
