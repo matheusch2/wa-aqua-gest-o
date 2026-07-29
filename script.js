@@ -1175,7 +1175,7 @@ function editarNomeViveiro(index) {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </div>
-        <h2 class="form-titulo">Editar nome do viveiro</h2>
+        <h2 class="form-titulo">Editar viveiro</h2>
       </div>
       <div class="form-corpo">
         <div class="campo-form">
@@ -1185,8 +1185,53 @@ function editarNomeViveiro(index) {
           </div>
           <input type="text" id="editNomeViveiro" value="${(v.nome || "").replace(/"/g, "&quot;")}" placeholder="Ex: Viveiro - 2">
         </div>
+
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            <label>Tamanho do viveiro</label>
+          </div>
+          <div class="campo-input-unidade">
+            <input type="number" step="any" id="editTamanhoViveiro" value="${v.tamanho || ""}" placeholder="Ex: 0.5">
+            <span class="campo-unidade">ha</span>
+          </div>
+        </div>
+
+        ${v.dataPovoamento ? `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data de povoamento</label>
+          </div>
+          <input type="date" id="editDataPovoamento" value="${v.dataPovoamento || ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+            <label>Total povoado</label>
+          </div>
+          <input type="text" id="editTotalPovoado" value="${v.totalPovoado ? Number(String(v.totalPovoado).replace(/\D/g, "")).toLocaleString("pt-BR") : ""}" placeholder="Ex: 250.000" oninput="formatarPopulacao(this)">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <label>Laboratório</label>
+          </div>
+          <input type="text" id="editLaboratorio" value="${(v.laboratorio || "").replace(/"/g, "&quot;")}" placeholder="Ex: Aquatec">
+        </div>
+        ` : `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Início da preparação</label>
+          </div>
+          <input type="date" id="editDataPreparacao" value="${v.dataPreparacao || ""}">
+        </div>
+        <p class="rc-print-dica">Data de povoamento, total povoado e laboratório são definidos ao iniciar o cultivo.</p>
+        `}
+
         <div id="msg-edit-nome-viv" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarNomeViveiro(${index}, this)">Salvar</button>
+        <button class="botao-salvar" onclick="salvarNomeViveiro(${index}, this)">Salvar alterações</button>
         <button class="botao-voltar-form" style="margin-top:10px" onclick="mostrarListaViveiros(${_posicaoViveiro(index)})">Cancelar</button>
       </div>
     </div>
@@ -1216,15 +1261,38 @@ async function salvarNomeViveiro(index, botao) {
   if (viveiros.some((vv, i) => i !== index && (vv.nome || "").trim().toLowerCase() === novo.toLowerCase())) {
     erro("Já existe um viveiro com esse nome."); return;
   }
-  if (novo === (viveiros[index].nome || "").trim()) { mostrarListaViveiros(_posicaoViveiro(index)); return; }
+
+  const v = viveiros[index];
+  const tamanho = (document.getElementById("editTamanhoViveiro")?.value || "").trim();
+  if (!tamanho || Number(tamanho) <= 0) { erro("Informe o tamanho do viveiro."); return; }
+
+  const dados = { nome: novo, tamanho };
+  const mem = { nome: novo, tamanho };
+
+  if (v.dataPovoamento) {
+    const dataPov = document.getElementById("editDataPovoamento")?.value || "";
+    const total = (document.getElementById("editTotalPovoado")?.value || "").replace(/\D/g, "");
+    const laboratorio = (document.getElementById("editLaboratorio")?.value || "").trim();
+    if (!dataPov) { erro("Informe a data de povoamento."); return; }
+    if (!total || Number(total) <= 0) { erro("Informe o total povoado."); return; }
+    if (!laboratorio) { erro("Informe o laboratório."); return; }
+    dados.data_povoamento = dataPov; dados.total_povoado = total; dados.laboratorio = laboratorio;
+    mem.dataPovoamento = dataPov; mem.totalPovoado = total; mem.laboratorio = laboratorio;
+  } else {
+    const dataPrep = document.getElementById("editDataPreparacao")?.value || "";
+    if (!dataPrep) { erro("Informe a data de início da preparação."); return; }
+    dados.data_preparacao = dataPrep;
+    mem.dataPreparacao = dataPrep;
+  }
+
   const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); erro("Sessão expirada. Entre novamente."); return; }
   const { error } = await supabaseClient.from("viveiros")
-    .update({ nome: novo }).eq("id", viveiros[index].id).eq("user_id", usuario.id);
+    .update(dados).eq("id", v.id).eq("user_id", usuario.id);
   if (error) { restaurar(); erro("Erro ao salvar: " + error.message); return; }
-  viveiros[index].nome = novo;
-  _toastSucesso("Nome do viveiro atualizado!");
+  Object.assign(viveiros[index], mem);
+  _toastSucesso("Viveiro atualizado!");
   mostrarListaViveiros(_posicaoViveiro(index));
 }
 
