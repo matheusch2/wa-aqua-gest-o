@@ -380,13 +380,6 @@ button {
     text-align: left;
 }
 
-.vc-titulo-linha {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 6px;
-}
-
 .vc-titulo-area h3.vc-nome-viveiro {
     margin: 0 0 4px 0;
     color: #111827;
@@ -397,14 +390,14 @@ button {
 }
 
 .vc-editar-nome {
-    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
+    margin-left: 6px;
     background: none;
     border: none;
     padding: 2px;
-    margin: 0 0 4px 0;
     cursor: pointer;
     line-height: 0;
     border-radius: 6px;
