@@ -385,7 +385,6 @@ button {
     align-items: center;
     flex-wrap: nowrap;
     gap: 6px;
-    min-width: 0;
 }
 
 .vc-titulo-area h3.vc-nome-viveiro {
@@ -395,9 +394,6 @@ button {
     font-weight: 800;
     line-height: 1.2;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
 }
 
 .vc-editar-nome {
