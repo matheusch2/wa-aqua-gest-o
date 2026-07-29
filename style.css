@@ -346,6 +346,7 @@ button {
 }
 
 .viveiro-card {
+    position: relative;
     background: white;
     border-radius: 20px;
     padding: 20px;
@@ -390,30 +391,33 @@ button {
 }
 
 .vc-editar-nome {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    vertical-align: middle;
-    margin-left: 6px;
-    background: none;
+    background: #f1f5f4;
     border: none;
-    padding: 2px;
+    padding: 7px;
     cursor: pointer;
     line-height: 0;
-    border-radius: 6px;
+    border-radius: 9px;
 }
 .vc-editar-nome svg {
-    width: 15px;
-    height: 15px;
-    stroke: #9ca3af;
+    width: 16px;
+    height: 16px;
+    stroke: #6b7280;
     fill: none;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-.vc-editar-nome:active { background: #f1f5f4; }
+.vc-editar-nome:active { background: #e2e8e6; }
 .vc-editar-nome:hover svg { stroke: rgb(6,107,99); }
-body.tema-escuro .vc-editar-nome svg { stroke: #6b7280; }
+body.tema-escuro .vc-editar-nome { background: #2b3a37; }
+body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
 
 .vc-badge-cultivo {
     background: #dcfce7;
