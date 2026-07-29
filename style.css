@@ -392,8 +392,8 @@ button {
 
 .vc-editar-nome {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 6px;
+    right: 8px;
     z-index: 2;
     width: auto;
     display: inline-flex;
