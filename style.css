@@ -395,6 +395,7 @@ button {
     top: 12px;
     right: 12px;
     z-index: 2;
+    width: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
