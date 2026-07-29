@@ -392,16 +392,17 @@ button {
 
 .vc-editar-nome {
     position: absolute;
-    top: 6px;
-    right: 8px;
+    top: 2px;
+    right: 3px;
     z-index: 2;
     width: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f4;
+    background: none;
+    opacity: 0.35;
     border: none;
-    padding: 7px;
+    padding: 6px;
     cursor: pointer;
     line-height: 0;
     border-radius: 9px;
@@ -415,9 +416,9 @@ button {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-.vc-editar-nome:active { background: #e2e8e6; }
+.vc-editar-nome:active { opacity: 0.75; }
+.vc-editar-nome:hover { opacity: 0.8; }
 .vc-editar-nome:hover svg { stroke: rgb(6,107,99); }
-body.tema-escuro .vc-editar-nome { background: #2b3a37; }
 body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
 
 .vc-badge-cultivo {
