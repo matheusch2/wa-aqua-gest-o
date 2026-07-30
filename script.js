@@ -302,15 +302,15 @@ async function abrirFazenda() {
       <div class="form-corpo" style="padding:0">
         <div class="campo-form">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><label>Nome da fazenda</label></div>
-          <input type="text" id="fzNome" value="${nome}" placeholder="Ex: Fazenda São João">
+          <input type="text" id="fzNome" value="${_attr(nome)}" placeholder="Ex: Fazenda São João">
         </div>
         <div class="campo-form">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><label>Nome do proprietário</label></div>
-          <input type="text" id="fzProp" value="${prop}" placeholder="Seu nome">
+          <input type="text" id="fzProp" value="${_attr(prop)}" placeholder="Seu nome">
         </div>
         <div class="campo-form">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg><label>E-mail</label></div>
-          <input type="email" id="fzEmail" value="${email}" placeholder="seu@email.com">
+          <input type="email" id="fzEmail" value="${_attr(email)}" placeholder="seu@email.com">
         </div>
         <div id="msg-fazenda" style="display:none;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar" onclick="salvarFazenda()">
@@ -781,6 +781,13 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
 }
 
 // ─── FUNÇÕES UTILITÁRIAS (antes ausentes) ───────────────────────────────────
+
+// Escapa texto para dentro de um atributo HTML de aspas duplas (value="...").
+// Sem isso, um nome como Fazenda "Boa Vista" fecha o atributo antes da hora: o
+// campo abre truncado em Fazenda e, ao salvar por cima, o resto é perdido.
+function _attr(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
 
 // Formata um Date como "AAAA-MM-DD" no fuso LOCAL do aparelho.
 // Não use toISOString() para isso: ela converte para UTC, e às 21h de Brasília
@@ -1859,7 +1866,7 @@ function abrirEdicaoTipoRacao(i) {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <label>Nome da ração</label>
           </div>
-          <input type="text" id="editNomeTipoRacao" value="${t.nome}">
+          <input type="text" id="editNomeTipoRacao" value="${_attr(t.nome)}">
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -4600,6 +4607,7 @@ async function salvarCustoFixo(index) {
 }
 
 async function toggleCustoFixo(index) {
+  if (_bloqueioEdicao()) return; // ativar/desativar muda o rateio de todos os custos
   const c = custosFixos[index];
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
@@ -5063,14 +5071,14 @@ function abrirFormBoleto(index) {
           <svg class="campo-icone" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           <label>Nome do boleto</label>
         </div>
-        <input type="text" id="boleto-nome" placeholder="Ex: Ração ABC" value="${b ? b.nome : ""}">
+        <input type="text" id="boleto-nome" placeholder="Ex: Ração ABC" value="${_attr(b ? b.nome : "")}">
       </div>
       <div class="campo-form">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <label>Fornecedor</label>
         </div>
-        <input type="text" id="boleto-fornecedor" placeholder="Ex: Loja do João" value="${b ? b.fornecedor : ""}">
+        <input type="text" id="boleto-fornecedor" placeholder="Ex: Loja do João" value="${_attr(b ? b.fornecedor : "")}">
       </div>
       <div class="campo-form">
         <div class="campo-label">
@@ -6687,14 +6695,24 @@ async function _aplicarProtocoloRacaoRetroativo(index, prot) {
   return { n, valor, pulados, total: racoes.length };
 }
 
-// Põe em dia os protocolos semanais ao abrir o app
-async function aplicarProtocolosSemanais() {
+// Põe em dia os protocolos semanais.
+// indexAlvo definido = roda só naquele viveiro (é o caso quando o usuário acaba
+// de salvar ou ativar um manejo: o manejo pertence àquele viveiro, então não faz
+// sentido disparar lançamento automático nos outros).
+// indexAlvo indefinido = varredura de todos ao abrir o app (põe em dia).
+async function aplicarProtocolosSemanais(indexAlvo) {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const hojeStr = _maYmd(hoje);
   const aSalvar = [];
-  for (let index = 0; index < viveiros.length; index++) {
+  const soUm = Number.isInteger(indexAlvo);
+  const ini = soUm ? indexAlvo : 0;
+  const fim = soUm ? indexAlvo + 1 : viveiros.length;
+  for (let index = ini; index < fim; index++) {
     const v = viveiros[index];
+    if (!v) continue;
     if (!v.dataPovoamento) continue;
+    // Viveiro fora do plano é somente leitura: não lança custo automático nele.
+    if (_viveiroForaDoLimite(index)) continue;
     const prots = (v.protocolos || []).filter(p => p.ativo && p.tipo === "semanal" && Array.isArray(p.dias) && p.dias.length);
     let alterou = false;
     for (const p of prots) {
@@ -6766,10 +6784,14 @@ function abrirManejoAutomatico(index) {
 }
 
 async function toggleProtocolo(index, protId) {
+  if (_bloqueioViveiro(index)) return;
   const p = (viveiros[index].protocolos || []).find(x => x.id === protId);
   if (!p) return;
   p.ativo = !p.ativo;
-  await salvarProtocolos(index);
+  const ok = await salvarProtocolos(index);
+  if (!ok) { p.ativo = !p.ativo; return; } // desfaz na memória se o banco recusou
+  // Ao ATIVAR um manejo semanal, põe em dia os lançamentos — só deste viveiro.
+  if (p.ativo && p.tipo === "semanal") await aplicarProtocolosSemanais(index);
   abrirManejoAutomatico(index);
 }
 
@@ -6923,9 +6945,9 @@ async function salvarProtocolo(index, protId) {
   const ok = await salvarProtocolos(index);
   if (!ok) return;
   _toastSucesso("Manejo salvo!");
-  // Aplica lançamentos (pode envolver vários custos)
+  // Aplica lançamentos (pode envolver vários custos) — só neste viveiro
   if (tipo === "semanal") {
-    await aplicarProtocolosSemanais();
+    await aplicarProtocolosSemanais(index);
   } else if (retro) {
     const r = await _aplicarProtocoloRacaoRetroativo(index, prot);
     if (r.n > 0) {
@@ -7054,6 +7076,11 @@ function calcularPreviaKg() {
 
 async function salvarProduto() {
   if (_bloqueioEdicao()) return;
+  // Trava ANTES de qualquer await: a checagem de duplicado lê o array em memória,
+  // que só é atualizado depois do insert. Dois toques rápidos passavam os dois
+  // pela checagem e gravavam o mesmo insumo duas vezes.
+  const botaoTopo = document.querySelector(".botao-salvar");
+  if (botaoTopo?.disabled) return;
   const nome = document.getElementById("nomeProduto").value.trim();
   const categoria = document.getElementById("categoriaProduto").value;
   const pesoKg = parseFloat(document.getElementById("pesoKgProduto").value);
@@ -7072,12 +7099,17 @@ async function salvarProduto() {
   }
   if (erroProd) erroProd.style.display = "none";
 
+  // Passou nas validações: fecha a porta antes do primeiro await
+  const botao = botaoTopo;
+  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) {
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    return;
+  }
 
   const custoPorGrama = valorPago / (pesoKg * 1000);
-  const botao = document.querySelector(".botao-salvar");
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
 
   const { data: salvo, error } = await supabaseClient
     .from("produtos")
@@ -7193,7 +7225,7 @@ function abrirEdicaoProduto(i) {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             <label>Nome do produto</label>
           </div>
-          <input type="text" id="editNomeProduto" value="${p.nome}">
+          <input type="text" id="editNomeProduto" value="${_attr(p.nome)}">
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -7991,7 +8023,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             <label>Descrição</label>
           </div>
-          <input type="text" id="nomeEdicaoCusto" value="${custo.nomeProduto}" placeholder="Ex: Ração, Pós larva...">
+          <input type="text" id="nomeEdicaoCusto" value="${_attr(custo.nomeProduto)}" placeholder="Ex: Ração, Pós larva...">
         </div>
         <div class="campo-form">
           <div class="campo-label">
