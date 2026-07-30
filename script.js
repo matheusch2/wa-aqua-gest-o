@@ -5872,11 +5872,8 @@ function mostrarViveiroSemCiclo(index) {
       ${viveiro.dataPreparacao ? `
       <div class="prep-status">
         <div class="prep-status-ico"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg></div>
-        <div class="prep-status-txt">
-          <span class="prep-status-lbl">Em preparação</span>
-          <strong class="prep-status-dias">${calcularDiasCultivo(viveiro.dataPreparacao)} dias</strong>
-          <small>desde ${formatarData(viveiro.dataPreparacao)}</small>
-        </div>
+        <span class="prep-status-txt"><strong>${calcularDiasCultivo(viveiro.dataPreparacao)} dias</strong> em preparação</span>
+        <small class="prep-status-desde">desde ${formatarData(viveiro.dataPreparacao)}</small>
       </div>
 
       <button class="botao-salvar" onclick="mostrarFormularioReinicio(${index}, 'povoar')" style="margin-top:4px">
@@ -5886,6 +5883,10 @@ function mostrarViveiroSemCiclo(index) {
       <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})" style="margin-top:8px">
         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Lançar custo de preparação
+      </button>
+      <button class="botao-voltar-form" onclick="verCustosPreparacao(${index})" style="margin-top:8px">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Ver custo de preparação
       </button>
       ` : `
       <div class="viveiro-sem-ciclo-msg">
@@ -7500,6 +7501,13 @@ async function salvarOutroCusto(index) {
   if (erroOutro) erroOutro.style.display = "none";
 
   if (!descricao) { _erroOutro("Digite o nome do custo."); return; }
+  // "Ração" é nome reservado: o custo de ração é derivado dos lançamentos, e
+  // _montarCustoRacaoVirtual descarta qualquer registro com nome/categoria
+  // "Ração" do ciclo ativo — o lançamento manual sumiria da tela.
+  if (descricao.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() === "racao") {
+    _erroOutro('Para custo de ração use "Lançar ração" — esse nome é reservado.');
+    return;
+  }
   const categoria = descricao;
   const valor = parseMoedaBR(document.getElementById("valorOutroCusto").value);
 
@@ -7585,10 +7593,31 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".cd-menu-wrap")) _cdFecharMenus();
 });
 
+// Custos pertencentes ao escopo pedido. "prep" = só a preparação atual (mesmo
+// ciclo do viveiro; para lançamentos antigos sem ciclo, a partir da data de
+// início da preparação). Sem isso, custos de ciclos já encerrados apareceriam
+// na tela "custo de preparação", pois viveiro.custos guarda todo o histórico.
+// Devolve pares { c, i } onde `i` é o índice REAL em viveiro.custos. Editar e
+// excluir indexam o array original (viveiros[x].custos[i]), por isso o índice
+// nunca pode vir de um array já filtrado — sairia mexendo no custo errado.
+function _custosDoEscopoPares(viveiro, escopo) {
+  const pares = (viveiro.custos || []).map((c, i) => ({ c, i }));
+  if (escopo !== "prep") return pares;
+  const ini = viveiro.dataPreparacao || "";
+  return pares.filter(({ c }) => (viveiro.cicloId && c.cicloId)
+    ? c.cicloId === viveiro.cicloId
+    : (!ini || String(c.data || "") >= ini));
+}
+
+function _custosDoEscopo(viveiro, escopo) {
+  return _custosDoEscopoPares(viveiro, escopo).map(p => p.c);
+}
+
 function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
-  const custos = viveiro.custos || [];
+  const pares = _custosDoEscopoPares(viveiro, direto);
+  const custos = pares.map(p => p.c);
   // Rateio dos custos fixos (funcionário/energia) do ciclo atual — só de leitura,
   // para o total desta tela bater com o "Custo parcial" do viveiro.
   const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
@@ -7615,7 +7644,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     // Extrato: cada lançamento com a sua data (mais recente primeiro),
     // agrupado por dia. Sem ícone; nome + valor na 1ª linha, categoria na 2ª,
     // quantidade + menu de 3 pontinhos na 3ª.
-    const itens = custos.map((c, i) => ({ c, i }))
+    const itens = pares.slice()
       .sort((a, b) => String(b.c.data || "").localeCompare(String(a.c.data || "")));
     if (itens.length === 0) {
       corpo = `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`;
@@ -7641,8 +7670,8 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
               ${racao ? "" : `<div class="cd-menu-wrap">
                 <button class="cd-menu-btn" onclick="_cdToggleMenu('${menuId}')" aria-label="Opções">⋮</button>
                 <div class="cd-menu" id="${menuId}">
-                  <button onclick="_cdFecharMenus();abrirEdicaoCusto(${index},${i},'${elementoId}',${direto})">Editar lançamento</button>
-                  <button class="cd-menu-excluir" onclick="_cdFecharMenus();confirmarExcluirCusto(${index},${i},'${elementoId}',${direto})">Excluir lançamento</button>
+                  <button onclick="_cdFecharMenus();abrirEdicaoCusto(${index},${i},'${elementoId}',${_dArg(direto)})">Editar lançamento</button>
+                  <button class="cd-menu-excluir" onclick="_cdFecharMenus();confirmarExcluirCusto(${index},${i},'${elementoId}',${_dArg(direto)})">Excluir lançamento</button>
                 </div>
               </div>`}
             </div>`
@@ -7689,8 +7718,8 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
             <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
             <div class="custo-card-acoes">${g.soLeitura
               ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
-              : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">✏️</button>
-              <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${encodeURIComponent(g.chave)}','${elementoId}',${direto})">🗑️</button>`}
+              : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${_encArg(g.chave)}','${elementoId}',${_dArg(direto)})">✏️</button>
+              <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${_encArg(g.chave)}','${elementoId}',${_dArg(direto)})">🗑️</button>`}
             </div>
           </div>`;
         }).join("");
@@ -7707,10 +7736,10 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
 
   resultado.innerHTML = `
     <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
-    ${custos.length > 0 ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
+    ${(custos.length > 0 || rateioFixo > 0) ? `<button class="custo-imprimir" onclick="imprimirCustos(${index},${_dArg(direto)})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
     <div class="custo-modo-toggle">
-      <button class="cmt-btn ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Geral</button>
-      <button class="cmt-btn ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Detalhado</button>
+      <button class="cmt-btn ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Geral</button>
+      <button class="cmt-btn ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Detalhado</button>
     </div>
     <div class="custo-grupo-lista${_custoModo === "detalhado" ? " custo-grupo-lista-det" : ""}">
       ${corpo}
@@ -7721,14 +7750,40 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
       <span class="custo-total-lbl">Total de custos</span>
       <span class="custo-total-val">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
     </div>
-    <button class="botao-voltar-form" style="margin-top:14px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">Voltar</button>
+    <button class="botao-voltar-form" style="margin-top:14px" onclick="${_custoVoltarAcao(index, direto)}">Voltar</button>
   `;
+}
+
+// Serializa o parâmetro `direto` para dentro de um onclick="..." (atributo com
+// aspas duplas): booleano vira true/false; texto vira 'prep' com aspas simples,
+// pois aspas duplas encerrariam o atributo.
+function _dArg(d) { return typeof d === "string" ? `'${d}'` : String(!!d); }
+
+// encodeURIComponent NÃO escapa o apóstrofo, que fecharia o literal de string
+// dentro de onclick="...(' ... ')". decodeURIComponent devolve %27 como ', então
+// os consumidores continuam recebendo a chave original.
+function _encArg(s) { return encodeURIComponent(s).replace(/'/g, "%27"); }
+
+// Destino do "Voltar" da tela de custos, conforme de onde ela foi aberta:
+// "prep" = tela do viveiro em preparação; true = histórico direto; false = opções.
+function _custoVoltarAcao(index, direto) {
+  if (direto === "prep") return `mostrarViveiroSemCiclo(${index})`;
+  return direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`;
+}
+
+// Custos do viveiro que ainda está em preparação (aberto pela tela do viveiro)
+function verCustosPreparacao(index) {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  // O wrapper .form-lancamento mantém a largura confortável no desktop
+  area.innerHTML = `<div class="form-lancamento"><div id="prep-custos-area"></div></div>`;
+  renderizarHistoricoCustos(index, "prep-custos-area", "prep");
 }
 
 function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
   const chave = decodeURIComponent(chaveEnc);
   const v = viveiros[index];
-  const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
+  const grupo = _custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
   if (grupo.some(_ehCustoRacao)) {
     _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
@@ -7770,8 +7825,8 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
         ${prod ? `<p class="rc-print-dica">Recalculado pela quantidade (R$ ${formatarNumeroBR(prod.custoPorGrama * 1000, 2)}/kg). Você ainda pode ajustar o valor na mão.</p>` : ""}
       </div>
       <div id="msg-edit-custo" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-      <button class="botao-salvar" onclick="salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto})">Salvar alterações</button>
-      <button class="botao-voltar-form" style="margin-top:10px" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Voltar</button>
+      <button class="botao-salvar" onclick="salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${_dArg(direto)})">Salvar alterações</button>
+      <button class="botao-voltar-form" style="margin-top:10px" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Voltar</button>
     </div>
   `;
 }
@@ -7784,7 +7839,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   const msg = document.getElementById("msg-edit-custo");
   const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
   const v = viveiros[index];
-  const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
+  const grupo = _custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
   if (grupo.some(_ehCustoRacao)) {
     _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
@@ -7841,8 +7896,8 @@ function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
   row.innerHTML = `<div class="custo-grupo-conf">
     <span>Excluir todos os lançamentos deste item?</span>
     <div class="custo-grupo-conf-btns">
-      <button class="ciclo-btn-relatorio" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${direto})">Cancelar</button>
-      <button class="ciclo-btn-excluir" onclick="excluirGrupoCusto(${index},'${chaveEnc}','${elementoId}',${direto},this)">Excluir</button>
+      <button class="ciclo-btn-relatorio" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Cancelar</button>
+      <button class="ciclo-btn-excluir" onclick="excluirGrupoCusto(${index},'${chaveEnc}','${elementoId}',${_dArg(direto)},this)">Excluir</button>
     </div>
   </div>`;
 }
@@ -7852,14 +7907,14 @@ async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
   if (botao?.disabled) return;
   const chave = decodeURIComponent(chaveEnc);
   const v = viveiros[index];
-  if ((v.custos || []).filter(c => _chaveCusto(c) === chave).some(_ehCustoRacao)) {
+  if (_custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave).some(_ehCustoRacao)) {
     _toastErro("O custo de Ração é calculado dos lançamentos — exclua os lançamentos de ração.");
     return;
   }
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
-  const ids = (v.custos || []).filter(c => _chaveCusto(c) === chave).map(c => c.id).filter(Boolean);
+  const ids = _custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave).map(c => c.id).filter(Boolean);
   if (ids.length) {
     const { error } = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
     if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
@@ -7876,7 +7931,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
     return;
   }
   const resultado = document.getElementById(elementoId);
-  const acaoVoltar = `renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${direto}); restaurarScroll()`;
+  const acaoVoltar = `renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${_dArg(direto)}); restaurarScroll()`;
 
   resultado.innerHTML = `
     <div class="form-lancamento">
@@ -7911,7 +7966,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
             onblur="formatarMoedaBlur(this)">
         </div>
         <div id="msg-edit-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarEdicaoCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto})">
+        <button class="botao-salvar" onclick="salvarEdicaoCusto(${viveiroIndex},${custoIndex},'${elementoId}',${_dArg(direto)})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
@@ -7953,14 +8008,17 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
   viveiros[viveiroIndex].custos[custoIndex].data = novaData;
   viveiros[viveiroIndex].custos[custoIndex].nomeProduto = novoNome;
   viveiros[viveiroIndex].custos[custoIndex].valor = novoValor;
+  // O banco também recebe categoria: novoNome — sem isto a memória ficava com a
+  // categoria antiga até o próximo recarregamento.
+  viveiros[viveiroIndex].custos[custoIndex].categoria = novoNome;
 
   renderizarHistoricoCustos(viveiroIndex, elementoId, direto);
   restaurarScroll();
 }
 
-function imprimirCustos(viveiroIndex) {
+function imprimirCustos(viveiroIndex, escopo) {
   const viveiro = viveiros[viveiroIndex];
-  const custos = viveiro.custos || [];
+  const custos = _custosDoEscopo(viveiro, escopo);
   const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
@@ -8018,8 +8076,8 @@ function confirmarExcluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
     <div class="confirmar-exclusao-custo" style="grid-column:1/-1">
       <span>Excluir este custo?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCusto(${viveiroIndex},${custoIndex},'${elementoId}',${direto},this)">Sim, excluir</button>
-        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${direto})">Cancelar</button>
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCusto(${viveiroIndex},${custoIndex},'${elementoId}',${_dArg(direto)},this)">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoCustos(${viveiroIndex},'${elementoId}',${_dArg(direto)})">Cancelar</button>
       </div>
     </div>
   `;
