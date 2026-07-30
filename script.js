@@ -487,7 +487,7 @@ async function abrirMinhaConta() {
     const venc = new Date(user.created_at);
     if (!isNaN(venc.getTime())) {
       venc.setFullYear(venc.getFullYear() + 1);
-      vencStr = _fmtDataISO(venc.toISOString());
+      vencStr = _fmtDataISO(_dataLocalISO(venc));
       proxStr = vencStr;
     }
   }
@@ -664,18 +664,41 @@ function fmtG(v) {
   return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+// Interpreta um valor em reais digitado por brasileiro. Devolve null quando não
+// dá para entender. Vírgula é SEMPRE decimal. O ponto é separador de milhar,
+// exceto quando é o único ponto seguido de 1 ou 2 dígitos ("250.75", "1,5" →
+// "1.5"): aí o usuário claramente quis decimal, porque o teclado ofereceu ponto.
+// Sem essa exceção, "250.75" era lido como R$ 25.075,00 — erro de 100x que
+// passava pela validação (número positivo) e ia para o banco em silêncio.
+function _numeroMoedaBR(str) {
+  if (str === null || str === undefined) return null;
+  const limpo = String(str).trim().replace(/[^\d.,-]/g, "");
+  if (!limpo) return null;
+  let normalizado;
+  if (limpo.includes(",")) {
+    normalizado = limpo.replace(/\./g, "").replace(",", ".");
+  } else {
+    const partes = limpo.split(".");
+    normalizado = (partes.length === 2 && partes[1].length >= 1 && partes[1].length <= 2)
+      ? limpo                      // ponto decimal: 250.75 / 1.5
+      : limpo.replace(/\./g, "");  // ponto de milhar: 1.000 / 1.234.567
+  }
+  const n = parseFloat(normalizado);
+  return Number.isFinite(n) ? n : null;
+}
+
 function parseMoedaBR(str) {
   if (!str) return 0;
-  return parseFloat(String(str).replace(/\./g, "").replace(",", ".")) || 0;
+  const n = _numeroMoedaBR(str);
+  return n === null ? 0 : n;
 }
 
 function formatarMoedaBlur(input) {
-  let v = input.value.trim();
+  const v = input.value.trim();
   if (!v) return;
-  // pt-BR: ponto é separador de milhar, vírgula é decimal (sempre)
-  v = v.replace(/\./g, "").replace(",", ".");
-  const n = parseFloat(v);
-  if (isNaN(n)) { input.value = ""; return; }
+  const n = _numeroMoedaBR(v);
+  if (n === null) { input.value = ""; return; }
+  // Reescreve no formato pt-BR: o usuário vê a correção antes de salvar
   input.value = n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -758,6 +781,20 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
 }
 
 // ─── FUNÇÕES UTILITÁRIAS (antes ausentes) ───────────────────────────────────
+
+// Formata um Date como "AAAA-MM-DD" no fuso LOCAL do aparelho.
+// Não use toISOString() para isso: ela converte para UTC, e às 21h de Brasília
+// já é o dia seguinte lá — o lançamento cairia na data errada.
+function _dataLocalISO(d) {
+  const dt = (d instanceof Date) ? d : new Date(d);
+  if (isNaN(dt.getTime())) return "";
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+
+// "Hoje" na data local — padrão dos formulários e fim das janelas de cálculo.
+function _hojeLocal() {
+  return _dataLocalISO(new Date());
+}
 
 function toggleSenha(inputId, botao) {
   const input = document.getElementById(inputId);
@@ -883,7 +920,7 @@ function mostrarCadastroViveiro() {
               <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <label>Início da preparação</label>
             </div>
-            <input type="date" id="dataPreparacao" value="${new Date().toISOString().split("T")[0]}">
+            <input type="date" id="dataPreparacao" value="${_hojeLocal()}">
           </div>
         </div>
 
@@ -1313,7 +1350,7 @@ function abrirViveiro(index) {
   // Fonte única: custos manuais do ciclo (inclui legados sem ciclo_id na janela)
   // + custo fixo rateado, desde a preparação/povoamento até hoje.
   const _inicioCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento;
-  const _cc = _custosCicloAtivo(viveiro, viveiro.cicloId, _inicioCiclo, new Date().toISOString().split("T")[0]);
+  const _cc = _custosCicloAtivo(viveiro, viveiro.cicloId, _inicioCiclo, _hojeLocal());
   const custosLancados = _cc.totalManuais;
   const custoFixoViveiro = _cc.rateioFixo;
   const totalCustos = _cc.total;
@@ -1923,7 +1960,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
     return;
   }
 
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -2107,7 +2144,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
 function abrirBiometria(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -2215,7 +2252,7 @@ async function salvarBiometria(index) {
     gramatura: gramatura,
   });
 
-  document.getElementById("dataBiometria").value = new Date().toISOString().split("T")[0];
+  document.getElementById("dataBiometria").value = _hojeLocal();
   document.getElementById("gramaturaBiometria").value = "";
   restaurar();
 
@@ -2231,7 +2268,7 @@ async function salvarBiometria(index) {
 function abrirDespesca(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -2362,7 +2399,7 @@ async function salvarDespesca(index) {
     precoKg: precoKg,
   });
 
-  document.getElementById("dataDespesca").value = new Date().toISOString().split("T")[0];
+  document.getElementById("dataDespesca").value = _hojeLocal();
   document.getElementById("quantidadeDespesca").value = "";
   document.getElementById("pesoMedioDespesca").value = "";
   const _pd = document.getElementById("precoDespesca"); if (_pd) _pd.value = "";
@@ -3585,7 +3622,7 @@ function reiniciarCiclo(index) {
 function mostrarFormularioReinicio(index, modo = "reiniciar") {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   const povoar = modo === "povoar";
 
   area.innerHTML = `
@@ -4272,7 +4309,7 @@ function abrirAssinatura() {
 // reaproveitando exatamente as mesmas contas da tela do viveiro.
 function _simularDadosViveiro(viveiro) {
   if (!viveiro || !viveiro.dataPovoamento) return null;
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   const inicio = viveiro.dataPreparacao || viveiro.dataPovoamento;
   const cc = _custosCicloAtivo(viveiro, viveiro.cicloId, inicio, hoje);
   const custoTotal = cc.total;
@@ -4411,7 +4448,7 @@ function abrirCustosFixos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   const ativos = custosFixos.filter(c => c.ativo);
   const totalMensal = _custoFixoMensalTotal();
   const nViveirosAtivos = _viveirosAtivosNaData(hoje, hoje);
@@ -4481,7 +4518,7 @@ function abrirFormCustoFixo(index) {
   // Para um custo novo, o padrão de "válido a partir de" é o início do cultivo
   // ativo mais antigo — assim já cobre os cultivos em andamento automaticamente.
   const _iniAtivos = viveiros.map(v => v.dataPreparacao || v.dataPovoamento).filter(Boolean).sort();
-  const _hojeYmd = new Date().toISOString().split("T")[0];
+  const _hojeYmd = _hojeLocal();
   const _defaultInicio = _iniAtivos.length ? _iniAtivos[0] : _hojeYmd;
   const cats = [
     ["mao_de_obra", "Mão de obra"],
@@ -4924,7 +4961,7 @@ async function salvarPagamentoParcial(index, botao) {
   const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   const novosPagamentos = [...(b.pagamentos || []), { data: hoje, valor }];
   const novoValorPago = Math.round(((b.valorPago || 0) + valor) * 100) / 100;
   const quitou = b.valor && novoValorPago >= b.valor - 0.005;
@@ -5152,7 +5189,7 @@ async function marcarBoletoPago(index, voltarDetalhe) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
   const b = boletos[index];
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   const patch = { pago: true, data_pagamento: hoje };
   // Se tem valor total, quita o restante e registra esse pagamento no histórico
   if (b.valor && b.valor > 0) {
@@ -5196,8 +5233,8 @@ function abrirFinanceiro() {
     const now = new Date();
     const ini = new Date(now.getFullYear(), now.getMonth(), 1);
     const fim = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    _finPeriodoIni = ini.toISOString().split("T")[0];
-    _finPeriodoFim = fim.toISOString().split("T")[0];
+    _finPeriodoIni = _dataLocalISO(ini);
+    _finPeriodoFim = _dataLocalISO(fim);
   }
   const area = document.getElementById("area-gestao");
   area.innerHTML = `
@@ -5264,7 +5301,7 @@ function _finTipoLabel(c) {
 // hora. Cada custo fixo vira um item por viveiro, com o valor rateado no período.
 function _finItensRateioFixo(alvos) {
   if (!custosFixos.some(c => c.ativo !== false)) return [];
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   const pIni = _finPeriodoIni || null, pFim = _finPeriodoFim || null;
   const itens = [];
   for (const v of alvos) {
@@ -5583,7 +5620,7 @@ function abrirEncerrarCiclo(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
 
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -6539,7 +6576,7 @@ function _viveirosAtivosNaData(ymd, hojeYmd) {
 function _custoFixoRateado(iniYmd, fimYmd) {
   if (!iniYmd || !fimYmd || iniYmd > fimYmd) return 0;
   if (!custosFixos.some(c => c.ativo !== false)) return 0;
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
   let total = 0, cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
     const mensalNoDia = _custoFixoMensalNaData(cur); // soma dos custos que já valiam nesse dia
@@ -7268,7 +7305,7 @@ function abrirLancarCusto(index) {
 function abrirLancarCustoProduto(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
 
   if (produtos.length === 0) {
     area.innerHTML = `
@@ -7428,7 +7465,7 @@ async function salvarCustoProduto(index) {
   viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: prod.id, nomeProduto: prod.nome, quantidadeG, valor, categoria: prod.categoria, data, observacao: null, cicloId });
 
   // Limpa o formulário para um novo lançamento
-  document.getElementById("dataCustoProduto").value = new Date().toISOString().split("T")[0];
+  document.getElementById("dataCustoProduto").value = _hojeLocal();
   document.getElementById("selectProduto").value = "";
   document.getElementById("qtdCustoProduto").value = "";
   const prev = document.getElementById("previa-custo-produto");
@@ -7441,7 +7478,7 @@ async function salvarCustoProduto(index) {
 function abrirLancarOutroCusto(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = _hojeLocal();
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -7531,7 +7568,7 @@ async function salvarOutroCusto(index) {
   viveiros[index].custos.push({ id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor, categoria, data, observacao: null, cicloId });
 
   // Limpa o formulário para um novo lançamento
-  document.getElementById("dataOutroCusto").value = new Date().toISOString().split("T")[0];
+  document.getElementById("dataOutroCusto").value = _hojeLocal();
   document.getElementById("nomeOutroCusto").value = "";
   document.getElementById("valorOutroCusto").value = "";
   reabilitar();
@@ -7620,7 +7657,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   const custos = pares.map(p => p.c);
   // Rateio dos custos fixos (funcionário/energia) do ciclo atual — só de leitura,
   // para o total desta tela bater com o "Custo parcial" do viveiro.
-  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
+  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, _hojeLocal());
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome — soma quantidade e valor (sem datas)
@@ -8019,7 +8056,7 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
 function imprimirCustos(viveiroIndex, escopo) {
   const viveiro = viveiros[viveiroIndex];
   const custos = _custosDoEscopo(viveiro, escopo);
-  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, new Date().toISOString().split("T")[0]);
+  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, _hojeLocal());
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome (igual à tela): uma linha por item
