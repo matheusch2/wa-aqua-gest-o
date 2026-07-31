@@ -7035,7 +7035,7 @@ function abrirCadastrarProduto() {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <label>Valor pago por saco</label>
+            <label>Valor pago por saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="valorPagoProduto" placeholder="Ex: 85,00" oninput="calcularPreviaKg()" onblur="formatarMoedaBlur(this); calcularPreviaKg()">
@@ -7252,7 +7252,7 @@ function abrirEdicaoProduto(i) {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <label>Valor pago por saco</label>
+            <label>Valor pago por saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="editValorPagoProduto" value="${p.valorPago ? p.valorPago.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2}) : ''}" onblur="formatarMoedaBlur(this)">
