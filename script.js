@@ -6065,11 +6065,163 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
           Imprimir relatório
         </button>
       </div>
+      ${ciclo.id ? `<button class="botao-voltar-form" style="margin-top:10px" onclick="abrirEditarRelatorioCiclo(${index}, ${JSON.stringify(ciclo.id)}, '${origem}')">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Corrigir dados do encerramento
+      </button>` : ""}
 
     </div>
   `;
 
   setTimeout(() => _renderGraficosCiclo(_serieRel), 60);
+}
+
+// ─── CORRIGIR O ENCERRAMENTO DE UM CICLO JÁ FECHADO ──────────────────────────
+// Só os 5 campos que foram DIGITADOS no encerramento são editáveis. Tudo o mais
+// (FCA, sobrevivência, produtividade, produção total, dias) é recalculado a
+// partir deles e do histórico congelado do ciclo — é o mesmo cálculo do
+// encerramento, para os números continuarem coerentes entre si.
+function _acharCicloFinalizado(index, cicloId) {
+  const lista = (viveiros[index] && viveiros[index].ciclosFinalizados) || [];
+  return lista.find(c => String(c.id) === String(cicloId)) || null;
+}
+
+function abrirEditarRelatorioCiclo(index, cicloId, origem = "historico") {
+  if (_bloqueioViveiro(index)) return;
+  const c = _acharCicloFinalizado(index, cicloId);
+  if (!c) { _toastErro("Ciclo não encontrado."); return; }
+  const area = document.getElementById("area-gestao");
+  const precoTxt = c.precoVenda ? Number(c.precoVenda).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(c.nomeViveiro || "")}</span>
+        <h2 class="form-titulo">Corrigir encerramento</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>Data de encerramento</label></div>
+          <input type="date" id="edRelData" value="${c.dataEncerramento || ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/></svg><label>Produção final</label></div>
+          <div class="campo-input-unidade">
+            <input type="number" step="any" id="edRelProducao" value="${c.producaoFinal ?? ""}" placeholder="Ex: 1000">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg><label>Peso médio final</label></div>
+          <div class="campo-input-unidade">
+            <input type="number" step="any" id="edRelPeso" value="${c.pesoFinal ?? ""}" placeholder="Ex: 12">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Preço da despesca final (R$/kg)</label></div>
+          <input type="text" inputmode="decimal" id="edRelPreco" value="${_attr(precoTxt)}" placeholder="Ex: 18,00" onblur="formatarMoedaBlur(this)">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><label>Observações</label></div>
+          <input type="text" id="edRelObs" value="${_attr(c.observacoes || "")}" placeholder="Opcional">
+        </div>
+        <p class="rc-print-dica">FCA, sobrevivência, produtividade, produção total e dias de cultivo são recalculados sozinhos a partir desses campos.</p>
+        <div id="msg-ed-rel" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
+        <button class="botao-salvar" onclick="salvarEdicaoRelatorioCiclo(${index}, ${JSON.stringify(cicloId)}, '${origem}', this)">Salvar correção</button>
+        <button class="botao-voltar-form" style="margin-top:10px" onclick="mostrarRelatorioCiclo(${index}, _acharCicloFinalizado(${index}, ${JSON.stringify(cicloId)}), '${origem}')">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarEdicaoRelatorioCiclo(index, cicloId, origem, botao) {
+  if (botao?.disabled) return;
+  if (_bloqueioViveiro(index)) return;
+  const c = _acharCicloFinalizado(index, cicloId);
+  if (!c) { _toastErro("Ciclo não encontrado."); return; }
+
+  const msg = document.getElementById("msg-ed-rel");
+  const erro = (m) => { if (msg) { msg.textContent = m; msg.style.display = "block"; } };
+  if (msg) msg.style.display = "none";
+
+  const dataEncerramento = document.getElementById("edRelData").value;
+  const producaoFinal = parseFloat(document.getElementById("edRelProducao").value);
+  const pesoFinal = parseFloat(document.getElementById("edRelPeso").value);
+  const precoVenda = parseMoedaBR(document.getElementById("edRelPreco").value || "0") || 0;
+  const observacoes = document.getElementById("edRelObs").value;
+
+  if (!dataEncerramento || !producaoFinal || !pesoFinal) {
+    erro("Preencha data de encerramento, produção final e peso médio final."); return;
+  }
+  if (producaoFinal <= 0 || pesoFinal <= 0) { erro("Produção e peso devem ser maiores que zero."); return; }
+  if (c.dataPovoamento && dataEncerramento < c.dataPovoamento) {
+    erro("A data de encerramento não pode ser anterior ao povoamento."); return;
+  }
+
+  // Recalcula na mesma ordem do encerramento, usando o histórico congelado.
+  // Ciclos antigos podem não ter o histórico salvo: nesses casos preserva o
+  // valor que já estava gravado, em vez de zerar.
+  const despSnap = Array.isArray(c.despescas) ? c.despescas : [];
+  const racSnap = Array.isArray(c.racoes) ? c.racoes : [];
+  const despescaParcial = despSnap.length
+    ? despSnap.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0)
+    : (Number(c.despescaParcial) || 0);
+  const racaoConsumida = racSnap.length
+    ? racSnap.reduce((s, r) => s + (Number(r.racao) || 0), 0)
+    : (Number(c.racaoConsumida) || 0);
+
+  const producaoTotal = despescaParcial + producaoFinal;
+  const fca = producaoTotal > 0 ? racaoConsumida / producaoTotal : 0;
+  const tamanhoNum = parseFloat(c.tamanho);
+  const produtividade = tamanhoNum > 0 ? producaoTotal / tamanhoNum : 0;
+  const totalPovoado = parseFloat(String(c.totalPovoado || "").replace(/\./g, ""));
+  // Cada parcial conta com o SEU peso médio; sem histórico, aproxima pelo peso final
+  const qtdParciais = despSnap.length
+    ? despSnap.reduce((s, d) => {
+        const kg = Number(d.quantidadeKg) || 0;
+        const peso = Number(d.pesoMedio || d.gramatura || 0);
+        return (kg > 0 && peso > 0) ? s + kg / (peso / 1000) : s;
+      }, 0)
+    : (despescaParcial > 0 && pesoFinal > 0 ? despescaParcial / (pesoFinal / 1000) : 0);
+  const qtdFinal = producaoFinal / (pesoFinal / 1000);
+  const sobrevivencia = totalPovoado > 0 ? ((qtdParciais + qtdFinal) / totalPovoado) * 100 : 0;
+  const diasCultivo = calcularDiasCultivo(c.dataPovoamento, dataEncerramento);
+
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); erro("Sessão expirada. Entre novamente."); return; }
+
+  const { data: atualizado, error } = await supabaseClient.from("ciclos").update({
+    data_encerramento: dataEncerramento,
+    dias_cultivo: diasCultivo,
+    producao_final: producaoFinal,
+    despesca_parcial: despescaParcial,
+    producao_total: producaoTotal,
+    produtividade: produtividade,
+    peso_final: pesoFinal,
+    racao_consumida: racaoConsumida,
+    fca: fca,
+    sobrevivencia: sobrevivencia,
+    preco_venda: precoVenda || null,
+    observacoes: observacoes,
+  }).eq("id", c.id).eq("user_id", usuario.id).select();
+
+  if (error) { restaurar(); erro("Erro ao salvar: " + error.message); return; }
+  if (!atualizado || !atualizado.length) {
+    restaurar(); erro("Não foi possível salvar. Verifique as permissões (RLS da tabela ciclos)."); return;
+  }
+
+  Object.assign(c, {
+    dataEncerramento, diasCultivo, producaoFinal, despescaParcial, producaoTotal,
+    produtividade, pesoFinal, racaoConsumida, fca, sobrevivencia,
+    precoVenda: precoVenda || 0, observacoes,
+  });
+
+  _toastSucesso("Relatório corrigido!");
+  mostrarRelatorioCiclo(index, c, origem);
 }
 
 // Séries do ciclo para os gráficos — biomassa/FCA estimados descontando as
