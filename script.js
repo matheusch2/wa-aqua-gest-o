@@ -6068,6 +6068,10 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
       ${ciclo.id ? `<button class="botao-voltar-form" style="margin-top:10px" onclick="abrirEditarRelatorioCiclo(${index}, ${JSON.stringify(ciclo.id)}, '${origem}')">
         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Corrigir dados do encerramento
+      </button>
+      <button class="botao-voltar-form" style="margin-top:8px" onclick="abrirDespescasCiclo(${index}, ${JSON.stringify(ciclo.id)}, '${origem}')">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
+        Corrigir despescas parciais
       </button>` : ""}
 
     </div>
@@ -6084,6 +6088,49 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
 function _acharCicloFinalizado(index, cicloId) {
   const lista = (viveiros[index] && viveiros[index].ciclosFinalizados) || [];
   return lista.find(c => String(c.id) === String(cicloId)) || null;
+}
+
+// Fonte única do recálculo de um ciclo já encerrado. Usada tanto ao corrigir os
+// dados do encerramento quanto ao corrigir as despescas parciais, para que os
+// dois caminhos não possam divergir. Mesma conta de salvarEncerramentoCiclo.
+function _recalcCicloEncerrado(c, dados) {
+  const producaoFinal = Number(dados.producaoFinal) || 0;
+  const pesoFinal = Number(dados.pesoFinal) || 0;
+  const dataEncerramento = dados.dataEncerramento || c.dataEncerramento;
+
+  const despSnap = Array.isArray(c.despescas) ? c.despescas : [];
+  const racSnap = Array.isArray(c.racoes) ? c.racoes : [];
+  // Ciclo antigo sem histórico salvo: preserva o que já estava gravado em vez
+  // de zerar. Com histórico salvo (mesmo vazio), a soma é a verdade.
+  const usaDesp = c.temSnapDespescas || despSnap.length > 0;
+  const usaRac = c.temSnapRacoes || racSnap.length > 0;
+
+  const despescaParcial = usaDesp
+    ? despSnap.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0)
+    : (Number(c.despescaParcial) || 0);
+  const racaoConsumida = usaRac
+    ? racSnap.reduce((s, r) => s + (Number(r.racao) || 0), 0)
+    : (Number(c.racaoConsumida) || 0);
+
+  const producaoTotal = despescaParcial + producaoFinal;
+  const fca = producaoTotal > 0 ? racaoConsumida / producaoTotal : 0;
+  const tamanhoNum = parseFloat(c.tamanho);
+  const produtividade = tamanhoNum > 0 ? producaoTotal / tamanhoNum : 0;
+  const totalPovoado = parseFloat(String(c.totalPovoado || "").replace(/\./g, ""));
+
+  // Cada parcial conta com o SEU peso médio; sem histórico, aproxima pelo final
+  const qtdParciais = usaDesp
+    ? despSnap.reduce((s, d) => {
+        const kg = Number(d.quantidadeKg) || 0;
+        const peso = Number(d.pesoMedio || d.gramatura || 0);
+        return (kg > 0 && peso > 0) ? s + kg / (peso / 1000) : s;
+      }, 0)
+    : (despescaParcial > 0 && pesoFinal > 0 ? despescaParcial / (pesoFinal / 1000) : 0);
+  const qtdFinal = pesoFinal > 0 ? producaoFinal / (pesoFinal / 1000) : 0;
+  const sobrevivencia = totalPovoado > 0 ? ((qtdParciais + qtdFinal) / totalPovoado) * 100 : 0;
+  const diasCultivo = calcularDiasCultivo(c.dataPovoamento, dataEncerramento);
+
+  return { despescaParcial, racaoConsumida, producaoTotal, fca, produtividade, sobrevivencia, diasCultivo };
 }
 
 function abrirEditarRelatorioCiclo(index, cicloId, origem = "historico") {
@@ -6161,34 +6208,9 @@ async function salvarEdicaoRelatorioCiclo(index, cicloId, origem, botao) {
     erro("A data de encerramento não pode ser anterior ao povoamento."); return;
   }
 
-  // Recalcula na mesma ordem do encerramento, usando o histórico congelado.
-  // Ciclos antigos podem não ter o histórico salvo: nesses casos preserva o
-  // valor que já estava gravado, em vez de zerar.
-  const despSnap = Array.isArray(c.despescas) ? c.despescas : [];
-  const racSnap = Array.isArray(c.racoes) ? c.racoes : [];
-  const despescaParcial = despSnap.length
-    ? despSnap.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0)
-    : (Number(c.despescaParcial) || 0);
-  const racaoConsumida = racSnap.length
-    ? racSnap.reduce((s, r) => s + (Number(r.racao) || 0), 0)
-    : (Number(c.racaoConsumida) || 0);
-
-  const producaoTotal = despescaParcial + producaoFinal;
-  const fca = producaoTotal > 0 ? racaoConsumida / producaoTotal : 0;
-  const tamanhoNum = parseFloat(c.tamanho);
-  const produtividade = tamanhoNum > 0 ? producaoTotal / tamanhoNum : 0;
-  const totalPovoado = parseFloat(String(c.totalPovoado || "").replace(/\./g, ""));
-  // Cada parcial conta com o SEU peso médio; sem histórico, aproxima pelo peso final
-  const qtdParciais = despSnap.length
-    ? despSnap.reduce((s, d) => {
-        const kg = Number(d.quantidadeKg) || 0;
-        const peso = Number(d.pesoMedio || d.gramatura || 0);
-        return (kg > 0 && peso > 0) ? s + kg / (peso / 1000) : s;
-      }, 0)
-    : (despescaParcial > 0 && pesoFinal > 0 ? despescaParcial / (pesoFinal / 1000) : 0);
-  const qtdFinal = producaoFinal / (pesoFinal / 1000);
-  const sobrevivencia = totalPovoado > 0 ? ((qtdParciais + qtdFinal) / totalPovoado) * 100 : 0;
-  const diasCultivo = calcularDiasCultivo(c.dataPovoamento, dataEncerramento);
+  const { despescaParcial, racaoConsumida, producaoTotal, fca, produtividade,
+          sobrevivencia, diasCultivo } =
+    _recalcCicloEncerrado(c, { producaoFinal, pesoFinal, dataEncerramento });
 
   const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
@@ -6222,6 +6244,202 @@ async function salvarEdicaoRelatorioCiclo(index, cicloId, origem, botao) {
 
   _toastSucesso("Relatório corrigido!");
   mostrarRelatorioCiclo(index, c, origem);
+}
+
+// ─── CORRIGIR AS DESPESCAS PARCIAIS DE UM CICLO ENCERRADO ────────────────────
+// Caso real: o cliente confundiu a despesca final com a parcial no encerramento.
+// Mexer numa parcial muda produção total, FCA e sobrevivência, então tudo é
+// recalculado e regravado junto — pela mesma função do encerramento.
+async function _persistirCicloCorrigido(index, c, dados, botao, erro) {
+  const der = _recalcCicloEncerrado(c, dados);
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { erro("Sessão expirada. Entre novamente."); return false; }
+
+  const patch = {
+    despesca_parcial: der.despescaParcial,
+    producao_total: der.producaoTotal,
+    produtividade: der.produtividade,
+    racao_consumida: der.racaoConsumida,
+    fca: der.fca,
+    sobrevivencia: der.sobrevivencia,
+    dias_cultivo: der.diasCultivo,
+    despescas_json: c.despescas || [],
+  };
+  const { data, error } = await supabaseClient.from("ciclos")
+    .update(patch).eq("id", c.id).eq("user_id", usuario.id).select();
+  if (error) { erro("Erro ao salvar: " + error.message); return false; }
+  if (!data || !data.length) { erro("Não foi possível salvar. Verifique as permissões (RLS da tabela ciclos)."); return false; }
+
+  Object.assign(c, {
+    despescaParcial: der.despescaParcial, producaoTotal: der.producaoTotal,
+    produtividade: der.produtividade, racaoConsumida: der.racaoConsumida,
+    fca: der.fca, sobrevivencia: der.sobrevivencia, diasCultivo: der.diasCultivo,
+    temSnapDespescas: true,
+  });
+  return true;
+}
+
+function abrirDespescasCiclo(index, cicloId, origem = "historico") {
+  const c = _acharCicloFinalizado(index, cicloId);
+  if (!c) { _toastErro("Ciclo não encontrado."); return; }
+  const area = document.getElementById("area-gestao");
+  const desps = Array.isArray(c.despescas) ? c.despescas : [];
+  const rs = v => "R$ " + formatarNumeroBR(Number(v) || 0, 2);
+  const totalKg = desps.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+
+  const linhas = desps.length === 0
+    ? `<p class="sobrevivencia-texto">Nenhuma despesca parcial neste ciclo.</p>`
+    : desps.map((d, di) => `
+      <div class="cd-card" id="dc-row-${di}">
+        <div class="cd-l1">
+          <span class="cd-nome">${formatarData(d.data)}</span>
+          <span class="cd-valor">${formatarNumeroBR(Number(d.quantidadeKg) || 0, 1)} kg</span>
+        </div>
+        <div class="cd-l2">
+          <span class="cd-cat">${formatarNumeroBR(Number(d.pesoMedio) || 0, 1)} g${d.precoKg ? " · " + rs(d.precoKg) + "/kg" : ""}</span>
+        </div>
+        <div class="cd-l3">
+          <span class="cd-meta"></span>
+          <div class="cd-menu-wrap">
+            <button class="cd-menu-btn" onclick="_cdToggleMenu('dc-menu-${di}')" aria-label="Opções">⋮</button>
+            <div class="cd-menu" id="dc-menu-${di}">
+              <button onclick="_cdFecharMenus();abrirEditarDespescaCiclo(${index}, ${JSON.stringify(cicloId)}, ${di}, '${origem}')">Editar despesca</button>
+              <button class="cd-menu-excluir" onclick="_cdFecharMenus();confirmarExcluirDespescaCiclo(${index}, ${JSON.stringify(cicloId)}, ${di}, '${origem}')">Excluir despesca</button>
+            </div>
+          </div>
+        </div>
+      </div>`).join("");
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
+        </div>
+        <span class="form-caption">${abreviarViveiro(c.nomeViveiro || "")}</span>
+        <h2 class="form-titulo">Despescas parciais</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="cd-resumo">
+          <span>${desps.length} despesca${desps.length !== 1 ? "s" : ""} parcial${desps.length !== 1 ? "is" : ""}</span>
+          <span class="cd-resumo-val">${formatarNumeroBR(totalKg, 1)} kg</span>
+        </div>
+        <div class="custo-grupo-lista custo-grupo-lista-det">${linhas}</div>
+        <p class="rc-print-dica">Corrigir uma despesca parcial recalcula produção total, FCA e sobrevivência do ciclo.</p>
+        <button class="botao-voltar-form" style="margin-top:12px" onclick="mostrarRelatorioCiclo(${index}, _acharCicloFinalizado(${index}, ${JSON.stringify(cicloId)}), '${origem}')">Voltar ao relatório</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirEditarDespescaCiclo(index, cicloId, di, origem = "historico") {
+  if (_bloqueioViveiro(index)) return;
+  const c = _acharCicloFinalizado(index, cicloId);
+  const d = c && Array.isArray(c.despescas) ? c.despescas[di] : null;
+  if (!d) { _toastErro("Despesca não encontrada."); return; }
+  const area = document.getElementById("area-gestao");
+  const precoTxt = d.precoKg ? Number(d.precoKg).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <h2 class="form-titulo">Editar despesca parcial</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>Data</label></div>
+          <input type="date" id="edDespData" value="${d.data || ""}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/></svg><label>Quantidade</label></div>
+          <div class="campo-input-unidade">
+            <input type="number" step="any" id="edDespQtd" value="${d.quantidadeKg ?? ""}" placeholder="Ex: 500">
+            <span class="campo-unidade">kg</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg><label>Peso médio</label></div>
+          <div class="campo-input-unidade">
+            <input type="number" step="any" id="edDespPeso" value="${d.pesoMedio ?? ""}" placeholder="Ex: 10">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Preço (R$/kg)</label></div>
+          <input type="text" inputmode="decimal" id="edDespPreco" value="${_attr(precoTxt)}" placeholder="Opcional" onblur="formatarMoedaBlur(this)">
+        </div>
+        <div id="msg-ed-desp" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
+        <button class="botao-salvar" onclick="salvarDespescaCiclo(${index}, ${JSON.stringify(cicloId)}, ${di}, '${origem}', this)">Salvar</button>
+        <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirDespescasCiclo(${index}, ${JSON.stringify(cicloId)}, '${origem}')">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarDespescaCiclo(index, cicloId, di, origem, botao) {
+  if (botao?.disabled) return;
+  if (_bloqueioViveiro(index)) return;
+  const c = _acharCicloFinalizado(index, cicloId);
+  const d = c && Array.isArray(c.despescas) ? c.despescas[di] : null;
+  if (!d) { _toastErro("Despesca não encontrada."); return; }
+
+  const msg = document.getElementById("msg-ed-desp");
+  const erro = (m) => { if (msg) { msg.textContent = m; msg.style.display = "block"; } };
+  if (msg) msg.style.display = "none";
+
+  const data = document.getElementById("edDespData").value;
+  const qtd = parseFloat(document.getElementById("edDespQtd").value);
+  const peso = parseFloat(document.getElementById("edDespPeso").value);
+  const preco = parseMoedaBR(document.getElementById("edDespPreco").value || "0") || 0;
+
+  if (!data || !qtd || !peso) { erro("Preencha data, quantidade e peso médio."); return; }
+  if (qtd <= 0 || peso <= 0) { erro("Quantidade e peso devem ser maiores que zero."); return; }
+
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const antes = { ...d };
+  Object.assign(d, { data, quantidadeKg: qtd, pesoMedio: peso, precoKg: preco || null });
+
+  const ok = await _persistirCicloCorrigido(index, c,
+    { producaoFinal: c.producaoFinal, pesoFinal: c.pesoFinal, dataEncerramento: c.dataEncerramento },
+    botao, erro);
+  if (!ok) { Object.assign(d, antes); restaurar(); return; } // desfaz na memória
+
+  _toastSucesso("Despesca corrigida!");
+  abrirDespescasCiclo(index, cicloId, origem);
+}
+
+function confirmarExcluirDespescaCiclo(index, cicloId, di, origem) {
+  const row = document.getElementById(`dc-row-${di}`);
+  if (!row) return;
+  row.innerHTML = `
+    <div class="confirmar-exclusao-custo">
+      <span>Excluir esta despesca parcial?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirDespescaCiclo(${index}, ${JSON.stringify(cicloId)}, ${di}, '${origem}', this)">Sim, excluir</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirDespescasCiclo(${index}, ${JSON.stringify(cicloId)}, '${origem}')">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
+
+async function excluirDespescaCiclo(index, cicloId, di, origem, botao) {
+  if (botao?.disabled) return;
+  if (_bloqueioViveiro(index)) return;
+  const c = _acharCicloFinalizado(index, cicloId);
+  if (!c || !Array.isArray(c.despescas) || !c.despescas[di]) { _toastErro("Despesca não encontrada."); return; }
+
+  const restaurar = _travarBotao(botao, "Excluindo...");
+  const removida = c.despescas.splice(di, 1)[0];
+
+  const ok = await _persistirCicloCorrigido(index, c,
+    { producaoFinal: c.producaoFinal, pesoFinal: c.pesoFinal, dataEncerramento: c.dataEncerramento },
+    botao, (m) => _toastErro(m));
+  if (!ok) { c.despescas.splice(di, 0, removida); restaurar(); return; } // desfaz
+
+  _toastSucesso("Despesca excluída!");
+  abrirDespescasCiclo(index, cicloId, origem);
 }
 
 // Séries do ciclo para os gráficos — biomassa/FCA estimados descontando as
@@ -8523,6 +8741,11 @@ async function carregarViveiros() {
           quantidadeKg: Number(d.quantidadeKg), pesoMedio: Number(d.pesoMedio),
           precoKg: d.precoKg != null ? Number(d.precoKg) : null,
         })) : [],
+        // Distingue "ciclo antigo, sem histórico salvo" de "histórico salvo e
+        // vazio". Sem isso, apagar todas as parciais faria o recálculo cair no
+        // valor antigo gravado e ressuscitar uma despesca que já não existe.
+        temSnapDespescas: Array.isArray(ciclo.despescas_json),
+        temSnapRacoes: Array.isArray(ciclo.racoes_json),
       })),
 
     custos: custosArr
