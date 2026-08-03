@@ -935,14 +935,34 @@ body.tema-escuro .info-box-kpi strong { color: #34d399; }
     background: #b91c1c;
 }
 
-.botao-perigo-outline {
+/* Especificidade dupla de propósito: .botao-voltar-form é declarado mais abaixo
+   no arquivo e, com a mesma força, venceria — deixando o botão de excluir
+   verde igual aos outros. Com as duas classes juntas, o vermelho prevalece
+   sem depender da ordem das regras. */
+.botao-perigo-outline,
+.botao-voltar-form.botao-perigo-outline {
     background: transparent;
     color: #dc2626;
-    border: 1.5px solid #dc2626;
+    border: 2px solid #dc2626;
 }
 
-.botao-perigo-outline:hover {
+.botao-perigo-outline:hover,
+.botao-voltar-form.botao-perigo-outline:hover {
     background: #fef2f2;
+}
+
+.botao-perigo-outline:active,
+.botao-voltar-form.botao-perigo-outline:active {
+    background: #fee2e2;
+}
+
+body.tema-escuro .botao-voltar-form.botao-perigo-outline {
+    color: #f87171;
+    border-color: #f87171;
+}
+body.tema-escuro .botao-voltar-form.botao-perigo-outline:hover,
+body.tema-escuro .botao-voltar-form.botao-perigo-outline:active {
+    background: rgba(220,38,38,0.14);
 }
 
 /* ─── RELATÓRIO REDESIGN ─────────────────────────────────────────────────── */
