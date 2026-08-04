@@ -6102,7 +6102,17 @@ function _seriesCiclo(ciclo) {
     biomassa.push(Number(bm.toFixed(1)));
     fca.push(Number((bm > 0 ? racAcum / bm : 0).toFixed(2)));
     racaoAcum.push(Number(racAcum.toFixed(1)));
-    obs.push(i === 0 ? "Povoamento" : (i === bios.length - 1 ? "Final do ciclo" : "-"));
+    // Ganho médio por dia no intervalo entre as duas biometrias. Normaliza o
+    // crescimento quando as pesagens não são igualmente espaçadas — e, ao
+    // contrário de g/semana, não repete a coluna de crescimento quando as
+    // biometrias são semanais.
+    if (i === 0) {
+      obs.push("—");
+    } else {
+      const dDias = dia - diasArr[i - 1];
+      const dPeso = b.gramatura - bios[i - 1].gramatura;
+      obs.push(dDias > 0 ? `${(dPeso / dDias).toFixed(2).replace(".", ",")}` : "—");
+    }
   });
   return { bios, dias, peso, cresc, biomassa, fca, racaoAcum, obs, datas, popNum, producaoTotal };
 }
@@ -6280,7 +6290,7 @@ function gerarRelatorioImpressao() {
   const custoRacao = custos.filter(c => c.categoria === "Ração").reduce((s, c) => s + Number(c.valor), 0);
   const racaoKg = Number(ciclo.racaoConsumida) || 0;
   const alimentacaoHtml = `
-  <h2 class="sec">8. Alimentação</h2>
+  <h2 class="sec">§. Alimentação</h2>
   <div class="grid info6">
     <div class="cel"><small>Ração consumida</small><b>${fmt(racaoKg, 1)} kg</b></div>
     <div class="cel"><small>Custo da ração</small><b>R$ ${fmt(custoRacao, 2)}</b></div>
@@ -6294,11 +6304,16 @@ function gerarRelatorioImpressao() {
   const _eventos = [];
   if (ciclo.dataPovoamento) _eventos.push({ d: ciclo.dataPovoamento, t: "Povoamento", i: `${Number(String(ciclo.totalPovoado).replace(/\./g, "") || 0).toLocaleString("pt-BR")} PLs` });
   bios.forEach(b => _eventos.push({ d: b.data, t: "Biometria", i: `Peso médio ${fmt(Number(b.gramatura), 1)} g` }));
-  despescasArr.forEach(d => _eventos.push({ d: d.data, t: "Despesca", i: `${fmt(Number(d.quantidadeKg) || 0, 1)} kg · ${fmt(Number(d.pesoMedio) || 0, 1)} g` }));
-  if (ciclo.dataEncerramento) _eventos.push({ d: ciclo.dataEncerramento, t: "Encerramento", i: `Produção ${fmt(producaoTotal, 1)} kg` });
+  despescasArr.forEach(d => _eventos.push({ d: d.data, t: "Despesca parcial", i: `${fmt(Number(d.quantidadeKg) || 0, 1)} kg · ${fmt(Number(d.pesoMedio) || 0, 1)} g` }));
+  // A despesca final é um evento por si só: sem ela, a linha do tempo mostrava
+  // as parciais e saltava direto para o encerramento, escondendo a maior colheita.
+  if (ciclo.dataEncerramento && Number(ciclo.producaoFinal) > 0) {
+    _eventos.push({ d: ciclo.dataEncerramento, t: "Despesca final", i: `${fmt(Number(ciclo.producaoFinal), 1)} kg · ${fmt(Number(ciclo.pesoFinal) || 0, 1)} g` });
+  }
+  if (ciclo.dataEncerramento) _eventos.push({ d: ciclo.dataEncerramento, t: "Encerramento", i: `Produção total ${fmt(producaoTotal, 1)} kg` });
   _eventos.sort((a, b) => String(a.d).localeCompare(String(b.d)));
   const timelineHtml = _eventos.length ? `
-  <h2 class="sec">9. Linha do tempo</h2>
+  <h2 class="sec">§. Linha do tempo</h2>
   <table><thead><tr><th style="width:92px">Data</th><th class="num" style="width:46px">Dia</th><th>Evento</th><th>Detalhe</th></tr></thead>
   <tbody>${_eventos.map(e => `<tr><td>${formatarData(e.d)}</td><td class="num">${calcularDiasCultivo(ciclo.dataPovoamento, e.d)}</td><td><b>${e.t}</b></td><td>${e.i}</td></tr>`).join("")}</tbody></table>` : "";
 
@@ -6306,7 +6321,7 @@ function gerarRelatorioImpressao() {
   const _hist = (viveiros[index] && viveiros[index].ciclosFinalizados) ? [...viveiros[index].ciclosFinalizados] : [];
   _hist.sort((a, b) => String(a.dataEncerramento).localeCompare(String(b.dataEncerramento)));
   const comparacaoHtml = _hist.length >= 2 ? `
-  <h2 class="sec">10. Comparação com ciclos anteriores</h2>
+  <h2 class="sec">§. Comparação com ciclos anteriores</h2>
   <table><thead><tr><th>Encerramento</th><th class="num">Dias</th><th class="num">Produção (kg)</th><th class="num">Produtividade (kg/ha)</th><th class="num">Peso médio (g)</th></tr></thead>
   <tbody>${_hist.map(c => {
     const atual = c === ciclo || (c.cicloId && ciclo.cicloId && c.cicloId === ciclo.cicloId && c.dataEncerramento === ciclo.dataEncerramento);
@@ -6400,7 +6415,7 @@ function gerarRelatorioImpressao() {
     ${execCards.map(c => `<div class="exec-card ${c.cls}"><div class="eico">${c.ico}</div><b>${c.val}</b><small>${c.lbl}</small></div>`).join("")}
   </div>
 
-  <h2 class="sec">1. Informações gerais</h2>
+  <h2 class="sec">§. Informações gerais</h2>
   <div class="grid info6">
     <div class="cel"><small>Data do povoamento</small><b>${formatarData(ciclo.dataPovoamento)}</b></div>
     <div class="cel"><small>Total de PLs</small><b>${Number(String(ciclo.totalPovoado).replace(/\./g,"")||0).toLocaleString("pt-BR")}</b></div>
@@ -6410,7 +6425,7 @@ function gerarRelatorioImpressao() {
     <div class="cel"><small>Dias de cultivo</small><b>${ciclo.diasCultivo} dias</b></div>
   </div>
 
-  <h2 class="sec">2. Indicadores finais do ciclo</h2>
+  <h2 class="sec">§. Indicadores finais do ciclo</h2>
   <div class="grupos3">
     <div class="grupo">
       <h5>Produção</h5>
@@ -6434,17 +6449,17 @@ function gerarRelatorioImpressao() {
 
   <div class="duas" style="margin-top:18px">
     <div>
-      <h2 class="sec" style="margin-top:0">3. Evolução do cultivo</h2>
+      <h2 class="sec" style="margin-top:0">§. Evolução do cultivo</h2>
       <div class="charts">
         <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
       </div>
     </div>
     <div>
-      <h2 class="sec" style="margin-top:0">4. Distribuição dos custos</h2>
+      <h2 class="sec" style="margin-top:0">§. Distribuição dos custos</h2>
       ${distLista.length ? `<div class="rosca-wrap"><div class="rosca-canvas"><canvas id="cDist"></canvas><div class="rosca-centro"><small>TOTAL</small><b>R$ ${fmt(custoTotal,2)}</b></div></div><div class="leg">${legendaDist}</div></div>` : `<p style="color:#9ca3af;font-size:11px">Nenhum custo lançado neste ciclo.</p>`}
 
-      <h2 class="sec">5. Resumo financeiro</h2>
+      <h2 class="sec">§. Resumo financeiro</h2>
       <div class="fin-row"><span>Receita das despescas parciais</span><b>${rs(receitaDespescasParciais)}</b></div>
       <div class="fin-row"><span>Receita da despesca final</span><b>${rs(receitaDespescaFinal)}</b></div>
       <div class="fin-row"><span>Receita bruta total</span><b>${rs(receitaBruta)}</b></div>
@@ -6455,11 +6470,11 @@ function gerarRelatorioImpressao() {
     </div>
   </div>
 
-  <h2 class="sec">6. Biometrias realizadas</h2>
-  <table><thead><tr><th>Data</th><th class="num">Dias</th><th class="num">Peso médio (g)</th><th class="num">Crescimento (g)</th><th>Observações</th></tr></thead>
-  <tbody>${bios.map((b,i)=>`<tr><td>${serieDatas[i]}</td><td class="num">${serieDias[i]}</td><td class="num">${fmt(seriePeso[i],1)}</td><td class="num">${serieCresc[i]===null?"-":fmt(serieCresc[i],1)}</td><td>${serieObs[i]}</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;color:#9ca3af">Sem biometrias.</td></tr>`}</tbody></table>
+  <h2 class="sec">§. Biometrias realizadas</h2>
+  <table><thead><tr><th>Data</th><th class="num">Dias</th><th class="num">Peso médio (g)</th><th class="num">Ganho (g)</th><th class="num">Ganho/dia (g)</th></tr></thead>
+  <tbody>${bios.map((b,i)=>`<tr><td>${serieDatas[i]}</td><td class="num">${serieDias[i]}</td><td class="num">${fmt(seriePeso[i],1)}</td><td class="num">${serieCresc[i]===null?"—":fmt(serieCresc[i],1)}</td><td class="num">${serieObs[i]}</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;color:#9ca3af">Sem biometrias.</td></tr>`}</tbody></table>
 
-  <h2 class="sec">7. Despescas realizadas</h2>
+  <h2 class="sec">§. Despescas realizadas</h2>
   <table><thead><tr><th>Data</th><th>Tipo</th><th class="num">Quantidade (kg)</th><th class="num">Peso médio (g)</th><th class="num">Preço/kg</th><th class="num">Receita (R$)</th></tr></thead>
   <tbody>${(linhasDespesca + linhaFinal) || `<tr><td colspan="6" style="text-align:center;color:#9ca3af">Sem despescas.</td></tr>`}
   <tr style="font-weight:800;background:#f8fafc"><td colspan="2">TOTAL</td><td class="num">${fmt(totDespQtd,1)}</td><td></td><td></td><td class="num">${precoGeral > 0 ? "R$ "+fmt(totReceita,2) : "-"}</td></tr></tbody></table>
@@ -6468,17 +6483,23 @@ function gerarRelatorioImpressao() {
   ${timelineHtml}
   ${comparacaoHtml}
 
+  ${(ciclo.observacoes || "").trim() ? `
   <div class="obs-duas">
     <div>
-      <h2 class="sec" style="margin-top:0">11. Observações</h2>
-      <div class="obs-box">${(ciclo.observacoes || "").trim() || "—"}</div>
+      <h2 class="sec" style="margin-top:0">§. Observações</h2>
+      <div class="obs-box">${(ciclo.observacoes || "").trim()}</div>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">Conclusão técnica</h2>
       <p class="conclusao">${conclusaoTecnica}</p>
       ${alertasHtml}
     </div>
-  </div>
+  </div>` : `
+  <div>
+    <h2 class="sec">§. Conclusão técnica</h2>
+    <p class="conclusao">${conclusaoTecnica}</p>
+    ${alertasHtml}
+  </div>`}
 
   <div class="assin"><div class="linha"></div><small>Responsável técnico</small></div>
 
@@ -6510,9 +6531,16 @@ function gerarRelatorioImpressao() {
 <\/script>
 </body></html>`;
 
+  // Numera as seções só agora, na ordem em que aparecem no documento. Numerar
+  // no código não funcionava: a comparação com ciclos anteriores só existe com
+  // 2+ ciclos, e alguns blocos são montados antes de entrarem no documento —
+  // o resultado era pular de "9." para "11.".
+  let _nSec = 0;
+  const htmlNumerado = html.replace(/(<h2 class="sec"[^>]*>)§\./g, (_m, abre) => `${abre}${++_nSec}.`);
+
   const win = window.open("", "_blank");
   if (!win) { _toastErro("Permita pop-ups para gerar o relatório."); return; }
-  win.document.write(html);
+  win.document.write(htmlNumerado);
   win.document.close();
 }
 
