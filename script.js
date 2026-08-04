@@ -6152,13 +6152,18 @@ function gerarRelatorioImpressao() {
   const custoFixoRateado = _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFixoRateado;
 
+  // Agrupa por nome normalizado: sem isso, "Análise de água" e "Analise de
+  // água" viravam duas fatias separadas, cada uma com metade do percentual.
   const grupos = {};
-  custos.forEach(c => {
-    const chave = c.tipo === "outro" ? (c.categoria || c.nomeProduto || "Outros") : (c.categoria || "Outros");
-    grupos[chave] = (grupos[chave] || 0) + Number(c.valor);
-  });
-  if (custoFixoRateado > 0) grupos["Mão de obra e custos fixos"] = (grupos["Mão de obra e custos fixos"] || 0) + custoFixoRateado;
-  const distLista = Object.entries(grupos).map(([nome, total]) => ({ nome, total })).sort((a, b) => b.total - a.total);
+  const _addGrupo = (rotulo, valor) => {
+    const chave = _normNomeCusto(rotulo);
+    if (!grupos[chave]) grupos[chave] = { nome: rotulo, total: 0 };
+    else grupos[chave].nome = _melhorRotulo(grupos[chave].nome, rotulo);
+    grupos[chave].total += Number(valor) || 0;
+  };
+  custos.forEach(c => _addGrupo(c.tipo === "outro" ? (c.categoria || c.nomeProduto || "Outros") : (c.categoria || "Outros"), c.valor));
+  if (custoFixoRateado > 0) _addGrupo("Mão de obra e custos fixos", custoFixoRateado);
+  const distLista = Object.values(grupos).sort((a, b) => b.total - a.total);
 
   // ── Indicadores ──
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
@@ -7601,7 +7606,7 @@ async function salvarOutroCusto(index) {
   // "Ração" é nome reservado: o custo de ração é derivado dos lançamentos, e
   // _montarCustoRacaoVirtual descarta qualquer registro com nome/categoria
   // "Ração" do ciclo ativo — o lançamento manual sumiria da tela.
-  if (descricao.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() === "racao") {
+  if (_normNomeCusto(descricao) === "racao") {
     _erroOutro('Para custo de ração use "Lançar ração" — esse nome é reservado.');
     return;
   }
@@ -7659,8 +7664,28 @@ function _fmtQtdCusto(g) {
   return formatarNumeroBR(g, 0) + " g";
 }
 
+function _semAcento(s) {
+  return String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+// Nomes digitados à mão são o mesmo insumo quando diferem só por acento,
+// maiúscula ou espaço: "Análise de água", "Analise de agua" e "análise de
+// água" são a mesma despesa. Agrupar por esta chave impede que o relatório
+// mostre a mesma coisa quebrada em várias linhas com percentuais menores.
+function _normNomeCusto(s) {
+  return _semAcento(s).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+// Entre grafias do mesmo nome, mostra a que está acentuada.
+function _melhorRotulo(atual, novo) {
+  const temAcento = (x) => String(x) !== _semAcento(x);
+  if (!atual) return novo;
+  if (temAcento(novo) && !temAcento(atual)) return novo;
+  return atual;
+}
+
 function _chaveCusto(c) {
-  return c.produtoId ? ("id:" + c.produtoId) : ("nome:" + (c.nomeProduto || c.categoria || "Outros"));
+  return c.produtoId ? ("id:" + c.produtoId) : ("nome:" + _normNomeCusto(c.nomeProduto || c.categoria || "Outros"));
 }
 
 // Registro de custo de Ração (derivado do ciclo ativo OU snapshot de ciclo
@@ -7725,6 +7750,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   custos.forEach(c => {
     const chave = _chaveCusto(c);
     if (!grupos[chave]) grupos[chave] = { chave, nome: c.nomeProduto || c.categoria || "Custo", quantidadeG: 0, valor: 0 };
+    else grupos[chave].nome = _melhorRotulo(grupos[chave].nome, c.nomeProduto || c.categoria || "Custo");
     grupos[chave].valor += Number(c.valor) || 0;
     if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
     // Ração é calculada dos lançamentos (e inclui snapshots de ciclos
@@ -8124,6 +8150,7 @@ function imprimirCustos(viveiroIndex, escopo) {
   custos.forEach(c => {
     const chave = _chaveCusto(c);
     if (!grupos[chave]) grupos[chave] = { nome: c.nomeProduto || c.categoria || "Custo", quantidadeG: 0, valor: 0 };
+    else grupos[chave].nome = _melhorRotulo(grupos[chave].nome, c.nomeProduto || c.categoria || "Custo");
     grupos[chave].valor += Number(c.valor) || 0;
     if (c.quantidadeG) grupos[chave].quantidadeG += Number(c.quantidadeG);
   });
