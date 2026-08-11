@@ -5822,6 +5822,42 @@ body.tema-escuro .rc-print-dica { color: #9ca3af; }
     padding: 12px 14px;
 }
 .ma-item.ma-inativo { opacity: 0.55; }
+
+/* Protocolo cujo produto saiu dos Insumos: não está lançando nada, então não
+   pode parecer normal nem ativo. */
+.ma-item.ma-orfao { opacity: 1; border-color: #fca5a5; background: #fef2f2; }
+.ma-item.ma-orfao .ma-item-regra { color: #b91c1c; }
+.ma-badge-alerta {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+    background: #fee2e2; color: #b91c1c; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .03em; vertical-align: 1px;
+}
+body.tema-escuro .ma-item.ma-orfao { background: #2a1414; border-color: #7f1d1d; }
+body.tema-escuro .ma-item.ma-orfao .ma-item-regra { color: #f87171; }
+body.tema-escuro .ma-badge-alerta { background: rgba(220,38,38,0.22); color: #fca5a5; }
+
+/* Resumo do que o manejo já lançou no ciclo */
+.ma-resumo {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    background: #f0f7f5; border: 1px solid #d6e8e4; border-radius: 11px;
+    padding: 9px 12px; margin-bottom: 10px; font-size: 12.5px; color: #4b5563;
+}
+.ma-resumo b { font-size: 14.5px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; }
+body.tema-escuro .ma-resumo { background: #16241f; border-color: #2b3a37; color: #9ca3af; }
+body.tema-escuro .ma-resumo b { color: #6ee7d8; }
+
+/* Prévia do custo dentro do formulário do protocolo */
+.ma-previa {
+    font-size: 12.5px; color: #4b5563; line-height: 1.5;
+    background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
+    padding: 9px 11px; margin: 0 0 12px;
+}
+.ma-previa:empty { display: none; }
+.ma-previa b { color: rgb(6,107,99); }
+.ma-previa small { color: #6b7280; }
+body.tema-escuro .ma-previa { background: #111827; border-color: #374151; color: #d1d5db; }
+body.tema-escuro .ma-previa b { color: #6ee7d8; }
+body.tema-escuro .ma-previa small { color: #9ca3af; }
 .ma-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .ma-item-nome { font-size: 14.5px; font-weight: 800; color: #1f2937; }
 .ma-item-regra { font-size: 12px; color: #6b7280; }

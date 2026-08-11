@@ -3503,11 +3503,21 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     return;
   }
 
+  const dataAntiga = racao.data;
   viveiros[viveiroIndex].racoes[racaoIndex] = {
     id: inserido[0].id, data: novaData, racao: novaQtd,
     nomeRacao: novoTipo ? novoTipo.nome : null,
     tipoRacaoId: novoTipo ? novoTipo.id : null,
   };
+
+  // Os protocolos atrelados à ração dosam por kg lançado: ao corrigir o
+  // lançamento, o custo automático precisa ser refeito, senão continua cobrando
+  // pela quantidade antiga. Limpa a data antiga (e a nova, se mudou) e reaplica.
+  try {
+    await _removerCustosAutoRacao(viveiroIndex, dataAntiga);
+    if (novaData !== dataAntiga) await _removerCustosAutoRacao(viveiroIndex, novaData);
+    if (novaQtd > 0) await _aplicarProtocolosRacao(viveiroIndex, novaQtd, novaData);
+  } catch (e) { console.log("Protocolo ração (edição):", e); }
 
   // Custo de ração derivado dos lançamentos — recalcula em memória
   _montarCustoRacaoVirtual();
@@ -3610,7 +3620,13 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
     return;
   }
 
+  const dataExcluida = racao.data;
   viveiros[viveiroIndex].racoes.splice(racaoIndex, 1);
+
+  // Sem o lançamento de ração, o custo que os protocolos dosaram a partir dele
+  // não tem mais razão de existir — ficaria órfão inflando o custo do ciclo.
+  try { await _removerCustosAutoRacao(viveiroIndex, dataExcluida); }
+  catch (e) { console.log("Protocolo ração (exclusão):", e); }
 
   // Custo de ração derivado dos lançamentos — recalcula em memória
   _montarCustoRacaoVirtual();
@@ -6670,23 +6686,51 @@ async function salvarProtocolos(index) {
   return true;
 }
 
+// Devolve "ok" (lançou), "pulado" (nada a fazer / já existia) ou "erro" (falhou
+// no banco). Quem chama PRECISA distinguir os dois últimos: tratar erro como
+// "pulado" fazia a varredura semanal marcar o dia como resolvido e nunca mais
+// tentar — o custo desaparecia em silêncio quando a internet oscilava.
 async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
-  if (!quantidadeG || quantidadeG <= 0) return false;
-  // Nunca repete o mesmo lançamento automático (mesmo produto + data)
+  if (!quantidadeG || quantidadeG <= 0) return "pulado";
+  const observacao = obs || "Automático";
+  // Não repete o mesmo lançamento automático: mesmo produto, mesma data e mesma
+  // origem. Comparar a observação inteira (e não só o prefixo "Automático")
+  // permite que um protocolo semanal e um atrelado à ração usem o mesmo produto
+  // no mesmo dia sem que um anule o outro.
   const jaTem = (viveiros[index].custos || []).some(c =>
-    c.data === data && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
-  if (jaTem) return false;
+    c.data === data && c.produtoId === produto.id && (c.observacao || "") === observacao);
+  if (jaTem) return "pulado";
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return false;
+  if (!usuario) return "erro";
   const valor = (produto.custoPorGrama || 0) * quantidadeG;
   const { data: salvo, error } = await supabaseClient.from("custos").insert([{
     user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto",
     produto_id: produto.id, nome_produto: produto.nome, quantidade_g: quantidadeG,
-    valor, categoria: produto.categoria, data, observacao: obs || "Automático",
+    valor, categoria: produto.categoria, data, observacao,
   }]).select();
-  if (error) { console.log(error); return false; }
+  if (error) { console.log(error); return "erro"; }
+  if (!salvo || !salvo.length) return "erro"; // RLS pode barrar sem devolver erro
   if (!viveiros[index].custos) viveiros[index].custos = [];
-  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: produto.id, nomeProduto: produto.nome, quantidadeG, valor, categoria: produto.categoria, data, observacao: obs || "Automático" });
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: produto.id, nomeProduto: produto.nome, quantidadeG, valor, categoria: produto.categoria, data, observacao });
+  return "ok";
+}
+
+// Remove os custos que os protocolos de ração geraram numa data. Necessário
+// porque a dose é proporcional aos kg lançados: se o lançamento de ração é
+// corrigido ou apagado, o custo derivado dele tem de acompanhar — senão fica
+// cobrando pela quantidade antiga, ou órfão no ciclo.
+async function _removerCustosAutoRacao(index, data) {
+  const v = viveiros[index];
+  const alvos = (v.custos || []).filter(c => c.data === data && (c.observacao || "") === "Automático (ração)");
+  if (!alvos.length) return true;
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+  const ids = alvos.map(c => c.id).filter(Boolean);
+  if (ids.length) {
+    const { error } = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
+    if (error) { console.log(error); return false; }
+  }
+  v.custos = (v.custos || []).filter(c => !alvos.includes(c));
   return true;
 }
 
@@ -6701,8 +6745,8 @@ async function _aplicarProtocolosRacao(index, racaoKg, data) {
     const produto = produtos.find(pr => pr.id === p.produtoId);
     if (!produto) continue;
     const quantidadeG = (Number(p.dosePorKgG) || 0) * racaoKg;
-    const ok = await _lancarCustoAuto(index, produto, quantidadeG, data, "Automático (ração)");
-    if (ok) aplicados.push({ nome: produto.nome, quantidadeG, valor: (produto.custoPorGrama || 0) * quantidadeG });
+    const r = await _lancarCustoAuto(index, produto, quantidadeG, data, "Automático (ração)");
+    if (r === "ok") aplicados.push({ nome: produto.nome, quantidadeG, valor: (produto.custoPorGrama || 0) * quantidadeG });
   }
   return aplicados;
 }
@@ -6722,8 +6766,8 @@ async function _aplicarProtocoloRacaoRetroativo(index, prot) {
     const jaTem = (v.custos || []).some(c => c.data === r.data && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
     if (jaTem) { pulados++; continue; }
     const quantidadeG = (Number(prot.dosePorKgG) || 0) * r.racao;
-    const ok = await _lancarCustoAuto(index, produto, quantidadeG, r.data, "Automático (ração)");
-    if (ok) { n++; valor += (produto.custoPorGrama || 0) * quantidadeG; }
+    const res = await _lancarCustoAuto(index, produto, quantidadeG, r.data, "Automático (ração)");
+    if (res === "ok") { n++; valor += (produto.custoPorGrama || 0) * quantidadeG; }
   }
   return { n, valor, pulados, total: racoes.length };
 }
@@ -6733,10 +6777,16 @@ async function _aplicarProtocoloRacaoRetroativo(index, prot) {
 // de salvar ou ativar um manejo: o manejo pertence àquele viveiro, então não faz
 // sentido disparar lançamento automático nos outros).
 // indexAlvo indefinido = varredura de todos ao abrir o app (põe em dia).
+// Teto de dias por protocolo numa única varredura, para o app não travar quando
+// alguém abre depois de meses. O que sobrar é avisado e continua na próxima vez.
+const _MA_MAX_DIAS_VARREDURA = 400;
+let _maPreviaIndex = 0; // viveiro do formulário aberto, usado pela prévia de custo
+
 async function aplicarProtocolosSemanais(indexAlvo) {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const hojeStr = _maYmd(hoje);
   const aSalvar = [];
+  let _maLancados = 0, _maFalhou = false, _maTruncou = false;
   const soUm = Number.isInteger(indexAlvo);
   const ini = soUm ? indexAlvo : 0;
   const fim = soUm ? indexAlvo + 1 : viveiros.length;
@@ -6755,22 +6805,36 @@ async function aplicarProtocolosSemanais(indexAlvo) {
       if (inicio < v.dataPovoamento) inicio = v.dataPovoamento;
       if (p.inicio && inicio < p.inicio) inicio = p.inicio;
       let cur = _maParse(inicio);
-      const fim = _maParse(hojeStr);
-      let guard = 0;
-      while (cur <= fim && guard < 400) {
-        guard++;
+      const ultimoDia = _maParse(hojeStr); // nome próprio: `fim` é o limite do laço de viveiros
+      // Marca de progresso: só avança até o último dia REALMENTE resolvido. Se um
+      // lançamento falha (internet, permissão), o laço para ali e a marca fica no
+      // dia anterior — assim a próxima abertura do app tenta de novo.
+      let ultimoOk = p.ultimoLancamento || null;
+      let diasVaridos = 0;
+      while (cur <= ultimoDia) {
+        if (diasVaridos++ >= _MA_MAX_DIAS_VARREDURA) { _maTruncou = true; break; }
         const ds = _maYmd(cur);
         if (p.dias.includes(cur.getDay())) {
-          const jaTem = (v.custos || []).some(c => c.data === ds && c.produtoId === produto.id && (c.observacao || "").startsWith("Automático"));
-          if (!jaTem) await _lancarCustoAuto(index, produto, Number(p.quantidadeG) || 0, ds, "Automático (semanal)");
+          const r = await _lancarCustoAuto(index, produto, Number(p.quantidadeG) || 0, ds, "Automático (semanal)");
+          if (r === "erro") { _maFalhou = true; break; }
+          if (r === "ok") _maLancados++;
         }
+        ultimoOk = ds;
         cur.setDate(cur.getDate() + 1);
       }
-      if (p.ultimoLancamento !== hojeStr) { p.ultimoLancamento = hojeStr; alterou = true; }
+      if (ultimoOk && p.ultimoLancamento !== ultimoOk) { p.ultimoLancamento = ultimoOk; alterou = true; }
     }
     if (alterou) aSalvar.push(index);
   }
   for (const idx of aSalvar) await salvarProtocolos(idx);
+
+  // Nada de corte silencioso: se algo ficou pendente, o usuário fica sabendo.
+  if (_maFalhou) {
+    _toastErro("Alguns lançamentos automáticos não foram salvos. Serão tentados de novo quando você abrir o app com internet.");
+  } else if (_maTruncou) {
+    _toastErro("Havia muitos dias em atraso no manejo automático. Parte foi lançada agora; abra o app novamente para continuar.");
+  }
+  return { lancados: _maLancados, falhou: _maFalhou, truncou: _maTruncou };
 }
 
 function _maResumoProtocolo(p) {
@@ -6789,21 +6853,37 @@ function abrirManejoAutomatico(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
   const prots = viveiro.protocolos || [];
+
+  // O que o manejo já lançou neste ciclo — sem isso o produtor não tinha como
+  // saber se os protocolos estavam realmente funcionando nem quanto custaram.
+  const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || "";
+  const lancados = (viveiro.custos || []).filter(c =>
+    (c.observacao || "").startsWith("Automático") &&
+    ((viveiro.cicloId && c.cicloId) ? c.cicloId === viveiro.cicloId : (!iniCiclo || String(c.data || "") >= iniCiclo)));
+  const totalLancado = lancados.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+
   area.innerHTML = `
     <h3 class="titulo-secao">Manejo automático — ${abreviarViveiro(viveiro.nome)}</h3>
     <div class="cfg-wrap">
       <p class="cfg-secao-desc">Produtos lançados automaticamente neste viveiro. Os lançamentos viram custos e podem ser editados/excluídos no histórico de custos.</p>
       ${produtos.length === 0 ? `<div class="viveiro-sem-ciclo-msg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Cadastre um produto em Insumos antes de criar um protocolo.</span></div>` : ""}
+      ${lancados.length > 0 ? `<div class="ma-resumo">
+        <span>${lancados.length} lançamento${lancados.length !== 1 ? "s" : ""} automático${lancados.length !== 1 ? "s" : ""} neste ciclo</span>
+        <b>R$ ${formatarNumeroBR(totalLancado, 2)}</b>
+      </div>` : ""}
       <div class="ma-lista">
         ${prots.length === 0 ? `<p class="ma-vazio">Nenhum protocolo configurado.</p>` : prots.map(p => {
           const prod = produtos.find(pr => pr.id === p.produtoId);
-          return `<div class="ma-item ${p.ativo ? "" : "ma-inativo"}">
+          const orfao = !prod; // produto foi excluído dos Insumos
+          return `<div class="ma-item ${p.ativo && !orfao ? "" : "ma-inativo"}${orfao ? " ma-orfao" : ""}">
             <div class="ma-item-info">
-              <span class="ma-item-nome">${prod ? prod.nome : (p.nomeProduto || "Produto removido")}</span>
-              <span class="ma-item-regra">${p.tipo === "racao" ? "Atrelado à ração" : "Programado semanal"} · ${_maResumoProtocolo(p)}</span>
+              <span class="ma-item-nome">${prod ? prod.nome : (p.nomeProduto || "Produto removido")}${orfao ? ` <span class="ma-badge-alerta">produto excluído</span>` : ""}</span>
+              <span class="ma-item-regra">${orfao
+                ? "Não está lançando — o produto saiu dos Insumos. Edite para escolher outro, ou exclua o protocolo."
+                : `${p.tipo === "racao" ? "Atrelado à ração" : "Programado semanal"} · ${_maResumoProtocolo(p)}`}</span>
             </div>
             <div class="ma-item-acoes">
-              <button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}')" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>
+              ${orfao ? "" : `<button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}')" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>`}
               <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">✏️</button>
               <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}', this)">🗑️</button>
             </div>
@@ -6839,6 +6919,7 @@ async function excluirProtocolo(index, protId, botao) {
 
 function abrirFormProtocolo(index, protId) {
   const viveiro = viveiros[index];
+  _maPreviaIndex = index;
   const p = protId ? (viveiro.protocolos || []).find(x => x.id === protId) : null;
   const tipo = p ? p.tipo : "racao";
   const _protDoseModo = (p && p.tipo === "racao" && p.doseModo === "pct") ? "pct" : "gkg";
@@ -6849,7 +6930,7 @@ function abrirFormProtocolo(index, protId) {
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Produto</label></div>
-        <select id="protProduto">
+        <select id="protProduto" onchange="_protPrevia()">
           ${produtos.map(pr => `<option value="${pr.id}" ${p && p.produtoId === pr.id ? "selected" : ""}>${pr.nome} (${pr.categoria})</option>`).join("")}
         </select>
       </div>
@@ -6871,12 +6952,12 @@ function abrirFormProtocolo(index, protId) {
         </div>
         <div class="campo-form" id="prot-dose-gkg" style="display:${_protDoseModo === "pct" ? "none" : "block"}">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/></svg><label>Dose por kg de ração (g)</label></div>
-          <input type="number" inputmode="decimal" id="protDosePorKg" step="any" placeholder="Ex: 5" value="${_protDoseModo !== "pct" && p && p.tipo === "racao" ? (p.dosePorKgG ?? "") : ""}">
+          <input type="number" inputmode="decimal" id="protDosePorKg" step="any" oninput="_protPrevia()" placeholder="Ex: 5" value="${_protDoseModo !== "pct" && p && p.tipo === "racao" ? (p.dosePorKgG ?? "") : ""}">
           <p class="rc-print-dica">Ex.: 5 g de produto para cada kg de ração lançada.</p>
         </div>
         <div class="campo-form" id="prot-dose-pct" style="display:${_protDoseModo === "pct" ? "block" : "none"}">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg><label>Porcentagem da ração (%)</label></div>
-          <input type="number" inputmode="decimal" id="protDosePct" step="any" placeholder="Ex: 2" value="${_protDoseModo === "pct" && p ? (p.dosePct ?? "") : ""}">
+          <input type="number" inputmode="decimal" id="protDosePct" step="any" oninput="_protPrevia()" placeholder="Ex: 2" value="${_protDoseModo === "pct" && p ? (p.dosePct ?? "") : ""}">
           <p class="rc-print-dica">Ex.: 2% 2 g de produto para cada 100 g de ração.</p>
         </div>
       </div>
@@ -6884,13 +6965,14 @@ function abrirFormProtocolo(index, protId) {
       <div id="prot-semanal" style="display:${tipo === "semanal" ? "block" : "none"}">
         <div class="campo-form">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Quantidade por aplicação (g)</label></div>
-          <input type="number" inputmode="decimal" id="protQtd" step="any" placeholder="Ex: 250" value="${p && p.tipo === "semanal" ? p.quantidadeG : ""}">
+          <input type="number" inputmode="decimal" id="protQtd" step="any" oninput="_protPrevia()" placeholder="Ex: 250" value="${p && p.tipo === "semanal" ? p.quantidadeG : ""}">
         </div>
       </div>
 
+      <div class="ma-previa" id="prot-previa"></div>
       <div class="campo-label" style="margin-bottom:6px"><label>Dias da semana</label></div>
       <div class="ma-dias">
-        ${_MA_DIAS.map((d, i) => `<button type="button" class="ma-dia ${diasSel.includes(i) ? "sel" : ""}" data-dia="${i}" onclick="this.classList.toggle('sel')">${d}</button>`).join("")}
+        ${_MA_DIAS.map((d, i) => `<button type="button" class="ma-dia ${diasSel.includes(i) ? "sel" : ""}" data-dia="${i}" onclick="this.classList.toggle('sel'); _protPrevia()">${d}</button>`).join("")}
       </div>
       <p class="rc-print-dica" id="prot-dias-dica">Atrelado à ração: deixe vazio para aplicar sempre que lançar ração. Programado: selecione os dias.</p>
 
@@ -6907,18 +6989,54 @@ function abrirFormProtocolo(index, protId) {
       <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirManejoAutomatico(${index})">Voltar</button>
     </div>
   `;
+  _protPrevia();
 }
 
 function _protToggleTipo() {
   const tipo = document.getElementById("protTipo").value;
   document.getElementById("prot-racao").style.display = tipo === "racao" ? "block" : "none";
   document.getElementById("prot-semanal").style.display = tipo === "semanal" ? "block" : "none";
+  _protPrevia();
+}
+
+// Prévia do custo enquanto o usuário configura: antes disso, só se descobria o
+// impacto no bolso depois que os lançamentos já tinham acontecido.
+function _protPrevia() {
+  const el = document.getElementById("prot-previa");
+  if (!el) return;
+  const prod = produtos.find(pr => pr.id === document.getElementById("protProduto")?.value);
+  const tipo = document.getElementById("protTipo")?.value || "racao";
+  if (!prod) { el.innerHTML = ""; return; }
+  const rs = (v) => "R$ " + formatarNumeroBR(v, 2);
+  const porG = Number(prod.custoPorGrama) || 0;
+
+  if (tipo === "racao") {
+    const modo = document.getElementById("protDoseModo")?.value || "gkg";
+    const dosePorKgG = modo === "pct"
+      ? (parseFloat(document.getElementById("protDosePct")?.value) || 0) * 10
+      : (parseFloat(document.getElementById("protDosePorKg")?.value) || 0);
+    if (dosePorKgG <= 0) { el.innerHTML = ""; return; }
+    // Referência: quanto de ração o viveiro costuma lançar por vez
+    const rac = (viveiros[_maPreviaIndex]?.racoes || []).filter(r => r.racao > 0);
+    const refKg = rac.length ? rac.reduce((s, r) => s + r.racao, 0) / rac.length : 50;
+    el.innerHTML = `<b>${formatarNumeroBR(dosePorKgG, 2)} g</b> de ${prod.nome} por kg de ração
+      · custo <b>${rs(dosePorKgG * porG)}</b> por kg lançado<br>
+      <small>Num lançamento de ${formatarNumeroBR(refKg, 1)} kg${rac.length ? " (média deste viveiro)" : ""}: ${formatarNumeroBR(dosePorKgG * refKg, 0)} g — ${rs(dosePorKgG * refKg * porG)}</small>`;
+  } else {
+    const qtd = parseFloat(document.getElementById("protQtd")?.value) || 0;
+    if (qtd <= 0) { el.innerHTML = ""; return; }
+    const nDias = document.querySelectorAll(".ma-dia.sel").length || 1;
+    el.innerHTML = `<b>${formatarNumeroBR(qtd, 0)} g</b> de ${prod.nome} por aplicação
+      · <b>${rs(qtd * porG)}</b> cada<br>
+      <small>Com ${nDias} dia${nDias !== 1 ? "s" : ""} por semana: ${rs(qtd * porG * nDias)}/semana — ${rs(qtd * porG * nDias * 4.3)}/mês</small>`;
+  }
 }
 
 function _protToggleDose() {
   const modo = document.getElementById("protDoseModo").value;
   document.getElementById("prot-dose-gkg").style.display = modo === "pct" ? "none" : "block";
   document.getElementById("prot-dose-pct").style.display = modo === "pct" ? "block" : "none";
+  _protPrevia();
 }
 
 async function salvarProtocolo(index, protId) {
