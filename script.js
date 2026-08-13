@@ -4672,10 +4672,11 @@ function abrirBoletos(filtro) {
   if (_boletosFiltro === "vencendo") filtrados = naoPagos.filter(x => x.st.tipo === "proximo" || x.st.tipo === "hoje");
   else if (_boletosFiltro === "vencidos") filtrados = naoPagos.filter(x => x.st.tipo === "vencido");
   else if (_boletosFiltro === "pagos") filtrados = todos.filter(x => x.b.pago);
-  else filtrados = [...todos].sort((x, y) => {
-    if (!!x.b.pago !== !!y.b.pago) return x.b.pago ? 1 : -1;
-    return x.st.diff - y.st.diff;
-  });
+  // Aba principal = o que ainda falta pagar, do mais urgente ao menos.
+  // O cabeçalho já dizia "a pagar" e o total já ignorava os quitados: só a
+  // lista é que ainda os trazia no fim, misturando o que exige ação com o que
+  // já foi resolvido. Boleto pago aparece na aba "Pagos".
+  else filtrados = [...naoPagos].sort((x, y) => x.st.diff - y.st.diff);
 
   // Lista de fornecedores para o seletor
   const fornecedores = [...new Set(boletos.map(b => (b.fornecedor || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -4777,7 +4778,7 @@ function abrirBoletos(filtro) {
         <input type="text" placeholder="Buscar por nome ou fornecedor..." oninput="_filtrarBoletosBusca(this.value)">
       </div>
       <div class="bt-abas">
-        <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">Todos</button>
+        <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">A pagar</button>
         <button class="bt-aba${_boletosFiltro === "vencendo" ? " ativa" : ""}" onclick="abrirBoletos('vencendo')">Vencendo</button>
         <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
         <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
@@ -4790,7 +4791,11 @@ function abrirBoletos(filtro) {
         </select>
       </div>` : ""}
       <div class="bt-lista">
-        ${filtrados.length ? rows : `<div class="bt-empty">Nenhum boleto${_boletosFiltro !== "todos" ? " nessa categoria" : " cadastrado"}.</div>`}
+        ${filtrados.length ? rows : `<div class="bt-empty">${
+          _boletosFiltro !== "todos" ? "Nenhum boleto nessa categoria."
+          : (_boletosFornecedor ? `Nenhum boleto em aberto de ${_boletosFornecedor}.`
+            : (boletos.length ? "Nenhum boleto em aberto — está tudo pago." : "Nenhum boleto cadastrado."))
+        }</div>`}
         <p id="bt-busca-vazio" class="bt-empty" style="display:none">Nenhum boleto encontrado.</p>
       </div>
       ${filtrados.length ? `<div class="bt-total-bar">
