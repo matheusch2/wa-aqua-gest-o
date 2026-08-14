@@ -2623,14 +2623,19 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                       if (i > 0) {
                         crescimento = fmtG(item.gramatura - biometrias[i - 1].gramatura) + " g";
                       }
+                      // A lista é exibida ordenada por data, mas editar e excluir
+                      // indexam viveiro.biometrias, que está na ordem de cadastro.
+                      // Passar a posição da tela abria/apagava outra biometria
+                      // sempre que alguém lançava uma com data retroativa.
+                      const iOriginal = viveiro.biometrias.findIndex(b => b.id === item.id);
                       return `
-                        <div class="linha-historico-acoes" id="bio-row-${index}-${i}">
+                        <div class="linha-historico-acoes" id="bio-row-${index}-${iOriginal}">
                             <span>${formatarData(item.data)}</span>
                             <span class="col-centro">${fmtG(item.gramatura)} g</span>
                             <span class="col-centro">${crescimento}</span>
                             <span class="col-acoes">
-                              <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                              <button class="botao-editar botao-excluir" onclick="confirmarExcluirBiometria(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                              <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${iOriginal}, '${elementoId}', ${direto})">✏️</button>
+                              <button class="botao-editar botao-excluir" onclick="confirmarExcluirBiometria(${index}, ${iOriginal}, '${elementoId}', ${direto})">🗑️</button>
                             </span>
                         </div>
                     `;
@@ -3825,17 +3830,23 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
               despescas.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
                 : despescas
-                    .map((item, i) => `
-                    <div class="linha-historico-acoes despesca-clicavel" id="desp-row-${index}-${i}" onclick="_toggleDetalheDespesca(${index}, ${i})" title="Toque para ver o detalhe">
+                    .map((item) => {
+                      // Mesmo cuidado da biometria: a tela ordena por data, mas
+                      // editar/excluir/detalhe indexam viveiro.despescas, que está
+                      // na ordem de cadastro.
+                      const iOriginal = viveiro.despescas.findIndex(d => d.id === item.id);
+                      return `
+                    <div class="linha-historico-acoes despesca-clicavel" id="desp-row-${index}-${iOriginal}" onclick="_toggleDetalheDespesca(${index}, ${iOriginal})" title="Toque para ver o detalhe">
                         <span>${formatarData(item.data)}</span>
                         <span class="col-centro">${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
                         <span class="col-centro">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
                         <span class="col-acoes">
-                          <button class="botao-editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${i}, '${elementoId}', ${direto})">✏️</button>
-                          <button class="botao-editar botao-excluir" onclick="event.stopPropagation(); confirmarExcluirDespesca(${index}, ${i}, '${elementoId}', ${direto})">🗑️</button>
+                          <button class="botao-editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${iOriginal}, '${elementoId}', ${direto})">✏️</button>
+                          <button class="botao-editar botao-excluir" onclick="event.stopPropagation(); confirmarExcluirDespesca(${index}, ${iOriginal}, '${elementoId}', ${direto})">🗑️</button>
                         </span>
                     </div>
-                `)
+                `;
+                    })
                     .join("")
             }
         </div>
