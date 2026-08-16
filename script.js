@@ -6146,7 +6146,46 @@ function _seriesCiclo(ciclo) {
       obs.push(dDias > 0 ? `${(dPeso / dDias).toFixed(2).replace(".", ",")}` : "—");
     }
   });
-  return { bios, dias, peso, cresc, biomassa, fca, racaoAcum, obs, datas, popNum, producaoTotal };
+  // ── Conversão alimentar ao longo do ciclo ────────────────────────────────
+  // Base: a sobrevivência FINAL, aplicada como constante desde o início. Não é
+  // possível saber quando os animais morreram, e supor uma mortalidade
+  // progressiva seria pior: o "ganho de biomassa" de cada período passaria a
+  // embutir a morte inventada pela hipótese, inflando o FCA do fim do ciclo e
+  // fazendo parecer que a conversão piorou quando talvez só tenha morrido
+  // camarão. Com a sobrevivência fixa, o ganho vem apenas do peso subindo —
+  // então o FCA do período mede conversão, que é o que se quer diagnosticar.
+  // O último ponto usa a despesca final (dado real), e nele o FCA acumulado
+  // cai exatamente sobre o FCA do relatório.
+  const sobrFinal = (Number(ciclo.sobrevivencia) || 0) / 100;
+  const fcaDias = [], fcaAcum = [], fcaPeriodo = [];
+  if (sobrFinal > 0 && popNum > 0) {
+    const pontos = bios.map((b, i) => ({ data: b.data, dia: diasArr[i], peso: Number(b.gramatura) }));
+    if (ciclo.dataEncerramento && Number(ciclo.pesoFinal) > 0) {
+      pontos.push({ data: ciclo.dataEncerramento, dia: diaDe(ciclo.dataEncerramento), peso: Number(ciclo.pesoFinal), fim: true });
+    }
+    let antRac = null, antProd = null;
+    for (const pt of pontos) {
+      const kgDespescado = despescasSorted.filter(d => d.data <= pt.data)
+        .reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+      // Vivos = povoado × sobrevivência final, menos os que já saíram nas parciais
+      const vivos = Math.max(0, popNum * sobrFinal - qtdDespescadaAte(pt.data));
+      // Produzido = o que está na água + o que já saiu (também foi produzido)
+      const produzido = pt.fim ? producaoTotal : (vivos * pt.peso / 1000 + kgDespescado);
+      const rac = racaoAcumAte(pt.data);
+      if (produzido <= 0) continue;
+      fcaDias.push(pt.dia);
+      fcaAcum.push(Number((rac / produzido).toFixed(2)));
+      const dRac = antRac === null ? null : rac - antRac;
+      const dProd = antProd === null ? null : produzido - antProd;
+      // Sem ração no período (ou sem ganho de biomassa) não há conversão a
+      // medir: vira lacuna no gráfico, não um zero que pareceria um tombo.
+      fcaPeriodo.push((dProd > 0 && dRac > 0) ? Number((dRac / dProd).toFixed(2)) : null);
+      antRac = rac; antProd = produzido;
+    }
+  }
+
+  return { bios, dias, peso, cresc, biomassa, fca, racaoAcum, obs, datas, popNum, producaoTotal,
+           fcaDias, fcaAcum, fcaPeriodo };
 }
 
 function _renderGraficosCiclo(serie) {
@@ -6223,6 +6262,7 @@ function gerarRelatorioImpressao() {
   const popNum = _serie.popNum;
   const serieDias = _serie.dias, seriePeso = _serie.peso, serieCresc = _serie.cresc;
   const serieBiomassa = _serie.biomassa, serieFca = _serie.fca, serieRacaoAcum = _serie.racaoAcum;
+  const fcaDias = _serie.fcaDias || [], fcaAcum = _serie.fcaAcum || [], fcaPeriodo = _serie.fcaPeriodo || [];
   const serieObs = _serie.obs, serieDatas = _serie.datas;
 
   // ── Despescas ── (parciais com preço próprio + despesca final como última linha)
@@ -6248,6 +6288,7 @@ function gerarRelatorioImpressao() {
     peso: { labels: serieDias, data: seriePeso },
     racao: { labels: serieDias, data: serieRacaoAcum },
     fca: { labels: serieDias, data: serieFca },
+    conversao: { labels: fcaDias, acum: fcaAcum, periodo: fcaPeriodo },
     biomassa: { labels: serieDias, data: serieBiomassa },
     dist: { labels: distLista.map(d => d.nome), data: distLista.map(d => d.total), cores: distLista.map((_, i) => cores[i % cores.length]) },
   };
@@ -6395,6 +6436,7 @@ function gerarRelatorioImpressao() {
   .duas > div + div { margin-top: 4px; }
   .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .chart-box { border: 1px solid #eef0f2; border-radius: 8px; padding: 8px; }
+  .fca-nota { margin: 6px 0 0; font-size: 8px; color: #6b7280; line-height: 1.35; text-align: center; }
   .chart-box h4 { margin: 0 0 6px; font-size: 10.5px; color: #374151; text-align: center; font-weight: 700; }
   .chart-box canvas { width: 100% !important; height: 130px !important; }
   .rosca-wrap { display: flex; flex-direction: column; align-items: center; }
@@ -6490,6 +6532,9 @@ function gerarRelatorioImpressao() {
       <div class="charts">
         <div class="chart-box"><h4>Evolução do peso médio (g)</h4><canvas id="cPeso"></canvas></div>
         <div class="chart-box"><h4>Consumo acumulado de ração (kg)</h4><canvas id="cRacao"></canvas></div>
+        ${fcaAcum.length > 1 ? `<div class="chart-box"><h4>Conversão alimentar — FCA</h4><canvas id="cFca"></canvas>
+          <p class="fca-nota">Estimativa: usa a sobrevivência final (${formatarNumeroBR(Number(ciclo.sobrevivencia) || 0, 1)}%) como base em todo o ciclo.
+          A linha do período mostra quanta ração foi gasta para ganhar 1 kg entre duas pesagens.</p></div>` : ""}
       </div>
     </div>
     <div>
@@ -6559,6 +6604,14 @@ function gerarRelatorioImpressao() {
     if (typeof Chart === "undefined") { setTimeout(render, 100); return; }
     linha("cPeso", D.peso, "#16a34a", "rgba(22,163,74,.08)");
     new Chart(document.getElementById("cRacao"), { type: "bar", data: { labels: D.racao.labels, datasets: [{ data: D.racao.data, backgroundColor: "#0b6b63" }] }, options: { responsive: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
+    if (document.getElementById("cFca") && D.conversao.labels.length > 1) {
+      new Chart(document.getElementById("cFca"), { type: "line",
+        data: { labels: D.conversao.labels, datasets: [
+          { label: "Acumulado", data: D.conversao.acum, borderColor: "#0b6b63", backgroundColor: "transparent", tension: .3, pointRadius: 2, borderWidth: 2 },
+          { label: "Do período", data: D.conversao.periodo, borderColor: "#d97706", backgroundColor: "transparent", tension: .3, pointRadius: 2, borderWidth: 2, borderDash: [4,3], spanGaps: true } ] },
+        options: { responsive: false, plugins: { legend: { display: true, position: "bottom", labels: { boxWidth: 10, font: { size: 8 } } } },
+          scales: { x: { ticks: { font: { size: 8 } } }, y: { beginAtZero: true, ticks: { font: { size: 8 } } } } } });
+    }
     if (document.getElementById("cDist") && D.dist.data.length) {
       new Chart(document.getElementById("cDist"), { type: "doughnut", data: { labels: D.dist.labels, datasets: [{ data: D.dist.data, backgroundColor: D.dist.cores, borderColor: "#fff", borderWidth: 2 }] }, options: { responsive: false, cutout: "62%", plugins: { legend: { display: false } } } });
     }
