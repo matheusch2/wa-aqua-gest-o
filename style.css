@@ -5931,7 +5931,10 @@ body.tema-escuro .custo-grupo-nome { color: #f3f4f6; }
 body.tema-escuro .custo-grupo-valor { color: #34d399; }
 
 /* Área de custos — visual em cards */
-.custo-titulo { margin: 0 0 10px; font-size: 20px; font-weight: 900; color: rgb(6,107,99); text-align: center; }
+.custo-titulo { margin: 0 0 4px; font-size: 20px; font-weight: 900; color: rgb(6,107,99); text-align: center; }
+/* Deixa explícito que a tela mostra o ciclo atual, não a vida toda do viveiro */
+.custo-escopo { margin: 0 0 12px; font-size: 11.5px; color: #9ca3af; text-align: center; line-height: 1.4; }
+body.tema-escuro .custo-escopo { color: #6b7280; }
 .custo-imprimir {
     display: flex; align-items: center; justify-content: center; gap: 6px;
     width: 100%; box-sizing: border-box; margin-bottom: 14px;

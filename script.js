@@ -7909,23 +7909,31 @@ document.addEventListener("click", (e) => {
 // Devolve pares { c, i } onde `i` é o índice REAL em viveiro.custos. Editar e
 // excluir indexam o array original (viveiros[x].custos[i]), por isso o índice
 // nunca pode vir de um array já filtrado — sairia mexendo no custo errado.
-function _custosDoEscopoPares(viveiro, escopo) {
+function _custosDoEscopoPares(viveiro) {
   const pares = (viveiro.custos || []).map((c, i) => ({ c, i }));
-  if (escopo !== "prep") return pares;
-  const ini = viveiro.dataPreparacao || "";
-  return pares.filter(({ c }) => (viveiro.cicloId && c.cicloId)
-    ? c.cicloId === viveiro.cicloId
-    : (!ini || String(c.data || "") >= ini));
+  // Mesma regra de _custosManuaisDoCiclo, que é a fonte única usada pelo card
+  // "Custo parcial", pelo simular venda e pelo relatório: casa pelo ciclo
+  // quando os dois lados têm id; senão, cai na janela de datas do ciclo.
+  // Antes esta tela devolvia viveiro.custos cru — o array guarda a vida inteira
+  // do viveiro, então custo de um cultivo aparecia no seguinte, e o total não
+  // batia com o que as outras telas mostravam.
+  const ini = viveiro.dataPreparacao || viveiro.dataPovoamento || "";
+  const fim = _hojeLocal();
+  const cicloId = viveiro.cicloId;
+  return pares.filter(({ c }) => {
+    if (cicloId && c.cicloId) return c.cicloId === cicloId;
+    return (!ini || !fim) ? true : (String(c.data || "") >= ini && String(c.data || "") <= fim);
+  });
 }
 
-function _custosDoEscopo(viveiro, escopo) {
-  return _custosDoEscopoPares(viveiro, escopo).map(p => p.c);
+function _custosDoEscopo(viveiro) {
+  return _custosDoEscopoPares(viveiro).map(p => p.c);
 }
 
 function renderizarHistoricoCustos(index, elementoId, direto) {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
-  const pares = _custosDoEscopoPares(viveiro, direto);
+  const pares = _custosDoEscopoPares(viveiro);
   const custos = pares.map(p => p.c);
   // Rateio dos custos fixos (funcionário/energia) do ciclo atual — só de leitura,
   // para o total desta tela bater com o "Custo parcial" do viveiro.
@@ -8046,7 +8054,11 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
 
   resultado.innerHTML = `
     <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
-    ${(custos.length > 0 || rateioFixo > 0) ? `<button class="custo-imprimir" onclick="imprimirCustos(${index},${_dArg(direto)})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
+    <p class="custo-escopo">${viveiro.dataPovoamento
+      ? `Cultivo atual, desde ${formatarData(viveiro.dataPreparacao || viveiro.dataPovoamento)}`
+      : (viveiro.dataPreparacao ? `Preparação atual, desde ${formatarData(viveiro.dataPreparacao)}` : "Este viveiro")}
+      · ciclos anteriores ficam no relatório de cada ciclo</p>
+    ${(custos.length > 0 || rateioFixo > 0) ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
     <div class="custo-modo-toggle">
       <button class="cmt-btn ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Geral</button>
       <button class="cmt-btn ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Detalhado</button>
@@ -8093,7 +8105,7 @@ function verCustosPreparacao(index) {
 function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
   const chave = decodeURIComponent(chaveEnc);
   const v = viveiros[index];
-  const grupo = _custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave);
+  const grupo = _custosDoEscopo(v).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
   if (grupo.some(_ehCustoRacao)) {
     _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
@@ -8149,7 +8161,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   const msg = document.getElementById("msg-edit-custo");
   const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
   const v = viveiros[index];
-  const grupo = _custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave);
+  const grupo = _custosDoEscopo(v).filter(c => _chaveCusto(c) === chave);
   if (!grupo.length) return;
   if (grupo.some(_ehCustoRacao)) {
     _toastErro("O custo de Ração é calculado dos lançamentos — edite os lançamentos de ração.");
@@ -8217,14 +8229,14 @@ async function excluirGrupoCusto(index, chaveEnc, elementoId, direto, botao) {
   if (botao?.disabled) return;
   const chave = decodeURIComponent(chaveEnc);
   const v = viveiros[index];
-  if (_custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave).some(_ehCustoRacao)) {
+  if (_custosDoEscopo(v).filter(c => _chaveCusto(c) === chave).some(_ehCustoRacao)) {
     _toastErro("O custo de Ração é calculado dos lançamentos — exclua os lançamentos de ração.");
     return;
   }
   const restaurar = _travarBotao(botao, "Excluindo...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
-  const ids = _custosDoEscopo(v, direto).filter(c => _chaveCusto(c) === chave).map(c => c.id).filter(Boolean);
+  const ids = _custosDoEscopo(v).filter(c => _chaveCusto(c) === chave).map(c => c.id).filter(Boolean);
   if (ids.length) {
     const { error } = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
     if (error) { restaurar(); _toastErro("Erro ao excluir: " + error.message); return; }
@@ -8326,9 +8338,9 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
   restaurarScroll();
 }
 
-function imprimirCustos(viveiroIndex, escopo) {
+function imprimirCustos(viveiroIndex) {
   const viveiro = viveiros[viveiroIndex];
-  const custos = _custosDoEscopo(viveiro, escopo);
+  const custos = _custosDoEscopo(viveiro);
   const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, _hojeLocal());
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
