@@ -1043,6 +1043,29 @@ async function salvarViveiro() {
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurarBotao(); return; }
+
+  // As checagens acima (nome repetido e limite do plano) enxergam só o que ESTA
+  // página carregou. Se o viveiro foi criado em outro aparelho ou em outra aba
+  // depois desta tela abrir, ela não sabe — e deixava criar um duplicado.
+  // Confere no banco imediatamente antes de gravar.
+  const { data: doBanco, error: erroConsulta } = await supabaseClient
+    .from("viveiros").select("id, nome")
+    .eq("user_id", usuario.id).eq("ativo", true);
+  if (!erroConsulta && Array.isArray(doBanco)) {
+    if (doBanco.some(v => (v.nome || "").trim().toLowerCase() === nomeNorm)) {
+      restaurarBotao();
+      mostrarErroViveiro(`Já existe um viveiro chamado "${nome.trim()}". Se você criou em outro aparelho, atualize a página para ver a lista.`);
+      return;
+    }
+    if (doBanco.length >= limite) {
+      restaurarBotao();
+      mostrarErroViveiro(limite <= 1
+        ? "O plano grátis permite 1 viveiro. Assine um plano em \"Meu plano\" para cadastrar mais."
+        : `Seu plano permite ${limite} viveiros. Faça upgrade em \"Meu plano\" para cadastrar mais.`);
+      return;
+    }
+  }
+
   novoViveiro.user_id = usuario.id;
   novoViveiro.ciclo_id = _novoCicloId(); // vincula os lançamentos deste ciclo
 
