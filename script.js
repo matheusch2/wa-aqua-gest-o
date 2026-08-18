@@ -8445,101 +8445,62 @@ async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto, botao)
 
 // ─── CARREGAR DADOS ───────────────────────────────────────────────────────────
 
-async function carregarViveiros() {
-  const usuario = await pegarUsuarioLogado();
+// usuarioConhecido: na abertura do app a sessão já traz o usuário, então não
+// há por que pedi-lo de novo ao servidor só para montar as consultas.
+async function carregarViveiros(usuarioConhecido) {
+  const usuario = usuarioConhecido || await pegarUsuarioLogado();
 
   if (!usuario) return;
 
-  const { data: viveirosData, error: erroViveiros } =
-    await supabaseClient
-      .from("viveiros")
-      .select("*")
-      .eq("ativo", true)
-      .eq("user_id", usuario.id)
-      .order("nome", { ascending: true });
+  // As 11 consultas abaixo filtram só por user_id — nenhuma depende do resultado
+  // da outra. Em série, cada uma esperava a ida e volta da anterior: num celular
+  // no campo eram ~11 viagens de rede antes de a tela aparecer. Disparando todas
+  // juntas, o tempo passa a ser o da mais lenta, não a soma de todas.
+  const tabela = (nome) => supabaseClient.from(nome).select("*").eq("user_id", usuario.id);
+  const [
+    rViveiros, rRacoes, rBiometrias, rDespescas, rCiclos,
+    rProdutos, rTiposRacao, rBoletos, rCustosFixos, rAssinatura, rCustos,
+  ] = await Promise.all([
+    tabela("viveiros").eq("ativo", true).order("nome", { ascending: true }),
+    tabela("racoes"),
+    tabela("biometrias"),
+    tabela("despescas"),
+    tabela("ciclos"),
+    tabela("produtos"),
+    tabela("tipos_racao"),
+    tabela("boletos").eq("ativo", true),
+    tabela("custos_fixos"),
+    tabela("assinaturas").maybeSingle(),
+    tabela("custos"),
+  ]);
 
-  if (erroViveiros) {
-    console.log(erroViveiros);
-    _erroCarregamento("Erro ao carregar viveiros.");
-    return;
+  // Tabelas essenciais: sem elas a tela mentiria, então aborta com aviso.
+  const essenciais = [
+    [rViveiros, "viveiros"], [rRacoes, "rações"], [rBiometrias, "biometrias"],
+    [rDespescas, "despescas"], [rCiclos, "ciclos"],
+  ];
+  for (const [r, rotulo] of essenciais) {
+    if (r.error) { console.log(r.error); _erroCarregamento(`Erro ao carregar ${rotulo}.`); return; }
   }
+  const viveirosData = rViveiros.data || [];
 
-  // CORREÇÃO: filtrar por user_id para não carregar dados de outros usuários
-  const { data: racoesData, error: erroRacoes } =
-    await supabaseClient
-      .from("racoes")
-      .select("*")
-      .eq("user_id", usuario.id);
-
-  if (erroRacoes) {
-    console.log(erroRacoes);
-    _erroCarregamento("Erro ao carregar rações.");
-    return;
-  }
-
-  const { data: biometriasData, error: erroBiometrias } =
-    await supabaseClient
-      .from("biometrias")
-      .select("*")
-      .eq("user_id", usuario.id);
-
-  if (erroBiometrias) {
-    console.log(erroBiometrias);
-    _erroCarregamento("Erro ao carregar biometrias.");
-    return;
-  }
-
-  const { data: despescasData, error: erroDespescas } =
-    await supabaseClient
-      .from("despescas")
-      .select("*")
-      .eq("user_id", usuario.id);
-
-  if (erroDespescas) {
-    console.log(erroDespescas);
-    _erroCarregamento("Erro ao carregar despescas.");
-    return;
-  }
-
-  const { data: ciclosData, error: erroCiclos } =
-    await supabaseClient
-      .from("ciclos")
-      .select("*")
-      .eq("user_id", usuario.id);
-
-  if (erroCiclos) {
-    console.log(erroCiclos);
-    _erroCarregamento("Erro ao carregar ciclos.");
-    return;
-  }
-
-  // Carregar produtos (gracioso se a tabela não existir ainda)
-  const { data: produtosData, error: erroProdutos } = await supabaseClient
-    .from("produtos").select("*").eq("user_id", usuario.id);
-  if (!erroProdutos && produtosData) {
-    produtos = produtosData.map(p => ({
+  // Tabelas acessórias: seguem graciosas se ainda não existirem no banco.
+  if (!rProdutos.error && rProdutos.data) {
+    produtos = rProdutos.data.map(p => ({
       id: p.id, nome: p.nome, categoria: p.categoria,
       pesoKg: Number(p.peso_kg), valorPago: Number(p.valor_pago),
       custoPorGrama: Number(p.custo_por_grama),
     }));
   }
-
-  // Carregar tipos de ração (gracioso se a tabela não existir ainda)
-  const { data: tiposRacaoData } = await supabaseClient
-    .from("tipos_racao").select("*").eq("user_id", usuario.id);
-  if (tiposRacaoData) {
-    tiposRacao = tiposRacaoData.map(t => ({
+  if (rTiposRacao.data) {
+    tiposRacao = rTiposRacao.data.map(t => ({
       id: t.id, nome: t.nome,
       pesoSacoKg: Number(t.peso_saco_kg),
       valorSaco: Number(t.valor_saco),
       custoPorKg: Number(t.custo_por_kg),
     }));
   }
-
-  // Carregar boletos a vencer
-  const { data: boletosData } = await supabaseClient
-    .from("boletos").select("*").eq("user_id", usuario.id).eq("ativo", true);
-  boletos = (boletosData || []).map(b => ({
+  boletos = (rBoletos.data || []).map(b => ({
     id: b.id,
     nome: b.nome,
     fornecedor: b.fornecedor,
@@ -8551,11 +8512,7 @@ async function carregarViveiros() {
     valorPago: b.valor_pago ? Number(b.valor_pago) : 0,
     pagamentos: Array.isArray(b.pagamentos) ? b.pagamentos : [],
   }));
-
-  // Carregar custos fixos mensais (gracioso se a tabela não existir ainda)
-  const { data: custosFixosData } = await supabaseClient
-    .from("custos_fixos").select("*").eq("user_id", usuario.id);
-  custosFixos = (custosFixosData || []).map(c => ({
+  custosFixos = (rCustosFixos.data || []).map(c => ({
     id: c.id,
     nome: c.nome,
     categoria: c.categoria || "outro",
@@ -8563,16 +8520,13 @@ async function carregarViveiros() {
     dataInicio: c.data_inicio || null,
     ativo: c.ativo !== false,
   }));
+  assinatura = rAssinatura.data || null;
 
-  // Carregar assinatura do usuário (gracioso se a tabela não existir ainda)
-  const { data: assinaturaData } = await supabaseClient
-    .from("assinaturas").select("*").eq("user_id", usuario.id).maybeSingle();
-  assinatura = assinaturaData || null;
-
-  // Carregar custos (gracioso se a tabela não existir ainda)
-  const { data: custosData } = await supabaseClient
-    .from("custos").select("*").eq("user_id", usuario.id);
-  const custosArr = custosData || [];
+  const racoesData = rRacoes.data || [];
+  const biometriasData = rBiometrias.data || [];
+  const despescasData = rDespescas.data || [];
+  const ciclosData = rCiclos.data || [];
+  const custosArr = rCustos.data || [];
 
   viveiros = viveirosData.map((item) => ({
     id: item.id,
@@ -8739,16 +8693,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           <p style="margin:0;font-size:14px">Carregando...</p>
         </div>
       `;
-      await carregarViveiros();
+      await carregarViveiros(session.user);
 
-      // Garante ciclo_id nos viveiros ativos antigos (uma única vez, idempotente)
-      try { await _garantirCicloIdViveirosAtivos(); } catch (e) { console.log("ciclo_id backfill:", e); }
-
-      // Põe em dia os protocolos semanais (lançamento automático)
-      try { await aplicarProtocolosSemanais(); } catch (e) { console.log("Protocolos:", e); }
-
-      // Atualizar avatar no topo
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      // O avatar sai da sessão que já temos em mãos — pedir o usuário de novo
+      // ao servidor era mais uma ida e volta só para desenhar um círculo.
+      const user = session.user;
       if (user) {
         const fotoUrl = user.user_metadata?.avatar_url;
         const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "?";
@@ -8760,6 +8709,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${iniciais || "?"}</span>`;
         }
       }
+
+      // Manutenção (migração de ciclo_id e lançamentos automáticos em atraso)
+      // não precisa segurar a tela: roda depois que o app já está utilizável.
+      // Os dois gravam direto na memória, então a próxima tela aberta já vê o
+      // resultado — o que eles não podem é atrasar a entrada do usuário.
+      setTimeout(async () => {
+        try { await _garantirCicloIdViveirosAtivos(); } catch (e) { console.log("ciclo_id backfill:", e); }
+        try { await aplicarProtocolosSemanais(); } catch (e) { console.log("Protocolos:", e); }
+      }, 0);
 
       verificarBoletosVencendo();
       if (window.innerWidth >= 900) {
