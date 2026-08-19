@@ -42,7 +42,7 @@ retomar, o commit com a implementação está no histórico do Git (procure por
 Corrigido nesta rodada: vírgula engolida nos campos numéricos (erro de 10x),
 rateio de custo fixo congelado no encerramento, vigência por período nos custos
 fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
-(16 idas ao servidor → 2), origem da sobrevivência estimada.
+(16 idas ao servidor → 2).
 
 - [ ] **Verificar as permissões do banco** — rodar o SQL de check-up (está no
   chat de 30/07). Achamos 27 funções que gravam sem confirmar se a linha foi
