@@ -5839,6 +5839,7 @@ async function salvarEncerramentoCiclo(index) {
     producao_total: producaoTotal,
     peso_final: pesoFinal,
     racao_consumida: racaoConsumida,
+    custo_fixo_rateado: _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, dataEncerramento),
     fca: fca,
     sobrevivencia: sobrevivencia,
     observacoes: observacoes,
@@ -5851,9 +5852,18 @@ async function salvarEncerramentoCiclo(index) {
     despescas_json: despescas,
   };
 
-  const { error } = await supabaseClient
+  let { error } = await supabaseClient
     .from("ciclos")
     .insert([cicloBanco]);
+
+  // A coluna custo_fixo_rateado pode ainda não existir no banco do usuário.
+  // Nesse caso, encerra sem congelar o rateio (comportamento antigo) em vez de
+  // impedir o encerramento do ciclo por causa de um campo novo.
+  if (error && /custo_fixo_rateado/.test(error.message || "")) {
+    const { custo_fixo_rateado, ...semCampoNovo } = cicloBanco;
+    console.log("Coluna custo_fixo_rateado ausente — encerrando sem congelar o rateio.");
+    ({ error } = await supabaseClient.from("ciclos").insert([semCampoNovo]));
+  }
 
   if (error) {
     console.log(error);
@@ -6050,7 +6060,8 @@ function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
   // ── Custos (fonte única) e financeiro automático (preços das despescas) ──
   const _cc = _custosCicloAtivo(
     viveiros[index] || { custos: [] }, ciclo.cicloId,
-    ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
+    ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento,
+    ciclo.custoFixoRateado
   );
   const custoTotal = _cc.total, custoManuais = _cc.totalManuais, rateioFixo = _cc.rateioFixo;
 
@@ -6253,7 +6264,9 @@ function gerarRelatorioImpressao() {
     viveiros[index]?.custos, ciclo.cicloId,
     ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento
   );
-  const custoFixoRateado = _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
+  const custoFixoRateado = (ciclo.custoFixoRateado != null && !isNaN(Number(ciclo.custoFixoRateado)))
+    ? Number(ciclo.custoFixoRateado)
+    : _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFixoRateado;
 
   // Agrupa por nome normalizado: sem isso, "Análise de água" e "Analise de
@@ -6768,12 +6781,20 @@ function _custosManuaisDoCiclo(custos, cicloId, iniYmd, fimYmd) {
 // FONTE ÚNICA dos custos de um ciclo: manuais válidos + custo fixo rateado.
 // Alimenta o card "Custo parcial", o "Custo por kg", o relatório do ciclo e a
 // impressão — garantindo o mesmo valor em todos os pontos para a mesma janela.
-function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd) {
+// rateioCongelado: valor gravado no encerramento. O rateio é recalculado a
+// partir dos custos fixos ATUAIS, então desativar um funcionário ou reajustar
+// um salário reescrevia o custo de ciclos já fechados — o mesmo relatório dava
+// número diferente a cada dia. Ciclo encerrado é registro histórico: usa o
+// valor congelado quando existe, e só recalcula para os ciclos antigos que
+// fecharam antes deste campo passar a ser gravado.
+function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd, rateioCongelado) {
   const manuais = _custosManuaisDoCiclo(viveiro.custos, cicloId, iniYmd, fimYmd);
   const totalProdutos = manuais.filter(c => c.tipo === "produto").reduce((s, c) => s + Number(c.valor), 0);
   const totalOutros = manuais.filter(c => c.tipo !== "produto").reduce((s, c) => s + Number(c.valor), 0);
   const totalManuais = totalProdutos + totalOutros;
-  const rateioFixo = _custoFixoRateado(iniYmd, fimYmd);
+  const rateioFixo = (rateioCongelado !== null && rateioCongelado !== undefined && !isNaN(Number(rateioCongelado)))
+    ? Number(rateioCongelado)
+    : _custoFixoRateado(iniYmd, fimYmd);
   return { manuais, totalProdutos, totalOutros, totalManuais, rateioFixo, total: totalManuais + rateioFixo };
 }
 
@@ -8600,6 +8621,7 @@ async function carregarViveiros(usuarioConhecido) {
         dataPreparacao: ciclo.data_preparacao || null,
         observacoes: ciclo.observacoes,
         cicloId: ciclo.ciclo_id || null,
+        custoFixoRateado: ciclo.custo_fixo_rateado != null ? Number(ciclo.custo_fixo_rateado) : null,
         // Histórico persistido (gracioso para ciclos antigos sem esses campos)
         biometrias: Array.isArray(ciclo.biometrias_json) ? ciclo.biometrias_json.map(b => ({
           data: b.data, gramatura: Number(b.gramatura),
