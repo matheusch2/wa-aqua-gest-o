@@ -1436,6 +1436,14 @@ function abrirViveiro(index) {
   let biomassaDespescaStr = "--";
   let custoKgProduzidoStr = "--";
   const PESO_ALVO_DESPESCA = 20; // g — meta padrão de despesca
+  // A estimativa cruza a ração de HOJE com o peso da ÚLTIMA biometria. Quanto
+  // mais velha a pesagem, mais a conta erra — e sempre para MAIS sobrevivência
+  // do que a real, porque o peso antigo tem taxa de arraçoamento maior. Com 21
+  // dias de defasagem o desvio passa de 20%. Por isso a tela passa a dizer de
+  // quando é a biometria usada, e avisa quando está velha.
+  const _bioUsada = biosSorted.length ? biosSorted[biosSorted.length - 1] : null;
+  const _diasBio = _bioUsada ? calcularDiasCultivo(_bioUsada.data, _hojeLocal()) : null;
+  const _bioVelha = _diasBio !== null && _diasBio > 10;
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
     if (res && res.biomassa > 0) {
@@ -1552,6 +1560,7 @@ function abrirViveiro(index) {
           </div>
           <small>Sobrevivência est.</small>
           <strong>${sobrevivenciaEstimada}</strong>
+          ${_bioUsada ? `<span class="info-box-fonte${_bioVelha ? " fonte-velha" : ""}">biometria de ${formatarData(_bioUsada.data)}${_diasBio > 0 ? ` · ${_diasBio} dia${_diasBio !== 1 ? "s" : ""} atrás` : " · hoje"}${_bioVelha ? " ⚠️" : ""}</span>` : ""}
         </div>
 
         <div class="info-box">
