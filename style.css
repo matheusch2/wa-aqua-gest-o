@@ -4819,6 +4819,35 @@ body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
 .cf-card-valor { font-size: 15px; font-weight: 700; color: #059669; white-space: nowrap; }
 .cf-card-valor small { font-size: 10.5px; font-weight: 500; color: #9ca3af; }
 .cf-card-acoes { display: flex; gap: 6px; }
+/* Diálogo: o novo valor vale a partir de hoje ou desde o início? */
+.cf-vig-fundo {
+    position: fixed; inset: 0; z-index: 9998; background: rgba(15,23,42,0.45);
+    display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.cf-vig-caixa {
+    background: #fff; border-radius: 16px; padding: 18px; width: 100%; max-width: 380px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+}
+.cf-vig-caixa h4 { margin: 0 0 4px; font-size: 16px; color: rgb(6,107,99); font-weight: 800; }
+.cf-vig-sub { margin: 0 0 14px; font-size: 12.5px; color: #6b7280; }
+.cf-vig-sub b { color: #1f2937; }
+.cf-vig-op {
+    display: block; width: 100%; text-align: left; background: #f8fafc;
+    border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 11px 13px;
+    margin-bottom: 9px; cursor: pointer;
+}
+.cf-vig-op:hover { border-color: rgb(6,107,99); background: #f0f7f5; }
+.cf-vig-op b { display: block; font-size: 14px; color: rgb(6,107,99); font-weight: 800; margin-bottom: 2px; }
+.cf-vig-op small { display: block; font-size: 11.5px; color: #6b7280; line-height: 1.4; font-weight: 400; }
+.cf-vig-cancelar {
+    width: 100%; background: none; border: none; color: #6b7280;
+    font-size: 13px; font-weight: 600; padding: 8px; cursor: pointer;
+}
+body.tema-escuro .cf-vig-caixa { background: #1f2937; }
+body.tema-escuro .cf-vig-op { background: #111827; border-color: #374151; }
+body.tema-escuro .cf-vig-op:hover { background: #16241f; border-color: rgb(6,107,99); }
+body.tema-escuro .cf-vig-sub b { color: #f3f4f6; }
+
 .cf-btn-acao {
     width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
     background: #f9fafb; display: flex; align-items: center; justify-content: center;

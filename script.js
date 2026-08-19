@@ -4528,7 +4528,7 @@ function abrirCustosFixos() {
           <div class="cf-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div class="cf-card-info">
             <span class="cf-card-nome">${c.nome}</span>
-            <span class="cf-card-cat">${_custoFixoCatLabel(c.categoria)}${c.dataInicio ? " · desde " + formatarData(c.dataInicio) : ""}${c.ativo ? "" : " · inativo"}</span>
+            <span class="cf-card-cat">${_custoFixoCatLabel(c.categoria)}${c.dataInicio ? " · desde " + formatarData(c.dataInicio) : ""}${c.dataFim ? " até " + formatarData(c.dataFim) : (c.ativo ? "" : " · inativo")}</span>
           </div>
           <div class="cf-card-valor">R$ ${formatarNumeroBR(c.valorMensal, 2)}<small>/mês</small></div>
           <div class="cf-card-acoes">
@@ -4627,6 +4627,36 @@ function abrirFormCustoFixo(index) {
   `;
 }
 
+// Pergunta o que o novo valor significa. Devolve "hoje", "tudo" ou null.
+function _perguntarVigenciaCustoFixo(c, valorNovo) {
+  return new Promise((resolve) => {
+    const rs = (v) => "R$ " + formatarNumeroBR(Number(v) || 0, 2);
+    const fundo = document.createElement("div");
+    fundo.className = "cf-vig-fundo";
+    fundo.innerHTML = `
+      <div class="cf-vig-caixa">
+        <h4>A partir de quando vale?</h4>
+        <p class="cf-vig-sub">${_attr(c.nome)}: de <b>${rs(c.valorMensal)}</b> para <b>${rs(valorNovo)}</b></p>
+        <button class="cf-vig-op" data-modo="hoje">
+          <b>Vale a partir de hoje</b>
+          <small>Reajuste. O que já passou continua com ${rs(c.valorMensal)}.</small>
+        </button>
+        <button class="cf-vig-op" data-modo="tudo">
+          <b>Corrigir desde o início</b>
+          <small>O valor antigo estava errado. Refaz todo o período com ${rs(valorNovo)}.</small>
+        </button>
+        <button class="cf-vig-cancelar" data-modo="">Cancelar</button>
+      </div>`;
+    const fechar = (modo) => { fundo.remove(); resolve(modo || null); };
+    fundo.addEventListener("click", (e) => {
+      if (e.target === fundo) return fechar(null);
+      const btn = e.target.closest("[data-modo]");
+      if (btn) fechar(btn.dataset.modo);
+    });
+    document.body.appendChild(fundo);
+  });
+}
+
 async function salvarCustoFixo(index) {
   if (_bloqueioEdicao()) return;
   const botao = document.querySelector(".botao-salvar");
@@ -4649,12 +4679,40 @@ async function salvarCustoFixo(index) {
 
   if (editando) {
     const c = custosFixos[index];
-    const { error } = await supabaseClient.from("custos_fixos")
-      .update({ nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio })
-      .eq("id", c.id).eq("user_id", usuario.id);
-    if (error) { console.log(error); mostrarErro("Erro ao salvar: " + error.message); restaurar(); return; }
-    c.nome = nome; c.categoria = categoria; c.valorMensal = valorMensal; c.dataInicio = dataInicio;
-    _toastSucesso("Custo fixo atualizado.");
+    const mudouValor = Number(c.valorMensal) !== Number(valorMensal);
+    // Mudar o valor tem dois sentidos diferentes: um reajuste (o passado ficou
+    // como estava) ou a correção de um valor digitado errado (refaz tudo). Só o
+    // usuário sabe qual é, então perguntamos — mas apenas quando o valor mudou.
+    const modo = mudouValor
+      ? await _perguntarVigenciaCustoFixo(c, valorMensal)
+      : "tudo";
+    if (modo === null) { restaurar(); return; } // cancelou
+
+    if (modo === "hoje") {
+      const hoje = _hojeLocal();
+      const ontem = _maAddDias(hoje, -1);
+      // Encerra o período atual ontem e abre um novo a partir de hoje
+      const { error: e1 } = await supabaseClient.from("custos_fixos")
+        .update({ data_fim: ontem }).eq("id", c.id).eq("user_id", usuario.id);
+      if (e1) { console.log(e1); mostrarErro("Erro ao salvar: " + e1.message); restaurar(); return; }
+      const { data: novoReg, error: e2 } = await supabaseClient.from("custos_fixos")
+        .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: hoje, ativo: true }])
+        .select();
+      if (e2 || !novoReg || !novoReg.length) { console.log(e2); mostrarErro("Erro ao salvar: " + (e2?.message || "tente novamente.")); restaurar(); return; }
+      c.dataFim = ontem;
+      custosFixos.push({
+        id: novoReg[0].id, nome, categoria, valorMensal,
+        dataInicio: hoje, dataFim: null, ativo: true,
+      });
+      _toastSucesso(`Novo valor vale a partir de ${formatarData(hoje)}.`);
+    } else {
+      const { error } = await supabaseClient.from("custos_fixos")
+        .update({ nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio })
+        .eq("id", c.id).eq("user_id", usuario.id);
+      if (error) { console.log(error); mostrarErro("Erro ao salvar: " + error.message); restaurar(); return; }
+      c.nome = nome; c.categoria = categoria; c.valorMensal = valorMensal; c.dataInicio = dataInicio;
+      _toastSucesso("Custo fixo atualizado.");
+    }
   } else {
     const { data, error } = await supabaseClient.from("custos_fixos")
       .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio, ativo: true }])
@@ -4671,12 +4729,20 @@ async function toggleCustoFixo(index) {
   const c = custosFixos[index];
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
-  const novo = !c.ativo;
+  const hoje = _hojeLocal();
+  const ativando = !c.ativo;
+  // Desativar encerra HOJE em vez de apagar o passado: os meses já trabalhados
+  // continuam no custo do cultivo. Reativar reabre a vigência a partir de hoje.
+  const patch = ativando
+    ? { ativo: true, data_fim: null, data_inicio: hoje }
+    : { ativo: false, data_fim: hoje };
   const { error } = await supabaseClient.from("custos_fixos")
-    .update({ ativo: novo }).eq("id", c.id).eq("user_id", usuario.id);
+    .update(patch).eq("id", c.id).eq("user_id", usuario.id);
   if (error) { console.log(error); _toastErro("Erro ao atualizar."); return; }
-  c.ativo = novo;
-  _toastSucesso(novo ? "Custo ativado." : "Custo desativado.");
+  c.ativo = ativando;
+  c.dataFim = ativando ? null : hoje;
+  if (ativando) c.dataInicio = hoje;
+  _toastSucesso(ativando ? `Ativado a partir de ${formatarData(hoje)}.` : `Encerrado em ${formatarData(hoje)} — os meses anteriores continuam contando.`);
   abrirCustosFixos();
 }
 
@@ -5373,7 +5439,7 @@ function _finTipoLabel(c) {
 // tela financeira. Não materializa linhas na tabela custos — são calculados na
 // hora. Cada custo fixo vira um item por viveiro, com o valor rateado no período.
 function _finItensRateioFixo(alvos) {
-  if (!custosFixos.some(c => c.ativo !== false)) return [];
+  if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return [];
   const hoje = _hojeLocal();
   const pIni = _finPeriodoIni || null, pFim = _finPeriodoFim || null;
   const itens = [];
@@ -6703,15 +6769,25 @@ function _maAddDias(s, n) {
 // data, e acumula a parcela de cada viveiro ao longo do seu ciclo.
 
 function _custoFixoMensalTotal() {
-  return custosFixos.reduce((s, c) => s + (c.ativo === false ? 0 : (Number(c.valorMensal) || 0)), 0);
+  const hoje = _hojeLocal();
+  return custosFixos.reduce((s, c) => s + (_custoFixoValeNaData(c, hoje) ? (Number(c.valorMensal) || 0) : 0), 0);
 }
-// Soma mensal dos custos que já valiam numa data (respeita a data de início de cada um)
+// Um custo fixo vale numa data se já tinha começado e ainda não terminou.
+// Desativar passa a gravar uma data de fim: assim o funcionário que trabalhou
+// junho e julho continua contando nesses meses, em vez de sumir do cultivo
+// inteiro. Registros antigos, desativados antes de existir data de fim, mantêm
+// o comportamento anterior (ficam fora de todas as datas).
+function _custoFixoValeNaData(c, ymd) {
+  if (c.dataInicio && ymd && c.dataInicio > ymd) return false; // ainda não começou
+  if (c.dataFim && ymd && ymd > c.dataFim) return false;       // já encerrou
+  if (!c.dataFim && c.ativo === false) return false;           // legado sem data de fim
+  return true;
+}
+
+// Soma mensal dos custos vigentes numa data
 function _custoFixoMensalNaData(ymd) {
-  return custosFixos.reduce((s, c) => {
-    if (c.ativo === false) return s;
-    if (c.dataInicio && ymd && c.dataInicio > ymd) return s; // ainda não começou nessa data
-    return s + (Number(c.valorMensal) || 0);
-  }, 0);
+  return custosFixos.reduce((s, c) =>
+    _custoFixoValeNaData(c, ymd) ? s + (Number(c.valorMensal) || 0) : s, 0);
 }
 // Dias reais do mês civil de uma data (28/29/30/31)
 function _diasNoMes(ymd) {
@@ -6747,7 +6823,7 @@ function _viveirosAtivosNaData(ymd, hojeYmd) {
 // Custo fixo rateado acumulado para um viveiro no período [iniYmd, fimYmd] (inclusive)
 function _custoFixoRateado(iniYmd, fimYmd) {
   if (!iniYmd || !fimYmd || iniYmd > fimYmd) return 0;
-  if (!custosFixos.some(c => c.ativo !== false)) return 0;
+  if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return 0;
   const hoje = _hojeLocal();
   let total = 0, cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
@@ -8550,6 +8626,7 @@ async function carregarViveiros(usuarioConhecido) {
     valorMensal: Number(c.valor_mensal),
     dataInicio: c.data_inicio || null,
     ativo: c.ativo !== false,
+    dataFim: c.data_fim || null,
   }));
   assinatura = rAssinatura.data || null;
 
