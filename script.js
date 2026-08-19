@@ -4627,33 +4627,53 @@ function abrirFormCustoFixo(index) {
   `;
 }
 
-// Pergunta o que o novo valor significa. Devolve "hoje", "tudo" ou null.
+// Pergunta a partir de QUE DIA o novo valor passa a valer. Uma data cobre todos
+// os casos: hoje (reajuste), uma data passada (reajuste retroativo) ou o próprio
+// início do custo (corrigir um valor digitado errado). Devolve "AAAA-MM-DD" ou
+// null se cancelar.
 function _perguntarVigenciaCustoFixo(c, valorNovo) {
   return new Promise((resolve) => {
     const rs = (v) => "R$ " + formatarNumeroBR(Number(v) || 0, 2);
+    const hoje = _hojeLocal();
+    const inicio = c.dataInicio || "";
     const fundo = document.createElement("div");
     fundo.className = "cf-vig-fundo";
     fundo.innerHTML = `
       <div class="cf-vig-caixa">
         <h4>A partir de quando vale?</h4>
         <p class="cf-vig-sub">${_attr(c.nome)}: de <b>${rs(c.valorMensal)}</b> para <b>${rs(valorNovo)}</b></p>
-        <button class="cf-vig-op" data-modo="hoje">
-          <b>Vale a partir de hoje</b>
-          <small>Reajuste. O que já passou continua com ${rs(c.valorMensal)}.</small>
-        </button>
-        <button class="cf-vig-op" data-modo="tudo">
-          <b>Corrigir desde o início</b>
-          <small>O valor antigo estava errado. Refaz todo o período com ${rs(valorNovo)}.</small>
-        </button>
-        <button class="cf-vig-cancelar" data-modo="">Cancelar</button>
+        <input type="date" id="cfVigData" class="cf-vig-data" value="${hoje}">
+        <div class="cf-vig-atalhos">
+          <button type="button" class="cf-vig-chip" data-data="${hoje}">Hoje</button>
+          ${inicio && inicio < hoje ? `<button type="button" class="cf-vig-chip" data-data="${inicio}">Desde o início (${formatarData(inicio)})</button>` : ""}
+        </div>
+        <p class="cf-vig-nota">Os dias anteriores a essa data continuam com ${rs(c.valorMensal)}.</p>
+        <button class="botao-salvar cf-vig-ok" type="button">Confirmar</button>
+        <button class="cf-vig-cancelar" type="button">Cancelar</button>
       </div>`;
-    const fechar = (modo) => { fundo.remove(); resolve(modo || null); };
+    const campo = () => fundo.querySelector("#cfVigData");
+    const nota = () => fundo.querySelector(".cf-vig-nota");
+    const atualizarNota = () => {
+      const d = campo().value;
+      nota().textContent = (!d || (inicio && d <= inicio))
+        ? `Refaz todo o período com ${rs(valorNovo)}.`
+        : `Os dias anteriores a ${formatarData(d)} continuam com ${rs(c.valorMensal)}.`;
+    };
+    const fechar = (v) => { fundo.remove(); resolve(v); };
     fundo.addEventListener("click", (e) => {
       if (e.target === fundo) return fechar(null);
-      const btn = e.target.closest("[data-modo]");
-      if (btn) fechar(btn.dataset.modo);
+      const chip = e.target.closest(".cf-vig-chip");
+      if (chip) { campo().value = chip.dataset.data; atualizarNota(); return; }
+      if (e.target.closest(".cf-vig-cancelar")) return fechar(null);
+      if (e.target.closest(".cf-vig-ok")) {
+        const d = campo().value;
+        if (!d) return; // sem data não dá para decidir
+        return fechar(d);
+      }
     });
+    fundo.addEventListener("change", (e) => { if (e.target.id === "cfVigData") atualizarNota(); });
     document.body.appendChild(fundo);
+    atualizarNota();
   });
 }
 
@@ -4683,28 +4703,30 @@ async function salvarCustoFixo(index) {
     // Mudar o valor tem dois sentidos diferentes: um reajuste (o passado ficou
     // como estava) ou a correção de um valor digitado errado (refaz tudo). Só o
     // usuário sabe qual é, então perguntamos — mas apenas quando o valor mudou.
-    const modo = mudouValor
-      ? await _perguntarVigenciaCustoFixo(c, valorMensal)
-      : "tudo";
-    if (modo === null) { restaurar(); return; } // cancelou
+    const desde = mudouValor ? await _perguntarVigenciaCustoFixo(c, valorMensal) : null;
+    if (mudouValor && desde === null) { restaurar(); return; } // cancelou
 
-    if (modo === "hoje") {
-      const hoje = _hojeLocal();
-      const ontem = _maAddDias(hoje, -1);
-      // Encerra o período atual ontem e abre um novo a partir de hoje
+    // Data escolhida DEPOIS do início do custo = o valor mudou no meio do
+    // caminho: fecha o período atual na véspera e abre outro. Data igual ou
+    // anterior ao início = o valor sempre foi esse (correção), então basta
+    // atualizar o registro.
+    const dividir = mudouValor && c.dataInicio && desde > c.dataInicio;
+
+    if (dividir) {
+      const vespera = _maAddDias(desde, -1);
       const { error: e1 } = await supabaseClient.from("custos_fixos")
-        .update({ data_fim: ontem }).eq("id", c.id).eq("user_id", usuario.id);
+        .update({ data_fim: vespera }).eq("id", c.id).eq("user_id", usuario.id);
       if (e1) { console.log(e1); mostrarErro("Erro ao salvar: " + e1.message); restaurar(); return; }
       const { data: novoReg, error: e2 } = await supabaseClient.from("custos_fixos")
-        .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: hoje, ativo: true }])
+        .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: desde, ativo: true }])
         .select();
       if (e2 || !novoReg || !novoReg.length) { console.log(e2); mostrarErro("Erro ao salvar: " + (e2?.message || "tente novamente.")); restaurar(); return; }
-      c.dataFim = ontem;
+      c.dataFim = vespera;
       custosFixos.push({
         id: novoReg[0].id, nome, categoria, valorMensal,
-        dataInicio: hoje, dataFim: null, ativo: true,
+        dataInicio: desde, dataFim: null, ativo: true,
       });
-      _toastSucesso(`Novo valor vale a partir de ${formatarData(hoje)}.`);
+      _toastSucesso(`Novo valor vale a partir de ${formatarData(desde)}.`);
     } else {
       const { error } = await supabaseClient.from("custos_fixos")
         .update({ nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio })
