@@ -44,12 +44,17 @@ rateio de custo fixo congelado no encerramento, vigência por período nos custo
 fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
 (16 idas ao servidor → 2).
 
-- [ ] **Verificar as permissões do banco** — rodar o SQL de check-up (está no
-  chat de 30/07). Achamos 27 funções que gravam sem confirmar se a linha foi
-  mesmo alterada. É risco latente: só vira bug se faltar alguma política.
-  Se o check-up acusar falta, aí sim vale endurecer essas funções.
-- [ ] Atenção especial a `perfis` e `assinaturas`: se o usuário puder EDITAR
-  essas tabelas, ele pode se dar plano pago ou virar admin. Ali o certo é só
-  leitura para o usuário; quem escreve é a Edge Function.
+- [x] **Permissões do banco verificadas (31/07) — está tudo certo.**
+  Cada operação que o app usa tem política, e nada além disso está aberto.
+  `perfis` e `assinaturas` são somente leitura para o usuário — é isso que
+  impede alguém de se promover a admin ou se dar plano pago.
+  Ausências que o check-up aponta e são CORRETAS, não mexer:
+  - `admin_historico`: nenhuma política — só a Edge Function escreve.
+  - `biometrias`, `racoes`, `despescas`: sem UPDATE — editar é apagar e gravar.
+  - `viveiros`: sem DELETE — excluir é `ativo = false` (exclusão suave).
+  Consequência: os 27 pontos que gravam sem confirmar a linha NÃO precisam ser
+  mexidos. Mas guarde a regra: se um dia o app passar a usar uma operação nova
+  numa dessas tabelas (ex.: UPDATE em `racoes`), vai falhar em silêncio até a
+  política ser criada.
 - [ ] Ainda não auditados a fundo: `/ch2`, corridas/duplo toque, projeção de
   crescimento.
