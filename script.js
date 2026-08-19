@@ -687,6 +687,16 @@ function _numeroMoedaBR(str) {
   return Number.isFinite(n) ? n : null;
 }
 
+// Lê um campo numérico aceitando vírgula OU ponto como decimal. Os campos eram
+// type="number", e nesses o navegador DESCARTA a vírgula em silêncio: quem
+// digitava "2,5" kg gravava 25 kg, e "0,5" ha virava 5 ha. Como o número saía
+// positivo e válido, nenhuma validação pegava. Agora os campos são de texto com
+// teclado numérico, e a leitura passa por aqui.
+function parseDecimalBR(str) {
+  const n = _numeroMoedaBR(str);
+  return n === null ? NaN : n;
+}
+
 function parseMoedaBR(str) {
   if (!str) return 0;
   const n = _numeroMoedaBR(str);
@@ -961,7 +971,7 @@ function mostrarCadastroViveiro() {
             <label>Tamanho do viveiro</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="tamanhoViveiro" placeholder="Ex: 0.5">
+            <input type="text" inputmode="decimal" id="tamanhoViveiro" placeholder="Ex: 0.5">
             <span class="campo-unidade">ha</span>
           </div>
         </div>
@@ -1259,7 +1269,7 @@ function editarNomeViveiro(index) {
             <label>Tamanho do viveiro</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" step="any" id="editTamanhoViveiro" value="${v.tamanho || ""}" placeholder="Ex: 0.5">
+            <input type="text" inputmode="decimal" step="any" id="editTamanhoViveiro" value="${v.tamanho || ""}" placeholder="Ex: 0.5">
             <span class="campo-unidade">ha</span>
           </div>
         </div>
@@ -1691,7 +1701,7 @@ function abrirCadastrarTipoRacao() {
             <label>Peso do saco</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="pesoSacoRacao" value="30" step="0.1" oninput="calcularPreviaSacoRacao()">
+            <input type="text" inputmode="decimal" id="pesoSacoRacao" value="30" step="0.1" oninput="calcularPreviaSacoRacao()">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -1721,7 +1731,7 @@ function abrirCadastrarTipoRacao() {
 }
 
 function calcularPreviaSacoRacao() {
-  const peso = parseFloat(document.getElementById("pesoSacoRacao")?.value);
+  const peso = parseDecimalBR(document.getElementById("pesoSacoRacao")?.value);
   const valor = parseMoedaBR(document.getElementById("valorSacoRacao")?.value);
   const div = document.getElementById("previa-saco-racao");
   const el = document.getElementById("previa-saco-racao-valor");
@@ -1744,7 +1754,7 @@ async function salvarTipoRacao() {
   if (botao?.disabled) return; // trava contra duplo toque (evita rações duplicadas)
 
   const nome = document.getElementById("nomeTipoRacao").value.trim();
-  const pesoSacoKg = parseFloat(document.getElementById("pesoSacoRacao").value);
+  const pesoSacoKg = parseDecimalBR(document.getElementById("pesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("valorSacoRacao").value);
   const erroEl = document.getElementById("erro-tipo-racao");
   if (erroEl) erroEl.style.display = "none";
@@ -1897,7 +1907,7 @@ function abrirEdicaoTipoRacao(i) {
             <label>Peso do saco</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="editPesoSacoRacao" value="${t.pesoSacoKg}" step="0.1">
+            <input type="text" inputmode="decimal" id="editPesoSacoRacao" value="${t.pesoSacoKg}" step="0.1">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -1928,7 +1938,7 @@ async function salvarEdicaoTipoRacao(i) {
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const nome = document.getElementById("editNomeTipoRacao").value.trim();
-  const pesoSacoKg = parseFloat(document.getElementById("editPesoSacoRacao").value);
+  const pesoSacoKg = parseDecimalBR(document.getElementById("editPesoSacoRacao").value);
   const valorSaco = parseMoedaBR(document.getElementById("editValorSacoRacao").value);
   const erroEl = document.getElementById("erro-edit-tipo-racao");
   const _erroEdit = (msg) => { if (erroEl) { erroEl.textContent = msg; erroEl.style.display = "block"; } };
@@ -2040,7 +2050,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <label>Consumo de ração</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="consumoRacao" placeholder="Ex: 50" oninput="document.getElementById('msg-racao-erro')&&(document.getElementById('msg-racao-erro').style.display='none')">
+            <input type="text" inputmode="decimal" id="consumoRacao" placeholder="Ex: 50" oninput="document.getElementById('msg-racao-erro')&&(document.getElementById('msg-racao-erro').style.display='none')">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -2076,7 +2086,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   if (_bloqueioViveiro(index)) return;
 
   const data = document.getElementById("dataRacao").value;
-  const racao = parseFloat(document.getElementById("consumoRacao").value);
+  const racao = parseDecimalBR(document.getElementById("consumoRacao").value);
 
   const erroDiv = document.getElementById("msg-racao-erro");
   const mostrarErroRacao = (msg) => { if (erroDiv) { erroDiv.textContent = msg; erroDiv.style.display = "block"; } };
@@ -2324,7 +2334,7 @@ function abrirDespesca(index) {
             <label>Quantidade despescada</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="quantidadeDespesca" placeholder="Ex: 500">
+            <input type="text" inputmode="decimal" id="quantidadeDespesca" placeholder="Ex: 500">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -2335,7 +2345,7 @@ function abrirDespesca(index) {
             <label>Peso médio</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="pesoMedioDespesca" placeholder="Ex: 12">
+            <input type="text" inputmode="decimal" id="pesoMedioDespesca" placeholder="Ex: 12">
             <span class="campo-unidade">g</span>
           </div>
         </div>
@@ -2377,8 +2387,8 @@ async function salvarDespesca(index) {
   if (botao?.disabled) return; // trava contra duplo toque
 
   const data = document.getElementById("dataDespesca").value;
-  const quantidadeKg = parseFloat(document.getElementById("quantidadeDespesca").value);
-  const pesoMedio = parseFloat(document.getElementById("pesoMedioDespesca").value);
+  const quantidadeKg = parseDecimalBR(document.getElementById("quantidadeDespesca").value);
+  const pesoMedio = parseDecimalBR(document.getElementById("pesoMedioDespesca").value);
   const precoKg = parseMoedaBR(document.getElementById("precoDespesca")?.value || "0") || null;
 
   const erroDespesca = document.getElementById("msg-despesca-erro");
@@ -2853,13 +2863,13 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     <div class="proj-alvo-row">
       <span class="proj-alvo-lbl">Peso-alvo</span>
       <div class="proj-alvo-ctrl">
-        <button class="proj-alvo-btn" onclick="(function(){var v=Math.max(1,parseFloat(document.getElementById('proj-alvo').value||20)-0.5);document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">−</button>
+        <button class="proj-alvo-btn" onclick="(function(){var v=Math.max(1,parseDecimalBR(document.getElementById('proj-alvo').value||20)-0.5);document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">−</button>
         <div class="proj-alvo-val-wrap">
-          <input type="number" id="proj-alvo" value="${alvo}" min="1" step="0.5"
+          <input type="text" inputmode="decimal" id="proj-alvo" value="${alvo}" min="1" step="0.5"
             onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value) || 20)">
           <span>g</span>
         </div>
-        <button class="proj-alvo-btn" onclick="(function(){var v=parseFloat(document.getElementById('proj-alvo').value||20)+0.5;document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">+</button>
+        <button class="proj-alvo-btn" onclick="(function(){var v=parseDecimalBR(document.getElementById('proj-alvo').value||20)+0.5;document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">+</button>
       </div>
     </div>
     ${cardProj}
@@ -3155,7 +3165,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAt
             <label>Consumo de ração</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="qtdEdicaoRacao" value="${racao.racao}" placeholder="Ex: 50">
+            <input type="text" inputmode="decimal" id="qtdEdicaoRacao" value="${racao.racao}" placeholder="Ex: 50">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -3354,7 +3364,7 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
             <label>Quantidade</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="qtdEdicaoDesp" value="${desp.quantidadeKg}" placeholder="Ex: 500">
+            <input type="text" inputmode="decimal" id="qtdEdicaoDesp" value="${desp.quantidadeKg}" placeholder="Ex: 500">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -3364,7 +3374,7 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
             <label>Peso médio</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="pesoEdicaoDesp" value="${desp.pesoMedio}" placeholder="Ex: 12">
+            <input type="text" inputmode="decimal" id="pesoEdicaoDesp" value="${desp.pesoMedio}" placeholder="Ex: 12">
             <span class="campo-unidade">g</span>
           </div>
         </div>
@@ -3394,8 +3404,8 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoDesp").value;
-  const novaQtd = parseFloat(document.getElementById("qtdEdicaoDesp").value);
-  const novoPeso = parseFloat(document.getElementById("pesoEdicaoDesp").value);
+  const novaQtd = parseDecimalBR(document.getElementById("qtdEdicaoDesp").value);
+  const novoPeso = parseDecimalBR(document.getElementById("pesoEdicaoDesp").value);
   const novoPreco = parseMoedaBR(document.getElementById("precoEdicaoDesp")?.value || "0") || null;
 
   if (!novaData || !novaQtd || !novoPeso) { _toastErro("Preencha todos os campos."); return; }
@@ -3491,7 +3501,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoRacao").value;
-  const novaQtd = parseFloat(document.getElementById("qtdEdicaoRacao").value);
+  const novaQtd = parseDecimalBR(document.getElementById("qtdEdicaoRacao").value);
 
   if (!novaData || isNaN(novaQtd) || novaQtd < 0) {
     _toastErro("Preencha a data e a quantidade (pode ser 0).");
@@ -4420,7 +4430,7 @@ function abrirSimularVenda() {
           <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <label>Preço de venda (R$/kg)</label>
         </div>
-        <input type="number" inputmode="decimal" step="0.01" id="simVenda-preco" placeholder="Ex.: 15,00" oninput="_simVendaCalcular()">
+        <input type="text" inputmode="decimal" step="0.01" id="simVenda-preco" placeholder="Ex.: 15,00" oninput="_simVendaCalcular()">
       </div>
       <div id="simVenda-resultado"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
@@ -5708,7 +5718,7 @@ function abrirEncerrarCiclo(index) {
             <label>Produção final</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="producaoFinal" placeholder="Ex: 1000">
+            <input type="text" inputmode="decimal" id="producaoFinal" placeholder="Ex: 1000">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -5718,7 +5728,7 @@ function abrirEncerrarCiclo(index) {
             <label>Peso médio final</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="pesoFinal" placeholder="Ex: 12">
+            <input type="text" inputmode="decimal" id="pesoFinal" placeholder="Ex: 12">
             <span class="campo-unidade">g</span>
           </div>
         </div>
@@ -5759,8 +5769,8 @@ async function salvarEncerramentoCiclo(index) {
   const viveiro = viveiros[index];
 
   const dataEncerramento = document.getElementById("dataEncerramento").value;
-  const producaoFinal = parseFloat(document.getElementById("producaoFinal").value);
-  const pesoFinal = parseFloat(document.getElementById("pesoFinal").value);
+  const producaoFinal = parseDecimalBR(document.getElementById("producaoFinal").value);
+  const pesoFinal = parseDecimalBR(document.getElementById("pesoFinal").value);
   const precoVenda = parseMoedaBR(document.getElementById("precoVendaCiclo")?.value || "0") || 0;
   const observacoes = document.getElementById("observacoesCiclo").value;
 
@@ -7044,12 +7054,12 @@ function abrirFormProtocolo(index, protId) {
         </div>
         <div class="campo-form" id="prot-dose-gkg" style="display:${_protDoseModo === "pct" ? "none" : "block"}">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/></svg><label>Dose por kg de ração (g)</label></div>
-          <input type="number" inputmode="decimal" id="protDosePorKg" step="any" oninput="_protPrevia()" placeholder="Ex: 5" value="${_protDoseModo !== "pct" && p && p.tipo === "racao" ? (p.dosePorKgG ?? "") : ""}">
+          <input type="text" inputmode="decimal" id="protDosePorKg" step="any" oninput="_protPrevia()" placeholder="Ex: 5" value="${_protDoseModo !== "pct" && p && p.tipo === "racao" ? (p.dosePorKgG ?? "") : ""}">
           <p class="rc-print-dica">Ex.: 5 g de produto para cada kg de ração lançada.</p>
         </div>
         <div class="campo-form" id="prot-dose-pct" style="display:${_protDoseModo === "pct" ? "block" : "none"}">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg><label>Porcentagem da ração (%)</label></div>
-          <input type="number" inputmode="decimal" id="protDosePct" step="any" oninput="_protPrevia()" placeholder="Ex: 2" value="${_protDoseModo === "pct" && p ? (p.dosePct ?? "") : ""}">
+          <input type="text" inputmode="decimal" id="protDosePct" step="any" oninput="_protPrevia()" placeholder="Ex: 2" value="${_protDoseModo === "pct" && p ? (p.dosePct ?? "") : ""}">
           <p class="rc-print-dica">Ex.: 2% 2 g de produto para cada 100 g de ração.</p>
         </div>
       </div>
@@ -7057,7 +7067,7 @@ function abrirFormProtocolo(index, protId) {
       <div id="prot-semanal" style="display:${tipo === "semanal" ? "block" : "none"}">
         <div class="campo-form">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Quantidade por aplicação (g)</label></div>
-          <input type="number" inputmode="decimal" id="protQtd" step="any" oninput="_protPrevia()" placeholder="Ex: 250" value="${p && p.tipo === "semanal" ? p.quantidadeG : ""}">
+          <input type="text" inputmode="decimal" id="protQtd" step="any" oninput="_protPrevia()" placeholder="Ex: 250" value="${p && p.tipo === "semanal" ? p.quantidadeG : ""}">
         </div>
       </div>
 
@@ -7105,8 +7115,8 @@ function _protPrevia() {
   if (tipo === "racao") {
     const modo = document.getElementById("protDoseModo")?.value || "gkg";
     const dosePorKgG = modo === "pct"
-      ? (parseFloat(document.getElementById("protDosePct")?.value) || 0) * 10
-      : (parseFloat(document.getElementById("protDosePorKg")?.value) || 0);
+      ? (parseDecimalBR(document.getElementById("protDosePct")?.value) || 0) * 10
+      : (parseDecimalBR(document.getElementById("protDosePorKg")?.value) || 0);
     if (dosePorKgG <= 0) { el.innerHTML = ""; return; }
     // Referência: quanto de ração o viveiro costuma lançar por vez
     const rac = (viveiros[_maPreviaIndex]?.racoes || []).filter(r => r.racao > 0);
@@ -7115,7 +7125,7 @@ function _protPrevia() {
       · custo <b>${rs(dosePorKgG * porG)}</b> por kg lançado<br>
       <small>Num lançamento de ${formatarNumeroBR(refKg, 1)} kg${rac.length ? " (média deste viveiro)" : ""}: ${formatarNumeroBR(dosePorKgG * refKg, 0)} g — ${rs(dosePorKgG * refKg * porG)}</small>`;
   } else {
-    const qtd = parseFloat(document.getElementById("protQtd")?.value) || 0;
+    const qtd = parseDecimalBR(document.getElementById("protQtd")?.value) || 0;
     if (qtd <= 0) { el.innerHTML = ""; return; }
     const nDias = document.querySelectorAll(".ma-dia.sel").length || 1;
     el.innerHTML = `<b>${formatarNumeroBR(qtd, 0)} g</b> de ${prod.nome} por aplicação
@@ -7155,13 +7165,13 @@ async function salvarProtocolo(index, protId) {
   if (tipo === "racao") {
     const modo = document.getElementById("protDoseModo").value;
     if (modo === "pct") {
-      const pct = parseFloat(document.getElementById("protDosePct").value);
+      const pct = parseDecimalBR(document.getElementById("protDosePct").value);
       if (!pct || pct <= 0) { erro("Informe a porcentagem da ração."); return; }
       prot.doseModo = "pct";
       prot.dosePct = pct;
       prot.dosePorKgG = pct * 10; // pct% de 1000 g de ração = pct×10 g por kg
     } else {
-      const dose = parseFloat(document.getElementById("protDosePorKg").value);
+      const dose = parseDecimalBR(document.getElementById("protDosePorKg").value);
       if (!dose || dose <= 0) { erro("Informe a dose por kg de ração."); return; }
       prot.doseModo = "gkg";
       prot.dosePct = null;
@@ -7169,7 +7179,7 @@ async function salvarProtocolo(index, protId) {
     }
     prot.dias = dias; // vazio = todo dia que lançar ração
   } else {
-    const qtd = parseFloat(document.getElementById("protQtd").value);
+    const qtd = parseDecimalBR(document.getElementById("protQtd").value);
     if (!qtd || qtd <= 0) { erro("Informe a quantidade por aplicação."); return; }
     if (dias.length === 0) { erro("Selecione ao menos um dia da semana."); return; }
     prot.quantidadeG = qtd;
@@ -7271,7 +7281,7 @@ function abrirCadastrarProduto() {
             <label>Peso do saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="pesoKgProduto" placeholder="Ex: 25" oninput="calcularPreviaKg()">
+            <input type="text" inputmode="decimal" id="pesoKgProduto" placeholder="Ex: 25" oninput="calcularPreviaKg()">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -7305,7 +7315,7 @@ function abrirCadastrarProduto() {
 }
 
 function calcularPreviaKg() {
-  const peso = parseFloat(document.getElementById("pesoKgProduto").value);
+  const peso = parseDecimalBR(document.getElementById("pesoKgProduto").value);
   const valor = parseMoedaBR(document.getElementById("valorPagoProduto").value);
   const div = document.getElementById("previa-custo-kg");
   const el = document.getElementById("previa-custo-kg-valor");
@@ -7326,7 +7336,7 @@ async function salvarProduto() {
   if (botaoTopo?.disabled) return;
   const nome = document.getElementById("nomeProduto").value.trim();
   const categoria = document.getElementById("categoriaProduto").value;
-  const pesoKg = parseFloat(document.getElementById("pesoKgProduto").value);
+  const pesoKg = parseDecimalBR(document.getElementById("pesoKgProduto").value);
   const valorPago = parseMoedaBR(document.getElementById("valorPagoProduto").value);
   const erroProd = document.getElementById("erro-produto");
 
@@ -7488,7 +7498,7 @@ function abrirEdicaoProduto(i) {
             <label>Peso do saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="number" id="editPesoKgProduto" value="${p.pesoKg}">
+            <input type="text" inputmode="decimal" id="editPesoKgProduto" value="${p.pesoKg}">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -7520,7 +7530,7 @@ async function salvarEdicaoProduto(i) {
   if (botao?.disabled) return; // trava contra duplo toque
   const nome = document.getElementById("editNomeProduto").value.trim();
   const categoria = document.getElementById("editCategoriaProduto").value;
-  const pesoKg = parseFloat(document.getElementById("editPesoKgProduto").value);
+  const pesoKg = parseDecimalBR(document.getElementById("editPesoKgProduto").value);
   const valorPago = parseMoedaBR(document.getElementById("editValorPagoProduto").value);
   const erroEditProd = document.getElementById("erro-edit-produto");
   const _erroEditProd = (msg) => { if (erroEditProd) { erroEditProd.textContent = msg; erroEditProd.style.display = "block"; } };
@@ -7639,7 +7649,7 @@ function abrirLancarCustoProduto(index) {
               <button type="button" class="unidade-btn" id="btnUnidadeKg" onclick="selecionarUnidade('kg')">kg</button>
             </div>
           </div>
-          <input type="number" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
+          <input type="text" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
         </div>
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
           Valor calculado: <strong id="previa-custo-valor">—</strong>
@@ -7672,7 +7682,7 @@ function recalcularValorEditCusto(index, chaveEnc) {
   const grupo = (v.custos || []).filter(c => _chaveCusto(c) === chave);
   const prod = produtos.find(p => p.id === grupo[0]?.produtoId);
   if (!prod) return; // sem produto cadastrado, não há preço para recalcular
-  const qtdRaw = parseFloat(document.getElementById("editCustoQtd")?.value);
+  const qtdRaw = parseDecimalBR(document.getElementById("editCustoQtd")?.value);
   const el = document.getElementById("editCustoValor");
   if (!el || isNaN(qtdRaw) || qtdRaw <= 0) return;
   const qtdG = _editCustoUnidade === "kg" ? qtdRaw * 1000 : qtdRaw;
@@ -7689,7 +7699,7 @@ function selecionarUnidade(u) {
 
 function atualizarPreviaCusto() {
   const prodIndex = document.getElementById("selectProduto")?.value;
-  const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto")?.value);
+  const qtdRaw = parseDecimalBR(document.getElementById("qtdCustoProduto")?.value);
   const div = document.getElementById("previa-custo-produto");
   const el = document.getElementById("previa-custo-valor");
   if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdRaw) && qtdRaw > 0) {
@@ -7711,7 +7721,7 @@ async function salvarCustoProduto(index) {
 
   const data = document.getElementById("dataCustoProduto").value;
   const prodIndex = document.getElementById("selectProduto").value;
-  const qtdRaw = parseFloat(document.getElementById("qtdCustoProduto").value);
+  const qtdRaw = parseDecimalBR(document.getElementById("qtdCustoProduto").value);
   const erroCustoProd = document.getElementById("msg-custo-produto-erro");
   const _erroCustoProd = (msg) => { if (erroCustoProd) { erroCustoProd.textContent = msg; erroCustoProd.style.display = "block"; } };
   if (erroCustoProd) erroCustoProd.style.display = "none";
@@ -8162,7 +8172,7 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
             <button type="button" class="unidade-btn ${_editCustoUnidade === 'kg' ? 'ativo' : ''}" id="btnEditUnidadeKg" onclick="selecionarUnidadeEdit('kg',${index},'${chaveEnc}')">kg</button>
           </div>
         </div>
-        <input type="number" inputmode="decimal" id="editCustoQtd" value="${qtdNaUnidade}" min="0" step="any" oninput="recalcularValorEditCusto(${index},'${chaveEnc}')">
+        <input type="text" inputmode="decimal" id="editCustoQtd" value="${qtdNaUnidade}" min="0" step="any" oninput="recalcularValorEditCusto(${index},'${chaveEnc}')">
       </div>` : ""}
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Valor total (R$)</label></div>
@@ -8199,7 +8209,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   // Quantidade: para produto, respeita o que foi editado; para outros custos, mantém o que havia
   let somaQtd;
   if (isProduto) {
-    const qtdRaw = parseFloat(document.getElementById("editCustoQtd")?.value);
+    const qtdRaw = parseDecimalBR(document.getElementById("editCustoQtd")?.value);
     if (isNaN(qtdRaw) || qtdRaw <= 0) { erro("Informe a quantidade utilizada."); return; }
     somaQtd = _editCustoUnidade === "kg" ? qtdRaw * 1000 : qtdRaw;
   } else {
