@@ -8671,6 +8671,44 @@ async function carregarViveiros(usuarioConhecido) {
 // Garante que todo viveiro ATIVO antigo (sem ciclo_id) receba um identificador,
 // de forma idempotente e segura contra concorrência. Não toca em ciclos
 // históricos encerrados nem no fallback por data.
+// Congela, uma única vez, o rateio de custos fixos dos ciclos encerrados que
+// ainda não têm o valor gravado. Sem isso, esses relatórios continuariam sendo
+// recalculados com os custos fixos de hoje e mudariam a cada alteração de
+// salário ou desativação de funcionário.
+// O valor gravado é o que o sistema calcula AGORA — é uma fotografia, não a
+// reconstrução do que valia na época (esse dado nunca foi guardado). Vale
+// porque interrompe a variação; quanto mais cedo roda, mais fiel fica.
+// Idempotente: só grava onde ainda está vazio, e só se o UPDATE realmente pegar.
+async function _congelarRateioCiclosAntigos() {
+  const pendentes = [];
+  for (const v of viveiros) {
+    for (const c of (v.ciclosFinalizados || [])) {
+      if (c.id && (c.custoFixoRateado === null || c.custoFixoRateado === undefined)) pendentes.push(c);
+    }
+  }
+  if (!pendentes.length) return; // nada a migrar
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return;
+
+  for (const c of pendentes) {
+    const ini = c.dataPreparacao || c.dataPovoamento;
+    if (!ini || !c.dataEncerramento) continue;
+    const valor = _custoFixoRateado(ini, c.dataEncerramento);
+    const { data, error } = await supabaseClient.from("ciclos")
+      .update({ custo_fixo_rateado: valor })
+      .eq("id", c.id).eq("user_id", usuario.id)
+      .is("custo_fixo_rateado", null)   // não sobrescreve o que outro aparelho já congelou
+      .select("custo_fixo_rateado");
+    if (error) {
+      // Coluna ainda não existe no banco deste usuário: para de tentar.
+      if (/custo_fixo_rateado/.test(error.message || "")) return;
+      console.log("congelar rateio:", error);
+      continue;
+    }
+    if (data && data.length) c.custoFixoRateado = Number(data[0].custo_fixo_rateado);
+  }
+}
+
 async function _garantirCicloIdViveirosAtivos() {
   const semId = viveiros.filter(v => !v.cicloId);
   if (!semId.length) return; // nada a migrar — idempotente
@@ -8748,6 +8786,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // resultado — o que eles não podem é atrasar a entrada do usuário.
       setTimeout(async () => {
         try { await _garantirCicloIdViveirosAtivos(); } catch (e) { console.log("ciclo_id backfill:", e); }
+        try { await _congelarRateioCiclosAntigos(); } catch (e) { console.log("congelar rateio:", e); }
         try { await aplicarProtocolosSemanais(); } catch (e) { console.log("Protocolos:", e); }
       }, 0);
 
