@@ -7086,7 +7086,8 @@ function abrirManejoAutomatico(index) {
   area.innerHTML = `
     <h3 class="titulo-secao">Manejo automático — ${abreviarViveiro(viveiro.nome)}</h3>
     <div class="cfg-wrap">
-      <p class="cfg-secao-desc">Produtos lançados automaticamente neste viveiro. Os lançamentos viram custos e podem ser editados/excluídos no histórico de custos.</p>
+      <p class="cfg-secao-desc">Produtos lançados automaticamente neste viveiro. Os lançamentos viram custos e podem ser editados/excluídos no histórico de custos.
+      Pausar interrompe os lançamentos enquanto estiver pausado; excluir um protocolo não apaga o que já foi lançado.</p>
       ${produtos.length === 0 ? `<div class="viveiro-sem-ciclo-msg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Cadastre um produto em Insumos antes de criar um protocolo.</span></div>` : ""}
       ${lancados.length > 0 ? `<div class="ma-resumo">
         <span>${lancados.length} lançamento${lancados.length !== 1 ? "s" : ""} automático${lancados.length !== 1 ? "s" : ""} neste ciclo</span>
@@ -7121,9 +7122,16 @@ async function toggleProtocolo(index, protId) {
   if (_bloqueioViveiro(index)) return;
   const p = (viveiros[index].protocolos || []).find(x => x.id === protId);
   if (!p) return;
+  const marcaAntes = p.ultimoLancamento;
   p.ativo = !p.ativo;
+  // Ao RETOMAR, a varredura recomeçaria no dia seguinte ao último lançamento —
+  // ou seja, lançaria retroativamente todo o período em que ficou pausado, e o
+  // produtor pagaria por aplicações que não fez. Pausar tem que significar
+  // "não lançar nesses dias", então a marca de progresso pula para ontem e a
+  // retomada começa hoje.
+  if (p.ativo) p.ultimoLancamento = _maAddDias(_hojeLocal(), -1);
   const ok = await salvarProtocolos(index);
-  if (!ok) { p.ativo = !p.ativo; return; } // desfaz na memória se o banco recusou
+  if (!ok) { p.ativo = !p.ativo; p.ultimoLancamento = marcaAntes; return; } // desfaz na memória
   // Ao ATIVAR um manejo semanal, põe em dia os lançamentos — só deste viveiro.
   if (p.ativo && p.tipo === "semanal") await aplicarProtocolosSemanais(index);
   abrirManejoAutomatico(index);
