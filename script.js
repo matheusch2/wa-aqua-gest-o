@@ -298,7 +298,7 @@ async function abrirFazenda() {
           <input type="file" accept="image/*" onchange="uploadFotoFazenda(this)" style="display:none">
         </label>
       </div>
-      ${fotoUrl ? `<button class="fazenda-remover-foto" onclick="excluirFotoFazenda()">Remover foto</button>` : `<p class="fazenda-foto-dica">Adicione uma foto da fazenda (opcional)</p>`}
+      ${fotoUrl ? `<button class="fazenda-remover-foto" onclick="excluirFotoFazenda(this)">Remover foto</button>` : `<p class="fazenda-foto-dica">Adicione uma foto da fazenda (opcional)</p>`}
       <div class="form-corpo" style="padding:0">
         <div class="campo-form">
           <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><label>Nome da fazenda</label></div>
@@ -313,7 +313,7 @@ async function abrirFazenda() {
           <input type="email" id="fzEmail" value="${_attr(email)}" placeholder="seu@email.com">
         </div>
         <div id="msg-fazenda" style="display:none;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarFazenda()">
+        <button class="botao-salvar" onclick="salvarFazenda(this)">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar alterações
         </button>
@@ -324,7 +324,8 @@ async function abrirFazenda() {
   `;
 }
 
-async function salvarFazenda() {
+async function salvarFazenda(botao) {
+  if (botao?.disabled) return; // evita duplo toque
   const nome = document.getElementById("fzNome").value.trim();
   const prop = document.getElementById("fzProp").value.trim();
   const email = document.getElementById("fzEmail").value.trim();
@@ -333,15 +334,16 @@ async function salvarFazenda() {
   if (msg) msg.style.display = "none";
   if (!nome) { setMsg("Digite o nome da fazenda."); return; }
 
+  const restaurar = _travarBotao(botao, "Salvando...");
   const { data: { user } } = await supabaseClient.auth.getUser();
   const emailMudou = email && email !== user?.email;
 
   const { error } = await supabaseClient.auth.updateUser({ data: { nome, proprietario: prop } });
-  if (error) { setMsg("Erro ao salvar. Tente novamente."); return; }
+  if (error) { restaurar(); setMsg("Erro ao salvar. Tente novamente."); return; }
 
   if (emailMudou) {
     const { error: e2 } = await supabaseClient.auth.updateUser({ email });
-    if (e2) { setMsg("Dados salvos, mas o e-mail não pôde ser alterado: " + e2.message); return; }
+    if (e2) { restaurar(); setMsg("Dados salvos, mas o e-mail não pôde ser alterado: " + e2.message); return; }
     _toastSucesso("Enviamos um link de confirmação para o novo e-mail.");
   } else {
     _toastSucesso("Alterações salvas!");
@@ -374,9 +376,11 @@ async function uploadFotoFazenda(input) {
   img.src = url;
 }
 
-async function excluirFotoFazenda() {
+async function excluirFotoFazenda(botao) {
+  if (botao?.disabled) return; // evita duplo toque
+  const restaurar = _travarBotao(botao, "Removendo...");
   const { error } = await supabaseClient.auth.updateUser({ data: { avatar_url: null } });
-  if (error) { _toastErro("Erro ao remover foto."); return; }
+  if (error) { restaurar(); _toastErro("Erro ao remover foto."); return; }
   atualizarAvatarTopo();
   abrirFazenda();
 }
@@ -408,7 +412,7 @@ function abrirSeguranca() {
           <input type="password" id="segConfirma" placeholder="Repita a nova senha">
         </div>
         <div id="msg-seg" style="display:none;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarNovaSenha()">
+        <button class="botao-salvar" onclick="salvarNovaSenha(this)">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar nova senha
         </button>
@@ -419,7 +423,8 @@ function abrirSeguranca() {
   `;
 }
 
-async function salvarNovaSenha() {
+async function salvarNovaSenha(botao) {
+  if (botao?.disabled) return; // evita duplo toque
   const atual = document.getElementById("segAtual").value;
   const nova = document.getElementById("segNova").value;
   const conf = document.getElementById("segConfirma").value;
@@ -431,12 +436,15 @@ async function salvarNovaSenha() {
   if (!nova || nova.length < 6) { setMsg("A nova senha deve ter no mínimo 6 caracteres."); return; }
   if (nova !== conf) { setMsg("As senhas não coincidem."); return; }
 
+  // Sem trava, o 2º toque conferia a senha ATUAL depois de o 1º já tê-la
+  // trocado — e acusava "senha atual incorreta" numa troca que deu certo.
+  const restaurar = _travarBotao(botao, "Alterando...");
   const { data: { user } } = await supabaseClient.auth.getUser();
   const { error: eAuth } = await supabaseClient.auth.signInWithPassword({ email: user.email, password: atual });
-  if (eAuth) { setMsg("Senha atual incorreta."); return; }
+  if (eAuth) { restaurar(); setMsg("Senha atual incorreta."); return; }
 
   const { error } = await supabaseClient.auth.updateUser({ password: nova });
-  if (error) { setMsg("Erro ao alterar senha: " + error.message); return; }
+  if (error) { restaurar(); setMsg("Erro ao alterar senha: " + error.message); return; }
 
   _toastSucesso("Senha alterada com sucesso!");
   abrirConfiguracoes();
@@ -4532,7 +4540,7 @@ function abrirCustosFixos() {
           </div>
           <div class="cf-card-valor">R$ ${formatarNumeroBR(c.valorMensal, 2)}<small>/mês</small></div>
           <div class="cf-card-acoes">
-            <button class="cf-btn-acao" title="${c.ativo ? "Desativar" : "Ativar"}" onclick="toggleCustoFixo(${i})">
+            <button class="cf-btn-acao" title="${c.ativo ? "Desativar" : "Ativar"}" onclick="toggleCustoFixo(${i}, this)">
               ${c.ativo
                 ? `<svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>`
                 : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>`}
@@ -4746,11 +4754,15 @@ async function salvarCustoFixo(index) {
   abrirCustosFixos();
 }
 
-async function toggleCustoFixo(index) {
+async function toggleCustoFixo(index, botao) {
   if (_bloqueioEdicao()) return; // ativar/desativar muda o rateio de todos os custos
+  // Duplo toque aqui apagava a data de início original: o 1º toque reativava
+  // (data_inicio = hoje) e o 2º já encerrava — a vigência antiga sumia de vez.
+  if (botao?.disabled) return;
   const c = custosFixos[index];
+  const restaurar = _travarBotao(botao, "…");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const hoje = _hojeLocal();
   const ativando = !c.ativo;
   // Desativar encerra HOJE em vez de apagar o passado: os meses já trabalhados
@@ -4760,7 +4772,7 @@ async function toggleCustoFixo(index) {
     : { ativo: false, data_fim: hoje };
   const { error } = await supabaseClient.from("custos_fixos")
     .update(patch).eq("id", c.id).eq("user_id", usuario.id);
-  if (error) { console.log(error); _toastErro("Erro ao atualizar."); return; }
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao atualizar."); return; }
   c.ativo = ativando;
   c.dataFim = ativando ? null : hoje;
   if (ativando) c.dataInicio = hoje;
@@ -4862,8 +4874,8 @@ function abrirBoletos(filtro) {
           <button class="bt-menu-btn" onclick="_toggleMenuBoleto(${i})">⋮</button>
           <div id="bt-menu-${i}" class="bt-menu-drop" style="display:none">
             ${b.pago
-              ? `<button onclick="_toggleMenuBoleto(${i});desmarcarBoletoPago(${i})">↩️ Desfazer pagamento</button>`
-              : `<button onclick="_toggleMenuBoleto(${i});marcarBoletoPago(${i})">✅ Marcar como pago</button>`}
+              ? `<button onclick="_toggleMenuBoleto(${i});desmarcarBoletoPago(${i}, false, this)">↩️ Desfazer pagamento</button>`
+              : `<button onclick="_toggleMenuBoleto(${i});marcarBoletoPago(${i}, false, this)">✅ Marcar como pago</button>`}
             <button onclick="_toggleMenuBoleto(${i});abrirFormBoleto(${i})">✏️ Editar</button>
             <button class="bt-menu-excluir" onclick="_toggleMenuBoleto(${i});_mostrarConfirmarExcluir(${i})">🗑️ Excluir</button>
           </div>
@@ -5082,7 +5094,7 @@ function _boletoProgressoHtml(b) {
 // Botões de pagamento conforme o estado do boleto
 function _boletoAcoesPagamentoHtml(index, b) {
   if (b.pago) {
-    return `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desfazerUltimoPagamento(${index})">↩️ Desfazer último pagamento</button>`;
+    return `<button class="botao-salvar" style="margin-top:14px;background:#6b7280" onclick="desfazerUltimoPagamento(${index}, this)">↩️ Desfazer último pagamento</button>`;
   }
   const temTotal = b.valor && b.valor > 0;
   const jaPagouAlgo = (b.valorPago || 0) > 0;
@@ -5099,7 +5111,7 @@ function _boletoAcoesPagamentoHtml(index, b) {
         <button class="bt-pag-ok" onclick="salvarPagamentoParcial(${index}, this)">Confirmar</button>
       </div>
     </div>` : ""}
-    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true)">✓ ${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
+    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true, this)">✓ ${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
     ${!temTotal ? `<p class="rc-print-dica" style="margin-top:8px">Para pagar em partes, edite o boleto e informe o <b>valor total</b>.</p>` : ""}`;
 }
 
@@ -5139,11 +5151,15 @@ async function salvarPagamentoParcial(index, botao) {
   verDetalhesBoleto(index);
 }
 
-async function desfazerUltimoPagamento(index) {
+async function desfazerUltimoPagamento(index, botao) {
   if (_bloqueioEdicao()) return;
+  // Sem trava, dois toques rápidos desfaziam DOIS pagamentos (o 2º toque já
+  // enxergava a lista sem a última parcela) — e não há como saber que foi isso.
+  if (botao?.disabled) return;
   const b = boletos[index];
+  const restaurar = _travarBotao(botao, "Desfazendo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const pgs = [...(b.pagamentos || [])];
   const ultimo = pgs.pop();
   const novoValorPago = Math.max(0, Math.round(((b.valorPago || 0) - (ultimo ? Number(ultimo.valor) : 0)) * 100) / 100);
@@ -5151,7 +5167,7 @@ async function desfazerUltimoPagamento(index) {
   const { error } = await supabaseClient.from("boletos")
     .update({ pago: false, data_pagamento: null, valor_pago: ultimo ? novoValorPago : 0, pagamentos: pgs })
     .eq("id", b.id).eq("user_id", usuario.id);
-  if (error) { _toastErro("Erro ao desfazer: " + error.message); return; }
+  if (error) { restaurar(); _toastErro("Erro ao desfazer: " + error.message); return; }
   b.pago = false; b.dataPagamento = null;
   b.valorPago = ultimo ? novoValorPago : 0;
   b.pagamentos = pgs;
@@ -5345,10 +5361,12 @@ async function excluirBoleto(index, botao) {
   abrirBoletos();
 }
 
-async function marcarBoletoPago(index, voltarDetalhe) {
+async function marcarBoletoPago(index, voltarDetalhe, botao) {
   if (_bloqueioEdicao()) return;
+  if (botao?.disabled) return; // evita duplo toque
+  const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   const b = boletos[index];
   const hoje = _hojeLocal();
   const patch = { pago: true, data_pagamento: hoje };
@@ -5360,7 +5378,7 @@ async function marcarBoletoPago(index, voltarDetalhe) {
   }
   const { error } = await supabaseClient.from("boletos")
     .update(patch).eq("id", b.id).eq("user_id", usuario.id);
-  if (error) { console.error(error); _toastErro("Erro ao marcar como pago: " + error.message); return; }
+  if (error) { console.error(error); restaurar(); _toastErro("Erro ao marcar como pago: " + error.message); return; }
   b.pago = true;
   b.dataPagamento = hoje;
   if (patch.valor_pago != null) { b.valorPago = patch.valor_pago; b.pagamentos = patch.pagamentos; }
@@ -5368,15 +5386,17 @@ async function marcarBoletoPago(index, voltarDetalhe) {
   if (voltarDetalhe) verDetalhesBoleto(index); else abrirBoletos();
 }
 
-async function desmarcarBoletoPago(index, voltarDetalhe) {
+async function desmarcarBoletoPago(index, voltarDetalhe, botao) {
   if (_bloqueioEdicao()) return;
+  if (botao?.disabled) return; // evita duplo toque
+  const restaurar = _travarBotao(botao, "Desfazendo...");
   const usuario = await pegarUsuarioLogado();
-  if (!usuario) return;
+  if (!usuario) { restaurar(); return; }
   // Reabre e zera os pagamentos (ação rápida de "desfazer" a partir da lista)
   const { error } = await supabaseClient.from("boletos")
     .update({ pago: false, data_pagamento: null, valor_pago: 0, pagamentos: [] })
     .eq("id", boletos[index].id).eq("user_id", usuario.id);
-  if (error) { console.error(error); _toastErro("Erro ao desfazer: " + error.message); return; }
+  if (error) { console.error(error); restaurar(); _toastErro("Erro ao desfazer: " + error.message); return; }
   boletos[index].pago = false;
   boletos[index].dataPagamento = null;
   boletos[index].valorPago = 0;
@@ -6907,11 +6927,27 @@ async function salvarProtocolos(index) {
   return true;
 }
 
+// Fila dos lançamentos automáticos. "Já lancei isso?" e "grava" são dois passos
+// com uma ida ao servidor no meio. Se duas rotinas correm juntas — a varredura
+// que roda ao abrir o app e o salvar de um protocolo, por exemplo — as duas
+// consultam antes de qualquer uma gravar, as duas acham que não existe, e o
+// custo entra DUPLICADO. A fila garante que uma termine antes da outra começar.
+let _maFila = Promise.resolve();
+function _maSerial(fn) {
+  const proximo = _maFila.then(fn, fn);
+  _maFila = proximo.then(() => {}, () => {}); // a fila nunca "quebra" por um erro
+  return proximo;
+}
+
 // Devolve "ok" (lançou), "pulado" (nada a fazer / já existia) ou "erro" (falhou
 // no banco). Quem chama PRECISA distinguir os dois últimos: tratar erro como
 // "pulado" fazia a varredura semanal marcar o dia como resolvido e nunca mais
 // tentar — o custo desaparecia em silêncio quando a internet oscilava.
-async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
+function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
+  return _maSerial(() => _lancarCustoAutoSerial(index, produto, quantidadeG, data, obs));
+}
+
+async function _lancarCustoAutoSerial(index, produto, quantidadeG, data, obs) {
   if (!quantidadeG || quantidadeG <= 0) return "pulado";
   const observacao = obs || "Automático";
   // Não repete o mesmo lançamento automático: mesmo produto, mesma data e mesma
@@ -6940,7 +6976,13 @@ async function _lancarCustoAuto(index, produto, quantidadeG, data, obs) {
 // porque a dose é proporcional aos kg lançados: se o lançamento de ração é
 // corrigido ou apagado, o custo derivado dele tem de acompanhar — senão fica
 // cobrando pela quantidade antiga, ou órfão no ciclo.
-async function _removerCustosAutoRacao(index, data) {
+function _removerCustosAutoRacao(index, data) {
+  // Entra na mesma fila dos lançamentos: apagar enquanto outro lançamento está
+  // gravando deixaria um custo órfão (ou apagaria o que acabou de entrar).
+  return _maSerial(() => _removerCustosAutoRacaoSerial(index, data));
+}
+
+async function _removerCustosAutoRacaoSerial(index, data) {
   const v = viveiros[index];
   const alvos = (v.custos || []).filter(c => c.data === data && (c.observacao || "") === "Automático (ração)");
   if (!alvos.length) return true;
@@ -7003,7 +7045,21 @@ async function _aplicarProtocoloRacaoRetroativo(index, prot) {
 const _MA_MAX_DIAS_VARREDURA = 400;
 let _maPreviaIndex = 0; // viveiro do formulário aberto, usado pela prévia de custo
 
-async function aplicarProtocolosSemanais(indexAlvo) {
+// Uma varredura por vez. A da abertura do app roda em segundo plano; se o
+// usuário ativa ou salva um manejo enquanto ela corre, a segunda varredura
+// esperava nada e lançava os mesmos dias de novo. Aqui a segunda espera a
+// primeira: quando começa, a marca de progresso já está em dia e ela não repete
+// nada. Fila própria (separada da dos lançamentos) para não travar a si mesma.
+let _maVarredura = Promise.resolve();
+function aplicarProtocolosSemanais(indexAlvo) {
+  const proximo = _maVarredura.then(
+    () => _varrerProtocolosSemanais(indexAlvo),
+    () => _varrerProtocolosSemanais(indexAlvo));
+  _maVarredura = proximo.then(() => {}, () => {});
+  return proximo;
+}
+
+async function _varrerProtocolosSemanais(indexAlvo) {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const hojeStr = _maYmd(hoje);
   const aSalvar = [];
@@ -7105,7 +7161,7 @@ function abrirManejoAutomatico(index) {
                 : `${p.tipo === "racao" ? "Atrelado à ração" : "Programado semanal"} · ${_maResumoProtocolo(p)}`}</span>
             </div>
             <div class="ma-item-acoes">
-              ${orfao ? "" : `<button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}')" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>`}
+              ${orfao ? "" : `<button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}', this)" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>`}
               <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">✏️</button>
               <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}', this)">🗑️</button>
             </div>
@@ -7118,10 +7174,14 @@ function abrirManejoAutomatico(index) {
   `;
 }
 
-async function toggleProtocolo(index, protId) {
+async function toggleProtocolo(index, protId, botao) {
   if (_bloqueioViveiro(index)) return;
+  if (botao?.disabled) return; // evita duplo toque (ativar/pausar em sequência)
   const p = (viveiros[index].protocolos || []).find(x => x.id === protId);
   if (!p) return;
+  // Chavinha: só desabilita (sem trocar o conteúdo, senão o desenho do switch some)
+  if (botao) botao.disabled = true;
+  const liberar = () => { if (botao) botao.disabled = false; };
   const marcaAntes = p.ultimoLancamento;
   p.ativo = !p.ativo;
   // Ao RETOMAR, a varredura recomeçaria no dia seguinte ao último lançamento —
@@ -7131,10 +7191,10 @@ async function toggleProtocolo(index, protId) {
   // retomada começa hoje.
   if (p.ativo) p.ultimoLancamento = _maAddDias(_hojeLocal(), -1);
   const ok = await salvarProtocolos(index);
-  if (!ok) { p.ativo = !p.ativo; p.ultimoLancamento = marcaAntes; return; } // desfaz na memória
+  if (!ok) { p.ativo = !p.ativo; p.ultimoLancamento = marcaAntes; liberar(); return; } // desfaz na memória
   // Ao ATIVAR um manejo semanal, põe em dia os lançamentos — só deste viveiro.
   if (p.ativo && p.tipo === "semanal") await aplicarProtocolosSemanais(index);
-  abrirManejoAutomatico(index);
+  abrirManejoAutomatico(index); // redesenha a tela — a chavinha nova já vem liberada
 }
 
 async function excluirProtocolo(index, protId, botao) {
@@ -7214,7 +7274,7 @@ function abrirFormProtocolo(index, protId) {
       <label class="ma-check"><input type="checkbox" id="protRetroativo"> Aplicar aos dias anteriores (lança o que já passou)</label>
 
       <div id="msg-prot-erro" style="display:none;color:#ef4444;font-size:13px;margin:8px 0;text-align:center;font-weight:500"></div>
-      <button class="botao-salvar" style="margin-top:12px" onclick="salvarProtocolo(${index}, ${protId ? `'${protId}'` : "null"})">Salvar protocolo</button>
+      <button class="botao-salvar" style="margin-top:12px" onclick="salvarProtocolo(${index}, ${protId ? `'${protId}'` : "null"}, this)">Salvar protocolo</button>
       <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirManejoAutomatico(${index})">Voltar</button>
     </div>
   `;
@@ -7268,8 +7328,9 @@ function _protToggleDose() {
   _protPrevia();
 }
 
-async function salvarProtocolo(index, protId) {
+async function salvarProtocolo(index, protId, botao) {
   if (_bloqueioViveiro(index)) return;
+  if (botao?.disabled) return; // evita duplo toque: criava DOIS protocolos iguais
   const msg = document.getElementById("msg-prot-erro");
   const erro = t => { if (msg) { msg.textContent = t; msg.style.display = "block"; } };
   if (msg) msg.style.display = "none";
@@ -7322,8 +7383,10 @@ async function salvarProtocolo(index, protId) {
   } else {
     viveiros[index].protocolos.push(prot);
   }
+  // Trava só aqui: as validações acima são instantâneas e devolvem sem gravar.
+  const restaurar = _travarBotao(botao, "Salvando...");
   const ok = await salvarProtocolos(index);
-  if (!ok) return;
+  if (!ok) { restaurar(); return; }
   _toastSucesso("Manejo salvo!");
   // Aplica lançamentos (pode envolver vários custos) — só neste viveiro
   if (tipo === "semanal") {

@@ -56,5 +56,19 @@ fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
   mexidos. Mas guarde a regra: se um dia o app passar a usar uma operação nova
   numa dessas tabelas (ex.: UPDATE em `racoes`), vai falhar em silêncio até a
   política ser criada.
-- [ ] Ainda não auditados a fundo: `/ch2`, corridas/duplo toque, projeção de
-  crescimento.
+- [x] **Corridas / duplo toque auditadas (19/08) — 2 bugs reais corrigidos.**
+  1. **Custo automático em dobro.** A varredura que roda ao abrir o app e a que
+     roda ao salvar/ativar um manejo podiam correr juntas. As duas perguntavam
+     "já lancei esse dia?" antes de qualquer uma gravar → o ciclo inteiro de
+     manejo automático entrava DUPLICADO no custo. Reproduzido em teste: 26
+     lançamentos onde deviam ser 13. Corrigido com fila (uma varredura por vez,
+     e um lançamento por vez).
+  2. **Protocolo duplicado.** Dois toques no "Salvar protocolo" criavam dois
+     protocolos iguais — e depois os dois lançavam. Reproduzido: 2 onde devia
+     ser 1.
+  Também travados contra duplo toque: chavinha de pausar manejo, ativar/desativar
+  custo fixo, desfazer último pagamento, marcar/desmarcar boleto pago, salvar
+  fazenda, trocar senha, remover foto. Varredura completa: dos 47 pontos que
+  gravam no banco, os 42 clicáveis estão travados; os 5 restantes são internos
+  (não têm botão).
+- [ ] Ainda não auditados a fundo: `/ch2`, projeção de crescimento.
