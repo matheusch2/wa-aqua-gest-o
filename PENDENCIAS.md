@@ -37,3 +37,19 @@ retomar, o commit com a implementação está no histórico do Git (procure por
 ## Futuro (sem pressa)
 - [ ] Limpar a coluna esquisita `gen_random_uuid()` da tabela `viveiros` (SQL de 1 linha).
 - [ ] Recorrência/renovação automática de pagamento (hoje é avulso).
+
+## Revisão geral — onde paramos (30/07)
+Corrigido nesta rodada: vírgula engolida nos campos numéricos (erro de 10x),
+rateio de custo fixo congelado no encerramento, vigência por período nos custos
+fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
+(16 idas ao servidor → 2), origem da sobrevivência estimada.
+
+- [ ] **Verificar as permissões do banco** — rodar o SQL de check-up (está no
+  chat de 30/07). Achamos 27 funções que gravam sem confirmar se a linha foi
+  mesmo alterada. É risco latente: só vira bug se faltar alguma política.
+  Se o check-up acusar falta, aí sim vale endurecer essas funções.
+- [ ] Atenção especial a `perfis` e `assinaturas`: se o usuário puder EDITAR
+  essas tabelas, ele pode se dar plano pago ou virar admin. Ali o certo é só
+  leitura para o usuário; quem escreve é a Edge Function.
+- [ ] Ainda não auditados a fundo: `/ch2`, corridas/duplo toque, projeção de
+  crescimento.
