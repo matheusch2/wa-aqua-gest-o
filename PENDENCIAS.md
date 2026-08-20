@@ -90,6 +90,19 @@ com 60 — para uma tela que quase nunca se abre.
 - Última inconsistência de leitura de número corrigida: a edição de biometria
   fazia `replace(",", ".")` na mão em vez de usar `parseDecimalBR`.
 
+## Logo do topo (20/08)
+A logo sumiu do app. **Não foi a limpeza de CSS** — conferido: `.logo-img`
+nunca existiu no `style.css`; quem estiliza é `.logo-circulo img`, idêntica
+antes e depois. A causa é que o `index.html` puxava a logo de um hospedeiro
+de imagens grátis (`i.postimg.cc`). Se ele cai, apaga o arquivo ou passa a
+bloquear link externo, a logo do produto some do app de todo mundo.
+Agora usa `logo-wa.jpg`, que já estava no repositório, e o service worker
+guarda ela (aparece até offline). Nenhuma imagem do app depende mais de fora.
+
+**Lição pra próxima limpeza de CSS:** meu teste de regressão visual só olhava
+`#area-gestao *` — a barra do topo ficava de fora. Se um dia repetir, inclua
+`body *`.
+
 ## Futuro (sem pressa)
 - [ ] Limpar a coluna esquisita `gen_random_uuid()` da tabela `viveiros` (SQL de 1 linha).
 - [ ] Recorrência/renovação automática de pagamento (hoje é avulso).

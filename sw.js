@@ -33,6 +33,7 @@ const ESSENCIAIS = [
   "icon-192.png",
   "icon-512.png",
   "apple-touch-icon.png",
+  "logo-wa.jpg",
 ];
 
 self.addEventListener("install", (evento) => {
