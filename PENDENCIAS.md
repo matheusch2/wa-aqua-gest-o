@@ -73,6 +73,23 @@ com 60 — para uma tela que quase nunca se abre.
   essencial. Testado simulando a falha: o app abre normal.
 - Efeito colateral bom: "Histórico de ciclos" caiu de 21 ms para 9 ms.
 
+## Limpeza (20/08)
+- **33 KB a menos no `style.css`** (169 → 136 KB, −19%): 144 classes que não
+  existem em lugar nenhum do HTML. Eram restos de redesenhos — dois layouts
+  antigos de relatório (`rc-*`, `rel-*`), o menu suspenso antigo (`menu-*`) e a
+  tela de boletos antiga.
+  Como foi conferido: removi só seletores em que ALGUMA classe está morta (um
+  seletor `.a .b` nunca casa se `.b` não existe), e depois comparei o estilo
+  calculado de cada elemento em 33 telas, no claro e no escuro — 0 diferenças.
+  Se um dia for repetir: cuidado com classe montada por prefixo
+  (`bt-badge-${st.tipo}`) e com nome que só aparece dentro do `${...}`
+  (`${p.ativo ? "on" : ""}`). Uma varredura ingênua marca essas como mortas.
+- Conferido e está limpo: 0 funções sem referência, 0 variáveis de topo sem uso,
+  0 `alert`/`confirm` nativos, 0 `toISOString` em data local (o único que existe
+  é o comentário avisando pra não usar). Os 5 `catch` vazios são deliberados.
+- Última inconsistência de leitura de número corrigida: a edição de biometria
+  fazia `replace(",", ".")` na mão em vez de usar `parseDecimalBR`.
+
 ## Futuro (sem pressa)
 - [ ] Limpar a coluna esquisita `gen_random_uuid()` da tabela `viveiros` (SQL de 1 linha).
 - [ ] Recorrência/renovação automática de pagamento (hoje é avulso).

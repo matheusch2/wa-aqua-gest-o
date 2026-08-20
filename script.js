@@ -3298,7 +3298,9 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
   const novaData = document.getElementById("dataEdicaoBio").value;
-  const novaQtd = parseFloat(document.getElementById("qtdEdicaoBio").value.replace(",", "."));
+  // parseDecimalBR e não um replace de vírgula na mão: é o mesmo leitor de
+  // número usado nos outros 20 campos do app, e entende ponto de milhar também.
+  const novaQtd = parseDecimalBR(document.getElementById("qtdEdicaoBio").value);
 
   if (!novaData || !novaQtd || isNaN(novaQtd)) { _toastErro("Preencha a data e a gramatura."); return; }
 
