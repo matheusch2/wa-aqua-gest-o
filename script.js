@@ -2758,13 +2758,20 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const pesoAtual = pesos[pesos.length - 1];
   const ultimoDia = dias[dias.length - 1] || 0;
 
-  // Taxa média de crescimento (g/dia)
-  const taxas = [];
-  for (let i = 1; i < biometrias.length; i++) {
-    const dd = Math.round((_parseDataLocal(biometrias[i].data) - _parseDataLocal(biometrias[i - 1].data)) / 86400000);
-    if (dd > 0) taxas.push((biometrias[i].gramatura - biometrias[i - 1].gramatura) / dd);
+  // Ganho médio de peso (g/dia) do ciclo: peso da última biometria menos o da
+  // primeira, dividido pelos dias entre as duas.
+  // Antes era a média simples dos intervalos, que dava o MESMO peso a um
+  // intervalo de 3 dias e a um de 21 — uma biometria de conferência fora do
+  // ritmo semanal entortava a previsão inteira. Com biometrias sempre
+  // semanais os dois cálculos dão o mesmo número; a diferença só aparece
+  // justamente quando o intervalo varia, que é quando o antigo errava.
+  let gDia = 0;
+  if (biometrias.length >= 2) {
+    const primeira = biometrias[0];
+    const ultima = biometrias[biometrias.length - 1];
+    const diasEntre = Math.round((_parseDataLocal(ultima.data) - _parseDataLocal(primeira.data)) / 86400000);
+    if (diasEntre > 0) gDia = (Number(ultima.gramatura) - Number(primeira.gramatura)) / diasEntre;
   }
-  const gDia = taxas.length ? taxas.reduce((s, v) => s + v, 0) / taxas.length : 0;
 
   // Biomassa estimada (usa última ração + sobrevivência calculada)
   const racoesSorted = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));

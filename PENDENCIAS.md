@@ -99,6 +99,10 @@ fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
     redesenho, ocupava o canvas novo, e o desenho certo era recusado pelo
     Chart.js ("Canvas is already in use") — exceção e gráfico congelado.
     Reproduzido: 5 falhas em 20 toques.
-- [ ] **A decidir com o Matheus:** qual ganho/dia usar na projeção. Hoje é a
-  média simples dos intervalos entre biometrias, que dá peso igual a um
-  intervalo de 3 dias e a um de 21. Ver conversa de 20/08.
+  - **Ganho/dia da projeção** (decidido com o Matheus em 20/08): passou a ser
+    o ganho do ciclo — peso da última biometria menos o da primeira, dividido
+    pelos dias entre elas. Antes era a média simples dos intervalos, que dava
+    peso igual a um intervalo de 3 dias e a um de 21. Com biometria semanal os
+    dois dão o mesmo número; num mesmo cultivo de 3 g a 10 g em 21 dias, o
+    cálculo antigo dizia 2,33 / 1,75 / 2,05 g/sem só conforme o espaçamento
+    das pesagens — e chegou a errar a data prevista em 11 dias.
