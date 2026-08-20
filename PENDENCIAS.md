@@ -57,6 +57,22 @@ proporcional a dias, depende de aeradores e bombas.
   de fora — o medidor pode cobrir a casa, não só o cultivo.
 - Viveiro fora do limite do plano não entra no rateio (é somente leitura).
 
+## Fluidez — medido, não chutado (20/08)
+Medi as telas com um cliente grande (20 viveiros, 100 ciclos encerrados,
+13.820 custos): **nenhuma tela passa de 36 ms para desenhar**. Renderização
+não é o gargalo — não vale otimizar ali.
+
+O peso estava na ABERTURA do app: `select("*")` na tabela `ciclos` trazia o
+histórico completo (biometrias, rações, despescas em JSON) de todo ciclo
+encerrado, e isso é ~96% do peso da tabela — 146 KB já com 10 ciclos, ~1 MB
+com 60 — para uma tela que quase nunca se abre.
+- Agora a abertura pede só as colunas do resumo; o histórico chega quando o
+  relatório daquele ciclo é aberto, uma vez por ciclo.
+- Se a consulta por coluna falhar (coluna que não existe), cai de volta no
+  `select("*")` — senão o app inteiro não abriria, porque `ciclos` é
+  essencial. Testado simulando a falha: o app abre normal.
+- Efeito colateral bom: "Histórico de ciclos" caiu de 21 ms para 9 ms.
+
 ## Futuro (sem pressa)
 - [ ] Limpar a coluna esquisita `gen_random_uuid()` da tabela `viveiros` (SQL de 1 linha).
 - [ ] Recorrência/renovação automática de pagamento (hoje é avulso).

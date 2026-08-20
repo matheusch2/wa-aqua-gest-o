@@ -6404,6 +6404,9 @@ async function salvarEncerramentoCiclo(index) {
     biometrias: [...biometrias],
     racoes: [...racoes],
     despescas: [...despescas],
+    // Já está tudo em mãos: o relatório aberto logo abaixo não precisa ir
+    // buscar o histórico no servidor.
+    historicoCarregado: true,
     observacoes: observacoes,
   };
 
@@ -6515,7 +6518,52 @@ function mostrarConfirmExcluirViveiro(index) {
 let _relImpCiclo = null;
 let _relImpIndex = null;
 
-function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
+// Busca o histórico de UM ciclo encerrado — o que ficou de fora da abertura do
+// app. Uma vez por ciclo: depois fica na memória.
+async function _carregarHistoricoCiclo(ciclo) {
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+  const { data, error } = await supabaseClient
+    .from("ciclos")
+    .select("biometrias_json, racoes_json, despescas_json")
+    .eq("id", ciclo.id).eq("user_id", usuario.id)
+    .maybeSingle();
+  if (error) { console.log("histórico do ciclo:", error); return false; }
+
+  const d = data || {}; // ciclo antigo, salvo antes de existirem esses campos
+  ciclo.biometrias = Array.isArray(d.biometrias_json) ? d.biometrias_json.map(b => ({
+    data: b.data, gramatura: Number(b.gramatura),
+  })) : [];
+  ciclo.racoes = Array.isArray(d.racoes_json) ? d.racoes_json.map(r => ({
+    data: r.data, racao: Number(r.racao), nomeRacao: r.nomeRacao || null, tipoRacaoId: r.tipoRacaoId || null,
+  })) : [];
+  ciclo.despescas = Array.isArray(d.despescas_json) ? d.despescas_json.map(x => ({
+    data: x.data, tipo: x.tipo || "Parcial",
+    quantidadeKg: Number(x.quantidadeKg), pesoMedio: Number(x.pesoMedio),
+    precoKg: x.precoKg != null ? Number(x.precoKg) : null,
+  })) : [];
+  ciclo.historicoCarregado = true;
+  return true;
+}
+
+async function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
+  // Sem o histórico o relatório sairia com os gráficos vazios e a tabela de
+  // biometrias em branco — então busca antes de desenhar, não depois.
+  if (ciclo && ciclo.id && !ciclo.historicoCarregado) {
+    const espera = document.getElementById("area-gestao");
+    if (espera) espera.innerHTML = `<p class="rel-carregando">Carregando o relatório…</p>`;
+    if (!(await _carregarHistoricoCiclo(ciclo))) {
+      if (espera) espera.innerHTML = `
+        <div class="rel-carregando">Não foi possível carregar o histórico deste ciclo.<br>Verifique a internet e tente de novo.
+          <button class="botao-voltar-form" style="margin-top:14px" onclick="mostrarHistoricoCiclos()">Voltar</button>
+        </div>`;
+      return;
+    }
+  }
+  _renderRelatorioCiclo(index, ciclo, origem);
+}
+
+function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   const area = document.getElementById("area-gestao");
   _relImpCiclo = ciclo;
   _relImpIndex = index;
@@ -9023,7 +9071,16 @@ async function carregarViveiros(usuarioConhecido) {
     tabela("racoes"),
     tabela("biometrias"),
     tabela("despescas"),
-    tabela("ciclos"),
+    // Colunas explícitas: de fora ficam biometrias_json, racoes_json e
+    // despescas_json — o histórico de cada ciclo encerrado. Com "*" eles vinham
+    // em toda abertura do app (146 KB já com 10 ciclos, ~1 MB com 60) para uma
+    // tela que quase nunca se abre. Agora chegam quando o relatório é aberto.
+    supabaseClient.from("ciclos").select(
+      "id, viveiro_id, nome_viveiro, laboratorio, tamanho, total_povoado, data_povoamento," +
+      " data_encerramento, dias_cultivo, producao_final, despesca_parcial, produtividade," +
+      " producao_total, peso_final, racao_consumida, fca, sobrevivencia, observacoes," +
+      " preco_venda, data_preparacao, ciclo_id, custo_fixo_rateado"
+    ).eq("user_id", usuario.id),
     tabela("produtos"),
     tabela("tipos_racao"),
     tabela("boletos").eq("ativo", true),
@@ -9032,10 +9089,19 @@ async function carregarViveiros(usuarioConhecido) {
     tabela("custos"),
   ]);
 
+  // Rede de segurança da consulta acima: nomear colunas é mais leve, mas se uma
+  // delas não existir no banco a consulta INTEIRA falha — e ciclos é essencial,
+  // ou seja, o app não abriria. Nesse caso volta ao "*", que ignora o que falta.
+  let rCiclosOk = rCiclos;
+  if (rCiclos.error) {
+    console.log("ciclos por coluna falhou, tentando completo:", rCiclos.error);
+    rCiclosOk = await tabela("ciclos");
+  }
+
   // Tabelas essenciais: sem elas a tela mentiria, então aborta com aviso.
   const essenciais = [
     [rViveiros, "viveiros"], [rRacoes, "rações"], [rBiometrias, "biometrias"],
-    [rDespescas, "despescas"], [rCiclos, "ciclos"],
+    [rDespescas, "despescas"], [rCiclosOk, "ciclos"],
   ];
   for (const [r, rotulo] of essenciais) {
     if (r.error) { console.log(r.error); _erroCarregamento(`Erro ao carregar ${rotulo}.`); return; }
@@ -9084,7 +9150,7 @@ async function carregarViveiros(usuarioConhecido) {
   const racoesData = rRacoes.data || [];
   const biometriasData = rBiometrias.data || [];
   const despescasData = rDespescas.data || [];
-  const ciclosData = rCiclos.data || [];
+  const ciclosData = rCiclosOk.data || [];
   const custosArr = rCustos.data || [];
 
   viveiros = viveirosData.map((item) => ({
@@ -9150,18 +9216,11 @@ async function carregarViveiros(usuarioConhecido) {
         observacoes: ciclo.observacoes,
         cicloId: ciclo.ciclo_id || null,
         custoFixoRateado: ciclo.custo_fixo_rateado != null ? Number(ciclo.custo_fixo_rateado) : null,
-        // Histórico persistido (gracioso para ciclos antigos sem esses campos)
-        biometrias: Array.isArray(ciclo.biometrias_json) ? ciclo.biometrias_json.map(b => ({
-          data: b.data, gramatura: Number(b.gramatura),
-        })) : [],
-        racoes: Array.isArray(ciclo.racoes_json) ? ciclo.racoes_json.map(r => ({
-          data: r.data, racao: Number(r.racao), nomeRacao: r.nomeRacao || null, tipoRacaoId: r.tipoRacaoId || null,
-        })) : [],
-        despescas: Array.isArray(ciclo.despescas_json) ? ciclo.despescas_json.map(d => ({
-          data: d.data, tipo: d.tipo || "Parcial",
-          quantidadeKg: Number(d.quantidadeKg), pesoMedio: Number(d.pesoMedio),
-          precoKg: d.precoKg != null ? Number(d.precoKg) : null,
-        })) : [],
+        // O histórico (biometrias, rações, despescas) NÃO vem na abertura do
+        // app: são ~96% do peso desta tabela e só servem numa tela, a do
+        // relatório daquele ciclo. Chega sob demanda em _carregarHistoricoCiclo.
+        biometrias: [], racoes: [], despescas: [],
+        historicoCarregado: false,
       })),
 
     custos: custosArr

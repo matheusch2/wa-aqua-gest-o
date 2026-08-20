@@ -6381,3 +6381,10 @@ body.tema-escuro .en-item-val input { background: #12191a; border-color: #2b3a37
 body.tema-escuro .en-total.ok { background: #10241d; border-color: #14532d; color: #6ee7b7; }
 body.tema-escuro .en-total.falta { background: #26200f; border-color: #574512; color: #fcd34d; }
 body.tema-escuro .en-total.passou { background: #2a1414; border-color: #7f1d1d; color: #fca5a5; }
+
+/* Espera enquanto o histórico do ciclo é buscado (ele não vem na abertura) */
+.rel-carregando {
+    text-align: center; color: #6b7280; font-size: 14px; line-height: 1.6;
+    padding: 44px 18px;
+}
+body.tema-escuro .rel-carregando { color: #9ca3af; }
