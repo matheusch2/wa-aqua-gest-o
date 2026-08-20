@@ -38,6 +38,25 @@ retomar, o commit com a implementação está no histórico do Git (procure por
 - Painel admin: `/ch2`. Restauração de backup: `/ch2/restaurar.html`.
 - Meta pra subir pro Supabase Pro: por volta de ~10 clientes pagando.
 
+## Energia — FEITO (20/08)
+Financeiro → **Energia**. Lança a conta pelo PERÍODO DA LEITURA (duas datas),
+não pelo dia em que ela chegou. O app sugere a divisão pelos dias que cada
+viveiro rodou e o Matheus **ajusta cada valor na mão** — energia não é
+proporcional a dias, depende de aeradores e bombas.
+- **O problema do ciclo encerrado está resolvido.** Uma fatia por (viveiro ×
+  ciclo): se o período pega um ciclo que encerrou no meio, aquele pedaço é
+  lançado com o `ciclo_id` do ciclo ENCERRADO e o resto com o do novo.
+  Funciona porque o relatório de ciclo soma os custos ao vivo pelo `ciclo_id` —
+  o encerramento só congela biometria, ração, despesca e o rateio fixo.
+  Testado: conta de 01–30/07 com ciclo encerrado em 20/07 → ciclo velho recebeu
+  R$ 200, ciclo novo R$ 100, sem mistura.
+- Categoria fixa "Energia" (o financeiro agrupa por categoria; descrição
+  diferente a cada mês criaria um grupo novo todo mês). A descrição fica no
+  nome, que é como o histórico do viveiro agrupa.
+- Barra rateio maior que a conta. Rateio menor é permitido e avisa quanto ficou
+  de fora — o medidor pode cobrir a casa, não só o cultivo.
+- Viveiro fora do limite do plano não entra no rateio (é somente leitura).
+
 ## Futuro (sem pressa)
 - [ ] Limpar a coluna esquisita `gen_random_uuid()` da tabela `viveiros` (SQL de 1 linha).
 - [ ] Recorrência/renovação automática de pagamento (hoje é avulso).

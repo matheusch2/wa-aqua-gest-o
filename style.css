@@ -6307,3 +6307,77 @@ body.tema-escuro .cd-menu button { color: #e5e7eb; }
 body.tema-escuro .cd-menu button:hover { background: #1f2937; }
 body.tema-escuro .cd-menu-btn:hover { background: #374151; color: #e5e7eb; }
 body.tema-escuro .cd-menu .cd-menu-excluir { color: #f87171; border-top-color: #1f2937; }
+
+/* ─── ENERGIA (rateio manual por período de leitura) ─────────────────────── */
+.en-form { display: flex; flex-direction: column; }
+.en-datas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.en-erro { color: #ef4444; font-size: 13px; margin: 2px 0 10px; text-align: center; font-weight: 500; }
+
+.en-sec-tit {
+    font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    color: #6b7280; margin: 20px 2px 6px;
+}
+.en-dica { font-size: 12.5px; color: #6b7280; margin: 0 2px 10px; line-height: 1.45; }
+.en-dica b { color: #374151; }
+.en-vazio {
+    text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.5;
+    padding: 20px 12px; margin-top: 14px;
+    background: #f9fafb; border: 1.5px dashed #e5e7eb; border-radius: 13px;
+}
+
+.en-atalhos { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.en-atalho {
+    width: auto; flex: 1 1 auto; background: #f0f7f5; border: 1.5px solid #d6e8e4;
+    color: rgb(6,107,99); border-radius: 10px; padding: 8px 12px;
+    font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.en-atalho:active { background: #dcefeb; }
+
+.en-lista { display: flex; flex-direction: column; gap: 8px; }
+.en-item {
+    display: flex; align-items: center; gap: 10px;
+    background: white; border: 1.5px solid #e5e7eb; border-radius: 13px; padding: 11px 13px;
+}
+/* Fatia de ciclo que já encerrou: o custo vai para AQUELE ciclo, não para o
+   novo. Marcar visualmente evita a dúvida de "isso não vai bagunçar o ciclo?". */
+.en-item.en-encerrado { background: #fffbeb; border-color: #fde68a; }
+.en-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.en-item-nome { font-size: 14.5px; font-weight: 800; color: #1f2937; }
+.en-item-sub { font-size: 12px; color: #6b7280; }
+.en-badge {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+    background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .03em; vertical-align: 1px;
+}
+.en-item-val { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.en-item-rs { font-size: 12px; font-weight: 700; color: #9ca3af; }
+.en-item-val input {
+    width: 96px; text-align: right; border: 1.5px solid #e5e7eb; border-radius: 9px;
+    padding: 8px 9px; font-size: 14px; font-weight: 700; color: #1f2937;
+    background: #fff; outline: none;
+}
+.en-item-val input:focus { border-color: rgb(6,107,99); }
+
+.en-total {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    flex-wrap: wrap; border-radius: 11px; padding: 10px 12px; margin-top: 10px;
+    font-size: 13px; font-weight: 600;
+}
+.en-total b { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.en-total small { font-size: 11.5px; font-weight: 600; opacity: .9; }
+.en-total.ok { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.en-total.falta { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.en-total.passou { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+body.tema-escuro .en-dica, body.tema-escuro .en-sec-tit, body.tema-escuro .en-item-sub { color: #9ca3af; }
+body.tema-escuro .en-dica b { color: #d1d5db; }
+body.tema-escuro .en-vazio { background: #1a1f1e; border-color: #2b3a37; color: #9ca3af; }
+body.tema-escuro .en-atalho { background: #16241f; border-color: #2b3a37; color: #6ee7d8; }
+body.tema-escuro .en-item { background: #1a1f1e; border-color: #2b3a37; }
+body.tema-escuro .en-item-nome { color: #e5e7eb; }
+body.tema-escuro .en-item.en-encerrado { background: #26200f; border-color: #574512; }
+body.tema-escuro .en-badge { background: rgba(245,158,11,0.22); color: #fcd34d; }
+body.tema-escuro .en-item-val input { background: #12191a; border-color: #2b3a37; color: #e5e7eb; }
+body.tema-escuro .en-total.ok { background: #10241d; border-color: #14532d; color: #6ee7b7; }
+body.tema-escuro .en-total.falta { background: #26200f; border-color: #574512; color: #fcd34d; }
+body.tema-escuro .en-total.passou { background: #2a1414; border-color: #7f1d1d; color: #fca5a5; }

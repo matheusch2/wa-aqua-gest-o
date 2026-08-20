@@ -4205,7 +4205,12 @@ function abrirMenuFinanceiro() {
         </button>
         <button class="cfg-item" onclick="abrirCustosFixos()">
           <div class="cfg-item-ico cfg-item-ico-verde"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">Mão de obra, energia… rateados entre os viveiros</span></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">Mão de obra, aluguel… rateados entre os viveiros</span></div>
+          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="cfg-item" onclick="abrirEnergia()">
+          <div class="cfg-item-ico cfg-item-ico-amber"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Energia</span><span class="cfg-item-sub">Lance a conta pelo período da leitura e rateie na mão</span></div>
           <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -4850,6 +4855,304 @@ async function excluirCustoFixo(index, botao) {
   custosFixos.splice(index, 1);
   _toastSucesso("Custo fixo excluído.");
   abrirCustosFixos();
+}
+
+// ─── ENERGIA (rateio manual por período de leitura) ──────────────────────────
+// A conta de luz chega DEPOIS do consumo e não é proporcional a dias: viveiro
+// com oito aeradores gasta muito mais que um com dois. Por isso aqui o app
+// apenas SUGERE uma divisão e o produtor ajusta cada valor na mão.
+//
+// O ponto delicado é o ciclo. A conta de 01 a 30/08 pode pegar um ciclo que já
+// encerrou no dia 20. Como o relatório de ciclo soma os custos ao vivo pelo
+// ciclo_id, basta lançar cada fatia com o ciclo a que ela pertence — e o custo
+// cai no ciclo certo, mesmo que ele já esteja fechado.
+
+let _energiaSegs = [];
+
+// Fatias (viveiro × ciclo) que existiram dentro do período de leitura.
+function _energiaSegmentos(iniYmd, fimYmd) {
+  const hoje = _hojeLocal();
+  const segs = [];
+  const recorte = (de, ate) => {
+    const d = de > iniYmd ? de : iniYmd;
+    const a = (ate && ate < fimYmd) ? ate : fimYmd;
+    return d <= a ? { de: d, ate: a } : null;
+  };
+
+  viveiros.forEach((v, idx) => {
+    // Viveiro fora do plano é somente leitura — não recebe lançamento.
+    if (_viveiroForaDoLimite(idx)) return;
+
+    // Ciclo em andamento. Vale até HOJE: data futura não conta.
+    const iniAtual = v.dataPreparacao || v.dataPovoamento;
+    if (iniAtual) {
+      // Um ciclo encerra e a preparação do seguinte começa no MESMO dia. Sem
+      // este ajuste o dia do encerramento apareceria em duas fatias.
+      let de = iniAtual;
+      (v.ciclosFinalizados || []).forEach((cf) => {
+        if (cf.dataEncerramento && cf.dataEncerramento >= de) de = _maAddDias(cf.dataEncerramento, 1);
+      });
+      const r = recorte(de, hoje);
+      if (r) segs.push({ viveiroIndex: idx, nome: v.nome, cicloId: v.cicloId || null, encerrado: false, de: r.de, ate: r.ate });
+    }
+
+    // Ciclos já encerrados que alcançam o período
+    (v.ciclosFinalizados || []).forEach((cf) => {
+      const ci = cf.dataPreparacao || cf.dataPovoamento;
+      if (!ci || !cf.dataEncerramento) return;
+      const r = recorte(ci, cf.dataEncerramento);
+      if (r) segs.push({ viveiroIndex: idx, nome: v.nome, cicloId: cf.cicloId || null, encerrado: true, de: r.de, ate: r.ate });
+    });
+  });
+
+  segs.forEach((s) => {
+    s.dias = Math.round((_parseDataLocal(s.ate) - _parseDataLocal(s.de)) / 86400000) + 1;
+    s.valor = 0;
+  });
+  segs.sort((a, b) => a.viveiroIndex - b.viveiroIndex || a.de.localeCompare(b.de));
+  return segs;
+}
+
+function abrirEnergia() {
+  esconderMenu();
+  _energiaSegs = [];
+  const area = document.getElementById("area-gestao");
+  // Padrão: mês passado — é o período que a conta que acabou de chegar cobre.
+  const d = new Date();
+  const iniPadrao = _dataLocalISO(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const fimPadrao = _dataLocalISO(new Date(d.getFullYear(), d.getMonth(), 0));
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Energia</h3>
+    <div class="cfg-wrap">
+      <p class="cfg-secao-desc">Lance a conta de luz pelo <b>período da leitura</b>, não pelo dia em que ela chegou.
+      O app sugere uma divisão pelos dias que cada viveiro rodou, e você ajusta conforme o gasto real de cada um.
+      Fatia de ciclo já encerrado entra no custo daquele ciclo, não no novo.</p>
+
+      <div class="en-form">
+        <div class="campo-form">
+          <div class="campo-label"><label>Valor da conta</label></div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="enValor" placeholder="Ex: 1.240,00" onblur="formatarMoedaBlur(this)">
+            <span class="campo-unidade">R$</span>
+          </div>
+        </div>
+        <div class="en-datas">
+          <div class="campo-form">
+            <div class="campo-label"><label>Leitura de</label></div>
+            <input type="date" id="enIni" value="${iniPadrao}">
+          </div>
+          <div class="campo-form">
+            <div class="campo-label"><label>Leitura até</label></div>
+            <input type="date" id="enFim" value="${fimPadrao}">
+          </div>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><label>Descrição (opcional)</label></div>
+          <input type="text" id="enDesc" placeholder="Ex: Energia — conta de agosto">
+        </div>
+        <div id="msg-energia" class="en-erro" style="display:none"></div>
+        <button class="botao-salvar" onclick="_energiaCalcular()">Calcular rateio</button>
+      </div>
+
+      <div id="en-rateio"></div>
+
+      <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuFinanceiro()">Voltar</button>
+    </div>
+  `;
+}
+
+function _energiaErro(msg) {
+  const e = document.getElementById("msg-energia");
+  if (!e) return;
+  if (!msg) { e.style.display = "none"; return; }
+  e.textContent = msg;
+  e.style.display = "block";
+}
+
+function _energiaCalcular() {
+  _energiaErro("");
+  const box = document.getElementById("en-rateio");
+  const ini = document.getElementById("enIni").value;
+  const fim = document.getElementById("enFim").value;
+  const valor = parseMoedaBR(document.getElementById("enValor").value);
+
+  if (box) box.innerHTML = "";
+  if (isNaN(valor) || valor <= 0) { _energiaErro("Informe o valor da conta."); return; }
+  if (!ini || !fim) { _energiaErro("Informe as duas datas da leitura."); return; }
+  if (ini > fim) { _energiaErro("A data inicial da leitura é depois da final."); return; }
+
+  _energiaSegs = _energiaSegmentos(ini, fim);
+  if (!_energiaSegs.length) {
+    if (box) box.innerHTML = `<div class="en-vazio">Nenhum viveiro estava em preparação ou cultivo entre ${formatarData(ini)} e ${formatarData(fim)}. Confira as datas da leitura.</div>`;
+    return;
+  }
+  _energiaDistribuir("dias");
+}
+
+// Espalha o valor da conta pelas fatias. "dias" = proporcional aos dias que
+// cada uma rodou; "igual" = mesmo valor para todas.
+function _energiaDistribuir(modo) {
+  if (!_energiaSegs.length) return;
+  const valor = parseMoedaBR(document.getElementById("enValor").value) || 0;
+  const totalDias = _energiaSegs.reduce((s, x) => s + x.dias, 0);
+  const n = _energiaSegs.length;
+
+  _energiaSegs.forEach((s) => {
+    if (modo === "zerar") { s.valor = 0; return; }
+    const bruto = modo === "igual" ? valor / n : (totalDias > 0 ? (valor * s.dias) / totalDias : 0);
+    s.valor = Math.round(bruto * 100) / 100;
+  });
+
+  // Os centavos que sobram do arredondamento vão para a maior fatia, senão a
+  // soma nunca fecha exatamente com o valor da conta.
+  if (modo !== "zerar") {
+    const soma = _energiaSegs.reduce((s, x) => s + x.valor, 0);
+    const resto = Math.round((valor - soma) * 100) / 100;
+    if (resto !== 0) {
+      const maior = _energiaSegs.reduce((a, b) => (b.valor > a.valor ? b : a), _energiaSegs[0]);
+      maior.valor = Math.round((maior.valor + resto) * 100) / 100;
+    }
+  }
+  _energiaRenderRateio();
+}
+
+function _energiaSetValor(i, txt) {
+  if (!_energiaSegs[i]) return;
+  const v = parseMoedaBR(txt);
+  _energiaSegs[i].valor = isNaN(v) || v < 0 ? 0 : v;
+  _energiaAtualizarTotal();
+}
+
+function _energiaAtualizarTotal() {
+  const el = document.getElementById("en-total");
+  if (!el) return;
+  const conta = parseMoedaBR(document.getElementById("enValor").value) || 0;
+  const soma = _energiaSegs.reduce((s, x) => s + (Number(x.valor) || 0), 0);
+  const dif = Math.round((conta - soma) * 100) / 100;
+  const rs = (v) => "R$ " + formatarNumeroBR(v, 2);
+
+  if (Math.abs(dif) < 0.005) {
+    el.className = "en-total ok";
+    el.innerHTML = `<span>Distribuído <b>${rs(soma)}</b></span><small>bate certinho com a conta ✓</small>`;
+  } else if (dif > 0) {
+    el.className = "en-total falta";
+    el.innerHTML = `<span>Distribuído <b>${rs(soma)}</b> de ${rs(conta)}</span><small>${rs(dif)} ficam de fora do custo do cultivo</small>`;
+  } else {
+    el.className = "en-total passou";
+    el.innerHTML = `<span>Distribuído <b>${rs(soma)}</b> de ${rs(conta)}</span><small>passou ${rs(-dif)} do valor da conta</small>`;
+  }
+}
+
+function _energiaRenderRateio() {
+  const box = document.getElementById("en-rateio");
+  if (!box) return;
+
+  // Quantas fatias cada viveiro tem: com mais de uma, mostramos as datas para
+  // ficar claro qual pedaço é de qual ciclo.
+  const fatias = {};
+  _energiaSegs.forEach((s) => { fatias[s.viveiroIndex] = (fatias[s.viveiroIndex] || 0) + 1; });
+
+  box.innerHTML = `
+    <div class="en-sec-tit">Rateio entre os viveiros</div>
+    <p class="en-dica">Sugestão pelos dias que cada um rodou no período. <b>Ajuste na mão</b> conforme o gasto real — aeradores, bombas, tamanho do viveiro.</p>
+    <div class="en-atalhos">
+      <button class="en-atalho" onclick="_energiaDistribuir('dias')">Sugerir por dias</button>
+      <button class="en-atalho" onclick="_energiaDistribuir('igual')">Dividir igual</button>
+      <button class="en-atalho" onclick="_energiaDistribuir('zerar')">Zerar</button>
+    </div>
+    <div class="en-lista">
+      ${_energiaSegs.map((s, i) => `
+        <div class="en-item${s.encerrado ? " en-encerrado" : ""}">
+          <div class="en-item-info">
+            <span class="en-item-nome">${abreviarViveiro(s.nome)}${s.encerrado ? ` <span class="en-badge">ciclo encerrado</span>` : ""}</span>
+            <span class="en-item-sub">${s.dias} dia${s.dias === 1 ? "" : "s"}${fatias[s.viveiroIndex] > 1 ? ` · ${formatarData(s.de)} a ${formatarData(s.ate)}` : ""}</span>
+          </div>
+          <div class="en-item-val">
+            <span class="en-item-rs">R$</span>
+            <input type="text" inputmode="decimal" id="en-v-${i}" value="${formatarNumeroBR(s.valor, 2)}"
+                   oninput="_energiaSetValor(${i}, this.value)" onblur="formatarMoedaBlur(this); _energiaSetValor(${i}, this.value)">
+          </div>
+        </div>`).join("")}
+    </div>
+    <div class="en-total" id="en-total"></div>
+    <button class="botao-salvar" style="margin-top:12px" onclick="salvarEnergia(this)">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Lançar energia
+    </button>
+  `;
+  _energiaAtualizarTotal();
+}
+
+async function salvarEnergia(botao) {
+  if (_bloqueioEdicao()) return;
+  if (botao?.disabled) return; // evita duplo toque: lançaria a conta duas vezes
+  _energiaErro("");
+
+  const ini = document.getElementById("enIni").value;
+  const fim = document.getElementById("enFim").value;
+  const conta = parseMoedaBR(document.getElementById("enValor").value) || 0;
+  const desc = (document.getElementById("enDesc").value || "").trim() || "Energia";
+
+  const lancar = _energiaSegs.filter((s) => (Number(s.valor) || 0) > 0);
+  if (!lancar.length) { _energiaErro("Nenhum valor para lançar — todos os viveiros estão zerados."); return; }
+
+  const soma = lancar.reduce((s, x) => s + x.valor, 0);
+  if (soma - conta > 0.005) {
+    _energiaErro(`O rateio soma R$ ${formatarNumeroBR(soma, 2)}, mais que a conta de R$ ${formatarNumeroBR(conta, 2)}. Ajuste antes de lançar.`);
+    return;
+  }
+
+  const restaurar = _travarBotao(botao, "Lançando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
+  const observacao = `Energia · leitura ${formatarData(ini)} a ${formatarData(fim)}`;
+  const linhas = lancar.map((s) => ({
+    user_id: usuario.id,
+    viveiro_id: viveiros[s.viveiroIndex].id,
+    tipo: "outro",
+    nome_produto: desc,
+    valor: s.valor,
+    // Categoria FIXA "Energia": o relatório financeiro agrupa os custos do tipo
+    // "outro" pela categoria, então uma descrição diferente a cada mês criaria
+    // um grupo novo todo mês. Já o histórico do viveiro agrupa por nome, e ali
+    // ver "conta de julho" separada de "conta de agosto" ajuda.
+    categoria: "Energia",
+    // Último dia da fatia: está dentro do período da leitura E dentro do ciclo,
+    // inclusive quando o ciclo é o que já foi encerrado.
+    data: s.ate,
+    ciclo_id: s.cicloId,
+    observacao,
+  }));
+
+  const { data: salvos, error } = await supabaseClient.from("custos").insert(linhas).select();
+  if (error) { restaurar(); _energiaErro("Erro ao lançar: " + error.message); return; }
+  if (!salvos || salvos.length !== linhas.length) {
+    restaurar();
+    _energiaErro("O banco não confirmou todos os lançamentos. Confira o histórico de custos antes de repetir.");
+    return;
+  }
+
+  // Espelha na memória: os relatórios já mostram sem precisar reabrir o app.
+  salvos.forEach((row) => {
+    const v = viveiros.find((x) => x.id === row.viveiro_id);
+    if (!v) return;
+    if (!v.custos) v.custos = [];
+    v.custos.push({
+      id: row.id, tipo: "outro", produtoId: null, nomeProduto: row.nome_produto,
+      quantidadeG: null, valor: Number(row.valor), categoria: row.categoria,
+      data: row.data, observacao: row.observacao, cicloId: row.ciclo_id || null,
+    });
+  });
+
+  const sobra = Math.round((conta - soma) * 100) / 100;
+  _toastSucesso(`Energia lançada em ${lancar.length} ${lancar.length === 1 ? "viveiro" : "viveiros"} — R$ ${formatarNumeroBR(soma, 2)}.`);
+  if (sobra > 0.005) {
+    setTimeout(() => _toastErro(`R$ ${formatarNumeroBR(sobra, 2)} não foram rateados e ficaram fora do custo do cultivo.`), 3600);
+  }
+  _energiaSegs = [];
+  abrirMenuFinanceiro();
 }
 
 function abrirBoletos(filtro) {
