@@ -297,7 +297,10 @@
         // ── Chamada às Edge Functions (tolera nome com/sem hífen final) ──
         const _slugOk = {};
         async function chamar(body, fn = "admin-clientes") {
-            const slugs = _slugOk[fn] ? [_slugOk[fn]] : [fn + "-", fn];
+            // Nome certo primeiro: o nome com hífen no fim é só um resquício de
+            // uma implantação antiga. Tentar ele antes fazia toda primeira
+            // chamada da página gastar uma ida ao servidor que sempre falhava.
+            const slugs = _slugOk[fn] ? [_slugOk[fn]] : [fn, fn + "-"];
             let erroDetalhado = null, ultimoErro = null;
             for (const slug of slugs) {
                 try {
@@ -324,9 +327,16 @@
         }
 
         async function init() {
-            const { data: { session } } = await sb.auth.getSession();
-            if (!session) { document.getElementById("tela-login").style.display = "block"; return; }
-            entrarPainel(session);
+            // As duas telas começam escondidas: se algo estourar aqui sem rede,
+            // a página ficava totalmente em branco, sem sequer o campo de login.
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session) { document.getElementById("tela-login").style.display = "block"; return; }
+                entrarPainel(session);
+            } catch (e) {
+                document.getElementById("tela-login").style.display = "block";
+                msgLogin("Não foi possível falar com o servidor. Verifique a internet e tente de novo.");
+            }
         }
 
         async function entrarAdmin() {
@@ -579,19 +589,34 @@
             if (btn.disabled) return;
             const txt = btn.textContent;
             btn.disabled = true; btn.textContent = "Aguarde…";
+            const body = { action: tipo, alvo };
+            if (tipo === "liberar") { body.plano = document.getElementById("plano-" + alvo).value; body.ciclo = document.getElementById("ciclo-" + alvo).value; }
+            else if (tipo === "trocar") { body.plano = document.getElementById("plano-" + alvo).value; }
+
+            // Só o CHAMAR pode dizer que a ação falhou. Antes, se a lista não
+            // recarregasse (uma oscilação de internet depois de a ação já ter
+            // dado certo), a tela dizia "Erro" e liberava o botão — e um
+            // segundo clique em "Liberar" somava mais 30 dias em cima dos 30
+            // que já tinham entrado. Aqui as duas coisas ficam separadas.
             try {
-                const body = { action: tipo, alvo };
-                if (tipo === "liberar") { body.plano = document.getElementById("plano-" + alvo).value; body.ciclo = document.getElementById("ciclo-" + alvo).value; }
-                else if (tipo === "trocar") { body.plano = document.getElementById("plano-" + alvo).value; }
                 await chamar(body);
-                await carregarClientes();
-                toast(tipo === "liberar" ? "Pagamento registrado — plano liberado! ✅" :
-                    tipo === "trocar" ? "Plano trocado." :
-                    tipo === "bloquear" ? "Cliente bloqueado." : "Cliente reativado.",
-                    tipo === "bloquear" ? "" : "ok");
             } catch (e) {
                 toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
                 btn.disabled = false; btn.textContent = txt;
+                return;
+            }
+
+            const ok = tipo === "liberar" ? "Pagamento registrado — plano liberado! ✅" :
+                tipo === "trocar" ? "Plano trocado." :
+                tipo === "bloquear" ? "Cliente bloqueado." : "Cliente reativado.";
+            // Daqui pra baixo a ação JÁ ESTÁ FEITA no servidor. Se a lista não
+            // atualizar, o botão continua travado de propósito: melhor pedir
+            // para recarregar do que arriscar um segundo clique.
+            try {
+                await carregarClientes();
+                toast(ok, tipo === "bloquear" ? "" : "ok");
+            } catch (e) {
+                toast(ok + " Atualize a página para ver a lista.", "ok");
             }
         }
 
@@ -607,12 +632,18 @@
             btn.disabled = true; btn.textContent = "Excluindo…";
             try {
                 await chamar({ alvo }, "excluir-conta");
-                abertos.delete(alvo);
-                await carregarClientes();
-                toast("Conta excluída definitivamente.", "ok");
             } catch (e) {
                 toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
                 btn.disabled = false; btn.textContent = "Sim, excluir tudo";
+                return;
+            }
+            // Exclusão já concluída — falha ao recarregar não pode virar "Erro"
+            abertos.delete(alvo);
+            try {
+                await carregarClientes();
+                toast("Conta excluída definitivamente.", "ok");
+            } catch (e) {
+                toast("Conta excluída. Atualize a página para ver a lista.", "ok");
             }
         }
 
@@ -626,7 +657,7 @@
                 const h = data.historico || [];
                 box.innerHTML = h.length ? h.map(i => {
                     const d = new Date(i.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-                    const det = i.detalhes && i.detalhes.plano ? ` — ${NOME_PLANO[i.detalhes.plano] || i.detalhes.plano}${i.detalhes.ciclo ? " · " + i.detalhes.ciclo : ""}${i.detalhes.vencimento ? " · vence " + i.detalhes.vencimento.split("-").reverse().join("/") : ""}` : "";
+                    const det = i.detalhes && i.detalhes.plano ? ` — ${esc(NOME_PLANO[i.detalhes.plano] || i.detalhes.plano)}${i.detalhes.ciclo ? " · " + esc(i.detalhes.ciclo) : ""}${i.detalhes.vencimento ? " · vence " + esc(String(i.detalhes.vencimento).split("-").reverse().join("/")) : ""}` : "";
                     return `<div class="hist-item"><b>${esc(i.acao)}</b>${det}<small>${d}</small></div>`;
                 }).join("") : `<div class="hist-item">Nenhum registro ainda.</div>`;
             } catch (e) {

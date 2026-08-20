@@ -71,4 +71,19 @@ fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
   fazenda, trocar senha, remover foto. Varredura completa: dos 47 pontos que
   gravam no banco, os 42 clicáveis estão travados; os 5 restantes são internos
   (não têm botão).
-- [ ] Ainda não auditados a fundo: `/ch2`, projeção de crescimento.
+- [x] **Painel `/ch2` auditado (20/08).**
+  Segurança está correta: chave publicável (nunca a service_role), toda ação
+  privilegiada passa pela Edge Function que confere o papel no servidor,
+  `noindex`, anti-iframe. Quem não é admin leva 401 e não vê dado nenhum.
+  Corrigido:
+  - **Risco de liberar o plano duas vezes.** Se a lista falhasse ao recarregar
+    DEPOIS de a ação já ter dado certo, a tela dizia "Erro" e destravava o
+    botão — o 2º clique somava mais 30 dias. Agora só a ação em si pode dizer
+    "erro"; se a lista não atualiza, avisa que deu certo e mantém o botão
+    travado. Mesma correção em "Excluir conta".
+  - Página em branco quando o servidor não respondia na abertura (as duas telas
+    começam escondidas e não havia proteção). Agora cai no login com aviso.
+  - Toda primeira chamada gastava uma ida ao servidor que sempre falhava
+    (tentava o nome antigo da função primeiro). Invertida a ordem.
+  - Escapado o texto do histórico (era o único ponto que ia pro HTML cru).
+- [ ] Ainda não auditada a fundo: projeção de crescimento.
