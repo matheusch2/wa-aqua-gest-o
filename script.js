@@ -87,6 +87,42 @@ function _travarBotao(botao, texto = "Salvando...") {
   return () => { botao.disabled = false; botao.classList.remove("btn-carregando"); botao.innerHTML = htmlOriginal; };
 }
 
+// O Chart.js guarda cada gráfico numa lista interna, com um observador de
+// redimensionamento preso ao canvas. Como as telas são redesenhadas trocando o
+// innerHTML, o canvas antigo sai da página mas o gráfico continua vivo e
+// escutando. Quem fica ajustando o peso-alvo no +/- acumula dezenas deles e o
+// celular vai ficando lento. Aqui derrubamos os que não estão mais na tela.
+function _limparGraficosOrfaos() {
+  try {
+    const insts = (typeof Chart !== "undefined" && Chart.instances) || {};
+    Object.keys(insts).forEach((k) => {
+      const c = insts[k];
+      // isConnected vale para qualquer documento — não derruba o gráfico da
+      // janela de impressão, que vive fora do documento principal.
+      if (c && c.canvas && c.canvas.isConnected === false) {
+        try { c.destroy(); } catch (e) {}
+      }
+    });
+  } catch (e) {}
+}
+
+// Prepara um canvas para receber um gráfico novo.
+// Além da limpeza acima, resolve uma corrida real: cada tela desenha o gráfico
+// dentro de um setTimeout. Em dois toques rápidos no +/- do peso-alvo, o
+// temporizador do desenho ANTIGO acorda depois de a tela já ter sido
+// redesenhada, acha o canvas NOVO e ocupa ele. Quando o temporizador certo
+// acorda, o Chart.js recusa ("Canvas is already in use"), a exceção sobe e o
+// gráfico simplesmente para de atualizar. Derrubar quem estiver no canvas
+// antes de desenhar faz o último desenho sempre vencer, que é o correto.
+function _prepararCanvasGrafico(canvas) {
+  _limparGraficosOrfaos();
+  try {
+    const atual = (canvas && typeof Chart !== "undefined" && Chart.getChart) ? Chart.getChart(canvas) : null;
+    if (atual) atual.destroy();
+  } catch (e) {}
+  return canvas;
+}
+
 // Gera um identificador único para vincular lançamentos ao ciclo correto
 // (evita mistura de custos quando um ciclo encerra e outro inicia no mesmo dia).
 function _novoCicloId() {
@@ -2694,6 +2730,18 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
     `;
 }
 
+// Peso-alvo no formato do país: 19,5 e não 19.5.
+function _projAlvoTexto(v) { return String(v).replace(".", ","); }
+
+// Botões − / + do peso-alvo. Ficou em função nomeada porque o mesmo número
+// precisa ser lido e reescrito em vírgula — inline dava pra errar fácil.
+function _projAjustarAlvo(index, direto, delta) {
+  const inp = document.getElementById("proj-alvo");
+  const atual = parseDecimalBR(inp && inp.value ? inp.value : "");
+  const base = isNaN(atual) ? 20 : atual;
+  verCurvaCrescimento(index, direto, Math.max(1, Math.round((base + delta) * 100) / 100));
+}
+
 function verCurvaCrescimento(index, direto, pesoAlvo) {
   const viveiro = viveiros[index];
   const biometrias = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
@@ -2727,10 +2775,6 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   // Despescas parciais já realizadas
   const _despCurva = viveiro.despescas || [];
   const _despKg = _despCurva.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
-  const _despQtd = _despCurva.reduce((s, d) => {
-    const pm = Number(d.pesoMedio) || 0;
-    return s + (pm > 0 ? (Number(d.quantidadeKg) || 0) / (pm / 1000) : 0);
-  }, 0);
   if (populacaoNum && ultimaRacaoNaoZero && pesoAtual > 0) {
     const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
     if (res && res.quantidade > 0) {
@@ -2871,13 +2915,13 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     <div class="proj-alvo-row">
       <span class="proj-alvo-lbl">Peso-alvo</span>
       <div class="proj-alvo-ctrl">
-        <button class="proj-alvo-btn" onclick="(function(){var v=Math.max(1,parseDecimalBR(document.getElementById('proj-alvo').value||20)-0.5);document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">−</button>
+        <button class="proj-alvo-btn" onclick="_projAjustarAlvo(${index}, ${direto}, -0.5)">−</button>
         <div class="proj-alvo-val-wrap">
-          <input type="text" inputmode="decimal" id="proj-alvo" value="${alvo}" min="1" step="0.5"
-            onchange="verCurvaCrescimento(${index}, ${direto}, parseFloat(this.value) || 20)">
+          <input type="text" inputmode="decimal" id="proj-alvo" value="${_projAlvoTexto(alvo)}"
+            onchange="verCurvaCrescimento(${index}, ${direto}, parseDecimalBR(this.value) || 20)">
           <span>g</span>
         </div>
-        <button class="proj-alvo-btn" onclick="(function(){var v=parseDecimalBR(document.getElementById('proj-alvo').value||20)+0.5;document.getElementById('proj-alvo').value=v;verCurvaCrescimento(${index},${direto},v);})()">+</button>
+        <button class="proj-alvo-btn" onclick="_projAjustarAlvo(${index}, ${direto}, 0.5)">+</button>
       </div>
     </div>
     ${cardProj}
@@ -2904,6 +2948,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     const canvas = document.getElementById("canvas-crescimento");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    _prepararCanvasGrafico(canvas);
 
     const linhaDespescaPlugin = {
       id: "linhaDespesca",
@@ -5742,6 +5787,7 @@ function _finRenderPorTipo(resultado, custos, total) {
   setTimeout(() => {
     const cv = document.getElementById("finPizza");
     if (!cv || typeof Chart === "undefined") return;
+    _prepararCanvasGrafico(cv);
     new Chart(cv.getContext("2d"), {
       type: "doughnut",
       data: {
@@ -6349,12 +6395,14 @@ function _renderGraficosCiclo(serie) {
   });
   const linha = (id, data, cor, fill) => {
     const el = document.getElementById(id); if (!el) return;
+    _prepararCanvasGrafico(el);
     new Chart(el.getContext("2d"), { type: "line", data: { labels: serie.dias, datasets: [{ data, borderColor: cor, backgroundColor: fill || "transparent", fill: !!fill, tension: 0.3, pointRadius: 3, pointBackgroundColor: cor, borderWidth: 2 }] }, options: op() });
   };
   // Relatório final: apenas Peso médio e Consumo acumulado de ração (sem
   // gráficos estimados de FCA/biomassa).
   linha("rcPeso", serie.peso, "#16a34a", "rgba(22,163,74,.08)");
   const elR = document.getElementById("rcRacao");
+  if (elR) _prepararCanvasGrafico(elR);
   if (elR) new Chart(elR.getContext("2d"), { type: "bar", data: { labels: serie.dias, datasets: [{ data: serie.racaoAcum, backgroundColor: "rgb(6,107,99)" }] }, options: op() });
 }
 

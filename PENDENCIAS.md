@@ -86,4 +86,19 @@ fixos, pausa do manejo automático, custos misturando ciclos, entrada do app
   - Toda primeira chamada gastava uma ida ao servidor que sempre falhava
     (tentava o nome antigo da função primeiro). Invertida a ordem.
   - Escapado o texto do histórico (era o único ponto que ia pro HTML cru).
-- [ ] Ainda não auditada a fundo: projeção de crescimento.
+- [x] **Projeção de crescimento auditada (20/08) — 3 correções.**
+  - **Vírgula engolida no peso-alvo.** Digitar "22,5" virava 22 (usava
+    `parseFloat` em vez de `parseDecimalBR`) — e os botões − / + ao lado já
+    liam certo, então os dois controles discordavam. O campo também mostrava
+    "19.5" com ponto; agora é vírgula.
+  - **Gráficos acumulando.** Nenhum gráfico do app era destruído ao redesenhar
+    a tela. 20 toques no +/- deixavam 21 gráficos órfãos vivos, cada um com
+    seu observador de redimensionamento — o celular ia ficando lento.
+  - **Gráfico parava de atualizar.** Cada tela desenha dentro de um
+    `setTimeout`; em toques rápidos o desenho antigo acordava depois do
+    redesenho, ocupava o canvas novo, e o desenho certo era recusado pelo
+    Chart.js ("Canvas is already in use") — exceção e gráfico congelado.
+    Reproduzido: 5 falhas em 20 toques.
+- [ ] **A decidir com o Matheus:** qual ganho/dia usar na projeção. Hoje é a
+  média simples dos intervalos entre biometrias, que dá peso igual a um
+  intervalo de 3 dias e a um de 21. Ver conversa de 20/08.
