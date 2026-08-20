@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#066b63">
     <link rel="manifest" href="manifest.json?v=20260713b">
-    <link rel="stylesheet" href="style.css?v=20260820b">
+    <link rel="stylesheet" href="style.css?v=20260820c">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -26,6 +26,16 @@
 
     <title>WA Aqua gestão</title>
     
+
+    <!-- Service worker: botao "Instalar" no computador + resistencia offline.
+         Ele usa REDE PRIMEIRO, entao nunca segura versao velha do sistema. -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("sw.js").catch(function (e) { console.log("SW:", e); });
+        });
+      }
+    </script>
 </head>
 
 
@@ -125,7 +135,7 @@
 
     </div>
 
-    <script src="script.js?v=20260820b"></script>
+    <script src="script.js?v=20260820c"></script>
 
 </body>
 </html>

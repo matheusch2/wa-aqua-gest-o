@@ -2,14 +2,18 @@
 
 Anotações do que está combinado pra fazer. (Sem senhas nem dados sensíveis aqui.)
 
-## Próximo passo (Matheus vai retomar)
-- [ ] **Adicionar o service worker** — arquivo que:
-  - faz aparecer o botão "Instalar" no computador (Chrome/Edge);
-  - é pré-requisito pra empacotar o app pra Play Store;
-  - dá resistência offline básica.
-  - Já temos: `manifest.json`, ícones (192/512), HTTPS. Só falta o service worker.
+## Service worker — FEITO (20/08)
+`sw.js` na raiz, registrado em `index.html` e `login.html`.
+- **Regra de ouro: rede sempre primeiro.** Ele nunca segura versão velha do
+  sistema. O cache só entra quando a rede falha. Testado: com o servidor
+  passando a mandar uma versão nova, o app pegou a nova, não a guardada.
+- Fora do alcance dele de propósito: Supabase, o CDN e o painel `/ch2`.
+- Offline: o app abre com a última versão que passou por ali.
+- Como desligar, se um dia atrapalhar: instruções no topo do próprio `sw.js`.
+- Chrome confirma os critérios de instalação: manifesto sem erros, nome,
+  `start_url`, `standalone`, ícones 192/512, service worker ativo com `fetch`.
 
-## Depois do service worker
+## Próximo passo (Play Store)
 - [ ] Gerar o pacote Android com o **PWABuilder** (a "casquinha" que abre o site — um código só).
 - [ ] Conta de desenvolvedor da **Play Store**: US$ 25 (pagamento único).
 - [ ] Configurar o `assetlinks.json` (Digital Asset Links) pro app abrir em tela cheia, sem barra do navegador.
