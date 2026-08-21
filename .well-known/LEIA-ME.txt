@@ -1,0 +1,15 @@
+Esta pasta existe por causa do app Android (Play Store).
+
+O PWABuilder gera um arquivo chamado "assetlinks.json". Ele precisa ficar
+AQUI, e ficar acessível em:
+
+    https://waaqua.com.br/.well-known/assetlinks.json
+
+E' esse arquivo que prova para o Android que o site e o app sao da mesma
+pessoa. Sem ele, o app abre com uma barra de endereco do navegador em
+cima -- parece um site, nao um aplicativo.
+
+IMPORTANTE: o arquivo ".nojekyll" na raiz do repositorio nao pode ser
+apagado. Sem ele, o GitHub Pages roda o Jekyll, e o Jekyll ignora toda
+pasta que comeca com ponto -- inclusive esta. O arquivo sumiria do site
+sem aviso nenhum.

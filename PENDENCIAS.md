@@ -31,6 +31,12 @@ Falta (só o Matheus pode):
 - [ ] Subir o `assetlinks.json` que o PWABuilder gera, em
       `waaqua.com.br/.well-known/assetlinks.json` — é ele que tira a barra do
       navegador. **Sem isso o app abre com uma barra feia de endereço em cima.**
+      A pasta `.well-known/` já está criada no repositório.
+      ⚠️ **NÃO APAGUE o arquivo `.nojekyll` da raiz.** O GitHub Pages roda o
+      Jekyll por padrão, e o Jekyll ignora toda pasta que começa com ponto —
+      incluindo `.well-known/`. Sem o `.nojekyll`, o `assetlinks.json` fica no
+      repositório mas NÃO aparece no site, e a verificação do Google falha sem
+      dar nenhuma mensagem de erro.
 - [ ] Preencher a ficha: descrição, prints, classificação de conteúdo.
 - [ ] Atenção: conta pessoal nova precisa de **teste fechado (~12 testadores por
       14 dias)** antes de liberar pra todo mundo. Comece a juntar os 12 já.
