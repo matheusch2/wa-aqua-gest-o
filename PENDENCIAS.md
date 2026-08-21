@@ -25,10 +25,30 @@ Já feito:
       navegador. Ficou `/login.html`, igual à identidade de hoje.
 - [x] **Prints 1080×1920** (9:16, o formato aceito) gerados das telas reais.
 
+### Onde paramos (21/08, madrugada)
+- [x] Pacote Android gerado no PWABuilder. O arquivo é
+      `WA Aqua Gestão-unsigned.aab`, na pasta **Downloads** do notebook.
+      - ID do pacote: **`br.com.waaqua.gestao`** — nunca pode mudar.
+      - Veio **sem chave de assinatura**, de propósito: quem assina é o próprio
+        Google (Play App Signing). Então **não há chave para perder** — o aviso
+        anterior sobre guardar o `signing.keystore` NÃO se aplica a este caminho.
+      - Por isso o `assetlinks.json` também não veio: ele depende da impressão
+        digital da chave, que só existe depois que o Google assinar.
+- [x] **D-U-N-S solicitado** (21/08) pelo formulário da Apple
+      (`developer.apple.com/enroll/duns-lookup`), que é gratuito e serve para as
+      duas lojas. Chega por e-mail em ~5 dias úteis, às vezes 2 semanas.
+- [ ] **AGUARDANDO o D-U-N-S.** Só criar a conta na Play Console depois que o
+      número chegar — a escolha entre conta pessoal e de empresa é feita na
+      criação e dá dor de cabeça para mudar depois.
+      Decidido: **conta de ORGANIZAÇÃO** (o Matheus tem CNPJ), porque
+      (a) dispensa o teste fechado de 12 pessoas por 14 dias,
+      (b) não expõe o endereço residencial na ficha pública do app,
+      (c) mostra o nome da empresa como desenvolvedor, e o produto é pago.
+
 Falta (só o Matheus pode):
 - [ ] Conta de desenvolvedor da **Play Console**: US$ 25 (pagamento único).
 - [ ] Gerar o pacote no **PWABuilder** (pwabuilder.com → waaqua.com.br).
-- [ ] Subir o `assetlinks.json` que o PWABuilder gera, em
+- [ ] Subir o `assetlinks.json` em
       `waaqua.com.br/.well-known/assetlinks.json` — é ele que tira a barra do
       navegador. **Sem isso o app abre com uma barra feia de endereço em cima.**
       A pasta `.well-known/` já está criada no repositório.
