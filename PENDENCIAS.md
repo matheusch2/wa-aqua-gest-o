@@ -13,12 +13,27 @@ Anotações do que está combinado pra fazer. (Sem senhas nem dados sensíveis a
 - Chrome confirma os critérios de instalação: manifesto sem erros, nome,
   `start_url`, `standalone`, ícones 192/512, service worker ativo com `fetch`.
 
-## Próximo passo (Play Store)
-- [ ] Gerar o pacote Android com o **PWABuilder** (a "casquinha" que abre o site — um código só).
-- [ ] Conta de desenvolvedor da **Play Store**: US$ 25 (pagamento único).
-- [ ] Configurar o `assetlinks.json` (Digital Asset Links) pro app abrir em tela cheia, sem barra do navegador.
-- [ ] Preparar itens que a Play Store exige: **política de privacidade** (URL), descrição, prints, classificação de conteúdo.
-- [ ] Atenção: conta pessoal nova na Play Console precisa rodar **teste fechado (~12 testadores por 14 dias)** antes de publicar pra todo mundo.
+## Play Store — em andamento (20/08)
+Já feito:
+- [x] **Política de privacidade** em `waaqua.com.br/privacidade.html` — é a URL que
+      o Google exige. O texto descreve o que o app REALMENTE coleta. Se um dia
+      passar a coletar algo novo (localização, câmera, contatos), atualize esta
+      página ANTES, senão vira declaração falsa na ficha da loja.
+- [x] **Manifesto pronto pra loja**: `id`, `lang`, `dir`, `categories`, caminhos
+      absolutos. O `id` é o que importa — sem ele a identidade do app vem do
+      `start_url`, e mudar o start_url um dia criaria um app "novo" para o
+      navegador. Ficou `/login.html`, igual à identidade de hoje.
+- [x] **Prints 1080×1920** (9:16, o formato aceito) gerados das telas reais.
+
+Falta (só o Matheus pode):
+- [ ] Conta de desenvolvedor da **Play Console**: US$ 25 (pagamento único).
+- [ ] Gerar o pacote no **PWABuilder** (pwabuilder.com → waaqua.com.br).
+- [ ] Subir o `assetlinks.json` que o PWABuilder gera, em
+      `waaqua.com.br/.well-known/assetlinks.json` — é ele que tira a barra do
+      navegador. **Sem isso o app abre com uma barra feia de endereço em cima.**
+- [ ] Preencher a ficha: descrição, prints, classificação de conteúdo.
+- [ ] Atenção: conta pessoal nova precisa de **teste fechado (~12 testadores por
+      14 dias)** antes de liberar pra todo mundo. Comece a juntar os 12 já.
 
 ## Corrigir ciclo encerrado (a refazer do zero, quando quisermos)
 Foi feito e depois **removido** do código, para ser repensado com calma. Se
