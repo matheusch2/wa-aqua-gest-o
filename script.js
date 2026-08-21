@@ -6606,7 +6606,10 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc2-sec-tit">Informações gerais</div>
       <div class="rc2-grid">
         <div class="rc2-cell"><small>Povoamento</small><b>${formatarData(ciclo.dataPovoamento)}</b></div>
-        <div class="rc2-cell"><small>PLs</small><b>${Number(ciclo.totalPovoado).toLocaleString("pt-BR")}</b></div>
+        <!-- O total vem gravado como texto com ponto de milhar ("420.000").
+             Number("420.000") lê o ponto como decimal e devolve 420 — o
+             relatório mostrava 420 PLs onde eram 420 mil. -->
+        <div class="rc2-cell"><small>PLs</small><b>${Number(String(ciclo.totalPovoado || "").replace(/\./g, "") || 0).toLocaleString("pt-BR")}</b></div>
         <div class="rc2-cell"><small>Laboratório</small><b>${ciclo.laboratorio || "—"}</b></div>
         <div class="rc2-cell"><small>Área</small><b>${ciclo.tamanho} ha</b></div>
         ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `<div class="rc2-cell"><small>Preparação</small><b>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</b></div>` : ""}
