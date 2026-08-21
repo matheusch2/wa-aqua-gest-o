@@ -57,6 +57,11 @@ Falta (só o Matheus pode):
       incluindo `.well-known/`. Sem o `.nojekyll`, o `assetlinks.json` fica no
       repositório mas NÃO aparece no site, e a verificação do Google falha sem
       dar nenhuma mensagem de erro.
+- [x] **Verificação de propriedade do site (21/08).** A Play Console exige provar
+      que `waaqua.com.br` é seu, e isso passa pelo **Google Search Console**.
+      Arquivo `google39c3b2937f823a6a.html` está na raiz do repositório.
+      **Não apague** — o Google revalida de tempos em tempos, e se o arquivo
+      sumir a propriedade cai e a conta pode ser questionada.
 - [ ] Preencher a ficha: descrição, prints, classificação de conteúdo.
 - [ ] Atenção: conta pessoal nova precisa de **teste fechado (~12 testadores por
       14 dias)** antes de liberar pra todo mundo. Comece a juntar os 12 já.
