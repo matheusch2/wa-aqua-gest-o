@@ -967,58 +967,101 @@ button:active:not(:disabled) {
     flex-shrink: 0;
 }
 
-/* ─── PAINEL DA FAZENDA ──────────────────────────────────────────────────── */
+/* ─── PAINEL DA FAZENDA ──────────────────────────────────────────────────────
+   Segue o desenho que veio pronto (cartões brancos, quadradinho colorido do
+   ícone, blocos "RESUMO"/"DESEMPENHO", ações rápidas embaixo). O que muda é o
+   miolo: aqui os números e os botões são os do sistema, não exemplos fixos.
+─────────────────────────────────────────────────────────────────────────────── */
 
-.pnl-destaques {
+.pnl-cabecalho {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.pnl-ola {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0b2030;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.pnl-sublinha {
+    margin: 5px 0 0;
+    font-size: 13px;
+    color: #68747d;
+}
+
+.pnl-data { text-align: right; flex-shrink: 0; }
+.pnl-data strong { display: block; font-size: 12.5px; color: #0b2030; }
+.pnl-data span { display: block; font-size: 11px; color: #8b979e; margin-top: 2px; }
+
+/* ── Os três cartões do topo ── */
+
+.pnl-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     margin-bottom: 14px;
 }
 
-.pnl-destaque {
-    border: 1px solid #dde5e3;
-    border-radius: 14px;
-    padding: 12px 10px;
+.pnl-stat {
     background: #fff;
-    text-align: center;
-    /* Sem overflow escondido o número grande empurra a caixa e quebra a grade
-       de três colunas justo no celular, que é onde há menos espaço. */
-    overflow: hidden;
+    border: 1px solid #e2e9e7;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(5,76,69,.06);
+    padding: 17px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 
-.pnl-destaque.verde   { background: #eefaf7; border-color: #cfe8e2; }
-.pnl-destaque.azul    { background: #eef4fb; border-color: #d5e3f2; }
-.pnl-destaque.laranja { background: #fdf3ec; border-color: #f2ddcc; }
+.pnl-stat-txt { min-width: 0; }
 
-.pnl-rotulo {
-    display: block;
-    font-size: 11px;
-    font-weight: 800;
-    color: #6b7c81;
-    text-transform: uppercase;
-    letter-spacing: .2px;
-    line-height: 1.25;
-    min-height: 27px;
-}
-
-.pnl-num {
-    display: block;
-    font-size: 24px;
-    font-weight: 900;
-    color: rgb(6,107,99);
-    line-height: 1.1;
-    margin: 3px 0 2px;
-}
-
-.pnl-de { font-size: 15px; font-weight: 800; color: #7c9a95; }
-
-.pnl-sub {
+.pnl-stat-rotulo {
     display: block;
     font-size: 10.5px;
-    color: #7a8b90;
-    line-height: 1.3;
+    font-weight: 800;
+    color: #40505a;
+    letter-spacing: .04em;
 }
+
+.pnl-stat-valor {
+    display: block;
+    margin-top: 8px;
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1;
+    color: #0b2030;
+}
+
+.pnl-stat small {
+    display: block;
+    margin-top: 8px;
+    color: #68747d;
+    font-size: 11px;
+}
+
+.pnl-stat-icone {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.pnl-stat-icone.verde   { background: #e4f3ef; color: #08796f; }
+.pnl-stat-icone.laranja { background: #fff0da; color: #ef9000; }
+.pnl-stat-icone.roxo    { background: #f2e7f8; color: #8546b5; }
+
+/* ── Precisa de atenção ── */
 
 .pnl-alertas {
     display: flex;
@@ -1050,8 +1093,8 @@ button:active:not(:disabled) {
     font-size: 11.5px;
     color: #6b7c81;
     margin-top: 2px;
-    /* Uma linha só: a lista de nomes pode ser enorme com 20 viveiros e
-       empurraria os viveiros para fora da primeira tela. */
+    /* Uma linha só: com 20 viveiros a lista de nomes seria enorme e empurraria
+       o resto do painel para fora da primeira tela. */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1059,77 +1102,164 @@ button:active:not(:disabled) {
 
 .pnl-alerta-seta { color: #9ca3af; font-size: 20px; line-height: 1; }
 
-.pnl-secao-titulo {
-    font-size: 12px;
-    font-weight: 800;
-    color: #6b7c81;
-    text-transform: uppercase;
-    letter-spacing: .3px;
-    margin: 0 0 8px 2px;
-}
+/* ── Os dois blocos ── */
 
-.pnl-vivs {
+.pnl-grade {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 14px;
     margin-bottom: 16px;
 }
 
-.pnl-viv {
-    border: 1px solid #dde5e3;
-    border-radius: 14px;
-    padding: 12px 13px;
+.pnl-painel {
     background: #fff;
+    border: 1px solid #e2e9e7;
+    border-radius: 15px;
+    box-shadow: 0 8px 28px rgba(5,76,69,.06);
+    padding: 17px;
+    min-width: 0;
+}
+
+.pnl-painel-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 15px;
+}
+
+.pnl-kicker {
+    display: block;
+    color: #0b8074;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+}
+
+.pnl-painel h2 {
+    margin: 3px 0 0;
+    font-size: 16.5px;
+    font-weight: 800;
+    color: #0b2030;
+}
+
+.pnl-link, .pnl-select {
+    width: auto;
+    border: 1px solid #e2e9e7;
+    border-radius: 9px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #0b2030;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pnl-nada {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13px;
+    padding: 22px 6px;
+    margin: 0;
+}
+
+/* ── A lista de viveiros ──
+   Uma marcação só para os dois tamanhos: no computador as colunas alinham e o
+   conjunto lê como tabela; no celular vira cartão, com os números embaixo do
+   nome. Duas marcações separadas desandariam uma da outra com o tempo. */
+
+.pnl-cabeca { display: none; }
+
+.pnl-tabela { display: flex; flex-direction: column; gap: 8px; }
+
+.pnl-linha {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px 8px;
+    align-items: center;
+    border: 1px solid #e9efed;
+    border-radius: 12px;
+    padding: 12px 13px;
     cursor: pointer;
 }
 
-.pnl-viv.bloqueado { opacity: .55; }
+.pnl-linha.bloqueado { opacity: .55; }
 
-.pnl-viv-topo {
+.pnl-linha-nome {
+    grid-column: 1 / -1;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 9px;
+    gap: 10px;
+    min-width: 0;
 }
 
-.pnl-viv-topo strong { font-size: 15px; color: #24363b; }
-
-.pnl-viv-dias {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: rgb(6,107,99);
-    background: #eefaf7;
-    border-radius: 999px;
-    padding: 3px 9px;
-}
-
-.pnl-viv-nums {
+.pnl-linha-avatar {
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
+    border-radius: 9px;
+    background: #e4f3ef;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    place-items: center;
+    font-size: 17px;
 }
 
-.pnl-viv-nums small {
+.pnl-linha-nome strong {
+    display: block;
+    font-size: 14.5px;
+    color: #0b2030;
+}
+
+.pnl-linha-situacao {
+    display: block;
+    font-size: 11.5px;
+    color: #10b981;
+    margin-top: 1px;
+    /* Numa linha so: "Em cultivo · 105 dias" quebrando em duas espremia a
+       coluna do nome e desalinhava a tabela inteira. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pnl-linha-nome > div { min-width: 0; }
+
+.pnl-linha-nome strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pnl-celula small {
     display: block;
     font-size: 10px;
-    color: #8b9a9e;
+    color: #8b979e;
     text-transform: uppercase;
     letter-spacing: .2px;
 }
 
-.pnl-viv-nums b {
+.pnl-celula b {
     display: block;
     font-size: 13.5px;
-    color: #24363b;
+    color: #0b2030;
     margin-top: 1px;
 }
 
-.pnl-vazios {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-bottom: 6px;
+/* No celular a seta não cabe sem espremer os números — o cartão inteiro já é
+   clicável, então ela só some. */
+.pnl-linha-seta { display: none; }
+
+.pnl-vazios-titulo {
+    font-size: 11px;
+    font-weight: 800;
+    color: #8b979e;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin: 15px 0 8px 2px;
 }
+
+.pnl-vazios { display: flex; flex-wrap: wrap; gap: 7px; }
 
 .pnl-vazio {
     width: auto;
@@ -1142,6 +1272,102 @@ button:active:not(:disabled) {
     font-weight: 700;
     cursor: pointer;
 }
+
+/* ── Gráfico ── */
+
+.pnl-grafico-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.pnl-grafico-meta span { font-size: 12px; color: #68747d; }
+.pnl-grafico-meta strong { font-size: 17px; font-weight: 800; color: #0b8074; }
+
+.pnl-grafico { position: relative; height: 220px; }
+
+/* ── Ações rápidas ── */
+
+.pnl-acoes { margin-bottom: 14px; }
+
+.pnl-acoes-titulo {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0b2030;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin: 0 0 10px 2px;
+}
+
+.pnl-acoes-grade {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+}
+
+.pnl-acao {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e2e9e7;
+    border-radius: 13px;
+    box-shadow: 0 8px 28px rgba(5,76,69,.05);
+    padding: 14px 15px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.pnl-acao-icone {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    background: #e4f3ef;
+    color: #08796f;
+    display: grid;
+    place-items: center;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.pnl-acao-txt strong { display: block; font-size: 14.5px; color: #0b2030; }
+.pnl-acao-txt small { display: block; font-size: 11.5px; color: #68747d; margin-top: 2px; }
+
+/* ── Rodapé informativo ── */
+
+.pnl-info {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    background: #f3f8f7;
+    border: 1px solid #e2e9e7;
+    border-radius: 12px;
+    padding: 13px 15px;
+}
+
+.pnl-info span { color: #0b8074; font-size: 16px; }
+.pnl-info p { margin: 0; font-size: 12.5px; color: #68747d; }
+
+/* ── Fazenda sem nenhum viveiro ── */
+
+.pnl-vazio-geral {
+    background: #fff;
+    border: 1px solid #e2e9e7;
+    border-radius: 15px;
+    padding: 34px 22px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.pnl-vazio-icone { font-size: 40px; }
+.pnl-vazio-geral strong { font-size: 16.5px; color: #0b2030; }
+.pnl-vazio-geral p { margin: 0 0 8px; font-size: 13.5px; color: #68747d; }
 
 /* ─── NAVEGAÇÃO ENTRE VIVEIROS ───────────────────────────────────────────── */
 
@@ -1874,31 +2100,69 @@ body.tema-escuro .nav-viveiros {
     background: #1f2937;
 }
 
-body.tema-escuro .pnl-destaque,
-body.tema-escuro .pnl-viv {
+body.tema-escuro .pnl-stat,
+body.tema-escuro .pnl-painel,
+body.tema-escuro .pnl-acao,
+body.tema-escuro .pnl-vazio-geral {
     background: #1f2937;
     border-color: #374151;
+    box-shadow: none;
 }
 
-body.tema-escuro .pnl-destaque.verde   { background: #12312d; border-color: #1d4a43; }
-body.tema-escuro .pnl-destaque.azul    { background: #17293c; border-color: #244159; }
-body.tema-escuro .pnl-destaque.laranja { background: #33261b; border-color: #55402c; }
+body.tema-escuro .pnl-linha { border-color: #374151; }
 
-body.tema-escuro .pnl-num { color: #5eead4; }
-body.tema-escuro .pnl-de,
-body.tema-escuro .pnl-sub,
-body.tema-escuro .pnl-rotulo,
-body.tema-escuro .pnl-secao-titulo,
-body.tema-escuro .pnl-viv-nums small { color: #9ca3af; }
-body.tema-escuro .pnl-viv-topo strong,
-body.tema-escuro .pnl-viv-nums b,
-body.tema-escuro .pnl-alerta-txt strong { color: #f3f4f6; }
-body.tema-escuro .pnl-alerta-txt small { color: #9ca3af; }
+body.tema-escuro .pnl-ola,
+body.tema-escuro .pnl-data strong,
+body.tema-escuro .pnl-stat-valor,
+body.tema-escuro .pnl-painel h2,
+body.tema-escuro .pnl-linha-nome strong,
+body.tema-escuro .pnl-celula b,
+body.tema-escuro .pnl-acao-txt strong,
+body.tema-escuro .pnl-acoes-titulo,
+body.tema-escuro .pnl-alerta-txt strong,
+body.tema-escuro .pnl-vazio-geral strong,
+body.tema-escuro .pnl-cabeca span { color: #f3f4f6; }
 
-body.tema-escuro .pnl-viv-dias { background: #12312d; color: #5eead4; }
+body.tema-escuro .pnl-sublinha,
+body.tema-escuro .pnl-data span,
+body.tema-escuro .pnl-stat small,
+body.tema-escuro .pnl-stat-rotulo,
+body.tema-escuro .pnl-celula small,
+body.tema-escuro .pnl-acao-txt small,
+body.tema-escuro .pnl-alerta-txt small,
+body.tema-escuro .pnl-vazios-titulo,
+body.tema-escuro .pnl-nada,
+body.tema-escuro .pnl-grafico-meta span,
+body.tema-escuro .pnl-info p,
+body.tema-escuro .pnl-vazio-geral p { color: #9ca3af; }
+
+body.tema-escuro .pnl-kicker,
+body.tema-escuro .pnl-grafico-meta strong,
+body.tema-escuro .pnl-info span { color: #5eead4; }
+
+/* Os quadradinhos de icone e o avatar do viveiro seguem coloridos, so que em
+   tons que nao estouram no fundo escuro. */
+body.tema-escuro .pnl-stat-icone.verde   { background: #12312d; color: #5eead4; }
+body.tema-escuro .pnl-stat-icone.laranja { background: #33261b; color: #f0a952; }
+body.tema-escuro .pnl-stat-icone.roxo    { background: #2b1f38; color: #c08ae8; }
+body.tema-escuro .pnl-linha-avatar,
+body.tema-escuro .pnl-acao-icone { background: #12312d; color: #5eead4; }
+
+body.tema-escuro .pnl-link,
+body.tema-escuro .pnl-select {
+    background: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+}
+
 body.tema-escuro .pnl-alerta.urgente { background: #3a1e1e; border-color: #5c2d2d; }
 body.tema-escuro .pnl-alerta.aviso   { background: #372f18; border-color: #574a24; }
 body.tema-escuro .pnl-alerta.bom     { background: #16302a; border-color: #24493e; }
+
+body.tema-escuro .pnl-info {
+    background: #16302a;
+    border-color: #24493e;
+}
 
 body.tema-escuro .pnl-vazio {
     background: #1a222e;
@@ -3163,18 +3427,54 @@ body.tema-escuro .proj-alvo-val-wrap span { color: #9ca3af; }
   #area-gestao .vc-pls-badge { font-size: 14px !important; }
   #area-gestao .botao-abrir { font-size: 17px !important; padding: 16px !important; }
   #area-gestao .nav-viveiros { max-width: 760px; margin-left: auto; margin-right: auto; }
-  /* Painel: na tela grande sobra largura, então os viveiros ficam lado a lado
-     e o produtor vê a fazenda inteira sem rolar. */
-  #area-gestao .pnl-destaques,
+  /* Painel na tela grande: e aqui que ele vira a tela de entrada, entao ganha
+     as tres colunas de indicadores, os dois blocos lado a lado e a lista de
+     viveiros alinhada como tabela de verdade. */
+  #area-gestao .pnl-cabecalho,
+  #area-gestao .pnl-stats,
   #area-gestao .pnl-alertas,
-  #area-gestao .pnl-vivs,
-  #area-gestao .pnl-vazios { max-width: 900px; margin-left: auto; margin-right: auto; }
-  #area-gestao .pnl-secao-titulo { max-width: 900px; margin-left: auto; margin-right: auto; }
-  #area-gestao .pnl-vivs { grid-template-columns: repeat(2, 1fr); }
-  #area-gestao .pnl-num { font-size: 30px; }
-  #area-gestao .pnl-rotulo { font-size: 12px; }
-  #area-gestao .pnl-sub { font-size: 12px; }
-  #area-gestao .pnl-destaque { padding: 16px 14px; }
+  #area-gestao .pnl-grade,
+  #area-gestao .pnl-acoes,
+  #area-gestao .pnl-info,
+  #area-gestao .pnl-vazio-geral { max-width: 1120px; margin-left: auto; margin-right: auto; }
+
+  #area-gestao .pnl-ola { font-size: 27px; }
+  #area-gestao .pnl-stats { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  #area-gestao .pnl-stat { padding: 21px 22px; }
+  #area-gestao .pnl-stat-valor { font-size: 28px; }
+  #area-gestao .pnl-grade { grid-template-columns: 1fr 1fr; gap: 18px; }
+  #area-gestao .pnl-painel { padding: 20px; }
+  #area-gestao .pnl-acoes-grade { grid-template-columns: repeat(4, 1fr); }
+  #area-gestao .pnl-info { margin-bottom: 6px; }
+
+  /* A lista vira tabela: cabecalho aparece e as colunas alinham entre as linhas. */
+  #area-gestao .pnl-cabeca {
+    display: grid;
+    grid-template-columns: 2fr .75fr .95fr .55fr 26px;
+    gap: 8px;
+    padding: 0 13px 8px;
+    border-bottom: 1px solid #eef3f2;
+    margin-bottom: 8px;
+  }
+  #area-gestao .pnl-cabeca span {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #8b979e;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+  #area-gestao .pnl-linha {
+    grid-template-columns: 2fr .75fr .95fr .55fr 26px;
+    gap: 8px;
+  }
+  #area-gestao .pnl-linha-nome { grid-column: auto; }
+  /* Na tabela o titulo da coluna ja esta no cabecalho — repeti-lo em cada
+     linha viraria ruido. */
+  #area-gestao .pnl-celula small { display: none; }
+  #area-gestao .pnl-celula b { font-size: 14px; }
+  #area-gestao .pnl-linha-seta { display: block; color: #9ca3af; font-size: 19px; text-align: center; }
+  #area-gestao .pnl-grafico { height: 250px; }
+
   /* Na tela grande cabe tudo: a tira quebra em linhas em vez de rolar. */
   #area-gestao .vv-seletor { max-width: 760px; margin-left: auto; margin-right: auto; flex-wrap: wrap; overflow-x: visible; justify-content: center; }
   #area-gestao .botao-voltar-form { max-width: 760px; margin-left: auto; margin-right: auto; font-size: 15px !important; }

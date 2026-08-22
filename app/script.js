@@ -1206,8 +1206,16 @@ function _resumoViveiro(index) {
   const custo = (emCultivo && inicio) ? _custosCicloAtivo(v, v.cicloId, inicio, _hojeLocal()).total : 0;
   const hoje = _parseDataLocal(_hojeLocal());
 
+  const racaoTotal = racoes.reduce((s, x) => s + (Number(x.racao) || 0), 0);
+  // FCA sobre a biomassa PRODUZIDA (a que ficou + a que já saiu na despesca),
+  // igual à tela do viveiro. Sem somar a despesca, o FCA fica alto à toa.
+  const despKgTotal = (v.despescas || []).reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+  const produzida = (biomassa || 0) + despKgTotal;
+  const fca = (racaoTotal > 0 && produzida > 0) ? racaoTotal / produzida : null;
+
   return {
-    index, nome: v.nome, emCultivo, biomassa, pesoAtual, gDia, custo,
+    index, nome: v.nome, emCultivo, biomassa, pesoAtual, gDia, custo, fca,
+    racao: racaoTotal, biometrias: bios.length,
     tamanho: Number(v.tamanho) || 0,
     foraDoPlano: _viveiroForaDoLimite(index),
     dias: emCultivo ? calcularDiasCultivo(v.dataPovoamento) : null,
@@ -1260,6 +1268,7 @@ function _resumoFazenda() {
     total: itens.length,
     vazios: itens.length - cultivo.length,
     biomassa: cultivo.reduce((s, x) => s + (x.biomassa || 0), 0),
+    racao: cultivo.reduce((s, x) => s + (x.racao || 0), 0),
     custo: cultivo.reduce((s, x) => s + x.custo, 0),
     area: cultivo.reduce((s, x) => s + x.tamanho, 0),
     // Só conta como "estimativa completa" o que realmente deu para calcular:
@@ -1276,81 +1285,235 @@ function abrirPainel() {
 
   if (!viveiros.length) {
     area.innerHTML = `
-      <h2 class="titulo-secao">Painel</h2>
-      <p style="text-align:center;color:#9ca3af;padding:20px 0">Nenhum viveiro cadastrado ainda.<br><small>Cadastre o primeiro para o painel ganhar vida.</small></p>
-      <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>`;
+      <div class="pnl-cabecalho">
+        <div>
+          <h1 class="pnl-ola">Olá, <span id="pnl-nome">Produtor</span>! 👋</h1>
+          <p class="pnl-sublinha">Acompanhe o desempenho da sua fazenda em um só lugar.</p>
+        </div>
+        <div class="pnl-data"><strong>${_painelDataHoje()}</strong><span>WA Aqua Gestão</span></div>
+      </div>
+      <div class="pnl-vazio-geral">
+        <div class="pnl-vazio-icone">🦐</div>
+        <strong>Sua fazenda ainda está vazia</strong>
+        <p>Cadastre o primeiro viveiro e o painel começa a mostrar tudo aqui.</p>
+        <button class="botao-abrir" style="max-width:280px" onclick="mostrarCadastroViveiro()">Cadastrar viveiro</button>
+      </div>
+      ${window.innerWidth >= 900 ? "" : `<button class="botao-voltar-form" style="margin-top:16px" onclick="voltarMenuGestao()">Voltar</button>`}`;
+    _painelPreencherNome();
     return;
   }
 
   const r = _resumoFazenda();
   const moeda = (v) => "R$ " + formatarNumeroBR(v, 2);
 
-  const destaque = (rotulo, valor, sub, cor) => `
-    <div class="pnl-destaque ${cor || ""}">
-      <span class="pnl-rotulo">${rotulo}</span>
-      <strong class="pnl-num">${valor}</strong>
-      <span class="pnl-sub">${sub}</span>
+  const cartao = (rotulo, valor, sub, icone, cor) => `
+    <article class="pnl-stat">
+      <div class="pnl-stat-txt">
+        <span class="pnl-stat-rotulo">${rotulo}</span>
+        <strong class="pnl-stat-valor">${valor}</strong>
+        <small>${sub}</small>
+      </div>
+      <div class="pnl-stat-icone ${cor}">${icone}</div>
+    </article>`;
+
+  const alertas = r.alertas.length ? r.alertas.map(a => `
+    <div class="pnl-alerta ${a.tipo}" onclick="${a.acao}">
+      <span class="pnl-alerta-txt"><strong>${a.texto}</strong><small>${a.detalhe}</small></span>
+      <span class="pnl-alerta-seta">›</span>
+    </div>`).join("") : `
+    <div class="pnl-alerta bom sem-acao">
+      <span class="pnl-alerta-txt"><strong>Nada pedindo atenção agora</strong><small>Biometrias em dia e nenhum boleto vencendo.</small></span>
     </div>`;
 
-  const alertas = r.alertas.length ? `
-    <div class="pnl-alertas">
-      ${r.alertas.map(a => `
-        <div class="pnl-alerta ${a.tipo}" onclick="${a.acao}">
-          <span class="pnl-alerta-txt"><strong>${a.texto}</strong><small>${a.detalhe}</small></span>
-          <span class="pnl-alerta-seta">›</span>
-        </div>`).join("")}
-    </div>` : `
-    <div class="pnl-alertas">
-      <div class="pnl-alerta bom sem-acao">
-        <span class="pnl-alerta-txt"><strong>Nada pedindo atenção agora</strong><small>Biometrias em dia e nenhum boleto vencendo.</small></span>
+  // Uma linha por viveiro. No computador as colunas ficam lado a lado e o
+  // conjunto lê como tabela; no celular a mesma linha vira cartão, com os
+  // números embaixo do nome. Markup único: duas versões desandariam com o tempo.
+  const linha = (x) => `
+    <div class="pnl-linha ${x.foraDoPlano ? "bloqueado" : ""}" onclick="abrirViveiro(${x.index})">
+      <div class="pnl-linha-nome">
+        <div class="pnl-linha-avatar">🦐</div>
+        <div>
+          <strong>${x.nome}</strong>
+          <span class="pnl-linha-situacao">● Em cultivo · ${x.dias} d</span>
+        </div>
       </div>
-    </div>`;
-
-  const linhaViveiro = (x) => `
-    <div class="pnl-viv ${x.foraDoPlano ? "bloqueado" : ""}" onclick="abrirViveiro(${x.index})">
-      <div class="pnl-viv-topo">
-        <strong>${x.nome}</strong>
-        <span class="pnl-viv-dias">${x.dias} dias</span>
-      </div>
-      <div class="pnl-viv-nums">
-        <div><small>Peso</small><b>${x.pesoAtual ? fmtG(x.pesoAtual) + " g" : "--"}</b></div>
-        <div><small>Biomassa</small><b>${x.biomassa ? formatarNumeroBR(x.biomassa, 0) + " kg" : "--"}</b></div>
-        <div><small>Ganho</small><b>${x.gDia ? formatarNumeroBR(x.gDia * 7, 2) + " g/sem" : "--"}</b></div>
-        <div><small>Custo</small><b>${x.custo ? moeda(x.custo) : "--"}</b></div>
-      </div>
+      <div class="pnl-celula"><small>Biometria</small><b>${x.pesoAtual ? fmtG(x.pesoAtual) + " g" : "--"}</b></div>
+      <div class="pnl-celula"><small>Biomassa</small><b>${x.biomassa ? formatarNumeroBR(x.biomassa, 0) + " kg" : "--"}</b></div>
+      <div class="pnl-celula"><small>FCA</small><b>${x.fca ? formatarNumeroBR(x.fca, 2) : "--"}</b></div>
+      <span class="pnl-linha-seta">›</span>
     </div>`;
 
   const vazios = r.itens.filter(x => !x.emCultivo);
+  // O gráfico só faz sentido com pelo menos duas biometrias — uma só vira um
+  // ponto solto, que não conta história nenhuma.
+  const comCurva = r.cultivo.filter(x => x.biometrias >= 2);
+
+  const acao = (fn, icone, titulo, sub) => `
+    <button type="button" class="pnl-acao" onclick="${fn}">
+      <span class="pnl-acao-icone">${icone}</span>
+      <span class="pnl-acao-txt"><strong>${titulo}</strong><small>${sub}</small></span>
+    </button>`;
 
   area.innerHTML = `
-    <h2 class="titulo-secao">Painel</h2>
-
-    <div class="pnl-destaques">
-      ${destaque("Em cultivo", `${r.cultivo.length}<span class="pnl-de">/${r.total}</span>`,
-                 r.vazios ? `${r.vazios} vazio${r.vazios > 1 ? "s" : ""}` : "todos ocupados", "verde")}
-      ${destaque("Biomassa estimada", r.biomassa ? formatarNumeroBR(r.biomassa, 0) : "--",
-                 r.biomassa ? (r.comBiomassa < r.cultivo.length
-                   ? `kg · ${r.comBiomassa} de ${r.cultivo.length} viveiros`
-                   : "kg no viveiro") : "faltam dados", "azul")}
-      ${destaque("Investido no ciclo", r.custo ? formatarNumeroBR(r.custo, 0) : "--",
-                 r.custo ? "reais até hoje" : "nada lançado", "laranja")}
+    <div class="pnl-cabecalho">
+      <div>
+        <h1 class="pnl-ola">Olá, <span id="pnl-nome">Produtor</span>! 👋</h1>
+        <p class="pnl-sublinha">Acompanhe o desempenho da sua fazenda em um só lugar.</p>
+      </div>
+      <div class="pnl-data"><strong>${_painelDataHoje()}</strong><span>WA Aqua Gestão</span></div>
     </div>
 
-    ${alertas}
+    <section class="pnl-stats">
+      ${cartao("VIVEIROS ATIVOS", `${r.cultivo.length}`,
+               r.vazios ? `Em cultivo · ${r.vazios} vazio${r.vazios > 1 ? "s" : ""}` : "Em cultivo", "◉", "verde")}
+      ${cartao("RAÇÃO ACUMULADA", r.racao ? formatarNumeroBR(r.racao, 1) + " kg" : "--",
+               "Total consumido no ciclo", "♨", "laranja")}
+      ${cartao("CUSTO PARCIAL", r.custo ? moeda(r.custo) : "--",
+               "Total acumulado", "$", "roxo")}
+    </section>
 
-    ${r.cultivo.length ? `
-      <div class="pnl-secao-titulo">Viveiros em cultivo</div>
-      <div class="pnl-vivs">${r.cultivo.map(linhaViveiro).join("")}</div>` : ""}
+    <section class="pnl-alertas">${alertas}</section>
 
-    ${vazios.length ? `
-      <div class="pnl-secao-titulo">Vazios</div>
-      <div class="pnl-vazios">
-        ${vazios.map(x => `<button type="button" class="pnl-vazio" onclick="abrirViveiro(${x.index})">${x.nome}</button>`).join("")}
-      </div>` : ""}
+    <section class="pnl-grade">
+      <article class="pnl-painel">
+        <div class="pnl-painel-topo">
+          <div>
+            <span class="pnl-kicker">RESUMO</span>
+            <h2>Viveiros</h2>
+          </div>
+          <button type="button" class="pnl-link" onclick="mostrarListaViveiros()">Ver todos</button>
+        </div>
+
+        ${r.cultivo.length ? `
+          <div class="pnl-tabela">
+            <div class="pnl-cabeca">
+              <span>Viveiro</span><span>Biometria</span><span>Biomassa</span><span>FCA</span><span></span>
+            </div>
+            ${r.cultivo.map(linha).join("")}
+          </div>` : `
+          <p class="pnl-nada">Nenhum viveiro em cultivo no momento.</p>`}
+
+        ${vazios.length ? `
+          <div class="pnl-vazios-titulo">Vazios</div>
+          <div class="pnl-vazios">
+            ${vazios.map(x => `<button type="button" class="pnl-vazio" onclick="abrirViveiro(${x.index})">${x.nome}</button>`).join("")}
+          </div>` : ""}
+      </article>
+
+      <article class="pnl-painel">
+        <div class="pnl-painel-topo">
+          <div>
+            <span class="pnl-kicker">DESEMPENHO</span>
+            <h2>Evolução do crescimento</h2>
+          </div>
+          ${comCurva.length > 1 ? `
+            <select id="pnl-seletor" class="pnl-select" aria-label="Escolher viveiro do gráfico"
+                    onchange="_painelDesenharGrafico(Number(this.value))">
+              ${comCurva.map((x, i) => `<option value="${x.index}"${i === 0 ? " selected" : ""}>${x.nome}</option>`).join("")}
+            </select>` : ""}
+        </div>
+
+        ${comCurva.length ? `
+          <div class="pnl-grafico-meta">
+            <span>Peso médio</span>
+            <strong id="pnl-peso-atual">--</strong>
+          </div>
+          <div class="pnl-grafico"><canvas id="pnl-canvas"></canvas></div>` : `
+          <p class="pnl-nada">Ainda não há biometrias suficientes para desenhar a curva.<br>
+             <small>São necessárias pelo menos duas em algum viveiro em cultivo.</small></p>`}
+      </article>
+    </section>
+
+    <section class="pnl-acoes">
+      <div class="pnl-acoes-titulo">Ações rápidas</div>
+      <div class="pnl-acoes-grade">
+        ${acao("mostrarLancamentoRacao()", "♨", "Lançar ração", "Registrar consumo")}
+        ${acao("mostrarListaViveiros()", "⌁", "Cadastrar biometria", "Abrir um viveiro")}
+        ${acao("abrirSimularVenda()", "$", "Simular venda", "Calcular resultado")}
+        ${acao("abrirMenuFinanceiro()", "↗", "Financeiro", "Entradas e saídas")}
+      </div>
+    </section>
+
+    <div class="pnl-info">
+      <span>ⓘ</span>
+      <p>Mantenha ração e biometrias em dia: é delas que saem a biomassa, o FCA e o custo por quilo.</p>
+    </div>
 
     ${window.innerWidth >= 900 ? "" :
       `<button class="botao-voltar-form" style="margin-top:16px" onclick="voltarMenuGestao()">Voltar</button>`}
   `;
+
+  _painelPreencherNome();
+  if (comCurva.length) setTimeout(() => _painelDesenharGrafico(comCurva[0].index), 0);
+}
+
+function _painelDataHoje() {
+  const d = _parseDataLocal(_hojeLocal());
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+// O nome vem do servidor, então chega depois da tela. Em vez de segurar o
+// painel inteiro esperando, a tela abre com "Produtor" e o nome entra quando
+// chega — a diferença é imperceptível e nada trava.
+async function _painelPreencherNome() {
+  const alvo = document.getElementById("pnl-nome");
+  if (!alvo) return;
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "";
+    const primeiro = nome.split(" ").filter(Boolean)[0];
+    if (primeiro && document.getElementById("pnl-nome")) {
+      document.getElementById("pnl-nome").textContent =
+        primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
+    }
+  } catch (e) { /* fica "Produtor", que não atrapalha ninguém */ }
+}
+
+function _painelDesenharGrafico(index) {
+  const canvas = document.getElementById("pnl-canvas");
+  if (!canvas || typeof Chart === "undefined") return;
+  const v = viveiros[index];
+  if (!v) return;
+
+  const bios = [...(v.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
+  if (bios.length < 2) return;
+
+  const rotulos = bios.map(b => "D" + calcularDiasCultivo(v.dataPovoamento, _parseDataLocal(b.data)));
+  const pesos = bios.map(b => Number(b.gramatura) || 0);
+
+  const peso = document.getElementById("pnl-peso-atual");
+  if (peso) peso.textContent = fmtG(pesos[pesos.length - 1]) + " g";
+
+  _prepararCanvasGrafico(canvas);
+  new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels: rotulos,
+      datasets: [{
+        data: pesos,
+        borderColor: "rgb(11,128,116)",
+        backgroundColor: "rgba(15,140,126,0.14)",
+        pointBackgroundColor: "rgb(11,128,116)",
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => fmtG(c.parsed.y) + " g" } },
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { font: { size: 10 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      },
+    },
+  });
 }
 
 // Rótulo curto para a tira de seleção. Quase todo mundo nomeia como
