@@ -1,395 +1,47 @@
 <!DOCTYPE html>
 <!--
   WA Aqua Gestão — Copyright © 2026 Matheus. Todos os direitos reservados.
-  Uso, cópia ou distribuição sem autorização por escrito são proibidos.
-  Contato: matheuswitalo86@gmail.com
+
+  PONTE. Este arquivo não é uma tela: ele só reencaminha para /app/login.html.
+
+  Por que existe: até 21/08/2026 o sistema morava na raiz do site, e o login
+  ficava aqui. Muita gente salvou ESTE endereço na tela inicial do celular ou
+  nos favoritos. Quando o app mudou para /app, este arquivo passou a existir
+  para que esses atalhos continuem funcionando.
+
+  NÃO APAGUE. Um cliente com o atalho antigo cairia numa página de erro, sem
+  entender por quê — e ligaria achando que o sistema saiu do ar.
+
+  A parte depois do "#" é preservada de propósito: os links de recuperação de
+  senha do Supabase carregam o token ali. Perder isso é o cliente clicar no
+  e-mail de "esqueci minha senha" e a recuperação simplesmente não funcionar.
 -->
-<html lang="pt-BR" translate="no">
+<html lang="pt-BR">
 <head>
-    <meta name="google" content="notranslate">
-    <!-- Anti-clickjacking: se alguém tentar embutir o site num iframe, quebra pra fora -->
-    <script>if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.style.display = "none"; } }</script>
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260713">
-    <link rel="icon" type="image/png" href="icon-512.png?v=20260713">
-    <meta name="apple-mobile-web-app-title" content="WA Aqua">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#066b63">
-    <link rel="manifest" href="manifest.json?v=20260820">
-    <link rel="stylesheet" href="style.css?v=20260821b">
-    <style>
-        input[type="password"]::-ms-reveal,
-        input[type="password"]::-ms-clear { display: none; }
-        input::-webkit-credentials-auto-fill-button { visibility: hidden; pointer-events: none; }
-
-        @media (min-width: 900px) {
-            body {
-                background: linear-gradient(160deg, #071e2a 0%, #0c2d3d 55%, #0d2f38 100%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 100vh;
-                margin: 0;
-                padding: 24px;
-                box-sizing: border-box;
-                position: relative;
-                overflow: hidden;
-            }
-            body::before {
-                content: "";
-                position: fixed;
-                top: -25%;
-                left: -15%;
-                width: 65%;
-                height: 65%;
-                border-radius: 50%;
-                background: radial-gradient(ellipse at center, rgba(6,107,99,0.22) 0%, transparent 68%);
-                pointer-events: none;
-            }
-            body::after {
-                content: "";
-                position: fixed;
-                bottom: -20%;
-                right: -10%;
-                width: 55%;
-                height: 55%;
-                border-radius: 50%;
-                background: radial-gradient(ellipse at center, rgba(7,125,115,0.18) 0%, transparent 68%);
-                pointer-events: none;
-            }
-            #card-gestao {
-                display: block !important;
-                flex-direction: unset !important;
-                max-width: 420px !important;
-                width: 100% !important;
-                margin: 0 !important;
-                min-height: auto !important;
-                flex: unset !important;
-                border-radius: 24px !important;
-                box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07) !important;
-                overflow: hidden !important;
-                position: relative;
-                z-index: 1;
-                background: white !important;
-            }
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>wa aqua - login</title>
-
-    <!-- Service worker: botao "Instalar" no computador + resistencia offline.
-         Ele usa REDE PRIMEIRO, entao nunca segura versao velha do sistema. -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker.register("sw.js").catch(function (e) { console.log("SW:", e); });
-        });
-      }
-    </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#066b63">
+<meta name="robots" content="noindex">
+<title>WA Aqua Gestão</title>
+<style>
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #f3f6f5; color: #6b7280; text-align: center; padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: rgb(6,107,99); font-weight: 700; }
+</style>
+<script>
+  // replace() e não href: o endereço antigo não deve ficar no histórico, senão
+  // o botão Voltar joga a pessoa de volta aqui, num laço.
+  (function () {
+    var destino = "/app/login.html" + window.location.search + window.location.hash;
+    window.location.replace(destino);
+  })();
+</script>
 </head>
-<body class="notranslate">
-
-    <div id="card-gestao" class="card modo-login">
-        <div id="area-login"></div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Detecta o fluxo de recuperação de senha (link recebido por e-mail)
-        const _ehRecuperacao = (window.location.hash || "").includes("type=recovery");
-
-        // Redireciona conforme o papel da conta: admin → painel /admin, user → sistema.
-        // Se a tabela de perfis ainda não existir, cai no fluxo normal.
-        async function _irPorPerfil() {
-            try {
-                const { data } = await supabaseClient.from("perfis").select("role").maybeSingle();
-                if (data && data.role === "admin") { window.location.replace("ch2/"); return; }
-            } catch (e) { /* segue o fluxo normal */ }
-            window.location.replace("index.html");
-        }
-
-        // Supabase dispara este evento ao processar o token do link de recuperação
-        supabaseClient.auth.onAuthStateChange((event) => {
-            if (event === "PASSWORD_RECOVERY") mostrarDefinirNovaSenha();
-        });
-
-        // Se já estiver logado, vai direto pro app (exceto durante a recuperação de senha).
-        // replace() não deixa entrada de login navegável no histórico.
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (_ehRecuperacao) { mostrarDefinirNovaSenha(); return; }
-            if (session) _irPorPerfil();
-            else mostrarLogin();
-        });
-
-        // Restaura o formulário de login se o Safari devolver a página do bfcache
-        // com o botão preso em "Entrando..." (sem apagar o e-mail digitado).
-        function restaurarEstadoVisualDoLogin() {
-            if (!document.getElementById("emailLogin")) return; // só na tela de login
-            const btn = document.querySelector(".botao-entrar");
-            if (!btn) return;
-            btn.disabled = false;
-            btn.style.opacity = "";
-            if (btn.querySelector(".btn-spinner")) {
-                btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Entrar`;
-            }
-        }
-
-        // Trata a restauração pelo back-forward cache (bfcache) do Safari.
-        window.addEventListener("pageshow", (event) => {
-            if (!event.persisted) return; // só quando a página volta do bfcache
-            restaurarEstadoVisualDoLogin();
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                if (session && !_ehRecuperacao) _irPorPerfil();
-            });
-        });
-
-        function msgLogin(texto, tipo) {
-            const el = document.getElementById("msg-login");
-            if (!el) return;
-            el.textContent = texto;
-            el.style.display = "block";
-            el.style.color = tipo === "ok" ? "#16a34a" : "#dc2626";
-        }
-
-        function toggleSenha(inputId, botao) {
-            const input = document.getElementById(inputId);
-            const svgOlho = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-            const svgOlhoFechado = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
-            if (input.type === "password") {
-                input.type = "text";
-                botao.innerHTML = svgOlhoFechado;
-            } else {
-                input.type = "password";
-                botao.innerHTML = svgOlho;
-            }
-        }
-
-        function mostrarLogin() {
-            document.getElementById("area-login").innerHTML = `
-                <div class="login-wrapper">
-                    <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
-                        <h1 class="titulo-login">ENTRAR</h1>
-                        <p class="login-subtitulo">Bem-vindo!</p>
-                    </div>
-                    <div class="login-form-card">
-                        <label>E-mail</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
-                            <input type="email" id="emailLogin" placeholder="Digite seu e-mail">
-                        </div>
-                        <label>Senha</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            <input type="password" id="senhaLogin" placeholder="Digite sua senha">
-                            <button class="botao-olho" type="button" onclick="toggleSenha('senhaLogin', this)">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </button>
-                        </div>
-                        <button class="botao-entrar" onclick="entrarUsuario(this)">
-                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                            Entrar
-                        </button>
-                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
-                        <button class="link-esqueci" onclick="mostrarRecuperarSenha()">Esqueci minha senha</button>
-                        <div class="separador-login"><span>Não tem uma conta?</span></div>
-                        <button class="botao-criar-conta" onclick="mostrarCadastro()">
-                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                            Criar conta
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function mostrarCadastro() {
-            document.getElementById("area-login").innerHTML = `
-                <div class="login-wrapper">
-                    <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
-                        <h1 class="titulo-login" style="font-size:22px">CRIAR CONTA</h1>
-                    </div>
-                    <div class="login-form-card">
-                        <label>E-mail</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
-                            <input type="email" id="emailCadastro" placeholder="Digite seu e-mail">
-                        </div>
-                        <label>Senha</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            <input type="password" id="senhaCadastro" placeholder="Mínimo 6 caracteres">
-                            <button class="botao-olho" type="button" onclick="toggleSenha('senhaCadastro', this)">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </button>
-                        </div>
-                        <label>Confirmar senha</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            <input type="password" id="confirmarSenha" placeholder="Repita a senha">
-                            <button class="botao-olho" type="button" onclick="toggleSenha('confirmarSenha', this)">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </button>
-                        </div>
-                        <button class="botao-entrar" onclick="cadastrarUsuario(this)">Criar conta</button>
-                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
-                        <button class="botao-voltar-form" onclick="mostrarLogin()">← Voltar para o login</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function mostrarRecuperarSenha() {
-            document.getElementById("area-login").innerHTML = `
-                <div class="login-wrapper">
-                    <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
-                        <h1 class="titulo-login" style="font-size:22px">RECUPERAR SENHA</h1>
-                    </div>
-                    <div class="login-form-card">
-                        <label>E-mail da sua conta</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
-                            <input type="email" id="emailRecuperacao" placeholder="Digite seu e-mail">
-                        </div>
-                        <button class="botao-entrar" onclick="recuperarSenha(this)">Enviar link de recuperação</button>
-                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
-                        <button class="botao-voltar-form" onclick="mostrarLogin()">← Voltar para o login</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Trava o botão de autenticação com spinner e devolve função para restaurar
-        function _travarBtnLogin(botao, texto) {
-            if (!botao) return () => {};
-            const html = botao.innerHTML;
-            botao.disabled = true;
-            botao.style.opacity = "0.9";
-            botao.innerHTML = `<span class="btn-spinner" style="margin-right:8px"></span>${texto}`;
-            return () => { botao.disabled = false; botao.style.opacity = ""; botao.innerHTML = html; };
-        }
-
-        async function entrarUsuario(botao) {
-            if (botao?.disabled) return;
-            const email = document.getElementById("emailLogin").value;
-            const senha = document.getElementById("senhaLogin").value;
-            if (!email || !senha) { msgLogin("Preencha e-mail e senha."); return; }
-            const restaurar = _travarBtnLogin(botao, "Entrando...");
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-            if (error) { restaurar(); msgLogin("E-mail ou senha incorretos."); return; }
-            // replace() evita que o botão "Voltar" reabra a tela de login "Entrando..."
-            _irPorPerfil();
-        }
-
-        async function cadastrarUsuario(botao) {
-            if (botao?.disabled) return;
-            const email = document.getElementById("emailCadastro").value;
-            const senha = document.getElementById("senhaCadastro").value;
-            const confirmar = document.getElementById("confirmarSenha").value;
-            if (!email || !senha || !confirmar) { msgLogin("Preencha todos os campos."); return; }
-            if (senha !== confirmar) { msgLogin("As senhas não coincidem."); return; }
-            if (senha.length < 6) { msgLogin("A senha deve ter pelo menos 6 caracteres."); return; }
-            const restaurar = _travarBtnLogin(botao, "Criando conta...");
-            const { error } = await supabaseClient.auth.signUp({ email, password: senha });
-            if (error) { restaurar(); msgLogin(error.message); return; }
-            mostrarLogin();
-            msgLogin("Conta criada! Agora faça login.", "ok");
-        }
-
-        async function recuperarSenha(botao) {
-            if (botao?.disabled) return;
-            const email = document.getElementById("emailRecuperacao").value;
-            if (!email) { msgLogin("Digite seu e-mail."); return; }
-            const restaurar = _travarBtnLogin(botao, "Enviando...");
-            // Faz o link do e-mail voltar para esta própria página de login
-            const redirectTo = window.location.href.split("#")[0].split("?")[0];
-            await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
-            // Anti-enumeração: sempre a mesma resposta, exista o e-mail ou não
-            mostrarLogin();
-            msgLogin("Se este e-mail estiver cadastrado, enviamos o link de recuperação.", "ok");
-        }
-
-        // Tela mostrada ao abrir o link de recuperação recebido por e-mail
-        function mostrarDefinirNovaSenha() {
-            document.getElementById("area-login").innerHTML = `
-                <div class="login-wrapper">
-                    <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
-                        <h1 class="titulo-login">NOVA SENHA</h1>
-                        <p class="login-subtitulo">Defina a sua nova senha</p>
-                    </div>
-                    <div class="login-form-card">
-                        <label>Nova senha</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            <input type="password" id="novaSenhaRec" placeholder="Mínimo 6 caracteres">
-                            <button class="botao-olho" type="button" onclick="toggleSenha('novaSenhaRec', this)">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </button>
-                        </div>
-                        <label>Confirmar nova senha</label>
-                        <div class="input-com-icone">
-                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            <input type="password" id="confSenhaRec" placeholder="Repita a nova senha">
-                        </div>
-                        <button class="botao-entrar" onclick="definirNovaSenha(this)">
-                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                            Salvar nova senha
-                        </button>
-                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function definirNovaSenha(botao) {
-            if (botao?.disabled) return;
-            const nova = document.getElementById("novaSenhaRec").value;
-            const conf = document.getElementById("confSenhaRec").value;
-            if (!nova || nova.length < 6) { msgLogin("A senha deve ter no mínimo 6 caracteres."); return; }
-            if (nova !== conf) { msgLogin("As senhas não coincidem."); return; }
-            const restaurar = _travarBtnLogin(botao, "Salvando...");
-            // A sessão de recuperação autoriza trocar a senha sem a senha antiga
-            const { error } = await supabaseClient.auth.updateUser({ password: nova });
-            if (error) { restaurar(); msgLogin("Erro ao salvar: " + error.message); return; }
-            msgLogin("Senha alterada! Entrando...", "ok");
-            setTimeout(() => { _irPorPerfil(); }, 900);
-        }
-    </script>
-
-    <script>
-        // Feedback de toque: onda de brilho (ripple) saindo do ponto tocado
-        document.addEventListener("pointerdown", function (e) {
-            const btn = e.target.closest("button");
-            if (!btn || btn.disabled) return;
-            const rect = btn.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
-            const size = Math.max(rect.width, rect.height);
-            if (getComputedStyle(btn).position === "static") btn.style.position = "relative";
-            btn.style.overflow = "hidden";
-            const r = document.createElement("span");
-            r.className = "btn-ripple";
-            r.style.width = r.style.height = size + "px";
-            r.style.left = ((e.clientX ?? rect.left + rect.width / 2) - rect.left - size / 2) + "px";
-            r.style.top = ((e.clientY ?? rect.top + rect.height / 2) - rect.top - size / 2) + "px";
-            btn.appendChild(r);
-            setTimeout(() => r.remove(), 550);
-        }, true);
-    </script>
-
+<body>
+  <p>Levando você para o sistema…<br><br>
+     <a href="/app/login.html">Se não abrir sozinho, toque aqui</a></p>
 </body>
 </html>

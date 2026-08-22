@@ -21,20 +21,31 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-const CACHE = "waaqua-v1";
+// v2: a mudança de endereços (app foi para /app) invalidou tudo o que estava
+// guardado. Trocar o nome do cache faz o "activate" apagar o antigo sozinho.
+const CACHE = "waaqua-v2";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
+// Caminhos ABSOLUTOS: este arquivo mora na raiz, mas guarda coisas de duas
+// pastas diferentes (a página de vendas e o sistema, em /app). Com caminho
+// relativo, "/app/..." seria resolvido errado.
 const ESSENCIAIS = [
-  "./",
-  "index.html",
-  "login.html",
-  "manifest.json",
-  "icon-192.png",
-  "icon-512.png",
-  "apple-touch-icon.png",
-  "logo-wa.jpg",
-  "privacidade.html",
+  // Página de vendas (a raiz do site)
+  "/",
+  "/index.html",
+  "/style.css",
+  // O sistema
+  "/app/login.html",
+  "/app/index.html",
+  "/app/style.css",
+  "/app/manifest.json",
+  "/logo-wa.jpg",
+  // Comuns
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png",
+  "/privacidade.html",
 ];
 
 self.addEventListener("install", (evento) => {
@@ -67,6 +78,11 @@ function podeCuidar(req) {
   // furar cache e é a última tela onde alguém quer ver dado velho.
   if (url.pathname.startsWith("/ch2")) return false;
   if (url.pathname.endsWith("/sw.js")) return false;
+  // Verificação do Google e Digital Asset Links: são perguntas que o Google faz
+  // ao SERVIDOR. Uma cópia guardada poderia responder por um arquivo que já não
+  // existe mais — melhor deixar passar direto, sempre.
+  if (/^\/google[0-9a-f]+\.html$/.test(url.pathname)) return false;
+  if (url.pathname.startsWith("/.well-known/")) return false;
   return true;
 }
 
@@ -93,9 +109,16 @@ self.addEventListener("fetch", (evento) => {
         if (guardado) return guardado;
 
         if (req.mode === "navigate") {
-          const inicio = (await caches.match("login.html", { ignoreSearch: true }))
-            || (await caches.match("index.html", { ignoreSearch: true }));
-          if (inicio) return inicio;
+          // Sem internet, devolve a tela mais próxima do que a pessoa pediu:
+          // quem tentou abrir o sistema quer o sistema, não a página de vendas.
+          const noApp = new URL(req.url).pathname.startsWith("/app");
+          const alvos = noApp
+            ? ["/app/login.html", "/app/index.html", "/index.html"]
+            : ["/index.html", "/app/login.html"];
+          for (const a of alvos) {
+            const guardado = await caches.match(a, { ignoreSearch: true });
+            if (guardado) return guardado;
+          }
         }
 
         return new Response(

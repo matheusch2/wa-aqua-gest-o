@@ -97,8 +97,48 @@ retomar, o commit com a implementação está no histórico do Git (procure por
   "histórico vazio", ou apagar todas as parciais ressuscita o valor antigo.
 - Decidir antes: de onde se entra nessa tela.
 
+## Landing page + reestruturação do site (21/08)
+O site mudou de forma. **A raiz agora é a página de vendas; o sistema mora em
+`/app`.**
+
+```
+/                     página de vendas (landing)
+/style.css  /assets   dela
+/login.html           PONTE: redireciona para /app/login.html  ← NÃO APAGUE
+/app/                 o sistema (index, login, script.js, style.css, manifest)
+/sw.js                service worker, cobre os dois (escopo "/")
+/privacidade.html     política (a Play Store exige)
+/ch2/                 painel admin
+/.well-known/  /.nojekyll  /google...html   verificações
+```
+
+Cuidados que isso exigiu:
+- **`/login.html` virou uma ponte e não pode ser apagado.** Clientes salvaram
+  esse endereço na tela inicial do celular. Ele preserva o que vem depois do
+  `#`, porque é ali que o Supabase manda o token de recuperação de senha —
+  sem isso o "esqueci minha senha" para de funcionar.
+- **O `id` do manifesto continua `/login.html`.** É ele que diz ao navegador
+  "é o mesmo app". Trocar faria quem já instalou ganhar um segundo ícone.
+- Cache do service worker foi para `waaqua-v2`: os endereços mudaram todos, o
+  cache antigo só atrapalharia. Trocar o nome faz o antigo ser apagado sozinho.
+- O arquivo de verificação do Google e a pasta `.well-known` ficam **fora** do
+  cache: são perguntas que o Google faz ao servidor, e uma cópia guardada
+  poderia responder por um arquivo que já não existe.
+
+⚠️ **O pacote da Play Store precisa ser refeito.** Ele foi gerado com
+`URL inicial: /login.html`, que agora é a ponte. Regerar no PWABuilder com
+**`/app/login.html`**. Como nada foi publicado ainda, não há prejuízo.
+
+Na landing: os quatro "Começar agora" agora levam ao sistema (três só rolavam a
+página), entrou contato de WhatsApp (não havia NENHUM), cartão de
+compartilhamento para o link ficar bonito no WhatsApp, favicon, a logo real no
+lugar do desenho em CSS, e dois prints trocados foram corrigidos — "Custos e
+Resultados" mostrava a simulação e "Histórico de Ciclos" mostrava a lista de
+viveiros.
+
 ## Contexto útil
 - Site: waaqua.com.br (GitHub Pages, branch `main`). Backend: Supabase (plano grátis por enquanto).
+- **O sistema fica em `waaqua.com.br/app/`**; a raiz é a página de vendas.
 - Painel admin: `/ch2`. Restauração de backup: `/ch2/restaurar.html`.
 - Meta pra subir pro Supabase Pro: por volta de ~10 clientes pagando.
 
