@@ -4584,13 +4584,20 @@ function _simVendaCalcular() {
     // "usar o estimado" não funcionava: o toque tira o foco do campo, o onblur
     // redesenha a nota, o botão é destruído e recriado no meio do toque, e o
     // dedo levanta sobre um elemento que já não é o mesmo — o clique se perde.
-    const estado = editada ? "editada:" + Math.round(estimada) : "estimada";
+    // dados.despKgTotal e não a const despKgTotal: ela só é declarada abaixo,
+    // e uma const antes da declaração estoura (zona morta temporal).
+    const jaDespescado = dados.despKgTotal || 0;
+    const extra = jaDespescado > 0
+      ? ` Os <b>${formatarNumeroBR(jaDespescado, 0)} kg</b> já despescados entram à parte, pelo preço real de venda.`
+      : "";
+    const estado = (editada ? "editada:" + Math.round(estimada) : "estimada") + "|" + Math.round(jaDespescado);
     if (nota.dataset.estado !== estado) {
       nota.dataset.estado = estado;
-      nota.innerHTML = editada
+      nota.innerHTML = (editada
         ? `Simulando com um valor seu. O app estimou <b>${formatarNumeroBR(estimada, 0)} kg</b>.
            <button type="button" class="sim-voltar-est" onclick="_simVendaUsarEstimada()">usar o estimado</button>`
-        : `Estimado pela última biometria e pela ração. <b>Pode mudar</b> para simular outro cenário.`;
+        : `Estimado pela última biometria${dados.pesoUltimaBio ? ` (peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g)` : ""} e pela ração. <b>Pode mudar</b> para simular outro cenário.`
+      ) + extra;
     }
   }
   const despKgTotal = dados.despKgTotal;                  // o que já foi despescado
@@ -4601,11 +4608,8 @@ function _simVendaCalcular() {
   const precoLido = parseDecimalBR(document.getElementById("simVenda-preco").value);
   const preco = isNaN(precoLido) || precoLido < 0 ? 0 : precoLido;
 
-  const cabecalho = `
-    <div class="sim-biomassa">${editada ? "Biomassa simulada" : "Biomassa estimada"}: <b>${formatarNumeroBR(biomassaTotal, 0)} kg</b>${despKgTotal > 0 ? ` <small>(${formatarNumeroBR(biomassaAtual, 0)} kg em pé + ${formatarNumeroBR(despKgTotal, 0)} kg despescado)</small>` : ""}${dados.pesoUltimaBio && !editada ? ` · peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g` : ""}</div>`;
-
   if (preco <= 0) {
-    resultado.innerHTML = cabecalho + `
+    resultado.innerHTML = `
       <div class="sim-cards">
         <div class="sim-card"><small>Custo total</small><strong>R$ ${formatarNumeroBR(custoTotal, 2)}</strong></div>
         <div class="sim-card"><small>Custo por kg</small><strong>R$ ${formatarNumeroBR(custoKg, 2)}</strong></div>
@@ -4637,7 +4641,7 @@ function _simVendaCalcular() {
     ? `<div class="sim-hint" style="color:#92400e">⚠️ ${formatarNumeroBR(kgSemPreco, 0)} kg de despesca sem preço de venda salvo — usei o preço simulado como aproximação. Informe o preço na despesca para o cálculo exato.</div>`
     : "";
 
-  resultado.innerHTML = cabecalho + `
+  resultado.innerHTML = `
     <div class="sim-cards">
       <div class="sim-card"><small>Faturamento</small><strong>R$ ${formatarNumeroBR(faturamento, 2)}</strong></div>
       <div class="sim-card"><small>Custo total</small><strong>R$ ${formatarNumeroBR(custoTotal, 2)}</strong></div>

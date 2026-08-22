@@ -80,6 +80,9 @@ Dois cuidados que o teste pegou:
   do toque — e o dedo levanta sobre outro elemento, então o clique se perde.
   A nota só é reescrita quando o texto realmente muda.
   Vale como regra geral: **não redesenhe o que está debaixo do dedo.**
+- A faixa verde "Biomassa estimada: X kg" foi **removida** a pedido do Matheus:
+  o número já está no campo logo acima, era repetição. O que só existia ali
+  (peso médio e os kg já despescados) passou para a nota abaixo do campo.
 
 ## Corrigir ciclo encerrado (a refazer do zero, quando quisermos)
 Foi feito e depois **removido** do código, para ser repensado com calma. Se
