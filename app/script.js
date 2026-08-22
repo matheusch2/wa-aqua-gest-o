@@ -1161,6 +1161,17 @@ async function salvarViveiro() {
   mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${nome.trim()} cadastrado com sucesso!`);
 }
 
+// Rótulo curto para a tira de seleção. Quase todo mundo nomeia como
+// "Viveiro - 12", então tirar essa palavra deixa só o número — que é como o
+// produtor chama o viveiro na fazenda. Nome sem número (ex: "Berçário") entra
+// abreviado, e o nome inteiro fica no title para não haver dúvida.
+function _rotuloCurtoViveiro(nome) {
+  const limpo = String(nome || "").trim();
+  const semPrefixo = limpo.replace(/^viveiro\s*[-–—:]?\s*/i, "").trim();
+  const escolhido = semPrefixo || limpo || "?";
+  return escolhido.length > 7 ? escolhido.slice(0, 6) + "…" : escolhido;
+}
+
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -1192,8 +1203,29 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao + 1}, 'proximo')">Próximo</button>`
     : `<span class="botao-nav-viveiro" style="visibility:hidden">Próximo</span>`;
 
+  // Tira de seleção: com 3 viveiros, "Próximo" resolve; com 20, o produtor
+  // tocava 17 vezes para chegar no último. Aqui ele toca uma vez no que quer.
+  const seletor = total < 2 ? "" : `
+    <div class="vv-seletor" role="tablist" aria-label="Escolher viveiro">
+      ${viveirosOrdenados.map((v, i) => {
+        const iOriginal = viveiros.indexOf(v);
+        const classes = ["vv-chip"];
+        if (i === posicao) classes.push("ativo");
+        if (v.dataPovoamento) classes.push("cultivo");
+        if (_viveiroForaDoLimite(iOriginal)) classes.push("bloqueado");
+        const situacao = _viveiroForaDoLimite(iOriginal) ? " (fora do plano)"
+                       : v.dataPovoamento ? " (em cultivo)" : " (vazio)";
+        return `<button type="button" class="${classes.join(" ")}" role="tab"
+          aria-selected="${i === posicao}"
+          title="${String(v.nome || "").replace(/"/g, "&quot;")}${situacao}"
+          onclick="mostrarListaViveiros(${i}, '${i > posicao ? "proximo" : i < posicao ? "anterior" : ""}')"
+        >${_rotuloCurtoViveiro(v.nome)}</button>`;
+      }).join("")}
+    </div>`;
+
   area.innerHTML = `
     <h2 class="titulo-secao">Viveiros</h2>
+    ${seletor}
 
     <div class="viveiro-card">
 
@@ -1266,10 +1298,17 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   _swipeViveirosAbort = new AbortController();
   const _swipeSig = _swipeViveirosAbort.signal;
   let touchStartX = 0;
-  area.addEventListener("touchstart", e => { touchStartX = e.touches?.[0]?.clientX ?? 0; }, { passive: true, signal: _swipeSig });
+  let touchNaTira = false;
+  area.addEventListener("touchstart", e => {
+    touchStartX = e.touches?.[0]?.clientX ?? 0;
+    // Arrastar a tira de seleção é rolagem dela, não troca de viveiro. Sem isto,
+    // procurar o viveiro 18 na tira faria o card pular junto a cada arrasto.
+    touchNaTira = !!(e.target && e.target.closest && e.target.closest(".vv-seletor"));
+  }, { passive: true, signal: _swipeSig });
   area.addEventListener("touchend", e => {
     // Só swipa se ainda estiver na tela de lista de viveiros
     if (!area.querySelector(".viveiro-card")) return;
+    if (touchNaTira) return;
     const endX = e.changedTouches?.[0]?.clientX;
     if (endX == null) return;
     const diff = touchStartX - endX;
@@ -1278,6 +1317,15 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1, "anterior");
     }
   }, { passive: true, signal: _swipeSig });
+
+  // Deixa o viveiro atual visível no meio da tira. scrollLeft na mão em vez de
+  // scrollIntoView de propósito: o scrollIntoView também rolaria a PÁGINA para
+  // achar a tira, jogando o card para fora da tela a cada troca.
+  const tira = area.querySelector(".vv-seletor");
+  if (tira) {
+    const ativo = tira.querySelector(".vv-chip.ativo");
+    if (ativo) tira.scrollLeft = ativo.offsetLeft - (tira.clientWidth - ativo.offsetWidth) / 2;
+  }
 
   // Animação de entrada
   const card = area.querySelector(".viveiro-card");
