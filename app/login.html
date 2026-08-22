@@ -108,7 +108,9 @@
         async function _irPorPerfil() {
             try {
                 const { data } = await supabaseClient.from("perfis").select("role").maybeSingle();
-                if (data && data.role === "admin") { window.location.replace("ch2/"); return; }
+                // Caminho ABSOLUTO: o painel mora em /ch2, fora de /app. Relativo
+                // ("ch2/") viraria /app/ch2/ e o admin cairia numa página de erro.
+                if (data && data.role === "admin") { window.location.replace("/ch2/"); return; }
             } catch (e) { /* segue o fluxo normal */ }
             window.location.replace("index.html");
         }
@@ -174,7 +176,7 @@
                 <div class="login-wrapper">
                     <div class="login-topo">
                         <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
+                            <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua Gestão" class="login-logo-img">
                         </div>
                         <h1 class="titulo-login">ENTRAR</h1>
                         <p class="login-subtitulo">Bem-vindo!</p>
@@ -214,7 +216,7 @@
                 <div class="login-wrapper">
                     <div class="login-topo">
                         <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
+                            <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua Gestão" class="login-logo-img">
                         </div>
                         <h1 class="titulo-login" style="font-size:22px">CRIAR CONTA</h1>
                     </div>
@@ -253,7 +255,7 @@
                 <div class="login-wrapper">
                     <div class="login-topo">
                         <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
+                            <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua Gestão" class="login-logo-img">
                         </div>
                         <h1 class="titulo-login" style="font-size:22px">RECUPERAR SENHA</h1>
                     </div>
@@ -327,7 +329,7 @@
                 <div class="login-wrapper">
                     <div class="login-topo">
                         <div class="logo-circulo login-logo">
-                            <img src="logo-wa.jpg?v=20260713" alt="WA Aqua Gestão" class="login-logo-img">
+                            <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua Gestão" class="login-logo-img">
                         </div>
                         <h1 class="titulo-login">NOVA SENHA</h1>
                         <p class="login-subtitulo">Defina a sua nova senha</p>
