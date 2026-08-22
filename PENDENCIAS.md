@@ -66,6 +66,21 @@ Falta (só o Matheus pode):
 - [ ] Atenção: conta pessoal nova precisa de **teste fechado (~12 testadores por
       14 dias)** antes de liberar pra todo mundo. Comece a juntar os 12 já.
 
+## Simular venda — biomassa editável (21/08)
+O campo "Biomassa a vender" vem preenchido com a estimativa, mas pode ser
+trocado para simular cenários ("e se der 5 toneladas?"). Trocar de viveiro
+volta para a estimativa daquele viveiro.
+
+Dois cuidados que o teste pegou:
+- **Vírgula/ponto.** O preço era lido com `parseFloat` + `replace(",", ".")`,
+  que engole o ponto de milhar. Em preço por kg quase não aparecia, mas em
+  biomassa "5.000" viraria 5. Os dois passaram a usar `parseDecimalBR`.
+- **O botão "usar o estimado" não funcionava.** Tocar nele tira o foco do
+  campo, o `onblur` redesenha a nota, o botão é destruído e recriado no meio
+  do toque — e o dedo levanta sobre outro elemento, então o clique se perde.
+  A nota só é reescrita quando o texto realmente muda.
+  Vale como regra geral: **não redesenhe o que está debaixo do dedo.**
+
 ## Corrigir ciclo encerrado (a refazer do zero, quando quisermos)
 Foi feito e depois **removido** do código, para ser repensado com calma. Se
 retomar, o commit com a implementação está no histórico do Git (procure por

@@ -4487,11 +4487,26 @@ function abrirSimularVenda() {
           <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
           <label>Viveiro</label>
         </div>
-        <select id="simVenda-viveiro" onchange="_simVendaCalcular()">
+        <select id="simVenda-viveiro" onchange="_simVendaTrocouViveiro()">
           <option value="">Selecione o viveiro</option>
           ${ativos.map(o => `<option value="${o.i}">${o.v.nome}</option>`).join("")}
         </select>
       </div>
+
+      <!-- Biomassa editável: vem preenchida com a estimativa, mas o produtor
+           pode trocar para simular cenários ("e se der 5 toneladas?"). -->
+      <div class="campo-form" id="simVenda-campo-bio" style="display:none">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <label>Biomassa a vender</label>
+        </div>
+        <div class="campo-input-unidade">
+          <input type="text" inputmode="decimal" id="simVenda-biomassa" oninput="_simVendaCalcular()" onblur="_simVendaFormatarBio(this)">
+          <span class="campo-unidade">kg</span>
+        </div>
+        <p class="sim-hint" id="simVenda-bio-nota" style="margin-top:6px"></p>
+      </div>
+
       <div class="campo-form">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -4503,6 +4518,43 @@ function abrirSimularVenda() {
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
   `;
+}
+
+// Troca de viveiro: a biomassa digitada era do viveiro anterior, então volta
+// para a estimativa do novo. Sem isso, escolher outro viveiro simularia com um
+// número que não tem nada a ver com ele.
+function _simVendaTrocouViveiro() {
+  const sel = document.getElementById("simVenda-viveiro");
+  const campo = document.getElementById("simVenda-campo-bio");
+  const input = document.getElementById("simVenda-biomassa");
+  const idx = sel ? sel.value : "";
+
+  if (idx === "") {
+    if (campo) campo.style.display = "none";
+    _simVendaCalcular();
+    return;
+  }
+  const dados = _simularDadosViveiro(viveiros[idx]);
+  const estimada = dados && dados.biomassaAtual ? dados.biomassaAtual : 0;
+  if (campo) campo.style.display = estimada > 0 ? "block" : "none";
+  if (input) input.value = estimada > 0 ? formatarNumeroBR(estimada, 0) : "";
+  _simVendaCalcular();
+}
+
+function _simVendaFormatarBio(input) {
+  const n = parseDecimalBR(input.value);
+  if (!isNaN(n) && n > 0) input.value = formatarNumeroBR(n, 0);
+  _simVendaCalcular();
+}
+
+// Volta a biomassa para o valor que o app estimou.
+function _simVendaUsarEstimada() {
+  const sel = document.getElementById("simVenda-viveiro");
+  const input = document.getElementById("simVenda-biomassa");
+  if (!sel || sel.value === "" || !input) return;
+  const dados = _simularDadosViveiro(viveiros[sel.value]);
+  if (dados && dados.biomassaAtual) input.value = formatarNumeroBR(dados.biomassaAtual, 0);
+  _simVendaCalcular();
 }
 
 function _simVendaCalcular() {
@@ -4519,16 +4571,38 @@ function _simVendaCalcular() {
     return;
   }
 
-  const biomassaAtual = dados.biomassaAtual;              // o que ainda está no viveiro (a vender)
+  // A biomassa a vender pode ter sido digitada pelo produtor. parseDecimalBR e
+  // não parseFloat: "5.000" tem que virar 5000, e não 5.
+  const estimada = dados.biomassaAtual;
+  const digitada = parseDecimalBR(document.getElementById("simVenda-biomassa")?.value);
+  const editada = !isNaN(digitada) && digitada > 0 && Math.abs(digitada - estimada) >= 1;
+  const biomassaAtual = editada ? digitada : estimada;    // o que ainda está no viveiro (a vender)
+
+  const nota = document.getElementById("simVenda-bio-nota");
+  if (nota) {
+    // Só reescreve quando o texto REALMENTE muda. Sem esta trava, tocar em
+    // "usar o estimado" não funcionava: o toque tira o foco do campo, o onblur
+    // redesenha a nota, o botão é destruído e recriado no meio do toque, e o
+    // dedo levanta sobre um elemento que já não é o mesmo — o clique se perde.
+    const estado = editada ? "editada:" + Math.round(estimada) : "estimada";
+    if (nota.dataset.estado !== estado) {
+      nota.dataset.estado = estado;
+      nota.innerHTML = editada
+        ? `Simulando com um valor seu. O app estimou <b>${formatarNumeroBR(estimada, 0)} kg</b>.
+           <button type="button" class="sim-voltar-est" onclick="_simVendaUsarEstimada()">usar o estimado</button>`
+        : `Estimado pela última biometria e pela ração. <b>Pode mudar</b> para simular outro cenário.`;
+    }
+  }
   const despKgTotal = dados.despKgTotal;                  // o que já foi despescado
   const biomassaTotal = biomassaAtual + despKgTotal;      // produção total (base do custo/kg e lucro/kg)
   const custoTotal = dados.custoTotal;
   const custoKg = biomassaTotal > 0 ? custoTotal / biomassaTotal : 0;
-  const precoRaw = document.getElementById("simVenda-preco").value;
-  const preco = parseFloat(String(precoRaw).replace(",", ".")) || 0;
+  // parseDecimalBR: o replace de vírgula na mão lia "1.234,50" como 1,234.
+  const precoLido = parseDecimalBR(document.getElementById("simVenda-preco").value);
+  const preco = isNaN(precoLido) || precoLido < 0 ? 0 : precoLido;
 
   const cabecalho = `
-    <div class="sim-biomassa">Biomassa estimada: <b>${formatarNumeroBR(biomassaTotal, 0)} kg</b>${despKgTotal > 0 ? ` <small>(${formatarNumeroBR(biomassaAtual, 0)} kg em pé + ${formatarNumeroBR(despKgTotal, 0)} kg despescado)</small>` : ""}${dados.pesoUltimaBio ? ` · peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g` : ""}</div>`;
+    <div class="sim-biomassa">${editada ? "Biomassa simulada" : "Biomassa estimada"}: <b>${formatarNumeroBR(biomassaTotal, 0)} kg</b>${despKgTotal > 0 ? ` <small>(${formatarNumeroBR(biomassaAtual, 0)} kg em pé + ${formatarNumeroBR(despKgTotal, 0)} kg despescado)</small>` : ""}${dados.pesoUltimaBio && !editada ? ` · peso médio ${formatarNumeroBR(dados.pesoUltimaBio, 1)} g` : ""}</div>`;
 
   if (preco <= 0) {
     resultado.innerHTML = cabecalho + `

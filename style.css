@@ -4914,3 +4914,13 @@ body.tema-escuro .en-total.passou { background: #2a1414; border-color: #7f1d1d; 
     padding: 44px 18px;
 }
 body.tema-escuro .rel-carregando { color: #9ca3af; }
+
+/* Botão "usar o estimado" da simulação de venda — volta a biomassa digitada
+   para o valor que o app calculou. Fica dentro de um parágrafo, então precisa
+   anular a largura total que o CSS dá a todo button. */
+.sim-voltar-est {
+    width: auto; display: inline; background: none; border: none; padding: 0;
+    color: rgb(6,107,99); font-size: inherit; font-weight: 700; font-family: inherit;
+    text-decoration: underline; cursor: pointer;
+}
+body.tema-escuro .sim-voltar-est { color: #6ee7d8; }
