@@ -936,7 +936,9 @@ function _voltarBotaoVisivel() {
 
 function voltarMenuGestao() {
   if (window.innerWidth >= 900) {
-    mostrarListaViveiros();
+    // No computador o menu lateral fica sempre visível, então "voltar" quer
+    // dizer "voltar para a tela inicial" — que agora é o painel.
+    abrirPainel();
     return;
   }
   document.getElementById("menuGestao").style.display = "grid";
@@ -1159,6 +1161,196 @@ async function salvarViveiro() {
   // Mostra a lista já posicionada no viveiro recém-criado
   const pos = viveiros.findIndex(v => v.id === it.id);
   mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${nome.trim()} cadastrado com sucesso!`);
+}
+
+/* ─── PAINEL DA FAZENDA ──────────────────────────────────────────────────────
+   A situação de tudo numa tela só. Antes, para saber como estava a fazenda o
+   produtor precisava abrir viveiro por viveiro — com 20, isso é 20 telas.
+
+   REGRA DESTE ARQUIVO: o painel NÃO faz conta própria. Ele chama as mesmas
+   funções que a tela do viveiro usa (_calcularBiomassa, _custosCicloAtivo).
+   Se calculasse por fora, um dia as duas telas iam discordar e o produtor não
+   saberia em qual acreditar — e um número que ninguém confia é pior que não ter
+   número nenhum.
+─────────────────────────────────────────────────────────────────────────────── */
+
+const _PESO_DESPESCA = 20; // g — mesma meta padrão usada na tela do viveiro
+
+function _resumoViveiro(index) {
+  const v = viveiros[index];
+  const emCultivo = !!v.dataPovoamento;
+
+  const bios = [...(v.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const racoes = [...(v.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  const ultimaBio = bios.length ? bios[bios.length - 1] : null;
+  // A biomassa vem da ração que os camarões estão comendo AGORA — a mesma base
+  // da tela do viveiro. Ração zerada não serve de referência.
+  const ultimaRacao = [...racoes].reverse().find(r => Number(r.racao) > 0);
+  const populacao = v.totalPovoado ? Number(String(v.totalPovoado).replace(/\./g, "")) : null;
+
+  const pesoAtual = ultimaBio ? (Number(ultimaBio.gramatura) || null) : null;
+  let biomassa = null;
+  if (emCultivo && populacao && ultimaRacao && pesoAtual) {
+    const r = _calcularBiomassa(populacao, ultimaRacao.racao, pesoAtual);
+    if (r && r.biomassa > 0) biomassa = r.biomassa;
+  }
+
+  // Ganho por dia entre a primeira e a última biometria (mesmo critério da curva).
+  let gDia = null;
+  if (bios.length >= 2) {
+    const dias = Math.round((_parseDataLocal(ultimaBio.data) - _parseDataLocal(bios[0].data)) / 86400000);
+    if (dias > 0) gDia = (Number(ultimaBio.gramatura) - Number(bios[0].gramatura)) / dias;
+  }
+
+  const inicio = v.dataPreparacao || v.dataPovoamento;
+  const custo = (emCultivo && inicio) ? _custosCicloAtivo(v, v.cicloId, inicio, _hojeLocal()).total : 0;
+  const hoje = _parseDataLocal(_hojeLocal());
+
+  return {
+    index, nome: v.nome, emCultivo, biomassa, pesoAtual, gDia, custo,
+    tamanho: Number(v.tamanho) || 0,
+    foraDoPlano: _viveiroForaDoLimite(index),
+    dias: emCultivo ? calcularDiasCultivo(v.dataPovoamento) : null,
+    diasSemBio: ultimaBio ? Math.round((hoje - _parseDataLocal(ultimaBio.data)) / 86400000) : null,
+    diasSemRacao: racoes.length ? Math.round((hoje - _parseDataLocal(racoes[racoes.length - 1].data)) / 86400000) : null,
+    temBio: !!ultimaBio,
+  };
+}
+
+function _resumoFazenda() {
+  const itens = viveiros.map((_, i) => _resumoViveiro(i));
+  const cultivo = itens.filter(x => x.emCultivo);
+
+  const alertas = [];
+
+  // 1) Viveiro em cultivo sem biometria. Sem biometria não há peso, e sem peso
+  //    o sistema não consegue estimar biomassa nenhuma — é o dado que trava tudo.
+  const semBio = cultivo.filter(x => !x.temBio);
+  const bioVelha = cultivo.filter(x => x.temBio && x.diasSemBio >= 10);
+  if (semBio.length) {
+    alertas.push({ tipo: "aviso", texto: `${semBio.length === 1 ? "1 viveiro está" : semBio.length + " viveiros estão"} sem nenhuma biometria`,
+      detalhe: semBio.map(x => x.nome).join(", "), acao: `abrirBiometria(${semBio[0].index})` });
+  }
+  if (bioVelha.length) {
+    alertas.push({ tipo: "aviso", texto: `${bioVelha.length === 1 ? "1 viveiro" : bioVelha.length + " viveiros"} sem biometria há mais de 10 dias`,
+      detalhe: bioVelha.map(x => `${x.nome} (${x.diasSemBio} dias)`).join(", "), acao: `abrirBiometria(${bioVelha[0].index})` });
+  }
+
+  // 2) Chegou no peso de despesca.
+  const noPonto = cultivo.filter(x => x.pesoAtual && x.pesoAtual >= _PESO_DESPESCA);
+  if (noPonto.length) {
+    alertas.push({ tipo: "bom", texto: `${noPonto.length === 1 ? "1 viveiro passou" : noPonto.length + " viveiros passaram"} de ${_PESO_DESPESCA} g`,
+      detalhe: noPonto.map(x => `${x.nome} (${fmtG(x.pesoAtual)} g)`).join(", "), acao: `abrirSimularVenda()` });
+  }
+
+  // 3) Boletos — mesma regra do aviso que já existia no menu.
+  const bol = (boletos || []).filter(b => !b.pago)
+    .map(b => ({ b, st: _statusBoleto(b.dataCompra, b.prazoDias) }))
+    .filter(x => x.st.tipo !== "ok");
+  if (bol.length) {
+    const vencidos = bol.filter(x => x.st.tipo === "vencido").length;
+    alertas.push({ tipo: vencidos ? "urgente" : "aviso",
+      texto: `${bol.length} boleto${bol.length > 1 ? "s" : ""} ${vencidos ? "vencido(s) ou vencendo" : "vencendo"}`,
+      detalhe: bol.map(x => `${x.b.nome} — ${x.st.label.toLowerCase()}`).join(", "),
+      acao: `abrirBoletos('${vencidos ? "todos" : "vencendo"}')` });
+  }
+
+  return {
+    itens, cultivo,
+    total: itens.length,
+    vazios: itens.length - cultivo.length,
+    biomassa: cultivo.reduce((s, x) => s + (x.biomassa || 0), 0),
+    custo: cultivo.reduce((s, x) => s + x.custo, 0),
+    area: cultivo.reduce((s, x) => s + x.tamanho, 0),
+    // Só conta como "estimativa completa" o que realmente deu para calcular:
+    // dizer "biomassa da fazenda" escondendo que 6 viveiros ficaram de fora
+    // seria mentir por omissão.
+    comBiomassa: cultivo.filter(x => x.biomassa).length,
+    alertas,
+  };
+}
+
+function abrirPainel() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+
+  if (!viveiros.length) {
+    area.innerHTML = `
+      <h2 class="titulo-secao">Painel</h2>
+      <p style="text-align:center;color:#9ca3af;padding:20px 0">Nenhum viveiro cadastrado ainda.<br><small>Cadastre o primeiro para o painel ganhar vida.</small></p>
+      <button class="botao-voltar" onclick="voltarMenuGestao()">Voltar</button>`;
+    return;
+  }
+
+  const r = _resumoFazenda();
+  const moeda = (v) => "R$ " + formatarNumeroBR(v, 2);
+
+  const destaque = (rotulo, valor, sub, cor) => `
+    <div class="pnl-destaque ${cor || ""}">
+      <span class="pnl-rotulo">${rotulo}</span>
+      <strong class="pnl-num">${valor}</strong>
+      <span class="pnl-sub">${sub}</span>
+    </div>`;
+
+  const alertas = r.alertas.length ? `
+    <div class="pnl-alertas">
+      ${r.alertas.map(a => `
+        <div class="pnl-alerta ${a.tipo}" onclick="${a.acao}">
+          <span class="pnl-alerta-txt"><strong>${a.texto}</strong><small>${a.detalhe}</small></span>
+          <span class="pnl-alerta-seta">›</span>
+        </div>`).join("")}
+    </div>` : `
+    <div class="pnl-alertas">
+      <div class="pnl-alerta bom sem-acao">
+        <span class="pnl-alerta-txt"><strong>Nada pedindo atenção agora</strong><small>Biometrias em dia e nenhum boleto vencendo.</small></span>
+      </div>
+    </div>`;
+
+  const linhaViveiro = (x) => `
+    <div class="pnl-viv ${x.foraDoPlano ? "bloqueado" : ""}" onclick="abrirViveiro(${x.index})">
+      <div class="pnl-viv-topo">
+        <strong>${x.nome}</strong>
+        <span class="pnl-viv-dias">${x.dias} dias</span>
+      </div>
+      <div class="pnl-viv-nums">
+        <div><small>Peso</small><b>${x.pesoAtual ? fmtG(x.pesoAtual) + " g" : "--"}</b></div>
+        <div><small>Biomassa</small><b>${x.biomassa ? formatarNumeroBR(x.biomassa, 0) + " kg" : "--"}</b></div>
+        <div><small>Ganho</small><b>${x.gDia ? formatarNumeroBR(x.gDia * 7, 2) + " g/sem" : "--"}</b></div>
+        <div><small>Custo</small><b>${x.custo ? moeda(x.custo) : "--"}</b></div>
+      </div>
+    </div>`;
+
+  const vazios = r.itens.filter(x => !x.emCultivo);
+
+  area.innerHTML = `
+    <h2 class="titulo-secao">Painel</h2>
+
+    <div class="pnl-destaques">
+      ${destaque("Em cultivo", `${r.cultivo.length}<span class="pnl-de">/${r.total}</span>`,
+                 r.vazios ? `${r.vazios} vazio${r.vazios > 1 ? "s" : ""}` : "todos ocupados", "verde")}
+      ${destaque("Biomassa estimada", r.biomassa ? formatarNumeroBR(r.biomassa, 0) : "--",
+                 r.biomassa ? (r.comBiomassa < r.cultivo.length
+                   ? `kg · ${r.comBiomassa} de ${r.cultivo.length} viveiros`
+                   : "kg no viveiro") : "faltam dados", "azul")}
+      ${destaque("Investido no ciclo", r.custo ? formatarNumeroBR(r.custo, 0) : "--",
+                 r.custo ? "reais até hoje" : "nada lançado", "laranja")}
+    </div>
+
+    ${alertas}
+
+    ${r.cultivo.length ? `
+      <div class="pnl-secao-titulo">Viveiros em cultivo</div>
+      <div class="pnl-vivs">${r.cultivo.map(linhaViveiro).join("")}</div>` : ""}
+
+    ${vazios.length ? `
+      <div class="pnl-secao-titulo">Vazios</div>
+      <div class="pnl-vazios">
+        ${vazios.map(x => `<button type="button" class="pnl-vazio" onclick="abrirViveiro(${x.index})">${x.nome}</button>`).join("")}
+      </div>` : ""}
+
+    ${window.innerWidth >= 900 ? "" :
+      `<button class="botao-voltar-form" style="margin-top:16px" onclick="voltarMenuGestao()">Voltar</button>`}
+  `;
 }
 
 // Rótulo curto para a tira de seleção. Quase todo mundo nomeia como
@@ -9510,7 +9702,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       verificarBoletosVencendo();
       if (window.innerWidth >= 900) {
-        mostrarListaViveiros();
+        // No computador não existe menu de botões grandes: a tela abre em algo.
+        // Abrir no painel dá a fazenda inteira de cara; antes abria na lista de
+        // viveiros, mostrando UM viveiro e escondendo todo o resto.
+        abrirPainel();
       } else {
         document.getElementById("area-gestao").innerHTML = "";
         document.getElementById("menuGestao").style.display = "grid";
