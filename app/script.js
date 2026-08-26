@@ -8750,12 +8750,16 @@ function abrirLancarCustoProduto(index) {
             <div class="unidade-toggle">
               <button type="button" class="unidade-btn ativo" id="btnUnidadeG" onclick="selecionarUnidade('g')">g</button>
               <button type="button" class="unidade-btn" id="btnUnidadeKg" onclick="selecionarUnidade('kg')">kg</button>
+              <!-- Só aparece depois de escolher o produto: "saco" só quer dizer
+                   alguma coisa quando o sistema sabe quantos quilos ele tem. -->
+              <button type="button" class="unidade-btn" id="btnUnidadeSaco" style="display:none" onclick="selecionarUnidade('saco')">saco</button>
             </div>
           </div>
           <input type="text" inputmode="decimal" id="qtdCustoProduto" placeholder="Ex: 300" min="0" step="any" oninput="atualizarPreviaCusto()">
         </div>
         <div id="previa-custo-produto" class="custo-por-grama-preview" style="display:none">
           Valor calculado: <strong id="previa-custo-valor">—</strong>
+          <span id="previa-custo-equiv" class="previa-equiv" style="display:none"></span>
         </div>
         <div id="msg-custo-produto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
         <button class="botao-salvar" onclick="salvarCustoProduto(${index})">
@@ -8772,10 +8776,71 @@ function abrirLancarCustoProduto(index) {
 let _unidadeCusto = "g";
 let _editCustoUnidade = "kg";
 
+/* ═══ UNIDADES DE LANÇAMENTO ═════════════════════════════════════════════════
+   Tudo é guardado em GRAMAS no banco — o preço do produto é custo por grama, e
+   é assim que todos os relatórios somam. As unidades são só o jeito de digitar.
+
+   "saco" existe porque ninguém compra silicone em grama: compra em saco. Sem
+   essa opção, o produtor tinha que abrir a calculadora, multiplicar por 25.000
+   e digitar o resultado — e errar um zero ali estraga o custo do ciclo inteiro.
+
+   O peso do saco vem do cadastro do produto, que já pede "Peso do saco /
+   embalagem". Por isso a opção só aparece DEPOIS de escolher o produto: antes
+   disso, "saco" não quer dizer nada.
+═════════════════════════════════════════════════════════════════════════════ */
+
+function _paraGramas(qtd, unidade, produto) {
+  if (unidade === "kg") return qtd * 1000;
+  if (unidade === "saco") {
+    const pesoKg = Number(produto?.pesoKg) || 0;
+    if (pesoKg <= 0) return null;   // sem peso cadastrado não dá para converter
+    return qtd * pesoKg * 1000;
+  }
+  return qtd;
+}
+
+// Mostra ou esconde o botão "saco" conforme o produto escolhido.
+function _ajustarBotaoSaco() {
+  const btn = document.getElementById("btnUnidadeSaco");
+  if (!btn) return;
+  const i = document.getElementById("selectProduto")?.value;
+  const prod = (i !== "" && i !== undefined) ? produtos[i] : null;
+  const pesoKg = Number(prod?.pesoKg) || 0;
+  btn.style.display = pesoKg > 0 ? "" : "none";
+  btn.textContent = "saco";
+  // Trocou para um produto sem peso de saco com "saco" selecionado? Volta para
+  // grama, senão a conta ficaria pendurada numa unidade que não existe mais.
+  if (pesoKg <= 0 && _unidadeCusto === "saco") selecionarUnidade("g");
+}
+
 function selecionarUnidadeEdit(u, index, chaveEnc) {
+  const anterior = _editCustoUnidade;
+  const campo = document.getElementById("editCustoQtd");
+  const chave = decodeURIComponent(chaveEnc);
+  const grupo = (viveiros[index]?.custos || []).filter(c => _chaveCusto(c) === chave);
+  const prod = produtos.find(p => p.id === grupo[0]?.produtoId);
+
+  // Aqui o número no campo foi preenchido pelo sistema, não digitado. Trocar a
+  // unidade sem converter faria "25" (que eram 25 kg) virar 25 SACOS — 625 kg,
+  // vinte e cinco vezes o valor. Converte para a quantidade continuar a mesma.
+  if (campo && campo.value.trim()) {
+    const atual = parseDecimalBR(campo.value);
+    const emGramas = _paraGramas(atual, anterior, prod);
+    if (!isNaN(atual) && emGramas !== null) {
+      let novo = emGramas;
+      if (u === "kg") novo = emGramas / 1000;
+      else if (u === "saco") {
+        const pesoKg = Number(prod?.pesoKg) || 0;
+        novo = pesoKg > 0 ? emGramas / (pesoKg * 1000) : emGramas;
+      }
+      campo.value = formatarNumeroBR(novo, Number.isInteger(novo) ? 0 : 3);
+    }
+  }
+
   _editCustoUnidade = u;
   document.getElementById("btnEditUnidadeG")?.classList.toggle("ativo", u === "g");
   document.getElementById("btnEditUnidadeKg")?.classList.toggle("ativo", u === "kg");
+  document.getElementById("btnEditUnidadeSaco")?.classList.toggle("ativo", u === "saco");
   recalcularValorEditCusto(index, chaveEnc);
 }
 
@@ -8788,7 +8853,8 @@ function recalcularValorEditCusto(index, chaveEnc) {
   const qtdRaw = parseDecimalBR(document.getElementById("editCustoQtd")?.value);
   const el = document.getElementById("editCustoValor");
   if (!el || isNaN(qtdRaw) || qtdRaw <= 0) return;
-  const qtdG = _editCustoUnidade === "kg" ? qtdRaw * 1000 : qtdRaw;
+  const qtdG = _paraGramas(qtdRaw, _editCustoUnidade, prod);
+  if (qtdG === null) return;
   const valor = prod.custoPorGrama * qtdG;
   el.value = valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -8797,19 +8863,32 @@ function selecionarUnidade(u) {
   _unidadeCusto = u;
   document.getElementById("btnUnidadeG")?.classList.toggle("ativo", u === "g");
   document.getElementById("btnUnidadeKg")?.classList.toggle("ativo", u === "kg");
+  document.getElementById("btnUnidadeSaco")?.classList.toggle("ativo", u === "saco");
+  const campo = document.getElementById("qtdCustoProduto");
+  if (campo) campo.placeholder = u === "saco" ? "Ex: 1" : u === "kg" ? "Ex: 25" : "Ex: 300";
   atualizarPreviaCusto();
 }
 
 function atualizarPreviaCusto() {
+  _ajustarBotaoSaco();
   const prodIndex = document.getElementById("selectProduto")?.value;
   const qtdRaw = parseDecimalBR(document.getElementById("qtdCustoProduto")?.value);
   const div = document.getElementById("previa-custo-produto");
   const el = document.getElementById("previa-custo-valor");
+  const eq = document.getElementById("previa-custo-equiv");
   if (prodIndex !== "" && prodIndex !== undefined && !isNaN(qtdRaw) && qtdRaw > 0) {
     const prod = produtos[prodIndex];
-    if (prod) {
-      const qtdG = _unidadeCusto === "kg" ? qtdRaw * 1000 : qtdRaw;
+    const qtdG = _paraGramas(qtdRaw, _unidadeCusto, prod);
+    if (prod && qtdG !== null) {
       el.textContent = `R$ ${formatarNumeroBR(prod.custoPorGrama * qtdG, 2)}`;
+      // Em saco, mostrar o equivalente em quilo é o que deixa o produtor
+      // conferir de cabeça se digitou a quantidade certa.
+      if (eq) {
+        eq.textContent = _unidadeCusto === "saco"
+          ? `${formatarNumeroBR(qtdRaw, qtdRaw % 1 ? 2 : 0)} saco${qtdRaw > 1 ? "s" : ""} = ${formatarNumeroBR(qtdG / 1000, 2)} kg`
+          : "";
+        eq.style.display = _unidadeCusto === "saco" ? "block" : "none";
+      }
       div.style.display = "block";
       return;
     }
@@ -8838,7 +8917,12 @@ async function salvarCustoProduto(index) {
   if (!usuario) { reabilitar(); return; }
 
   const prod = produtos[prodIndex];
-  const quantidadeG = _unidadeCusto === "kg" ? qtdRaw * 1000 : qtdRaw;
+  const quantidadeG = _paraGramas(qtdRaw, _unidadeCusto, prod);
+  if (quantidadeG === null) {
+    reabilitar();
+    _erroCustoProd("Este produto não tem peso de saco cadastrado. Escolha g ou kg.");
+    return;
+  }
   const valor = prod.custoPorGrama * quantidadeG;
 
   const cicloId = viveiros[index].cicloId || null;
@@ -9273,6 +9357,8 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
           <div class="unidade-toggle">
             <button type="button" class="unidade-btn ${_editCustoUnidade === 'g' ? 'ativo' : ''}" id="btnEditUnidadeG" onclick="selecionarUnidadeEdit('g',${index},'${chaveEnc}')">g</button>
             <button type="button" class="unidade-btn ${_editCustoUnidade === 'kg' ? 'ativo' : ''}" id="btnEditUnidadeKg" onclick="selecionarUnidadeEdit('kg',${index},'${chaveEnc}')">kg</button>
+            ${Number(prod?.pesoKg) > 0 ? `
+            <button type="button" class="unidade-btn ${_editCustoUnidade === 'saco' ? 'ativo' : ''}" id="btnEditUnidadeSaco" onclick="selecionarUnidadeEdit('saco',${index},'${chaveEnc}')">saco</button>` : ""}
           </div>
         </div>
         <input type="text" inputmode="decimal" id="editCustoQtd" value="${qtdNaUnidade}" min="0" step="any" oninput="recalcularValorEditCusto(${index},'${chaveEnc}')">

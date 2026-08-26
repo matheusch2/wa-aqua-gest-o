@@ -1893,6 +1893,14 @@ body.tema-escuro .ciclo-btn-relatorio { background: #374151; color: #e5e7eb; bor
     flex-shrink: 0;
 }
 
+.previa-equiv {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    opacity: .75;
+    margin-top: 3px;
+}
+
 .unidade-toggle {
     display: flex;
     gap: 2px;
