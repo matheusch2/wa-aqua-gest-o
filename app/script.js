@@ -936,9 +936,7 @@ function _voltarBotaoVisivel() {
 
 function voltarMenuGestao() {
   if (window.innerWidth >= 900) {
-    // No computador o menu lateral fica sempre visível, então "voltar" quer
-    // dizer "voltar para a tela inicial" — que agora é o painel.
-    abrirPainel();
+    mostrarListaViveiros();
     return;
   }
   document.getElementById("menuGestao").style.display = "grid";
@@ -9886,10 +9884,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       verificarBoletosVencendo();
       if (window.innerWidth >= 900) {
-        // No computador não existe menu de botões grandes: a tela abre em algo.
-        // Abrir no painel dá a fazenda inteira de cara; antes abria na lista de
-        // viveiros, mostrando UM viveiro e escondendo todo o resto.
-        abrirPainel();
+        mostrarListaViveiros();
       } else {
         document.getElementById("area-gestao").innerHTML = "";
         document.getElementById("menuGestao").style.display = "grid";
