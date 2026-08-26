@@ -6285,8 +6285,8 @@ function abrirFinanceiro() {
       </div>
       <button class="fin-limpar-filtros" onclick="_finLimparFiltros()">Limpar filtros</button>
       <div class="fin-modo-toggle">
-        <button class="fin-modo-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" onclick="_financeiroModo='detalhado';_finPagina=0;mostrarCustosFinanceiro()">Detalhado</button>
-        <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" onclick="_financeiroModo='resumido';mostrarCustosFinanceiro()">Por tipo</button>
+        <button class="fin-modo-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" data-modo="detalhado" onclick="_finTrocarModo('detalhado')">Detalhado</button>
+        <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" data-modo="resumido" onclick="_finTrocarModo('resumido')">Por tipo</button>
       </div>
       <div id="resultado-financeiro"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">Voltar</button>
@@ -6375,6 +6375,19 @@ function _finColetarCustos() {
   // Injeta os itens virtuais de rateio dos custos fixos (não editáveis pela lista)
   custos = custos.concat(_finItensRateioFixo(alvos));
   return { custos, porViveiro };
+}
+
+// A pastilha branca marcava sempre "Detalhado". O conteúdo trocava certo, mas
+// os botões são desenhados uma vez só pela tela de cima, e quem troca de aba só
+// redesenhava a área de baixo — então a marca ficava presa na primeira opção, e
+// a pessoa tocava de novo achando que não tinha pegado.
+function _finTrocarModo(modo) {
+  _financeiroModo = modo;
+  if (modo === "detalhado") _finPagina = 0;
+  document.querySelectorAll(".fin-modo-btn").forEach(b => {
+    b.classList.toggle("ativo", b.dataset.modo === modo);
+  });
+  mostrarCustosFinanceiro();
 }
 
 function mostrarCustosFinanceiro() {
@@ -6536,17 +6549,25 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
 }
 
 function _finRenderPorTipo(resultado, custos, total) {
-  const grupos = {};
-  custos.forEach(c => {
-    // Custos fixos agrupam pela categoria (Mão de obra, Energia…); outros como antes
-    const chave = c.tipo === "fixo" ? (c.categoria || "Custos fixos")
-      : (c.tipo === "outro" ? "Outro custo" : (c.categoria || "Outros"));
-    if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0 };
-    grupos[chave].total += Number(c.valor);
-    grupos[chave].qtd += 1;
-  });
-  const lista = Object.values(grupos).sort((a, b) => b.total - a.total);
+  // MESMA regra do "Detalhado", de propósito. Antes esta tela jogava TODO custo
+  // avulso num balde chamado "Outro custo" — e como a pós-larva é o maior gasto
+  // do ciclo, ela sozinha virava 87% de um pedaço sem nome, escondendo tudo o
+  // que estava junto dela. Duas abas com contas diferentes é pior que uma aba
+  // só: o produtor não sabe em qual acreditar.
+  const lista = _finGruposCategoria(custos);
   const cores = ["rgb(6,107,99)", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#14b8a6", "#ec4899", "#84cc16"];
+
+  // A rosca só aguenta umas 8 fatias antes de virar borrão. O que passa disso
+  // entra somado como "Demais custos" — e o nome NÃO é "Outros" de propósito,
+  // porque muita gente tem uma categoria chamada exatamente assim.
+  const CABEM = cores.length - 1;
+  const naPizza = lista.length > cores.length
+    ? lista.slice(0, CABEM).concat([{
+        nome: "Demais custos",
+        total: lista.slice(CABEM).reduce((s, g) => s + g.total, 0),
+        qtd: lista.slice(CABEM).reduce((s, g) => s + g.qtd, 0),
+      }])
+    : lista;
 
   resultado.innerHTML = `
     <div class="fin-secao-titulo" style="margin-top:4px">Resumo por tipo</div>
@@ -6556,7 +6577,7 @@ function _finRenderPorTipo(resultado, custos, total) {
         <div class="fin-pizza-centro"><span>Total</span><strong>R$ ${formatarNumeroBR(total, 2)}</strong></div>
       </div>
       <div class="fin-pizza-legenda">
-        ${lista.map((g, i) => `
+        ${naPizza.map((g, i) => `
           <div class="fin-leg-item">
             <span class="fin-leg-dot" style="background:${cores[i % cores.length]}"></span>
             <span class="fin-leg-nome">${g.nome}</span>
@@ -6584,8 +6605,8 @@ function _finRenderPorTipo(resultado, custos, total) {
     new Chart(cv.getContext("2d"), {
       type: "doughnut",
       data: {
-        labels: lista.map(g => g.nome),
-        datasets: [{ data: lista.map(g => g.total), backgroundColor: lista.map((_, i) => cores[i % cores.length]), borderWidth: 2, borderColor: "#fff" }]
+        labels: naPizza.map(g => g.nome),
+        datasets: [{ data: naPizza.map(g => g.total), backgroundColor: naPizza.map((_, i) => cores[i % cores.length]), borderWidth: 2, borderColor: "#fff" }]
       },
       options: {
         responsive: true,
