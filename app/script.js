@@ -8695,6 +8695,13 @@ function abrirLancarCustoProduto(index) {
   const area = document.getElementById("area-gestao");
   const hoje = _hojeLocal();
 
+  // A unidade é lembrada numa variável do arquivo, e a tela é redesenhada com
+  // "g" marcado sempre. Sem zerar aqui, quem lançasse em saco, saísse e
+  // voltasse veria "g" na tela enquanto a conta continuava em saco — e 300
+  // (que a pessoa quis em gramas) viraria 7.500.000 g, vinte e cinco mil vezes
+  // o valor. Vale para kg também, que já errava mil vezes antes do saco existir.
+  _unidadeCusto = "g";
+
   if (produtos.length === 0) {
     area.innerHTML = `
       <div class="form-lancamento">
@@ -9400,34 +9407,63 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   if (isProduto) {
     const qtdRaw = parseDecimalBR(document.getElementById("editCustoQtd")?.value);
     if (isNaN(qtdRaw) || qtdRaw <= 0) { erro("Informe a quantidade utilizada."); return; }
-    somaQtd = _editCustoUnidade === "kg" ? qtdRaw * 1000 : qtdRaw;
+    // _paraGramas, e não a conta na mão: a tela oferece g, kg E saco, e uma
+    // conta que só conhece kg gravava "2 gramas" onde a pessoa quis 2 sacos.
+    const prodGrupo = produtos.find(p => p.id === grupo[0].produtoId);
+    somaQtd = _paraGramas(qtdRaw, _editCustoUnidade, prodGrupo);
+    if (somaQtd === null) { erro("Este produto não tem peso de saco cadastrado."); return; }
   } else {
     somaQtd = grupo.reduce((s, c) => s + (Number(c.quantidadeG) || 0), 0);
   }
   const ids = grupo.map(c => c.id).filter(Boolean);
+  if (!ids.length) { erro("Este custo não pode ser editado por aqui."); return; }
 
   const restaurar = _travarBotao(botao, "Salvando...");
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
 
-  // Remove os lançamentos do grupo e grava um único consolidado
-  const del = await supabaseClient.from("custos").delete().in("id", ids).eq("user_id", usuario.id);
-  if (del.error) { restaurar(); erro("Erro ao salvar: " + del.error.message); return; }
-
   const cicloIdGrupo = grupo[0].cicloId || null; // preserva o ciclo do custo editado
-  const novo = {
-    user_id: usuario.id, viveiro_id: v.id, tipo: grupo[0].tipo,
-    produto_id: grupo[0].produtoId || null, nome_produto: novoNome,
+  // Renomear tem que renomear no relatório também. O relatório financeiro
+  // agrupa por CATEGORIA; mantendo a categoria antiga, a pessoa corrigia
+  // "Tecnico" para "Técnico" e o relatório continuava mostrando o errado.
+  // Em produto, a categoria é do catálogo e não se mexe.
+  const novaCategoria = isProduto ? grupo[0].categoria : novoNome;
+  const campos = {
+    tipo: grupo[0].tipo, produto_id: grupo[0].produtoId || null, nome_produto: novoNome,
     quantidade_g: somaQtd > 0 ? somaQtd : null, valor: novoValor,
-    categoria: grupo[0].categoria, data: grupo[0].data, observacao: null, ciclo_id: cicloIdGrupo,
+    categoria: novaCategoria, data: grupo[0].data, observacao: null, ciclo_id: cicloIdGrupo,
   };
-  const { data: salvo, error } = await supabaseClient.from("custos").insert([novo]).select();
-  if (error) { restaurar(); erro("Erro ao salvar: " + error.message); return; }
 
-  v.custos = (v.custos || []).filter(c => !ids.includes(c.id));
-  v.custos.push({
-    id: salvo[0].id, tipo: novo.tipo, produtoId: novo.produto_id, nomeProduto: novoNome,
-    quantidadeG: novo.quantidade_g, valor: novoValor, categoria: novo.categoria, data: novo.data, observacao: null, cicloId: cicloIdGrupo,
+  // ORDEM: primeiro ATUALIZA um dos lançamentos, depois apaga os irmãos.
+  // Antes era o contrário — apagava o grupo inteiro e só então gravava o
+  // consolidado. Se a segunda chamada falhasse (internet caindo no meio, erro
+  // do banco), o custo simplesmente sumia, e a pessoa via "Erro ao salvar" sem
+  // saber que já tinha perdido o lançamento. Nesta ordem, falha na primeira não
+  // muda nada; falha na segunda deixa uma repetição visível, que dá para
+  // corrigir. Perder é pior que repetir.
+  const principal = ids[0];
+  const irmaos = ids.slice(1);
+
+  const up = await supabaseClient.from("custos")
+    .update(campos).eq("id", principal).eq("user_id", usuario.id);
+  if (up.error) { restaurar(); erro("Erro ao salvar: " + up.error.message); return; }
+
+  if (irmaos.length) {
+    const del = await supabaseClient.from("custos")
+      .delete().in("id", irmaos).eq("user_id", usuario.id);
+    if (del.error) {
+      restaurar();
+      _toastErro("Salvou, mas sobraram lançamentos repetidos. Recarregue e confira.");
+      return;
+    }
+  }
+
+  v.custos = (v.custos || []).filter(c => !irmaos.includes(c.id));
+  const alvo = v.custos.find(c => c.id === principal);
+  if (alvo) Object.assign(alvo, {
+    tipo: campos.tipo, produtoId: campos.produto_id, nomeProduto: novoNome,
+    quantidadeG: campos.quantidade_g, valor: novoValor, categoria: novaCategoria,
+    data: campos.data, observacao: null, cicloId: cicloIdGrupo,
   });
   _toastSucesso("Custo atualizado!");
   renderizarHistoricoCustos(index, elementoId, direto);
