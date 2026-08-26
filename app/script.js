@@ -8348,7 +8348,13 @@ function abrirCustosInsumos() {
   `;
 }
 
+// Guarda se a pessoa já viu o aviso e insistiu. Zera a cada tela aberta e a
+// cada produto salvo — confirmação de um produto não vale para o seguinte.
+let _produtoConfirmado = false;
+let _TXT_SALVAR_PRODUTO = "";
+
 function abrirCadastrarProduto() {
+  _produtoConfirmado = false;
   const area = document.getElementById("area-gestao");
   area.innerHTML = `
     <div class="form-lancamento">
@@ -8405,6 +8411,7 @@ function abrirCadastrarProduto() {
           <span class="msg-emoji">✅</span>
           <span class="msg-texto">Produto cadastrado!</span>
         </div>
+        <div id="aviso-produto" class="aviso-cadastro" style="display:none"></div>
         <div id="erro-produto" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:12px"></div>
         <button class="botao-salvar" onclick="salvarProduto()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -8415,6 +8422,63 @@ function abrirCadastrarProduto() {
       </div>
     </div>
   `;
+  _TXT_SALVAR_PRODUTO = document.querySelector(".botao-salvar")?.innerHTML || "Salvar produto";
+}
+
+/* ═══ CONFERÊNCIA DO CADASTRO DE PRODUTO ═════════════════════════════════════
+   Um cliente cadastrou um balde de 1 kg como "1000" — pensando em gramas, num
+   campo que pede quilo. O sistema aceitou sem piscar, e a partir dali o preço
+   por grama daquele produto saiu mil vezes mais barato para sempre.
+
+   Aconteceu uma vez, acontece de novo. Aqui o sistema olha o que foi digitado
+   e AVISA quando o número está fora do que existe no mundo real.
+
+   Aviso, e nunca bloqueio: big bag de uma tonelada existe, produto caro
+   existe. Quem manda é o produtor — o sistema só se recusa a deixar passar
+   batido.
+═════════════════════════════════════════════════════════════════════════════ */
+
+function _conferirCadastroProduto(pesoKg, valorPago) {
+  const avisos = [];
+
+  // O erro clássico: grama digitada no campo de quilo. 25 kg é saco de ração,
+  // 1000 kg é big bag. Acima disso, quase sempre é engano.
+  if (pesoKg >= 200) {
+    avisos.push(`<b>${formatarNumeroBR(pesoKg, 0)} kg</b> é mais de ${Math.floor(pesoKg / 25)} sacos de ração juntos. ` +
+      `Se o produto vem num balde de ${formatarNumeroBR(pesoKg / 1000, 2).replace(/,00$/, "")} kg, o certo é digitar <b>${formatarNumeroBR(pesoKg / 1000, 3).replace(/,000$/, "")}</b>.`);
+  } else if (pesoKg > 0 && pesoKg < 0.1) {
+    avisos.push(`<b>${formatarNumeroBR(pesoKg, 3)} kg</b> é menos de 100 gramas. Confira se não era para ser em quilo.`);
+  }
+
+  // Vírgula no lugar errado: R$ 5.000 onde se quis R$ 50,00.
+  if (valorPago >= 5000) {
+    avisos.push(`<b>R$ ${formatarNumeroBR(valorPago, 2)}</b> por embalagem é muito alto. Confira a vírgula.`);
+  }
+
+  // A conta final é a que mais denuncia: os dois erros juntos podem se anular
+  // no preço da embalagem e só aparecer aqui.
+  if (pesoKg > 0 && valorPago > 0) {
+    const porKg = valorPago / pesoKg;
+    if (porKg < 0.05) {
+      avisos.push(`Isso dá <b>R$ ${formatarNumeroBR(porKg, 4)} por quilo</b> — praticamente de graça. Confira o peso.`);
+    } else if (porKg > 5000) {
+      avisos.push(`Isso dá <b>R$ ${formatarNumeroBR(porKg, 2)} por quilo</b>. Confira o peso e o valor.`);
+    }
+  }
+
+  return avisos;
+}
+
+// Desenha o aviso embaixo do formulário. Devolve true se há algo a conferir.
+function _mostrarAvisoProduto(idCaixa, pesoKg, valorPago) {
+  const caixa = document.getElementById(idCaixa);
+  if (!caixa) return false;
+  const avisos = _conferirCadastroProduto(pesoKg, valorPago);
+  if (!avisos.length) { caixa.style.display = "none"; caixa.innerHTML = ""; return false; }
+  caixa.innerHTML = `<strong>Confere isto antes de salvar</strong>` +
+    avisos.map(a => `<span>${a}</span>`).join("");
+  caixa.style.display = "block";
+  return true;
 }
 
 function calcularPreviaKg() {
@@ -8428,6 +8492,7 @@ function calcularPreviaKg() {
   } else {
     div.style.display = "none";
   }
+  _mostrarAvisoProduto("aviso-produto", peso, valor);
 }
 
 async function salvarProduto() {
@@ -8454,6 +8519,15 @@ async function salvarProduto() {
     return;
   }
   if (erroProd) erroProd.style.display = "none";
+
+  // Número fora do mundo real: mostra o aviso e SEGURA o primeiro toque. O
+  // segundo toque grava. Aviso que não segura nada é enfeite — a pessoa toca
+  // em salvar antes de ler, e foi assim que o balde de 1 kg virou uma tonelada.
+  if (_mostrarAvisoProduto("aviso-produto", pesoKg, valorPago) && !_produtoConfirmado) {
+    _produtoConfirmado = true;
+    if (botaoTopo) botaoTopo.innerHTML = "Confirmar mesmo assim";
+    return;
+  }
 
   // Passou nas validações: fecha a porta antes do primeiro await
   const botao = botaoTopo;
@@ -8491,6 +8565,10 @@ async function salvarProduto() {
   document.getElementById("pesoKgProduto").value = "";
   document.getElementById("valorPagoProduto").value = "";
   document.getElementById("previa-custo-kg").style.display = "none";
+  const avisoCad = document.getElementById("aviso-produto");
+  if (avisoCad) avisoCad.style.display = "none";
+  _produtoConfirmado = false;
+  if (botao) botao.innerHTML = _TXT_SALVAR_PRODUTO;
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
 
   const msg = document.getElementById("msg-produto-sucesso");
@@ -8601,7 +8679,7 @@ function abrirEdicaoProduto(i) {
             <label>Peso do saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="editPesoKgProduto" value="${p.pesoKg}">
+            <input type="text" inputmode="decimal" id="editPesoKgProduto" value="${p.pesoKg}" oninput="_conferirEdicaoProduto()">
             <span class="campo-unidade">kg</span>
           </div>
         </div>
@@ -8611,10 +8689,11 @@ function abrirEdicaoProduto(i) {
             <label>Valor pago por saco / embalagem</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="editValorPagoProduto" value="${p.valorPago ? p.valorPago.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2}) : ''}" onblur="formatarMoedaBlur(this)">
+            <input type="text" inputmode="decimal" id="editValorPagoProduto" value="${p.valorPago ? p.valorPago.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2}) : ''}" oninput="_conferirEdicaoProduto()" onblur="formatarMoedaBlur(this); _conferirEdicaoProduto()">
             <span class="campo-unidade">R$</span>
           </div>
         </div>
+        <div id="aviso-edit-produto" class="aviso-cadastro" style="display:none"></div>
         <div id="erro-edit-produto" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:4px"></div>
         <button class="botao-salvar" onclick="salvarEdicaoProduto(${i})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -8625,6 +8704,12 @@ function abrirEdicaoProduto(i) {
       </div>
     </div>
   `;
+}
+
+function _conferirEdicaoProduto() {
+  _mostrarAvisoProduto("aviso-edit-produto",
+    parseDecimalBR(document.getElementById("editPesoKgProduto")?.value),
+    parseMoedaBR(document.getElementById("editValorPagoProduto")?.value));
 }
 
 async function salvarEdicaoProduto(i) {
@@ -8640,6 +8725,12 @@ async function salvarEdicaoProduto(i) {
   if (erroEditProd) erroEditProd.style.display = "none";
 
   if (!nome || !pesoKg || !valorPago) { _erroEditProd("Preencha todos os campos."); return; }
+
+  if (_mostrarAvisoProduto("aviso-edit-produto", pesoKg, valorPago) && !_produtoConfirmado) {
+    _produtoConfirmado = true;
+    if (botao) botao.innerHTML = "Confirmar mesmo assim";
+    return;
+  }
 
   const custoPorGrama = valorPago / (pesoKg * 1000);
   const restaurar = _travarBotao(botao, "Salvando...");

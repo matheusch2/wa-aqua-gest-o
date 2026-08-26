@@ -1369,6 +1369,43 @@ button:active:not(:disabled) {
 .pnl-vazio-geral strong { font-size: 16.5px; color: #0b2030; }
 .pnl-vazio-geral p { margin: 0 0 8px; font-size: 13.5px; color: #68747d; }
 
+/* ─── CONFERÊNCIA DO CADASTRO DE PRODUTO ─────────────────────────────────── */
+
+/* Âmbar, e não vermelho: não é erro, é "confere isto". Vermelho ensina a
+   pessoa a ignorar, porque ela sabe que o número dela está certo. */
+.aviso-cadastro {
+    background: #fdf6e6;
+    border: 1px solid #f0e0b8;
+    border-radius: 10px;
+    padding: 11px 13px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    color: #6b5220;
+    line-height: 1.5;
+}
+
+.aviso-cadastro strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    color: #8a5312;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin-bottom: 5px;
+}
+
+.aviso-cadastro span { display: block; margin-top: 4px; }
+.aviso-cadastro b { color: #8a5312; }
+
+body.tema-escuro .aviso-cadastro {
+    background: #322c17;
+    border-color: #574a24;
+    color: #e0cfa4;
+}
+
+body.tema-escuro .aviso-cadastro strong,
+body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
+
 /* ─── AVISO DE VERSÃO NOVA ───────────────────────────────────────────────── */
 
 .atz-barra {
