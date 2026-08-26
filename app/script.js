@@ -164,6 +164,7 @@ document.addEventListener("click", function(e) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const _ICO = {
+  atualizar:`<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
   fazenda:  `<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   seguranca:`<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
   aparencia:`<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
@@ -242,6 +243,7 @@ async function abrirConfiguracoes() {
         ${_cfgItem("conta", "Minha conta", "Plano e assinatura", "abrirMinhaConta()")}
         ${_cfgItem("faq", "Perguntas frequentes (FAQ)", "Dúvidas sobre o sistema", "abrirFAQ()")}
         ${_cfgItem("suporte", "Suporte", "Fale com nossa equipe", "abrirSuporte()")}
+        ${_cfgItem("atualizar", "Buscar atualização", `Versão ${_VERSAO_RODANDO || "—"}`, "buscarAtualizacaoManual(this)")}
       </div>
       <button class="cfg-item cfg-item-sair" onclick="confirmarSairConta()">
         <div class="cfg-item-ico cfg-item-ico-sair">${_ICO.sair}</div>
@@ -9883,6 +9885,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }, 0);
 
       verificarBoletosVencendo();
+      _armarVerificacaoDeVersao();
       if (window.innerWidth >= 900) {
         mostrarListaViveiros();
       } else {
@@ -9932,3 +9935,135 @@ window.addEventListener("popstate", function () {
   btn.click();                      // volta uma tela — mesma ação do botão Voltar
   if (_voltarBotaoVisivel()) _armarVoltarNavegador(); // ainda em subtela segue protegendo
 });
+
+/* ═══ AVISO DE VERSÃO NOVA ═══════════════════════════════════════════════════
+
+   O PROBLEMA QUE ISTO RESOLVE:
+   todo arquivo do sistema carrega "?v=" no endereço, e trocar esse número
+   obriga o aparelho a baixar de novo. Menos UM: o index.html, que não tem como
+   ter versão — é ele que ABRE o app. E é justamente ele que aponta para
+   "script.js?v=...". Enquanto o aparelho segura o index.html velho, ele
+   continua pedindo o script velho, por mais que a gente publique. O resultado
+   é a atualização demorar e ninguém saber quanto.
+
+   COMO ISTO FUNCIONA:
+   o app pergunta ao servidor "qual é o index.html de agora?" — com
+   cache: "no-store" e um número aleatório no endereço, que furam tanto o cache
+   do aparelho quanto o do GitHub. Da resposta ele tira o "?v=" e compara com o
+   que está rodando. Se for diferente, houve publicação nova.
+
+   POR QUE NÃO USAR UM ARQUIVO DE VERSÃO SEPARADO:
+   seria mais um lugar para lembrar de atualizar a cada deploy, e o dia em que
+   esquecêssemos, o aviso mentiria — ou pior, deixaria de aparecer. Lendo o
+   próprio index.html, a fonte da verdade é a mesma que o navegador usa.
+═════════════════════════════════════════════════════════════════════════════ */
+
+// Versão que está rodando AGORA, lida da própria tag <script> desta página.
+const _VERSAO_RODANDO = (() => {
+  const tag = document.querySelector('script[src*="script.js"]');
+  const m = tag && tag.getAttribute("src").match(/[?&]v=([^&"']+)/);
+  return m ? m[1] : "";
+})();
+
+let _versaoNovaVista = "";   // já avisei sobre esta; não repete o aviso
+let _checandoVersao = false;
+
+async function _versaoNoServidor() {
+  // O número aleatório é contra o cache do GitHub Pages, que ignora o
+  // no-store do navegador: sem ele, a pergunta poderia ser respondida com a
+  // mesma página velha que queremos descobrir que envelheceu.
+  const url = "index.html?cb=" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const html = await r.text();
+  const m = html.match(/script\.js\?v=([^"']+)/);
+  return m ? m[1] : "";
+}
+
+async function verificarAtualizacao(manual) {
+  if (_checandoVersao) return null;
+  if (!_VERSAO_RODANDO) return null;      // sem saber a versão local, não há o que comparar
+  _checandoVersao = true;
+  try {
+    const noAr = await _versaoNoServidor();
+    if (noAr && noAr !== _VERSAO_RODANDO) {
+      if (manual || noAr !== _versaoNovaVista) {
+        _versaoNovaVista = noAr;
+        _mostrarBarraAtualizacao();
+      }
+      return noAr;
+    }
+    return false;
+  } catch (e) {
+    // Sem internet ou servidor fora: silêncio. Um aviso de erro aqui só
+    // assustaria quem está no meio de um lançamento, sem nada para fazer.
+    return null;
+  } finally {
+    _checandoVersao = false;
+  }
+}
+
+function _mostrarBarraAtualizacao() {
+  if (document.getElementById("barra-atualizacao")) return;
+  const div = document.createElement("div");
+  div.id = "barra-atualizacao";
+  div.className = "atz-barra";
+  div.innerHTML = `
+    <div class="atz-texto">
+      <strong>Nova versão disponível</strong>
+      <span>Toque para carregar as novidades</span>
+    </div>
+    <button class="atz-botao" onclick="atualizarApp(this)">Atualizar</button>
+    <button class="atz-fechar" onclick="document.getElementById('barra-atualizacao').remove()" aria-label="Agora não">×</button>
+  `;
+  document.body.appendChild(div);
+}
+
+// Limpa tudo o que pode estar segurando arquivo velho e recarrega.
+async function atualizarApp(botao) {
+  if (botao) { botao.disabled = true; botao.textContent = "Atualizando..."; }
+
+  // 1) O que o service worker guardou.
+  try {
+    const nomes = await caches.keys();
+    await Promise.all(nomes.map(n => caches.delete(n)));
+  } catch (e) { /* navegador sem cache API */ }
+
+  // 2) Manda o service worker buscar a versão nova dele mesmo. update(), e não
+  //    unregister(): desregistrar tiraria o "Instalar" e o funcionamento sem
+  //    internet, que são coisas que a gente quer manter.
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.update()));
+  } catch (e) { /* navegador sem service worker */ }
+
+  // 3) Recarrega com endereço diferente. Um reload comum pode ser respondido
+  //    pelo mesmo index.html guardado — e aí nada mudaria. Endereço novo, o
+  //    navegador é obrigado a ir buscar.
+  const base = window.location.pathname;
+  window.location.replace(base + "?atz=" + Date.now());
+}
+
+// Quando conferir:
+//  - uns segundos depois de abrir, para não atrasar a entrada;
+//  - toda vez que o app volta para a frente (é quando a pessoa vai usar);
+//  - de hora em hora, para quem deixa aberto o dia todo.
+function _armarVerificacaoDeVersao() {
+  setTimeout(() => verificarAtualizacao(false), 4000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) verificarAtualizacao(false);
+  });
+  setInterval(() => verificarAtualizacao(false), 60 * 60 * 1000);
+}
+
+// Botão "Buscar atualização" das Configurações: aqui o silêncio não serve,
+// porque a pessoa pediu e está esperando uma resposta.
+async function buscarAtualizacaoManual(botao) {
+  if (botao?.disabled) return;
+  const antes = botao ? botao.innerHTML : "";
+  if (botao) { botao.disabled = true; botao.querySelector(".cfg-item-sub").textContent = "Procurando..."; }
+  const r = await verificarAtualizacao(true);
+  if (botao) { botao.disabled = false; botao.innerHTML = antes; }
+  if (r === false) _toastSucesso("Você já está na versão mais recente.");
+  else if (r === null) _toastErro("Não consegui verificar. Veja sua conexão.");
+}

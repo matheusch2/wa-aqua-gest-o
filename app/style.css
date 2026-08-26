@@ -1369,7 +1369,70 @@ button:active:not(:disabled) {
 .pnl-vazio-geral strong { font-size: 16.5px; color: #0b2030; }
 .pnl-vazio-geral p { margin: 0 0 8px; font-size: 13.5px; color: #68747d; }
 
+/* ─── AVISO DE VERSÃO NOVA ───────────────────────────────────────────────── */
+
+.atz-barra {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    /* Embaixo, e não em cima: em cima cobriria a barra do app e, no iPhone em
+       modo aplicativo, brigaria com o relógio do sistema. */
+    bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+    width: min(440px, calc(100% - 24px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #0b3f3a;
+    color: #fff;
+    border-radius: 14px;
+    padding: 13px 14px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.3);
+    animation: atzSobe .26s ease-out;
+}
+
+@keyframes atzSobe {
+    from { transform: translate(-50%, 16px); opacity: 0; }
+    to   { transform: translate(-50%, 0);    opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .atz-barra { animation: none; }
+}
+
+.atz-texto { flex: 1; min-width: 0; }
+.atz-texto strong { display: block; font-size: 14px; font-weight: 800; }
+.atz-texto span { display: block; font-size: 11.5px; opacity: .82; margin-top: 1px; }
+
+.atz-botao {
+    width: auto;
+    flex-shrink: 0;
+    background: #fff;
+    color: #0b3f3a;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.atz-botao:disabled { opacity: .7; }
+
+.atz-fechar {
+    width: auto;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.6);
+    font-size: 21px;
+    line-height: 1;
+    padding: 2px 4px;
+    cursor: pointer;
+}
+
 /* ─── NAVEGAÇÃO ENTRE VIVEIROS ───────────────────────────────────────────── */
+
 
 .titulo-secao {
     text-align: center;
