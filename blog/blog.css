@@ -183,9 +183,61 @@ h1 {
 
 .rolagem { overflow-x: auto; margin: 24px 0; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 420px; background: var(--papel); }
-th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--linha); }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--linha); vertical-align: top; }
 th { background: var(--verde); color: #fff; font-weight: 700; font-size: 13.5px; }
 td:last-child, th:last-child { text-align: right; }
+
+/* Tabela de texto: a regra acima joga a última coluna para a direita, o que
+   serve para números e atrapalha para frases. */
+table.texto td:last-child, table.texto th:last-child { text-align: left; }
+table.texto td:first-child { font-weight: 700; white-space: nowrap; }
+
+/* No celular, tabela de duas colunas com frase inteira na segunda vira rolagem
+   lateral em toda linha — ninguém lê assim. Abaixo de 620px cada linha vira um
+   bloco: o nome da área em cima, a pergunta embaixo. O cabeçalho some porque
+   passa a ser repetido em cada bloco pela própria estrutura. */
+@media (max-width: 620px) {
+  table.texto { min-width: 0; display: block; background: transparent; }
+  table.texto thead { display: none; }
+  table.texto tbody, table.texto tr, table.texto td { display: block; }
+
+  table.texto tr {
+    background: var(--papel);
+    border: 1px solid var(--linha);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  table.texto td { border: 0; padding: 0; font-size: 15.5px; }
+
+  table.texto td:first-child {
+    white-space: normal;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--verde);
+    margin-bottom: 5px;
+  }
+}
+
+/* ─── DEFINIÇÃO DAS VARIÁVEIS ───────────────────────────────────────────── */
+
+/* Depois de cada fórmula vem "em que:". Fica em fonte de largura fixa para o
+   símbolo da fórmula e o da explicação serem visivelmente o mesmo símbolo. */
+.legenda { margin: -12px 0 26px; padding-left: 4px; font-size: 15px; }
+.legenda li { margin: 4px 0; list-style: none; }
+.legenda li::before { content: "·"; color: var(--verde); font-weight: 800; margin-right: 8px; }
+.legenda code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--verde-esc);
+  background: var(--verde-cl);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
 
 /* ─── ESPAÇO DO ANÚNCIO ─────────────────────────────────────────────────── */
 

@@ -6,13 +6,18 @@
   conteúdo e some uma entrada em /blog/index.html e em /sitemap.xml.
 
   O que NÃO pode faltar em cada artigo:
-   - <title> e a description: é o que aparece no Google;
+   - <title> e a description: é o que aparece no Google. O <title> precisa
+     caber em ~60 caracteres, por isso ele é mais curto que o H1 de propósito;
    - o canonical, apontando para o endereço final;
    - o bloco application/ld+json lá embaixo, que diz ao Google que isto é um
      artigo, de quem, e de quando — é o que rende o resultado com data;
    - a chamada para o sistema no fim: é ela que transforma leitura em cliente.
 
-  ARTIGO LONGO: leva sumário com âncoras. No celular, texto comprido sem
+  FÓRMULAS em texto normal, com ÷ e colchetes — nada de LaTeX nem imagem.
+  Assim o Google lê, o leitor de tela lê, dá para copiar, e não depende de
+  biblioteca nenhuma carregando.
+
+  ARTIGO LONGO leva sumário com âncoras. No celular, texto comprido sem
   sumário é rolagem cega — e o Google às vezes usa essas âncoras para mostrar
   atalhos dentro do próprio resultado da busca.
 -->
@@ -21,8 +26,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>FCA do camarão: o que é, como calcular e como melhorar</title>
-  <meta name="description" content="Quantos quilos de ração para produzir um quilo de camarão: a fórmula certa, o exemplo prático, o que faz a FCA subir e por que ração barata pode sair mais cara.">
+  <title>Fator de conversão alimentar (FCA) no cultivo de camarão</title>
+  <meta name="description" content="Como calcular a FCA aparente, corrigir o cálculo com despescas parciais, estimar a biomassa, diagnosticar conversão elevada e converter o índice em custo por quilo.">
   <link rel="canonical" href="https://waaqua.com.br/blog/como-calcular-fca-camarao.html">
 
   <meta name="theme-color" content="#066b63">
@@ -33,8 +38,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="WA Aqua Gestão">
   <meta property="og:locale" content="pt_BR">
-  <meta property="og:title" content="FCA do camarão: o que é, como calcular e como melhorar">
-  <meta property="og:description" content="A fórmula certa (com ganho de biomassa), o exemplo passo a passo e por que ração mais barata pode sair mais cara por quilo produzido.">
+  <meta property="og:title" content="Fator de conversão alimentar no cultivo de camarão">
+  <meta property="og:description" content="Cálculo, interpretação e estratégias de otimização da FCA: despescas parciais, estimativa de biomassa, diagnóstico e custo alimentar por quilograma produzido.">
   <meta property="og:url" content="https://waaqua.com.br/blog/como-calcular-fca-camarao.html">
   <meta property="og:image" content="https://waaqua.com.br/assets/curva-crescimento.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -42,7 +47,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="blog.css?v=7">
+  <link rel="stylesheet" href="blog.css?v=9">
 </head>
 <body>
 
@@ -64,364 +69,591 @@
 
     <p class="migalha"><a href="/">Início</a> › <a href="/blog/">Blog</a> › FCA</p>
 
-    <h1>FCA na criação de camarão: o que é, como calcular e como melhorar</h1>
+    <h1>Fator de conversão alimentar no cultivo de camarão: cálculo, interpretação
+      e estratégias de otimização</h1>
 
     <p class="assinatura">
       <span>26 de agosto de 2026</span>
       <span>·</span>
-      <span>Leitura de 12 minutos</span>
+      <span>atualizado em 27 de agosto</span>
+      <span>·</span>
+      <span>Leitura de 18 minutos</span>
     </p>
 
-    <p>Na carcinicultura, a ração costuma ser uma das maiores parcelas do custo de
-      produção. Por isso não basta olhar quanto o camarão está crescendo: é preciso
-      saber <strong>quanto de ração está sendo gasto para produzir esse
-      crescimento</strong>.</p>
+    <p>A alimentação representa um dos principais componentes do custo operacional na
+      carcinicultura intensiva e semi-intensiva. Consequentemente, pequenas variações
+      na eficiência de utilização da ração podem modificar significativamente o custo
+      por quilograma produzido, a carga orgânica lançada no sistema e a rentabilidade
+      final do ciclo. Nesse contexto, o fator de conversão alimentar (FCA),
+      denominado internacionalmente <em>Feed Conversion Ratio</em> (FCR), constitui
+      um dos principais indicadores zootécnicos do cultivo de camarões.</p>
 
-    <p>O indicador que responde isso é a Conversão Alimentar Aparente — a FCA. Em
-      inglês aparece como <em>Feed Conversion Ratio</em>, ou FCR.</p>
+    <p>Apesar de sua ampla utilização, a FCA é frequentemente calculada ou
+      interpretada de maneira inadequada. <strong>O indicador não avalia
+      exclusivamente a qualidade nutricional da ração.</strong> Ele representa o
+      resultado integrado entre alimento fornecido, crescimento, sobrevivência,
+      condições ambientais, sanidade, produtividade natural, precisão das estimativas
+      de biomassa e eficiência do manejo alimentar.</p>
 
     <div class="sumario">
       <strong>O que tem neste artigo</strong>
       <ol>
-        <li><a href="#o-que-e">O que é a FCA</a></li>
-        <li><a href="#formula">A fórmula (e o erro mais comum)</a></li>
-        <li><a href="#exemplo">Exemplo prático, passo a passo</a></li>
-        <li><a href="#biomassa">Como calcular a biomassa do viveiro</a></li>
-        <li><a href="#aparente">Por que se chama "aparente"</a></li>
-        <li><a href="#parciais">Como entram as despescas parciais</a></li>
-        <li><a href="#mortalidade">Como a mortalidade interfere</a></li>
-        <li><a href="#o-que-piora">O que faz a FCA subir</a></li>
-        <li><a href="#como-diminuir">Como diminuir a FCA</a></li>
-        <li><a href="#economica">FCA econômica: a conta que decide a compra</a></li>
-        <li><a href="#boa">O que é uma FCA boa?</a></li>
-        <li><a href="#registros">Os registros que você precisa ter</a></li>
+        <li><a href="#definicao">Definição técnica da FCA</a></li>
+        <li><a href="#parciais">Cálculo com despescas parciais</a></li>
+        <li><a href="#biomassa">Estimativa da biomassa</a></li>
+        <li><a href="#mortalidade">Influência da mortalidade</a></li>
+        <li><a href="#parcial">FCA parcial durante o cultivo</a></li>
+        <li><a href="#arracoamento">Taxa de arraçoamento e FCA</a></li>
+        <li><a href="#racao">Qualidade física e nutricional da ração</a></li>
+        <li><a href="#frequencia">Frequência e distribuição da alimentação</a></li>
+        <li><a href="#bandejas">Bandejas e avaliação do trato digestivo</a></li>
+        <li><a href="#agua">Qualidade da água e balanço iônico</a></li>
+        <li><a href="#fundo">Fundo do viveiro e carga orgânica</a></li>
+        <li><a href="#diagnostico">Diagnóstico de uma FCA elevada</a></li>
+        <li><a href="#custo">Custo alimentar por quilograma produzido</a></li>
+        <li><a href="#adequada">Qual seria uma FCA adequada?</a></li>
+        <li><a href="#estrategias">Estratégias técnicas para melhorar a FCA</a></li>
+        <li><a href="#referencias">Referências técnicas</a></li>
       </ol>
     </div>
 
-    <h2 id="o-que-e">O que é a FCA</h2>
+    <h2 id="definicao">Definição técnica da FCA</h2>
 
-    <p>A FCA diz <strong>quantos quilos de ração foram fornecidos para produzir um
-      quilo de ganho de biomassa</strong>. Uma FCA de 1,50 significa que foram
-      usados 1,50 kg de ração para produzir 1 kg de camarão.</p>
+    <p>O fator de conversão alimentar representa a quantidade de ração fornecida
+      necessária para produzir uma unidade de ganho de biomassa animal. Em condições
+      comerciais, utiliza-se normalmente a <strong>conversão alimentar
+      aparente</strong>, pois o produtor conhece a quantidade de ração distribuída,
+      mas não consegue determinar exatamente quanto foi ingerido pelos camarões.</p>
 
-    <p>Quanto menor, melhor tende a ser o aproveitamento da ração. Uma FCA alta
-      significa muita ração para pouco crescimento — o que aumenta o custo e ainda
-      prejudica a qualidade da água e do fundo do viveiro.</p>
+    <p>A equação básica é:</p>
+
+    <div class="formula">
+      <b>FCA aparente = ração fornecida ÷ ganho líquido de biomassa</b>
+      <small>tudo em quilogramas, no mesmo período</small>
+    </div>
+
+    <p>Para um ciclo sem despescas parciais:</p>
+
+    <div class="formula">
+      <b>FCA = R ÷ (B<sub>f</sub> − B<sub>i</sub>)</b>
+    </div>
+
+    <ul class="legenda">
+      <li><code>R</code> — quantidade total de ração fornecida, em quilogramas;</li>
+      <li><code>B<sub>f</sub></code> — biomassa final despescada, em quilogramas;</li>
+      <li><code>B<sub>i</sub></code> — biomassa inicial estocada, em quilogramas.</li>
+    </ul>
+
+    <p>Uma FCA de 1,40 indica que foram fornecidos 1,40 kg de ração para cada
+      quilograma de ganho líquido de biomassa. Quanto menor o valor, maior é a
+      eficiência aparente de utilização do alimento, <strong>desde que a redução da
+      FCA não seja acompanhada por queda do crescimento, da sobrevivência ou da
+      produtividade</strong>.</p>
 
     <div class="caixa">
-      <p><b>Cuidado com o atalho.</b> Não se busca FCA baixa simplesmente cortando
-        alimentação.</p>
-      <p>Se o camarão receber menos do que precisa, ele cresce devagar, o lote fica
-        desuniforme e o ciclo se estende. O objetivo é uma FCA <b>eficiente</b>,
-        mantendo crescimento, sobrevivência e produtividade.</p>
+      <p><b>Por que "aparente".</b> A denominação é tecnicamente importante. Em
+        viveiros comerciais, não é possível quantificar com precisão a ração
+        efetivamente ingerida.</p>
+      <p>Uma parcela pode ser perdida durante a distribuição, desintegrar-se, sofrer
+        lixiviação de nutrientes ou permanecer no fundo. Além disso, os camarões
+        utilizam alimentos naturais, como fitoplâncton, zooplâncton, organismos
+        bentônicos, detritos e agregados microbianos.</p>
+      <p>Dessa forma, <b>a FCA de campo expressa a eficiência global do sistema</b>, e
+        não somente o desempenho fisiológico da ração.</p>
     </div>
 
     <!-- ══ ANÚNCIO ══ Cole aqui o código do AdSense quando a conta for aprovada.
          Está entre seções, nunca no meio de uma explicação. -->
     <div class="anuncio">espaço reservado para anúncio</div>
 
-    <h2 id="formula">A fórmula (e o erro mais comum)</h2>
+    <h2 id="parciais">Cálculo com despescas parciais</h2>
+
+    <p>Quando são realizadas despescas parciais, <strong>toda biomassa comercial
+      retirada anteriormente deve ser incorporada ao denominador</strong>. A equação
+      passa a ser:</p>
 
     <div class="formula">
-      <b>FCA = ração fornecida ÷ ganho de biomassa</b>
-      <small>tudo em quilos, no mesmo período</small>
+      <b>FCA = R ÷ [(B<sub>f</sub> + ΣB<sub>dp</sub>) − B<sub>i</sub>]</b>
+      <small>ΣB<sub>dp</sub> = soma da biomassa retirada em todas as despescas parciais</small>
     </div>
 
-    <p>E o ganho de biomassa é:</p>
+    <p>Desconsiderar essa produção faz a FCA parecer artificialmente elevada. Por
+      isso, cada despesca deve ser registrada com <strong>data, quantidade retirada e
+      peso médio dos animais</strong>.</p>
+
+    <p>Considere um viveiro que recebeu 2.300 kg de ração. A biomassa inicial foi
+      estimada em 18 kg, houve uma despesca parcial de 300 kg e a despesca final
+      resultou em 1.400 kg:</p>
 
     <div class="formula">
-      <b>ganho = biomassa final − biomassa inicial</b>
+      <b>ganho líquido = (1.400 + 300) − 18 = 1.682 kg</b>
     </div>
 
-    <p>Aqui está o erro que mais aparece: em cultivos iniciados com pós-larvas muito
-      pequenas, muita gente divide a ração <strong>direto pela biomassa
-      despescada</strong>, sem descontar nada. Com PL minúscula a diferença é
-      pequena e passa despercebida.</p>
-
-    <p>Mas <strong>em viveiro povoado com juvenil maior, ignorar a biomassa inicial
-      muda o resultado de verdade</strong>. Tecnicamente, o certo é sempre
-      descontar.</p>
-
-    <h2 id="exemplo">Exemplo prático, passo a passo</h2>
-
-    <p>Um viveiro onde foram fornecidos <strong>2.000 kg de ração</strong> no ciclo
-      inteiro. Na despesca saíram <strong>1.350 kg de camarão</strong>. A biomassa
-      inicial povoada foi estimada em <strong>20 kg</strong>.</p>
-
-    <p><strong>Primeiro, o ganho:</strong></p>
-
     <div class="formula">
-      <b>1.350 kg − 20 kg = 1.330 kg</b>
-      <small>ganho de biomassa</small>
+      <b>FCA = 2.300 ÷ 1.682 = 1,37</b>
     </div>
 
-    <p><strong>Depois, a FCA:</strong></p>
+    <p>A FCA do ciclo foi, portanto, <strong>1,37</strong>. Se a despesca parcial
+      fosse ignorada, o valor calculado seria <strong>1,66</strong>, produzindo uma
+      avaliação equivocada do desempenho.</p>
+
+    <h2 id="biomassa">Estimativa da biomassa</h2>
+
+    <p>A confiabilidade da FCA depende diretamente da qualidade da estimativa de
+      biomassa. Em uma biometria, a biomassa pode ser estimada por:</p>
 
     <div class="formula">
-      <b>2.000 ÷ 1.330 = 1,50</b>
-      <small>1,50 kg de ração por quilo de ganho</small>
+      <b>B = (N × W) ÷ 1.000</b>
     </div>
 
-    <h2 id="biomassa">Como calcular a biomassa do viveiro</h2>
+    <ul class="legenda">
+      <li><code>B</code> — biomassa estimada, em quilogramas;</li>
+      <li><code>N</code> — número estimado de camarões vivos;</li>
+      <li><code>W</code> — peso médio individual, em gramas.</li>
+    </ul>
 
-    <p>Para a FCA sair certa, a biomassa precisa estar bem estimada:</p>
+    <p>O número de animais vivos pode ser estimado por:</p>
 
     <div class="formula">
-      <b>biomassa = camarões vivos × peso médio</b>
+      <b>N = N<sub>0</sub> × S</b>
+      <small>N<sub>0</sub> = quantidade povoada · S = sobrevivência estimada, em decimal</small>
     </div>
 
-    <p>Digamos 120.000 pós-larvas povoadas, com sobrevivência estimada em 75%. Isso
-      dá aproximadamente <strong>90.000 camarões vivos</strong>. Com peso médio de
-      15 gramas:</p>
+    <p>Se foram povoadas 120.000 pós-larvas, a sobrevivência estimada é de 78% e o
+      peso médio é de 14,5 g:</p>
 
     <div class="formula">
-      <b>90.000 × 15 g = 1.350.000 g = 1.350 kg</b>
+      <b>N = 120.000 × 0,78 = 93.600 camarões</b>
+    </div>
+
+    <div class="formula">
+      <b>B = (93.600 × 14,5) ÷ 1.000 = 1.357,2 kg</b>
     </div>
 
     <div class="caixa">
-      <p><b>O ponto fraco de toda essa conta:</b> qualquer erro na sobrevivência
-        estimada ou no peso médio altera a FCA junto.</p>
-      <p>Por isso biometria bem feita e registro confiável não são burocracia — são
-        a base do número.</p>
+      <p><b>O principal ponto de incerteza costuma ser a sobrevivência.</b> Uma
+        diferença de poucos pontos percentuais pode modificar substancialmente a
+        biomassa projetada, a taxa de arraçoamento e a FCA parcial.</p>
+      <p>Por essa razão, estimativas baseadas apenas na quantidade inicialmente
+        povoada tendem a <b>superestimar a população</b> após eventos de
+        mortalidade.</p>
     </div>
 
-    <h2 id="aparente">Por que se chama "aparente"</h2>
+    <p>As amostragens também precisam representar as diferentes regiões do viveiro.
+      Coletar animais somente próximos ao ponto de alimentação, à comporta ou ao
+      aerador pode introduzir viés, pois esses locais podem concentrar camarões
+      maiores ou mais ativos. O peso médio deve ser obtido com balança calibrada,
+      número adequado de indivíduos e amostras distribuídas espacialmente.</p>
 
-    <p>Na prática o que o produtor calcula é a Conversão Alimentar <strong>Aparente</strong>.
-      Aparente porque você sabe quanto <em>ofereceu</em>, mas não sabe exatamente
-      quanto foi <em>comido</em>.</p>
+    <h2 id="mortalidade">Influência da mortalidade</h2>
 
-    <p>Parte da ração pode ter sido levada pelo vento, acumulada nas margens,
-      dissolvida na água ou depositada no fundo. E, do outro lado, o camarão também
-      aproveita o alimento natural do viveiro: plâncton, pequenos organismos,
-      detritos, bioflocos.</p>
+    <p>A mortalidade exerce forte efeito sobre a conversão alimentar. Um camarão que
+      morre durante o cultivo pode ter consumido ração por várias semanas, porém sua
+      biomassa não será contabilizada na despesca. <strong>A ração permanece no
+      numerador, enquanto o animal deixa de contribuir para o denominador.</strong></p>
 
-    <div class="caixa">
-      <p><b>Por isso a FCA da fazenda mede o sistema inteiro</b> — manejo, água,
-        sanidade, alimento natural — <b>e não só a qualidade da ração</b>.</p>
-    </div>
+    <p>Esse efeito é particularmente severo em mortalidades tardias. Quanto mais
+      avançado estiver o cultivo, maior será a quantidade acumulada de alimento
+      consumido pelos animais perdidos.</p>
 
-    <h2 id="parciais">Como entram as despescas parciais</h2>
+    <p>Por esse motivo, uma FCA elevada não deve ser automaticamente atribuída à baixa
+      qualidade da ração ou ao excesso de arraçoamento. Ela pode ser consequência
+      de:</p>
 
-    <p>Quando há despesca parcial, <strong>toda a biomassa retirada tem que entrar
-      na conta</strong>:</p>
+    <ul>
+      <li>mortalidade crônica ou aguda;</li>
+      <li>baixa sobrevivência inicial;</li>
+      <li>enfermidades subclínicas;</li>
+      <li>predação;</li>
+      <li>fuga de animais;</li>
+      <li>erros na estimativa de povoamento;</li>
+      <li>falhas na quantificação da biomassa despescada.</li>
+    </ul>
+
+    <p>A interpretação correta exige que a FCA seja analisada junto à sobrevivência,
+      ao crescimento semanal, ao peso final, à produtividade e à duração do ciclo.</p>
+
+    <h2 id="parcial">FCA parcial durante o cultivo</h2>
+
+    <p>A FCA parcial pode ser utilizada para monitorar a eficiência entre duas
+      biometrias:</p>
 
     <div class="formula">
-      <b>FCA = ração acumulada ÷ [(biomassa final + parciais) − biomassa inicial]</b>
+      <b>FCA do período = R<sub>p</sub> ÷ [(B<sub>2</sub> + B<sub>dp</sub>) − B<sub>1</sub>]</b>
     </div>
 
-    <p>Se o produtor ignora o que já tirou, a FCA fica artificialmente alta — e ele
-      pode mudar o manejo por causa de um número que está errado, não porque o
-      cultivo piorou.</p>
+    <ul class="legenda">
+      <li><code>R<sub>p</sub></code> — ração fornecida entre as duas avaliações;</li>
+      <li><code>B<sub>1</sub></code> — biomassa estimada no início do período;</li>
+      <li><code>B<sub>2</sub></code> — biomassa estimada ao final;</li>
+      <li><code>B<sub>dp</sub></code> — biomassa retirada durante o intervalo.</li>
+    </ul>
 
-    <p>Para isso funcionar, cada despesca precisa de registro: <strong>data, peso
-      médio e quantidade retirada</strong>.</p>
+    <p>Esse cálculo permite identificar precocemente períodos de baixa eficiência.
+      Entretanto, a FCA parcial é <strong>extremamente sensível a erros de amostragem
+      e sobrevivência</strong>. Ela deve ser interpretada como tendência operacional,
+      e não como valor absoluto incontestável.</p>
+
+    <p>Uma redução aparentemente extraordinária da FCA pode ser apenas resultado de
+      biomassa superestimada. Da mesma maneira, uma elevação súbita pode decorrer de
+      amostragem com camarões menores ou de sobrevivência estimada abaixo da real.</p>
+
+    <h2 id="arracoamento">Relação entre taxa de arraçoamento e FCA</h2>
+
+    <p>A quantidade diária de ração costuma ser inicialmente calculada como percentual
+      da biomassa:</p>
+
+    <div class="formula">
+      <b>R<sub>d</sub> = B × TA</b>
+      <small>R<sub>d</sub> = ração diária · TA = taxa de arraçoamento, em decimal</small>
+    </div>
+
+    <p>Por exemplo, para uma biomassa de 1.200 kg e uma taxa de arraçoamento de 3%:</p>
+
+    <div class="formula">
+      <b>R<sub>d</sub> = 1.200 × 0,03 = 36 kg/dia</b>
+    </div>
+
+    <p>A taxa tabelada deve ser considerada um <strong>ponto de partida</strong>. A
+      quantidade efetivamente fornecida precisa ser ajustada conforme consumo
+      observado, peso médio, temperatura, oxigênio dissolvido, muda, produtividade
+      natural, condições meteorológicas, saúde intestinal e tendência de
+      crescimento.</p>
+
+    <p>O sobrearraçoamento aumenta diretamente o numerador da FCA e, simultaneamente,
+      pode reduzir o denominador ao deteriorar o ambiente. A ração não consumida
+      contribui para o acúmulo de matéria orgânica, eleva a demanda de oxigênio e
+      favorece a produção de metabólitos potencialmente tóxicos.</p>
+
+    <div class="caixa">
+      <p><b>O subarraçoamento também pode ser economicamente prejudicial.</b> Embora
+        reduza a quantidade de ração fornecida, pode diminuir o crescimento semanal,
+        ampliar a desuniformidade, prolongar o cultivo e elevar os custos com energia,
+        mão de obra e manutenção.</p>
+      <p>Portanto, <b>uma FCA baixa obtida à custa de restrição alimentar não
+        representa necessariamente maior rentabilidade</b>.</p>
+    </div>
 
     <div class="anuncio">espaço reservado para anúncio</div>
 
-    <h2 id="mortalidade">Como a mortalidade interfere</h2>
+    <h2 id="racao">Qualidade física e nutricional da ração</h2>
 
-    <p>A mortalidade é uma das principais causas de FCA alta, e o mecanismo é
-      direto: o camarão que morreu no meio do ciclo <strong>já consumiu ração por
-      dias ou semanas</strong>. Essa ração conta no total fornecido, mas o peso
-      daquele animal nunca aparece na despesca.</p>
-
-    <p>Mortalidade tardia é a pior de todas — o animal já comeu muito antes de
-      morrer.</p>
-
-    <p>Por isso, <strong>FCA ruim nem sempre é excesso de ração</strong>. Pode ser
-      baixa sobrevivência, doença, estresse, problema de água ou simplesmente erro
-      na estimativa de população.</p>
-
-    <h2 id="o-que-piora">O que faz a FCA subir</h2>
+    <p>A eficiência alimentar depende da formulação e das propriedades físicas do
+      alimento. Entre os aspectos relevantes estão:</p>
 
     <ul>
-      <li>Ração fornecida acima do consumo real</li>
-      <li>Estimativa incorreta da sobrevivência</li>
-      <li>Biometrias pouco representativas</li>
-      <li>Mortalidade durante o cultivo</li>
-      <li>Oxigênio dissolvido baixo</li>
-      <li>Temperatura inadequada</li>
-      <li>Desequilíbrio de pH, alcalinidade, dureza ou minerais</li>
-      <li>Amônia ou nitrito elevados</li>
-      <li>Ração com baixa estabilidade na água</li>
-      <li>Pellet fora do tamanho do animal</li>
-      <li>Armazenamento incorreto da ração</li>
-      <li>Doenças e problemas intestinais</li>
-      <li>Excesso de matéria orgânica no fundo</li>
-      <li>Má distribuição da ração no viveiro</li>
-      <li>Poucas refeições, com quantidades muito grandes</li>
-      <li>Competição excessiva entre os animais</li>
-      <li>Densidade acima da capacidade do sistema</li>
-      <li>Crescimento lento e ciclo muito prolongado</li>
+      <li>digestibilidade dos ingredientes;</li>
+      <li>equilíbrio entre proteína, energia, lipídios e carboidratos;</li>
+      <li>perfil e disponibilidade de aminoácidos;</li>
+      <li>atratividade e palatabilidade;</li>
+      <li>granulometria adequada ao tamanho do camarão;</li>
+      <li>estabilidade física do pellet;</li>
+      <li>resistência à lixiviação;</li>
+      <li>concentração de finos;</li>
+      <li>conservação durante transporte e armazenamento.</li>
     </ul>
 
-    <h2 id="como-diminuir">Como diminuir a FCA</h2>
+    <p><strong>O teor de proteína bruta, isoladamente, não define a qualidade da
+      ração.</strong> Uma dieta com maior proteína pode apresentar baixa eficiência se
+      os aminoácidos estiverem desequilibrados, se os ingredientes tiverem baixa
+      digestibilidade ou se houver deficiência energética. Nessa situação, parte da
+      proteína poderá ser utilizada como fonte de energia e excretada na forma de
+      compostos nitrogenados.</p>
 
-    <h3>Comece pela biomassa</h3>
-    <p>O primeiro passo é trabalhar com uma estimativa realista. A quantidade de
-      ração não pode sair só de tabela fixa. A tabela é referência — precisa ser
-      acompanhada pela observação do consumo.</p>
+    <p>Por outro lado, aumentar indiscriminadamente a densidade nutricional não
+      garante melhora da FCA. A formulação precisa ser compatível com a fase de
+      desenvolvimento, o consumo esperado e a capacidade digestiva dos animais.</p>
 
-    <p>Bandeja de alimentação ajuda a identificar sobra e mudança de apetite, mas
-      representa <strong>alguns pontos do viveiro</strong>, não o viveiro inteiro.
-      Não decida por ela sozinha. Olhe também o intestino do camarão, a atividade
-      alimentar, o comportamento nas margens e o que as biometrias mostram.</p>
+    <p>A estabilidade na água é particularmente importante para camarões, que
+      apresentam comportamento alimentar diferente de peixes de ingestão rápida.
+      Pellets que se desintegram precocemente podem perder nutrientes solúveis antes
+      da ingestão. Contudo, estabilidade excessiva também não compensa baixa
+      atratividade ou baixa digestibilidade.</p>
 
-    <h3>Distribua direito</h3>
-    <p>A ração precisa chegar em todo mundo. Quando a distribuição é irregular, uns
-      comem demais e outros ficam subalimentados — o lote fica desuniforme e a
-      conversão piora.</p>
+    <h2 id="frequencia">Frequência e distribuição da alimentação</h2>
 
-    <h3>Fracione as refeições</h3>
-    <p>O camarão come devagar. Se você joga muita ração de uma vez, parte perde
-      nutriente ou se desmancha antes de ser comida. Dividir o total diário em mais
-      refeições melhora o acesso e reduz o tempo que o alimento fica exposto na
-      água.</p>
+    <p>O fracionamento da ração pode aumentar a disponibilidade de alimento fresco,
+      reduzir a lixiviação e melhorar o acesso dos camarões. Estudos com
+      <em>L. vannamei</em> demonstram que a frequência alimentar pode influenciar
+      crescimento, sobrevivência e conversão, embora a resposta dependa do sistema, da
+      densidade, da formulação e do horário de fornecimento.</p>
 
-    <p>Estudos com <em>Litopenaeus vannamei</em> mostram que aumentar a frequência
-      alimentar pode melhorar crescimento, sobrevivência e conversão em determinadas
-      condições. Mas o número ideal de refeições depende da densidade, do tamanho
-      dos animais, da ração, da mão de obra disponível e do sistema.</p>
+    <p><strong>Não existe um número universal de refeições aplicável a todas as
+      fazendas.</strong> Em sistemas de baixa densidade e elevada produtividade
+      natural, a resposta ao aumento da frequência pode ser diferente daquela
+      observada em sistemas intensivos, com forte dependência de ração formulada.</p>
+
+    <p>Alimentadores automáticos permitem distribuir pequenas porções em intervalos
+      curtos. Para funcionarem adequadamente, precisam ser calibrados e posicionados
+      de acordo com profundidade, circulação da água, direção dos ventos, densidade
+      animal e áreas de maior atividade. <strong>Um equipamento desregulado pode
+      apenas fracionar o desperdício.</strong></p>
+
+    <p>Na distribuição manual, é necessário evitar a concentração excessiva da ração
+      em margens, áreas rasas ou regiões com fundo deteriorado. A distribuição deve
+      alcançar a maior parcela possível da população sem lançar alimento em zonas nas
+      quais ele tende a se acumular.</p>
+
+    <h2 id="bandejas">Bandejas e avaliação do trato digestivo</h2>
+
+    <p>As bandejas de alimentação são <strong>instrumentos de monitoramento, não uma
+      representação perfeita de todo o viveiro</strong>. O resultado pode ser
+      influenciado por posição, profundidade, densidade local, horário, acesso dos
+      animais e quantidade de ração colocada.</p>
+
+    <p>A ausência de sobras não comprova, isoladamente, que a quantidade ofertada está
+      correta. A ração pode ter sido consumida, fragmentada, carregada pela água ou
+      retirada da bandeja. A avaliação deve integrar:</p>
+
+    <ul>
+      <li>sobras nas bandejas;</li>
+      <li>grau de enchimento intestinal;</li>
+      <li>cor do conteúdo intestinal;</li>
+      <li>comportamento alimentar;</li>
+      <li>presença de camarões nas margens;</li>
+      <li>crescimento semanal;</li>
+      <li>uniformidade do lote;</li>
+      <li>qualidade da água;</li>
+      <li>tendência de consumo dos dias anteriores.</li>
+    </ul>
+
+    <p>Mudanças abruptas no consumo devem ser investigadas antes de se aumentar ou
+      reduzir fortemente a ração. Redução do apetite pode preceder sinais clínicos de
+      doença ou estar associada a baixo oxigênio, alterações de salinidade,
+      temperatura, muda ou deterioração do fundo.</p>
+
+    <h2 id="agua">Qualidade da água e balanço iônico</h2>
+
+    <p>A conversão alimentar é diretamente influenciada pelas condições ambientais. O
+      camarão somente utiliza eficientemente os nutrientes quando dispõe de condições
+      adequadas para respiração, osmorregulação, digestão, muda e síntese de
+      tecidos.</p>
+
+    <p>Baixo oxigênio dissolvido reduz atividade, ingestão e crescimento. Além disso,
+      limita a capacidade do sistema de oxidar a matéria orgânica proveniente da ração
+      e das excretas.</p>
+
+    <p>Amônia não ionizada e nitrito podem provocar estresse fisiológico, reduzir o
+      desempenho e aumentar a susceptibilidade a doenças. Oscilações intensas de pH e
+      fitoplâncton também interferem no consumo e na disponibilidade de oxigênio.</p>
+
+    <p>Em cultivos de <em>L. vannamei</em> em águas oligohalinas ou de baixa
+      salinidade, a concentração e a relação entre <strong>potássio, sódio, cálcio e
+      magnésio</strong> merecem atenção especial. Um desequilíbrio iônico aumenta o
+      custo energético da osmorregulação. Nesse cenário, parte da energia que poderia
+      ser destinada ao crescimento passa a ser utilizada na manutenção do equilíbrio
+      fisiológico, podendo comprometer consumo, muda, sobrevivência e conversão.</p>
 
     <div class="caixa">
-      <p><b>E não adianta enganar:</b> mais refeições não resolvem nada se a
-        quantidade total continuar acima do que o camarão come.</p>
+      <p><b>A correção mineral deve ser fundamentada em análise da água</b> e na
+        comparação com requisitos ou relações iônicas adequadas ao sistema.</p>
+      <p>A simples elevação da dureza total não garante que cálcio, magnésio e
+        potássio estejam <b>individualmente</b> equilibrados.</p>
     </div>
 
-    <h3>Cuide da água</h3>
-    <p>Com oxigênio baixo o camarão reduz atividade e consumo. E aqui tem uma
-      armadilha: <strong>bandeja vazia não significa que a ração virou
-      crescimento</strong> — parte pode ter se fragmentado, sido carregada, ou sido
-      comida já sem nutriente.</p>
+    <h2 id="fundo">Fundo do viveiro e carga orgânica</h2>
 
-    <p>O excesso de ração aumenta a matéria orgânica, cuja decomposição consome
-      oxigênio e eleva compostos tóxicos. Forma-se um ciclo: <strong>excesso de
-      ração piora a água → água ruim reduz o crescimento → menos crescimento
-      aumenta a FCA</strong>.</p>
+    <p>A FCA apresenta relação direta com o balanço de matéria orgânica. Quanto maior
+      a quantidade de ração fornecida sem correspondente produção de biomassa, maior
+      tende a ser a carga residual no sistema.</p>
 
-    <p>Aeração, renovação quando necessária, manejo de fundo e acompanhamento dos
-      parâmetros seguram esse ciclo.</p>
+    <p>A matéria orgânica acumulada aumenta a demanda bioquímica de oxigênio e pode
+      favorecer regiões reduzidas no sedimento. Dependendo das condições, podem
+      ocorrer produção de amônia, sulfeto de hidrogênio e outros metabólitos
+      prejudiciais.</p>
 
-    <h3>Qualidade e armazenamento da ração</h3>
-    <p>A ração precisa ter composição adequada, boa digestibilidade, atratividade e
-      estabilidade na água. E precisa ser guardada em lugar seco, ventilado,
-      protegido do sol, da umidade, de inseto e de roedor.</p>
+    <p>Uma circulação hidráulica eficiente ajuda a direcionar resíduos para áreas de
+      manejo. A posição e a potência dos aeradores devem considerar não somente o
+      fornecimento de oxigênio, mas também o padrão de movimentação da água.</p>
 
-    <p>Ração vencida, mofada, úmida ou com excesso de finos reduz o consumo e
-      prejudica a saúde. Saco não fica no chão nem encostado em parede úmida. E use
-      primeiro o lote que chegou primeiro.</p>
+    <p>O aumento da ração precisa ser acompanhado pela capacidade de suporte do
+      viveiro. <strong>Quando a carga alimentar supera a capacidade de assimilação do
+      sistema, a tendência é ocorrer deterioração ambiental, redução do crescimento e
+      aumento da FCA.</strong></p>
 
-    <h2 id="economica">FCA econômica: a conta que decide a compra</h2>
+    <div class="anuncio">espaço reservado para anúncio</div>
 
-    <p>Além da FCA zootécnica, acompanhe o <strong>custo da ração por quilo de
-      camarão produzido</strong>:</p>
+    <h2 id="diagnostico">Diagnóstico de uma FCA elevada</h2>
+
+    <p>A investigação deve seguir uma sequência técnica, evitando atribuir
+      imediatamente o problema à marca da ração.</p>
+
+    <div class="rolagem">
+      <table class="texto">
+        <thead>
+          <tr>
+            <th>Área avaliada</th>
+            <th>Perguntas para diagnóstico</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Registros</td><td>Toda a ração fornecida foi registrada? Houve perdas ou transferências não contabilizadas?</td></tr>
+          <tr><td>Biomassa</td><td>O peso médio é representativo? A sobrevivência foi superestimada?</td></tr>
+          <tr><td>Mortalidade</td><td>Houve mortalidade precoce, crônica ou tardia?</td></tr>
+          <tr><td>Consumo</td><td>Existem sobras, intestinos vazios ou alterações de apetite?</td></tr>
+          <tr><td>Distribuição</td><td>A ração chega uniformemente aos animais?</td></tr>
+          <tr><td>Água</td><td>Houve baixo oxigênio, amônia, nitrito ou grandes oscilações de pH?</td></tr>
+          <tr><td>Balanço iônico</td><td>Cálcio, magnésio e potássio estão adequados, especialmente em baixa salinidade?</td></tr>
+          <tr><td>Fundo</td><td>Existem áreas anóxicas, excesso de lodo ou odor de sulfeto?</td></tr>
+          <tr><td>Ração</td><td>O pellet apresenta granulometria, atratividade e estabilidade adequadas?</td></tr>
+          <tr><td>Sanidade</td><td>Existem sinais de doença, redução intestinal ou crescimento desuniforme?</td></tr>
+          <tr><td>Equipamentos</td><td>Alimentadores e balanças estão calibrados?</td></tr>
+          <tr><td>Predação e fuga</td><td>Há aves, peixes invasores, crustáceos competidores ou vazamentos?</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Somente após essa análise é possível definir se a intervenção deve ocorrer na
+      quantidade de ração, frequência, qualidade do alimento, aeração, correção
+      ambiental, sanidade ou estimativa populacional.</p>
+
+    <h2 id="custo">Custo alimentar por quilograma produzido</h2>
+
+    <p>A FCA deve ser convertida em indicador econômico. Quando se utiliza apenas uma
+      ração durante o período:</p>
 
     <div class="formula">
-      <b>custo alimentar por kg = FCA × preço do kg da ração</b>
+      <b>custo alimentar por kg = FCA × preço da ração por kg</b>
     </div>
 
-    <p>É aqui que a decisão muda. Compare:</p>
+    <p>Se a FCA for 1,45 e a ração custar R$ 5,20/kg:</p>
 
-    <div class="confronto">
-      <div class="opcao melhor">
-        <span class="rotulo">Ração A — mais cara</span>
-        <p class="conta">R$ 5,00/kg · FCA 1,50<br>1,50 × 5,00</p>
-        <p class="final">R$ 7,50</p>
-        <p class="conta">por quilo de camarão</p>
-      </div>
-      <div class="opcao">
-        <span class="rotulo">Ração B — mais barata</span>
-        <p class="conta">R$ 4,50/kg · FCA 1,90<br>1,90 × 4,50</p>
-        <p class="final">R$ 8,55</p>
-        <p class="conta">por quilo de camarão</p>
-      </div>
+    <div class="formula">
+      <b>1,45 × 5,20 = R$ 7,54/kg</b>
+      <small>custo direto de alimentação por quilograma de ganho líquido de biomassa</small>
     </div>
 
-    <p>A ração B é <strong>mais barata por saco e mais cara por quilo de camarão
-      produzido</strong>. Quem decide só pelo preço do saco perde R$ 1,05 em cada
-      quilo — e nem vê de onde saiu.</p>
+    <p>Quando são utilizadas rações com preços diferentes, o cálculo mais preciso é:</p>
 
-    <p>E a conta ainda não acabou: também entram crescimento, sobrevivência, tempo
-      de cultivo e qualidade final do camarão.</p>
-
-    <h2 id="boa">O que é uma FCA boa?</h2>
-
-    <p>Não existe um número único que sirva para toda fazenda. A FCA varia com a
-      espécie, o sistema, a densidade, a salinidade, o tamanho de abate, a
-      sobrevivência, a ração e o manejo.</p>
-
-    <p>Na aquicultura em geral aparecem resultados entre aproximadamente
-      <strong>1,2 e 2,2</strong>, conforme as condições. Em sistemas bem manejados
-      de camarão marinho, procura-se trabalhar na parte mais baixa dessa faixa.</p>
-
-    <div class="caixa">
-      <p><b>Comparar viveiros só pela FCA leva a conclusão errada.</b></p>
-      <p>Uma FCA de 1,20 com crescimento muito lento pode ser economicamente pior
-        que uma de 1,40 com crescimento rápido e boa sobrevivência.</p>
-      <p>O melhor resultado é o de <b>menor custo por quilo produzido</b>, sem
-        sacrificar a saúde dos animais nem a produtividade.</p>
+    <div class="formula">
+      <b>custo alimentar por kg = Σ(Q<sub>i</sub> × P<sub>i</sub>) ÷ ganho líquido de biomassa</b>
+      <small>Q<sub>i</sub> = quantidade utilizada de cada ração · P<sub>i</sub> = seu respectivo preço</small>
     </div>
 
-    <h2 id="registros">Os registros que você precisa ter</h2>
+    <p>Esse cálculo demonstra por que <strong>a ração de menor preço por saco nem
+      sempre é a alternativa mais econômica</strong>. Uma ração mais cara pode
+      apresentar menor custo por quilograma produzido se proporcionar melhor
+      digestibilidade, crescimento, sobrevivência e conversão.</p>
 
-    <p>Sem registro diário não há controle de FCA. O mínimo:</p>
+    <h2 id="adequada">Qual seria uma FCA adequada?</h2>
+
+    <p>Não é tecnicamente correto estabelecer um único valor ideal para todos os
+      cultivos. A FCA varia com densidade, peso de abate, produtividade natural,
+      qualidade da água, sobrevivência, genética, sistema de alimentação, formulação e
+      duração do ciclo.</p>
+
+    <p>Referências gerais de aquicultura relatam fatores de conversão frequentemente
+      situados entre <strong>1,2 e 2,2</strong>, dependendo da espécie e do sistema.
+      Esses valores não devem ser utilizados como meta universal para
+      <em>L. vannamei</em>.</p>
+
+    <p>A comparação mais útil é realizada <strong>entre viveiros da própria
+      fazenda</strong>, desde que apresentem condições semelhantes. Um sistema de
+      indicadores deve incluir, além da FCA:</p>
 
     <ul>
-      <li>Quantidade de ração fornecida</li>
-      <li>Tipo e lote da ração</li>
-      <li>Número de refeições e horários</li>
-      <li>Sobras observadas nas bandejas</li>
-      <li>Peso médio das biometrias e crescimento semanal</li>
-      <li>Mortalidades</li>
-      <li>Qualidade da água</li>
-      <li>Alterações de comportamento</li>
-      <li>Despescas parciais e biomassa retirada</li>
+      <li>ganho médio semanal;</li>
+      <li>sobrevivência;</li>
+      <li>peso médio final;</li>
+      <li>produtividade por hectare;</li>
+      <li>duração do ciclo;</li>
+      <li>consumo acumulado;</li>
+      <li>custo alimentar por quilograma;</li>
+      <li>custo operacional total;</li>
+      <li>margem obtida por hectare e por dia de cultivo.</li>
     </ul>
 
-    <p>É esse histórico que mostra <strong>em que momento a eficiência começou a
-      piorar</strong> — e permite comparar viveiros, ciclos, marcas de ração e
-      estratégias de alimentação.</p>
+    <div class="caixa">
+      <p><b>Uma FCA de 1,25 não representa necessariamente melhor resultado que uma
+        FCA de 1,40.</b></p>
+      <p>Se o primeiro cultivo apresentar restrição alimentar, baixo crescimento e
+        ciclo prolongado, seu resultado financeiro poderá ser inferior.</p>
+    </div>
 
-    <h3>FCA parcial: não espere a despesca</h3>
-    <p>Dá para calcular a FCA entre duas biometrias, usando a ração do período e o
-      ganho estimado no intervalo. Isso permite corrigir o arraçoamento
-      <strong>enquanto ainda dá tempo</strong>.</p>
+    <h2 id="estrategias">Estratégias técnicas para melhorar a FCA</h2>
 
-    <p>Só interprete com cuidado: um pequeno erro na sobrevivência estimada provoca
-      uma diferença grande na FCA parcial. Acompanhe junto com crescimento semanal,
-      consumo, sobrevivência e condições ambientais.</p>
+    <p>A redução consistente da FCA depende de ações integradas:</p>
 
-    <h2>Em resumo</h2>
+    <ol>
+      <li>Estimar a biomassa com amostragens representativas e sobrevivência realista.</li>
+      <li>Registrar diariamente a ração efetivamente distribuída.</li>
+      <li>Calibrar balanças e alimentadores automáticos.</li>
+      <li>Utilizar tabelas de arraçoamento apenas como referência inicial.</li>
+      <li>Ajustar a oferta conforme consumo, intestino, biometria e ambiente.</li>
+      <li>Fracionar a alimentação de acordo com o sistema e a capacidade operacional.</li>
+      <li>Distribuir a ração nas áreas ocupadas pelos camarões.</li>
+      <li>Evitar alimentação sobre regiões deterioradas do fundo.</li>
+      <li>Monitorar oxigênio nos horários mais críticos e após maiores refeições.</li>
+      <li>Relacionar o aumento da ração à capacidade de aeração e assimilação do viveiro.</li>
+      <li>Reduzir preventivamente o fornecimento diante de queda comprovada do consumo.</li>
+      <li>Investigar alterações de apetite antes de retomar aumentos na ração.</li>
+      <li>Avaliar granulometria, finos, estabilidade e condições de armazenamento.</li>
+      <li>Controlar predadores, competidores e possíveis fugas.</li>
+      <li>Investigar rapidamente mortalidades e alterações de crescimento.</li>
+      <li>Acompanhar FCA parcial como tendência, considerando sua margem de erro.</li>
+      <li>Comparar desempenho econômico, e não apenas o preço da ração.</li>
+      <li>Encerrar o ciclo quando o ganho adicional deixar de compensar os custos marginais.</li>
+    </ol>
 
-    <p>A FCA mostra quantos quilos de ração foram usados para produzir um quilo de
-      ganho. Mas o resultado <strong>não depende só da ração</strong>: sobrevivência,
-      água, sanidade, manejo alimentar, densidade, crescimento e precisão dos
-      registros entram todos no número.</p>
+    <h2 id="final">Considerações finais</h2>
 
-    <p>Para reduzir a FCA não basta cortar ração. É fornecer a quantidade certa, na
-      hora certa, bem distribuída — e manter as condições do viveiro.</p>
+    <p>O fator de conversão alimentar aparente é um indicador central para o controle
+      técnico e econômico da carcinicultura. Entretanto, seu valor não pode ser
+      analisado isoladamente nem atribuído exclusivamente à qualidade da ração.</p>
 
-    <p>Mais importante que perseguir o menor número possível é buscar uma
-      <strong>conversão eficiente, com crescimento rápido, boa sobrevivência e lucro
-      no fim do ciclo</strong>.</p>
+    <p>A FCA é determinada pela interação entre alimento, biomassa, sobrevivência,
+      qualidade da água, equilíbrio iônico, fundo do viveiro, sanidade, frequência
+      alimentar, distribuição da ração e precisão dos registros.</p>
+
+    <p>Reduzi-la não significa simplesmente diminuir a quantidade fornecida. O objetivo
+      tecnicamente correto é <strong>maximizar a fração da ração convertida em
+      biomassa comercial</strong>, mantendo crescimento, sobrevivência, produtividade
+      e duração de ciclo economicamente adequados.</p>
+
+    <p>Uma boa conversão alimentar é consequência de um sistema equilibrado. Quando a
+      alimentação é ajustada à biomassa real e à capacidade ambiental do viveiro, o
+      produtor reduz desperdícios, controla a carga orgânica, melhora a
+      previsibilidade do cultivo e diminui o custo por quilograma de camarão
+      produzido.</p>
+
+    <p>Nada disso se sustenta sem registro. Ração distribuída por dia, biometrias com
+      data e peso médio, despescas parciais com quantidade retirada e mortalidade
+      observada — é desse histórico que a FCA sai. É também por isso que
+      <a href="/app/login.html">manter o registro do cultivo em sistema</a> deixa de
+      ser burocracia e passa a ser a base do indicador.</p>
+
+    <h2 id="referencias">Referências técnicas</h2>
+
+    <div class="fontes">
+      <ul>
+        <li>BOYD, C. E. <em>A low feed conversion ratio is the primary indicator of
+          efficient aquaculture.</em> Responsible Seafood Advocate, 2021.</li>
+        <li>CARVALHO, E. A.; NUNES, A. J. P. <em>Effects of feeding frequency on feed
+          leaching loss and grow-out patterns of the white shrimp Litopenaeus vannamei
+          fed under a diurnal feeding regime in pond enclosures.</em> Aquaculture,
+          v. 252, p. 494–502, 2006.</li>
+        <li>FAO. <em>On-farm feeding and feed management in aquaculture.</em> FAO
+          Fisheries and Aquaculture Technical Paper. Rome: Food and Agriculture
+          Organization of the United Nations.</li>
+        <li>FAO. <em>Cultured Aquatic Species Information Programme: Penaeus
+          vannamei.</em> Food and Agriculture Organization of the United Nations.</li>
+        <li>NUNES, A. J. P. et al. <em>Effect of multiple feedings and a low-fishmeal,
+          amino acid-supplemented diet on the growth performance of juvenile
+          Litopenaeus vannamei.</em> Aquaculture International, v. 27, p. 337–347,
+          2019.</li>
+        <li>XU, W. et al. <em>Effects of feeding frequency on growth, feed utilization,
+          digestive enzyme activity and body composition of Litopenaeus vannamei in
+          biofloc-based zero-exchange intensive systems.</em> Aquaculture, v. 522,
+          735079, 2020.</li>
+      </ul>
+    </div>
 
     <div class="chamada">
       <h3>O WA Aqua faz essa conta sozinho</h3>
-      <p>A cada biometria e a cada lançamento de ração, o sistema atualiza a FCA já
-        somando as despescas parciais — junto com biomassa, sobrevivência e custo por
-        quilo de cada viveiro. Você vê a curva subindo enquanto ainda dá para mexer
-        no arraçoamento.</p>
-      <a href="/app/login.html">Conhecer o sistema</a>
-    </div>
-
-    <div class="fontes">
-      <strong>Fontes para consulta</strong>
-      <ul>
-        <li>Global Seafood Alliance — <em>A low feed conversion ratio is the primary indicator of efficient aquaculture</em></li>
-        <li>Global Seafood Alliance — <em>Feed tray management lowers FCRs</em></li>
-        <li>Global Seafood Alliance — <em>Effect of multiple feedings on white shrimp</em></li>
-      </ul>
+      <p>A cada biometria e a cada lançamento de ração, o sistema atualiza a biomassa,
+         a FCA e o custo por quilograma — já descontando a biomassa inicial e somando
+         as despescas parciais, que é justamente onde o cálculo manual mais erra.</p>
+      <a href="/app/login.html">Acessar o sistema</a>
     </div>
 
   </article>
@@ -433,7 +665,8 @@
     <span>
       <a href="/">Início</a> ·
       <a href="/blog/">Blog</a> ·
-      <a href="/privacidade.html">Privacidade</a>
+      <a href="/privacidade.html">Privacidade</a> ·
+      <a href="https://wa.me/5588992498067" rel="noopener">WhatsApp</a>
     </span>
   </div>
 </footer>
@@ -444,8 +677,8 @@
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "FCA na criação de camarão: o que é, como calcular e como melhorar",
-  "description": "Quantos quilos de ração para produzir um quilo de camarão: a fórmula certa com ganho de biomassa, o exemplo prático, o que faz a FCA subir e por que ração barata pode sair mais cara.",
+  "headline": "Fator de conversão alimentar no cultivo de camarão: cálculo, interpretação e estratégias de otimização",
+  "description": "Cálculo da FCA aparente, correção com despescas parciais, estimativa de biomassa, diagnóstico de conversão elevada e custo alimentar por quilograma produzido.",
   "datePublished": "2026-08-26",
   "dateModified": "2026-08-27",
   "inLanguage": "pt-BR",
@@ -455,7 +688,13 @@
     "name": "WA Aqua Gestão",
     "logo": { "@type": "ImageObject", "url": "https://waaqua.com.br/favicon-96.png" }
   },
-  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://waaqua.com.br/blog/como-calcular-fca-camarao.html" }
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://waaqua.com.br/blog/como-calcular-fca-camarao.html" },
+  "image": "https://waaqua.com.br/assets/curva-crescimento.png",
+  "about": [
+    { "@type": "Thing", "name": "Fator de conversão alimentar" },
+    { "@type": "Thing", "name": "Carcinicultura" },
+    { "@type": "Thing", "name": "Litopenaeus vannamei" }
+  ]
 }
 </script>
 
