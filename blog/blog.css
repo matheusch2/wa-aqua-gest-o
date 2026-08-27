@@ -192,7 +192,68 @@ td:last-child, th:last-child { text-align: right; }
   text-decoration: none;
 }
 
+/* ─── SUMÁRIO ───────────────────────────────────────────────────────────── */
+
+/* Artigo longo no celular sem sumário é rolagem cega. Com ele, quem já sabe
+   o básico pula direto para a parte que veio buscar. */
+.sumario {
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 26px 0 34px;
+}
+
+.sumario strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--calma);
+  margin-bottom: 10px;
+}
+
+.sumario ol { margin: 0; padding-left: 20px; }
+.sumario li { margin: 5px 0; font-size: 15.5px; }
+
+/* ─── DESTAQUE DE COMPARAÇÃO ────────────────────────────────────────────── */
+
+/* Para a conta que muda decisão de compra: duas rações lado a lado. */
+.confronto { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 26px 0; }
+
+@media (min-width: 620px) { .confronto { grid-template-columns: 1fr 1fr; } }
+
+.opcao {
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--papel);
+}
+
+.opcao.melhor { border-color: var(--verde); border-width: 2px; }
+.opcao .rotulo { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--calma); }
+.opcao.melhor .rotulo { color: var(--verde); }
+.opcao .conta { font-size: 14.5px; color: var(--calma); margin: 8px 0; }
+.opcao .final { font-size: 24px; font-weight: 800; color: var(--tinta); }
+.opcao.melhor .final { color: var(--verde-esc); }
+
+/* ─── FONTES ────────────────────────────────────────────────────────────── */
+
+.fontes {
+  margin-top: 44px;
+  padding-top: 22px;
+  border-top: 1px solid var(--linha);
+  font-size: 14.5px;
+  color: var(--calma);
+}
+
+.fontes strong { display: block; margin-bottom: 8px; color: var(--tinta); font-size: 15px; }
+.fontes ul { margin: 0; padding-left: 20px; }
+.fontes li { margin: 5px 0; }
+
 /* ─── LISTA DE ARTIGOS ──────────────────────────────────────────────────── */
+
 
 .lista-topo { margin-bottom: 28px; }
 .lista-topo h1 { margin-bottom: 8px; }
