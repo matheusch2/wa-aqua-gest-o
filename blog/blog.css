@@ -50,10 +50,38 @@ a { color: var(--verde); }
   padding: 12px 0;
 }
 
-.marca { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; }
-.marca img { width: 44px; height: 44px; border-radius: 9px; }
-.marca strong { display: block; font-size: 15px; font-weight: 800; letter-spacing: .02em; }
+.marca { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; min-width: 0; }
+.marca img { width: 44px; height: 44px; border-radius: 9px; flex-shrink: 0; }
+.marca > span { min-width: 0; }
+
+/* nowrap para o nome nunca quebrar em duas linhas, e ellipsis como rede de
+   segurança: se um dia faltar espaço, o nome corta com "…" em vez de passar
+   por baixo do botão. */
+.marca strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .marca span { display: block; font-size: 11.5px; opacity: .85; }
+
+/* No celular não cabe logo + nome + frase + "Acessar o sistema" na mesma
+   linha. Some a frase e o botão encurta para "Acessar" — o que a pessoa
+   precisa entender é para onde o botão leva, e o verde já diz que é o topo
+   do WA Aqua. */
+@media (max-width: 560px) {
+  /* ".topo .so-largo" e nao ".so-largo": a regra ".marca span" mais acima tem
+     uma classe + um elemento, e isso ganha de uma classe sozinha. Sem os dois
+     nomes aqui, a frase continuava aparecendo. */
+  .topo .so-largo { display: none; }
+  .topo-btn { padding: 9px 15px; font-size: 13.5px; }
+  .marca img { width: 38px; height: 38px; }
+  .marca strong { font-size: 14px; }
+}
 
 .topo-btn {
   background: #fff;
@@ -87,6 +115,17 @@ h1 {
   font-weight: 800;
   margin: 0 0 12px;
   text-wrap: balance;
+}
+
+/* O "balance" tenta deixar todas as linhas do mesmo tamanho. No notebook fica
+   bonito; na tela do celular ele partia o título em "o que / é,", separando
+   palavras que se leem juntas. Aí é melhor deixar quebrar sozinho.
+   Esta media query fica DEPOIS do h1 de propósito: as duas regras têm o mesmo
+   peso, então quem vem por último é que vale.
+   E é "wrap", não "normal": os valores aceitos aqui são wrap, nowrap, balance,
+   pretty e stable. "normal" o navegador joga fora sem avisar. */
+@media (max-width: 560px) {
+  h1 { text-wrap: wrap; }
 }
 
 .assinatura {
