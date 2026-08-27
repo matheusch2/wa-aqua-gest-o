@@ -1,0 +1,241 @@
+/* Blog do WA Aqua — Copyright © 2026 Matheus.
+
+   Folha própria, separada da landing de propósito: o blog vai crescer e mudar
+   num ritmo diferente da página de vendas, e não pode arrastar a página que
+   vende junto a cada ajuste de texto.
+
+   A cor é a mesma do produto, para quem chega por um artigo já reconhecer a
+   marca quando cair no sistema. */
+
+:root {
+  --verde: #066b63;
+  --verde-esc: #044f49;
+  --verde-cl: #e6f2f0;
+  --tinta: #12262a;
+  --calma: #5c6f74;
+  --papel: #ffffff;
+  --fundo: #f6f9f8;
+  --linha: #e2ebe9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--tinta);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.7;
+  font-size: 17px;
+}
+
+img { max-width: 100%; display: block; }
+a { color: var(--verde); }
+
+/* ─── TOPO ──────────────────────────────────────────────────────────────── */
+
+.topo {
+  background: linear-gradient(100deg, var(--verde-esc), #087a70);
+  color: #fff;
+}
+
+.topo-dentro {
+  width: min(880px, calc(100% - 40px));
+  margin-inline: auto;
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.marca { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; }
+.marca img { width: 44px; height: 44px; border-radius: 9px; }
+.marca strong { display: block; font-size: 15px; font-weight: 800; letter-spacing: .02em; }
+.marca span { display: block; font-size: 11.5px; opacity: .85; }
+
+.topo-btn {
+  background: #fff;
+  color: var(--verde-esc);
+  border-radius: 9px;
+  padding: 10px 17px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── ESTRUTURA ─────────────────────────────────────────────────────────── */
+
+.folha { width: min(880px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 60px; }
+
+/* O texto do artigo é mais estreito que a página: linha comprida demais faz o
+   olho perder onde estava ao voltar para a esquerda. */
+/* 68ch e nao pixels: "ch" e a largura de um caractere na fonte usada, entao a
+   medida acompanha o tamanho do texto em vez de depender de uma conta minha. */
+.artigo { width: min(62ch, 100%); margin-inline: auto; }
+
+.migalha { font-size: 13.5px; color: var(--calma); margin-bottom: 18px; }
+.migalha a { color: var(--calma); }
+
+h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  font-weight: 800;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+
+.assinatura {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 13.5px;
+  color: var(--calma);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--linha);
+}
+
+.artigo h2 {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 800;
+  margin: 40px 0 10px;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.artigo h3 { font-size: 18.5px; font-weight: 700; margin: 28px 0 6px; }
+.artigo p { margin: 16px 0; }
+.artigo ul, .artigo ol { margin: 16px 0; padding-left: 24px; }
+.artigo li { margin: 8px 0; }
+.artigo strong { font-weight: 700; }
+
+/* A fórmula em destaque: é o que a pessoa veio buscar. */
+.formula {
+  background: var(--verde-cl);
+  border: 1px solid #cfe4e0;
+  border-radius: 14px;
+  padding: 22px 20px;
+  margin: 26px 0;
+  text-align: center;
+}
+
+.formula b { display: block; font-size: clamp(17px, 3.4vw, 22px); font-weight: 800; color: var(--verde-esc); }
+.formula small { display: block; margin-top: 8px; font-size: 13px; color: var(--calma); }
+
+.caixa {
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-left: 4px solid var(--verde);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 26px 0;
+}
+
+.caixa p { margin: 8px 0; font-size: 15.5px; }
+.caixa p:first-child { margin-top: 0; }
+.caixa p:last-child { margin-bottom: 0; }
+.caixa b { color: var(--verde-esc); }
+
+.rolagem { overflow-x: auto; margin: 24px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 420px; background: var(--papel); }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--linha); }
+th { background: var(--verde); color: #fff; font-weight: 700; font-size: 13.5px; }
+td:last-child, th:last-child { text-align: right; }
+
+/* ─── ESPAÇO DO ANÚNCIO ─────────────────────────────────────────────────── */
+
+/* Fica ENTRE seções, nunca no meio de um raciocínio. Anúncio cortando
+   explicação faz a pessoa fechar a página, e aí não rende nem leitura nem
+   clique. A altura mínima evita o texto "pular" quando o anúncio carrega. */
+.anuncio {
+  margin: 34px 0;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4f3;
+  border: 1px dashed #d3ddda;
+  border-radius: 12px;
+  color: #9fb0ac;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* ─── CHAMADA PARA O SISTEMA ────────────────────────────────────────────── */
+
+.chamada {
+  background: linear-gradient(105deg, var(--verde-esc), #0a8578);
+  color: #fff;
+  border-radius: 16px;
+  padding: 26px 24px;
+  margin: 40px 0 0;
+}
+
+.chamada h3 { margin: 0 0 8px; font-size: 21px; font-weight: 800; color: #fff; }
+.chamada p { margin: 0 0 18px; font-size: 15.5px; opacity: .92; }
+
+.chamada a {
+  display: inline-block;
+  background: #fff;
+  color: var(--verde-esc);
+  border-radius: 10px;
+  padding: 13px 22px;
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+/* ─── LISTA DE ARTIGOS ──────────────────────────────────────────────────── */
+
+.lista-topo { margin-bottom: 28px; }
+.lista-topo h1 { margin-bottom: 8px; }
+.lista-topo p { color: var(--calma); margin: 0; font-size: 16.5px; }
+
+.artigos { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+.cartao {
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  padding: 20px 21px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.cartao:hover { border-color: #bcd6d1; }
+.cartao .etiqueta { font-size: 11.5px; font-weight: 800; color: var(--verde); letter-spacing: .05em; text-transform: uppercase; }
+.cartao h2 { margin: 7px 0 6px; font-size: 20px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
+.cartao p { margin: 0; color: var(--calma); font-size: 15px; }
+.cartao .quando { display: block; margin-top: 10px; font-size: 13px; color: #93a4a0; }
+
+@media (min-width: 720px) {
+  .artigos { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── RODAPÉ ────────────────────────────────────────────────────────────── */
+
+.rodape {
+  background: #043e3a;
+  color: rgba(255,255,255,.8);
+  font-size: 13.5px;
+}
+
+.rodape-dentro {
+  width: min(880px, calc(100% - 40px));
+  margin-inline: auto;
+  padding: 22px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  justify-content: space-between;
+}
+
+.rodape a { color: rgba(255,255,255,.85); }

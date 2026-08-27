@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!--
+  WA Aqua Gestão — Blog. Copyright © 2026 Matheus.
+
+  MODELO DE ARTIGO. Para publicar um novo, copie este arquivo, troque o
+  conteúdo e some uma entrada em /blog/index.html e em /sitemap.xml.
+
+  O que NÃO pode faltar em cada artigo:
+   - <title> e a description: é o que aparece no Google;
+   - o canonical, apontando para o endereço final;
+   - o bloco application/ld+json lá embaixo, que diz ao Google que isto é um
+     artigo, de quem, e de quando — é o que rende o resultado com data;
+   - a chamada para o sistema no fim: é ela que transforma leitura em cliente.
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Como calcular o FCA do camarão (e o que fazer quando está alto)</title>
+  <meta name="description" content="Quantos quilos de ração para produzir um quilo de camarão: a fórmula, o erro que infla o número depois da despesca parcial e o que fazer.">
+  <link rel="canonical" href="https://waaqua.com.br/blog/como-calcular-fca-camarao.html">
+
+  <meta name="theme-color" content="#066b63">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" href="/favicon-96.png?v=20260826" sizes="96x96">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260713">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="WA Aqua Gestão">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="Como calcular o FCA do camarão (e o que fazer quando está alto)">
+  <meta property="og:description" content="A fórmula, o erro que infla o número depois da despesca parcial, e o que fazer quando o FCA sobe.">
+  <meta property="og:url" content="https://waaqua.com.br/blog/como-calcular-fca-camarao.html">
+  <meta property="og:image" content="https://waaqua.com.br/assets/curva-crescimento.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="blog.css?v=1">
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-dentro">
+    <a class="marca" href="/">
+      <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua Gestão">
+      <span>
+        <strong>WA AQUA GESTÃO</strong>
+        <span>Gestão inteligente do seu cultivo</span>
+      </span>
+    </a>
+    <a class="topo-btn" href="/app/login.html">Acessar o sistema</a>
+  </div>
+</header>
+
+<main class="folha">
+  <article class="artigo">
+
+    <p class="migalha"><a href="/">Início</a> › <a href="/blog/">Blog</a> › FCA</p>
+
+    <h1>Como calcular o FCA do camarão (e o que fazer quando está alto)</h1>
+
+    <p class="assinatura">
+      <span>26 de agosto de 2026</span>
+      <span>·</span>
+      <span>Leitura de 6 minutos</span>
+    </p>
+
+    <p>O FCA é o número que mais rápido te diz se o ciclo está indo bem ou mal. Ele
+      responde uma pergunta só: <strong>quantos quilos de ração você gastou para
+      produzir um quilo de camarão?</strong></p>
+
+    <p>Como a ração costuma ser o maior custo do cultivo, cada décimo de FCA a mais
+      é dinheiro saindo. E o pior: sai devagar, todo dia, sem ninguém perceber — até
+      a despesca mostrar a conta.</p>
+
+    <h2>A fórmula</h2>
+
+    <div class="formula">
+      <b>FCA = ração consumida ÷ camarão produzido</b>
+      <small>os dois em quilos, no mesmo período</small>
+    </div>
+
+    <p>Um exemplo: o viveiro consumiu <strong>4.200 kg de ração</strong> e produziu
+      <strong>3.000 kg de camarão</strong>.</p>
+
+    <div class="formula">
+      <b>4.200 ÷ 3.000 = 1,40</b>
+      <small>gastou 1,4 kg de ração por quilo de camarão</small>
+    </div>
+
+    <p><strong>Quanto menor, melhor.</strong> Em cultivo de vannamei, o FCA costuma
+      ficar entre 1,2 e 1,8, dependendo da densidade, do manejo e da qualidade da
+      ração. Acima de 2,0 tem alguma coisa acontecendo que vale investigar.</p>
+
+    <!-- ══ ANÚNCIO ══ Cole aqui o código do AdSense quando a conta for aprovada.
+         Está entre seções, nunca no meio de uma explicação. -->
+    <div class="anuncio">espaço reservado para anúncio</div>
+
+    <h2>O erro que faz o FCA parecer pior do que é</h2>
+
+    <p>Este é o que mais confunde, e quase ninguém avisa.</p>
+
+    <p>Quando você faz uma <strong>despesca parcial</strong>, tira camarão do viveiro
+      mas a ração já consumida continua contando. Se você dividir a ração total pelo
+      que <em>sobrou</em> no viveiro, o FCA dispara — e não é porque o cultivo piorou.</p>
+
+    <div class="caixa">
+      <p><b>O jeito certo:</b> o camarão produzido é o que está no viveiro <b>mais</b>
+        o que já foi despescado.</p>
+      <p>Se ficaram 2.000 kg e você já tirou 1.000 kg numa parcial, o produzido é
+        3.000 kg — não 2.000.</p>
+    </div>
+
+    <p>Veja a diferença nos mesmos 4.200 kg de ração:</p>
+
+    <div class="rolagem">
+      <table>
+        <thead>
+          <tr><th>Conta</th><th>Produzido</th><th>FCA</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Só o que sobrou no viveiro</td><td>2.000 kg</td><td>2,10</td></tr>
+          <tr><td>Somando a despesca parcial</td><td>3.000 kg</td><td><strong>1,40</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O mesmo viveiro, no mesmo dia, parecendo desastre num jeito e normal no outro.
+      Já vi produtor mudar manejo por causa disso.</p>
+
+    <h2>Por que o FCA sobe</h2>
+
+    <h3>1. Sobra de ração</h3>
+    <p>É a causa mais comum. Ração que não foi comida vira matéria orgânica no fundo,
+      piora a água e conta no numerador da conta. Bandeja de alimentação bem lida
+      resolve boa parte disso.</p>
+
+    <h3>2. Mortalidade que ninguém viu</h3>
+    <p>Se morreu camarão e você continua arraçoando pela população inicial, está
+      alimentando bicho que não existe. O FCA sobe porque o denominador encolheu sem
+      aviso. É por isso que estimar a sobrevivência importa tanto.</p>
+
+    <h3>3. Água ruim</h3>
+    <p>Oxigênio baixo, amônia alta, temperatura fora da faixa — camarão estressado
+      come e não converte. A ração entra na conta e não vira carne.</p>
+
+    <h3>4. A ração em si</h3>
+    <p>Ração velha, guardada em lugar úmido ou de granulometria errada para o tamanho
+      do animal rende menos. Vale conferir a data e como está armazenada antes de
+      culpar o manejo.</p>
+
+    <div class="anuncio">espaço reservado para anúncio</div>
+
+    <h2>Acompanhe durante o ciclo, não no fim</h2>
+
+    <p>FCA calculado só na despesca serve para o relatório, não para a decisão. Quando
+      o número aparece, o dinheiro já foi.</p>
+
+    <p>O que funciona é acompanhar a cada biometria: com o peso médio atualizado e a
+      ração acumulada, dá para ver a curva subindo <em>enquanto</em> ainda dá para
+      mexer no arraçoamento.</p>
+
+    <div class="caixa">
+      <p><b>Uma conta que vale mais que o FCA sozinho:</b> o custo por quilo produzido.
+        O FCA fala de ração; o custo por quilo fala de tudo — ração, insumos,
+        pós-larva, energia, mão de obra.</p>
+      <p>Dois viveiros com o mesmo FCA podem ter lucros bem diferentes.</p>
+    </div>
+
+    <div class="chamada">
+      <h3>O WA Aqua calcula isso sozinho</h3>
+      <p>A cada biometria e a cada lançamento de ração, o sistema atualiza o FCA já
+        somando a despesca parcial — junto com biomassa, sobrevivência e custo por
+        quilo de cada viveiro.</p>
+      <a href="/app/login.html">Conhecer o sistema</a>
+    </div>
+
+  </article>
+</main>
+
+<footer class="rodape">
+  <div class="rodape-dentro">
+    <span>© 2026 WA Aqua Gestão</span>
+    <span>
+      <a href="/">Início</a> ·
+      <a href="/blog/">Blog</a> ·
+      <a href="/privacidade.html">Privacidade</a>
+    </span>
+  </div>
+</footer>
+
+<!-- Diz ao Google que isto é um artigo, de quem e de quando. É o que faz o
+     resultado da busca vir com data e autor em vez de um link seco. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Como calcular o FCA do camarão (e o que fazer quando está alto)",
+  "description": "FCA é quantos quilos de ração você gastou para produzir um quilo de camarão. A fórmula, o erro que infla o número depois da despesca parcial e o que fazer quando ele sobe.",
+  "datePublished": "2026-08-26",
+  "dateModified": "2026-08-26",
+  "inLanguage": "pt-BR",
+  "author": { "@type": "Organization", "name": "WA Aqua Gestão", "url": "https://waaqua.com.br/" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WA Aqua Gestão",
+    "logo": { "@type": "ImageObject", "url": "https://waaqua.com.br/favicon-96.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://waaqua.com.br/blog/como-calcular-fca-camarao.html" }
+}
+</script>
+
+</body>
+</html>
