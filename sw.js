@@ -43,6 +43,8 @@ const ESSENCIAIS = [
   "/logo-wa.jpg",
   // Comuns
   "/icon-192.png",
+  "/favicon.ico",
+  "/favicon-96.png",
   "/icon-512.png",
   "/apple-touch-icon.png",
   "/privacidade.html",
@@ -83,6 +85,9 @@ function podeCuidar(req) {
   // existe mais — melhor deixar passar direto, sempre.
   if (/^\/google[0-9a-f]+\.html$/.test(url.pathname)) return false;
   if (url.pathname.startsWith("/.well-known/")) return false;
+  // Mesma coisa para o que o Google lê para montar o resultado da busca.
+  if (url.pathname === "/robots.txt" || url.pathname === "/sitemap.xml") return false;
+  if (url.pathname === "/favicon.ico") return false;
   return true;
 }
 

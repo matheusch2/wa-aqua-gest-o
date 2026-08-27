@@ -1,0 +1,18 @@
+# WA Aqua Gestão — o que o Google pode olhar.
+#
+# A raiz é a página de vendas: é ela que tem que aparecer na busca.
+# O /app é a área de trabalho de quem já é cliente. Enquanto ele era
+# indexado, a descrição do site no Google virava o miolo da tela de login
+# ("Bem-vindo! E-mail. Senha."), que não vende nada a ninguém.
+
+User-agent: *
+Allow: /
+
+# Área de trabalho: quem chega aqui já é cliente e veio pelo atalho.
+Disallow: /app/
+# Painel administrativo.
+Disallow: /ch2/
+# Ponte para os atalhos antigos — redireciona, não tem conteúdo.
+Disallow: /login.html
+
+Sitemap: https://waaqua.com.br/sitemap.xml

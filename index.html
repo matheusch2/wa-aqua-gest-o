@@ -3,10 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="WA Aqua Gestão — gestão inteligente para fazendas de camarão." />
-  <title>WA Aqua Gestão</title>
+  <!-- Este texto é o que aparece EMBAIXO do link no Google. Antes o Google
+       mostrava o miolo da tela de login ("Bem-vindo! E-mail. Senha.") porque
+       era a única página que ele conhecia. -->
+  <meta name="description" content="Sistema de gestão para fazendas de camarão: viveiros, ração, biometrias e custos num só lugar. Saiba o lucro do ciclo antes da despesca." />
+  <title>WA Aqua Gestão — controle da sua fazenda de camarão</title>
   <meta name="theme-color" content="#066b63" />
-  <link rel="icon" type="image/png" href="/icon-512.png?v=20260713" />
+
+  <!-- REGRA DO GOOGLE PARA O ÍCONE AO LADO DO LINK: precisa ser QUADRADO e com
+       o lado múltiplo de 48 (48, 96, 144, 192...). O icon-512 não servia — 512
+       não é múltiplo de 48 — e por isso aparecia o globo cinza genérico.
+       O /favicon.ico na raiz é onde o Google procura primeiro, mesmo sem tag. -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/png" href="/favicon-96.png?v=20260826" sizes="96x96" />
+  <link rel="icon" type="image/png" href="/icon-192.png?v=20260826" sizes="192x192" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260713" />
 
   <!-- Cartão de compartilhamento. Sem isto, mandar o link no WhatsApp mostra
