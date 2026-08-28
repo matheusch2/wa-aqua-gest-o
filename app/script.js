@@ -575,7 +575,7 @@ const _FAQ = [
   { q: "Como alterar o peso-alvo?", a: "Na tela de projeção de crescimento, utilize os botões + e − para definir o peso desejado para a despesca. Todas as previsões serão recalculadas automaticamente com base no novo peso-alvo." },
   { q: "Como renovar minha assinatura?", a: "Acesse Configurações Minha conta e selecione Renovar assinatura. Escolha o plano desejado e siga as instruções para concluir a renovação." },
   { q: "Esqueci minha senha. O que fazer?", a: "Na tela de login, selecione Esqueci minha senha. Informe o e-mail cadastrado e siga as instruções enviadas para redefinir sua senha. Se não conseguir recuperar o acesso, entre em contato com o suporte do WA Aqua Gestão." },
-  { q: "Como lançar uma despesca?", a: "Acesse o viveiro desejado e selecione Lançar despesca. Informe a quantidade despescada e o peso médio dos camarões. O sistema calculará automaticamente a biomassa despescada e registrará a operação no histórico do ciclo." },
+  { q: "Como lançar uma despesca parcial?", a: "Acesse o viveiro desejado e selecione Lançar despesca parcial. Informe a quantidade despescada e o peso médio dos camarões. O sistema calculará automaticamente a biomassa despescada e registrará a operação no histórico do ciclo." },
   { q: "Como lançar o consumo de ração?", a: "Abra o viveiro e toque em Lançar ração. Informe a quantidade fornecida no dia e confirme o lançamento. O consumo será somado ao histórico do cultivo e utilizado nos cálculos de biomassa, FCA e demais indicadores do sistema." },
 ];
 
@@ -2043,7 +2043,13 @@ function abrirViveiro(index) {
         </button>
         <button class="vv-manejo-btn" onclick="abrirDespesca(${index})">
           <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          <span>Lançar despesca</span>
+          <!-- "parcial" no rótulo não é detalhe: o salvarDespesca grava
+               tipo "Parcial" fixo, não existe caminho aqui para a despesca
+               final. Um cliente leu "Lançar despesca", lançou a despesca do
+               fim do ciclo por aqui, lançou de novo ao encerrar, e o ciclo
+               fechou com o dobro de camarão. A despesca final é lançada em
+               "Encerrar ciclo". -->
+          <span>Lançar despesca parcial</span>
         </button>
         <button class="vv-manejo-btn" onclick="abrirLancarCusto(${index})">
           <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -2764,7 +2770,7 @@ function abrirDespesca(index) {
           <svg viewBox="0 0 24 24"><path d="M21 12s-4 6-9 6-9-6-9-6 4-6 9-6 9 6 9 6"/><circle cx="17" cy="12" r="1.5"/><path d="M3 12l-2-3.5M3 12l-2 3.5"/></svg>
         </div>
         <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
-        <h2 class="form-titulo">Lançar Despesca</h2>
+        <h2 class="form-titulo">Lançar Despesca Parcial</h2>
       </div>
       <div class="form-corpo">
         <div class="campo-form">
