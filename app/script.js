@@ -2824,7 +2824,7 @@ function abrirDespesca(index) {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <label>Preço de venda por kg <span style="color:#9ca3af;font-weight:500">(opcional)</span></label>
+            <label>Preço de venda por kg</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="precoDespesca" placeholder="Ex: 16,00" onblur="formatarMoedaBlur(this)">
@@ -2866,8 +2866,13 @@ async function salvarDespesca(index) {
   const mostrarErroDespesca = (msg) => { if (erroDespesca) { erroDespesca.textContent = msg; erroDespesca.style.display = "block"; } };
   if (erroDespesca) erroDespesca.style.display = "none";
 
-  if (!data || !quantidadeKg || !pesoMedio) {
-    mostrarErroDespesca("Preencha a data, quantidade e peso médio.");
+  // O preço é obrigatório. Enquanto era opcional, a despesca sem preço não
+  // ficava "sem receita" no relatório: ela era valorizada pelo preço da
+  // despesca FINAL (ver o cálculo da receita em _renderRelatorioCiclo). Uma
+  // parcial vendida em junho a R$ 18 entrava a R$ 25 se o ciclo fechou em
+  // setembro a R$ 25 — um chute com cara de dado, e sem aviso nenhum.
+  if (!data || !quantidadeKg || !pesoMedio || !precoKg) {
+    mostrarErroDespesca("Preencha a data, quantidade, peso médio e preço de venda.");
     return;
   }
 
@@ -3870,7 +3875,7 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <label>Preço de venda por kg <span style="color:#9ca3af;font-weight:500">(opcional)</span></label>
+            <label>Preço de venda por kg</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="precoEdicaoDesp" value="${desp.precoKg ? formatarNumeroBR(desp.precoKg, 2) : ""}" placeholder="Ex: 16,00" onblur="formatarMoedaBlur(this)">
@@ -3897,7 +3902,10 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const novoPeso = parseDecimalBR(document.getElementById("pesoEdicaoDesp").value);
   const novoPreco = parseMoedaBR(document.getElementById("precoEdicaoDesp")?.value || "0") || null;
 
-  if (!novaData || !novaQtd || !novoPeso) { _toastErro("Preencha todos os campos."); return; }
+  // Preço também é obrigatório aqui: se fosse exigido só no lançamento, dava
+  // para apagá-lo depois abrindo a edição — e a despesca voltaria a ser
+  // valorizada pelo preço da despesca final.
+  if (!novaData || !novaQtd || !novoPeso || !novoPreco) { _toastErro("Preencha todos os campos, inclusive o preço."); return; }
 
   const restaurar = _travarBotao(botao, "Salvando...");
   const desp = viveiros[viveiroIndex].despescas[despIndex];
@@ -7109,7 +7117,11 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   const precoFinal = Number(ciclo.precoVenda) || 0; // preço da despesca final
   const _despRel = ciclo.despescas || [];
   const receitaParciais = _despRel.reduce((s, d) => {
-    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal; // fallback registros antigos
+    // Fallback SÓ para registros antigos. Desde 28/08/2026 o preço é
+    // obrigatório ao lançar e ao editar uma despesca parcial, então despesca
+    // nova nunca cai aqui. Continua valendo para não zerar a receita de ciclos
+    // que já estão fechados — apagar esse fallback mudaria relatório antigo.
+    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal;
     return s + (Number(d.quantidadeKg) || 0) * p;
   }, 0);
   const receitaFinal = (Number(ciclo.producaoFinal) || 0) * precoFinal;
