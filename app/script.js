@@ -6820,13 +6820,9 @@ async function salvarEncerramentoCiclo(index) {
     despescas_json: despescas,
   };
 
-  // O .select() devolve a linha gravada com o id. Sem ele, o ciclo recém-
-  // encerrado ficava em memória sem id, e o botão "Corrigir" do relatório que
-  // abre logo em seguida não teria o que atualizar no banco.
-  let { data: cicloSalvo, error } = await supabaseClient
+  let { error } = await supabaseClient
     .from("ciclos")
-    .insert([cicloBanco])
-    .select("id");
+    .insert([cicloBanco]);
 
   // A coluna custo_fixo_rateado pode ainda não existir no banco do usuário.
   // Nesse caso, encerra sem congelar o rateio (comportamento antigo) em vez de
@@ -6834,7 +6830,7 @@ async function salvarEncerramentoCiclo(index) {
   if (error && /custo_fixo_rateado/.test(error.message || "")) {
     const { custo_fixo_rateado, ...semCampoNovo } = cicloBanco;
     console.log("Coluna custo_fixo_rateado ausente — encerrando sem congelar o rateio.");
-    ({ data: cicloSalvo, error } = await supabaseClient.from("ciclos").insert([semCampoNovo]).select("id"));
+    ({ error } = await supabaseClient.from("ciclos").insert([semCampoNovo]));
   }
 
   if (error) {
@@ -6891,7 +6887,6 @@ async function salvarEncerramentoCiclo(index) {
 
   // Montar cicloFinalizado ANTES de zerar o viveiro (para preservar dados no objeto local)
   const cicloFinalizado = {
-    id: cicloSalvo?.[0]?.id || null,
     nomeViveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
     tamanho: viveiro.tamanho,
@@ -7160,7 +7155,6 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
 
       <div class="rc2-acoes">
         <button class="botao-voltar-form" style="margin:0;flex:1" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">Voltar</button>
-        <button class="botao-voltar-form" style="margin:0;flex:1" onclick="abrirEdicaoRelatorioCiclo(${index}, '${origem}')">✏️ Corrigir</button>
         <button class="botao-salvar" style="margin:0;flex:1" onclick="gerarRelatorioImpressao()">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir relatório
@@ -7171,303 +7165,6 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   `;
 
   setTimeout(() => _renderGraficosCiclo(_serieRel), 60);
-}
-
-// ─── CORRIGIR UM RELATÓRIO JÁ FECHADO ───────────────────────────────────────
-// Por que existe: o ciclo encerrado é uma FOTOGRAFIA. Ao encerrar, as linhas de
-// ração, biometria e despesca são apagadas das suas tabelas e passam a viver só
-// dentro da linha do ciclo (racoes_json, biometrias_json, despescas_json). Ou
-// seja: depois de fechado, não há mais a tela de histórico para corrigir um
-// lançamento errado — sem esta tela, um erro no encerramento ficaria para
-// sempre no relatório.
-//
-// O erro mais comum é o que motivou esta tela: a MESMA despesca lançada duas
-// vezes, uma como parcial e outra como final. Como
-//   produção total = despescas parciais + despesca final,
-// o camarão entra dobrado, e daí contamina tudo que depende dele — FCA,
-// sobrevivência, produtividade, receita e custo por quilo.
-//
-// Regra que esta tela segue: NÃO grava indicador digitado. Só se editam os
-// dados de origem (as despescas, o peso final, a data, o preço); FCA,
-// sobrevivência, produtividade e produção total são sempre recalculados com as
-// MESMAS fórmulas do encerramento — que estão em salvarEncerramento(). Se um
-// dia aquelas fórmulas mudarem, estas têm que mudar junto.
-
-let _relEdCiclo = null;    // ciclo sendo corrigido
-let _relEdIndex = null;    // índice do viveiro dono do ciclo
-let _relEdOrigem = "historico";
-let _relEdParciais = [];   // cópia de trabalho das despescas parciais
-
-function abrirEdicaoRelatorioCiclo(index, origem) {
-  const ciclo = _relImpCiclo;
-  if (!ciclo) { _toastErro("Relatório indisponível."); return; }
-  if (!ciclo.id) {
-    _toastErro("Este ciclo ainda não terminou de salvar. Volte e abra o relatório pelo Histórico.");
-    return;
-  }
-
-  _relEdCiclo = ciclo;
-  _relEdIndex = index;
-  _relEdOrigem = origem || "historico";
-  // Cópia: enquanto ele não salvar, nada do relatório original é tocado. Se
-  // desistir e voltar, o ciclo continua exatamente como estava.
-  _relEdParciais = (ciclo.despescas || []).map(d => ({
-    data: d.data,
-    quantidadeKg: Number(d.quantidadeKg) || 0,
-    pesoMedio: Number(d.pesoMedio || d.gramatura) || 0,
-    precoKg: d.precoKg != null ? Number(d.precoKg) : null,
-    _fora: false,
-  }));
-
-  _renderEdicaoRelatorioCiclo();
-}
-
-function _renderEdicaoRelatorioCiclo() {
-  const ciclo = _relEdCiclo;
-  const area = document.getElementById("area-gestao");
-
-  const linhasParciais = _relEdParciais.length === 0
-    ? `<p class="sobrevivencia-texto" style="margin:6px 0 2px">Este ciclo não teve despesca parcial.</p>`
-    : _relEdParciais.map((d, i) => `
-        <div class="rced-parcial ${d._fora ? "rced-fora" : ""}">
-          <div class="rced-parcial-dados">
-            <b>${formatarNumeroBR(d.quantidadeKg, 1)} kg</b>
-            <span>${formatarData(d.data)} · ${formatarNumeroBR(d.pesoMedio, 1)} g${d.precoKg > 0 ? " · R$ " + formatarNumeroBR(d.precoKg, 2) + "/kg" : ""}</span>
-          </div>
-          <button class="rced-btn-tirar" onclick="_relEdAlternarParcial(${i})">
-            ${d._fora ? "Devolver" : "Remover"}
-          </button>
-        </div>`).join("");
-
-  area.innerHTML = `
-    <h3 class="titulo-secao">Corrigir relatório — ${abreviarViveiro(ciclo.nomeViveiro)}</h3>
-
-    <div class="cfg-wrap">
-
-      <div class="rced-aviso">
-        Aqui só se corrigem os dados lançados. <b>FCA, sobrevivência,
-        produtividade e produção total são recalculados sozinhos</b> — não
-        existe campo para digitá-los.
-      </div>
-
-      <div class="rced-bloco">
-        <div class="rced-bloco-tit">Despescas parciais</div>
-        <p class="rced-bloco-sub">Se a mesma despesca foi lançada como parcial
-          <b>e</b> como final, ela está sendo contada duas vezes. Remova a
-          repetida aqui.</p>
-        ${linhasParciais}
-      </div>
-
-      <div class="rced-bloco">
-        <div class="rced-bloco-tit">Despesca final</div>
-
-        <div class="campo-form">
-          <div class="campo-label"><label>Data de encerramento</label></div>
-          <input type="date" id="rcedData" value="${ciclo.dataEncerramento || ""}" onchange="_relEdRecalcular()">
-        </div>
-
-        <div class="campo-form">
-          <div class="campo-label"><label>Quantidade despescada (kg)</label></div>
-          <input type="text" inputmode="decimal" id="rcedProducaoFinal"
-                 value="${formatarNumeroBR(Number(ciclo.producaoFinal) || 0, 1)}"
-                 oninput="_relEdRecalcular()">
-        </div>
-
-        <div class="campo-form">
-          <div class="campo-label"><label>Peso médio final (g)</label></div>
-          <input type="text" inputmode="decimal" id="rcedPesoFinal"
-                 value="${formatarNumeroBR(Number(ciclo.pesoFinal) || 0, 1)}"
-                 oninput="_relEdRecalcular()">
-        </div>
-
-        <div class="campo-form">
-          <div class="campo-label"><label>Preço de venda (R$/kg)</label></div>
-          <input type="text" inputmode="decimal" id="rcedPreco"
-                 value="${Number(ciclo.precoVenda) > 0 ? formatarNumeroBR(Number(ciclo.precoVenda), 2) : ""}"
-                 placeholder="Ex: 16,00" onblur="formatarMoedaBlur(this)" oninput="_relEdRecalcular()">
-        </div>
-
-        <div class="campo-form">
-          <div class="campo-label"><label>Observações</label></div>
-          <textarea id="rcedObs" rows="2">${ciclo.observacoes || ""}</textarea>
-        </div>
-      </div>
-
-      <div class="rced-bloco">
-        <div class="rced-bloco-tit">Como o relatório vai ficar</div>
-        <div id="rced-previa"></div>
-      </div>
-
-      <div id="msg-rced-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
-
-      <button class="botao-salvar" onclick="salvarEdicaoRelatorioCiclo(this)">Salvar correção</button>
-      <button class="botao-voltar-form" style="margin-top:8px" onclick="_renderRelatorioCiclo(_relEdIndex, _relEdCiclo, _relEdOrigem)">Cancelar</button>
-    </div>
-  `;
-
-  _relEdRecalcular();
-}
-
-function _relEdAlternarParcial(i) {
-  if (!_relEdParciais[i]) return;
-  _relEdParciais[i]._fora = !_relEdParciais[i]._fora;
-  _renderEdicaoRelatorioCiclo();
-}
-
-// Refaz as contas do encerramento com os valores que estão na tela.
-// Espelha salvarEncerramento() — qualquer mudança lá tem que vir para cá.
-function _relEdCalcular() {
-  const ciclo = _relEdCiclo;
-  const producaoFinal = parseDecimalBR(document.getElementById("rcedProducaoFinal")?.value || "0") || 0;
-  const pesoFinal = parseDecimalBR(document.getElementById("rcedPesoFinal")?.value || "0") || 0;
-  const precoVenda = parseMoedaBR(document.getElementById("rcedPreco")?.value || "0") || 0;
-  const dataEncerramento = document.getElementById("rcedData")?.value || ciclo.dataEncerramento;
-
-  const parciais = _relEdParciais.filter(d => !d._fora);
-
-  const despescaParcial = parciais.reduce((t, d) => t + (Number(d.quantidadeKg) || 0), 0);
-  const producaoTotal = despescaParcial + producaoFinal;
-
-  // A ração não muda: os lançamentos do ciclo já foram apagados no
-  // encerramento e o total ficou congelado na linha do ciclo.
-  const racaoConsumida = Number(ciclo.racaoConsumida) || 0;
-  const fca = producaoTotal > 0 ? racaoConsumida / producaoTotal : 0;
-
-  const tamanhoNum = parseFloat(ciclo.tamanho);
-  const produtividade = tamanhoNum > 0 ? producaoTotal / tamanhoNum : 0;
-
-  // Sobrevivência: cada parcial conta com o SEU peso médio, não com o final.
-  const totalPovoado = parseFloat(String(ciclo.totalPovoado || "").replace(/\./g, ""));
-  const qtdParciais = parciais.reduce((t, d) => {
-    const kg = Number(d.quantidadeKg) || 0, p = Number(d.pesoMedio) || 0;
-    return (kg > 0 && p > 0) ? t + kg / (p / 1000) : t;
-  }, 0);
-  const qtdFinal = pesoFinal > 0 ? producaoFinal / (pesoFinal / 1000) : 0;
-  const sobrevivencia = totalPovoado > 0 ? ((qtdParciais + qtdFinal) / totalPovoado) * 100 : 0;
-
-  const diasCultivo = calcularDiasCultivo(ciclo.dataPovoamento, dataEncerramento);
-
-  // Receita: cada parcial pelo seu preço; sem preço próprio, cai no preço final
-  // (mesma regra do relatório, para a prévia não divergir da tela seguinte).
-  const receita = parciais.reduce((s, d) => {
-    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoVenda;
-    return s + (Number(d.quantidadeKg) || 0) * p;
-  }, 0) + producaoFinal * precoVenda;
-
-  return { producaoFinal, pesoFinal, precoVenda, dataEncerramento, parciais,
-           despescaParcial, producaoTotal, racaoConsumida, fca, produtividade,
-           sobrevivencia, diasCultivo, receita };
-}
-
-function _relEdRecalcular() {
-  const alvo = document.getElementById("rced-previa");
-  if (!alvo || !_relEdCiclo) return;
-  const c = _relEdCalcular();
-  const antes = _relEdCiclo;
-
-  // Mostra o valor antigo ao lado quando ele muda: é assim que ele confere que
-  // a correção fez o que esperava, sem precisar decorar o número anterior.
-  // Recebe NÚMERO, não texto: comparar depois de formatar quebra, porque
-  // Number("1,50") é NaN e a linha nunca acusava mudança.
-  const linha = (rotulo, novo, velho, casas, sufixo = "", classe = "") => {
-    const a = Number(novo) || 0, b = Number(velho) || 0;
-    const f = v => formatarNumeroBR(v, casas);
-    return `<div class="rced-prev-linha ${classe}">
-      <span>${rotulo}</span>
-      <b>${f(a)}${sufixo}${Math.abs(a - b) > 0.005 ? `<i class="rced-antes">antes ${f(b)}${sufixo}</i>` : ""}</b>
-    </div>`;
-  };
-
-  alvo.innerHTML =
-    linha("Despescas parciais", c.despescaParcial, antes.despescaParcial, 1, " kg") +
-    linha("Despesca final", c.producaoFinal, antes.producaoFinal, 1, " kg") +
-    linha("Produção total", c.producaoTotal, antes.producaoTotal, 1, " kg", "rced-prev-destaque") +
-    linha("FCA", c.fca, antes.fca, 2) +
-    linha("Sobrevivência", c.sobrevivencia, antes.sobrevivencia, 1, "%") +
-    linha("Produtividade", c.produtividade, antes.produtividade, 0, " kg/ha") +
-    linha("Dias de cultivo", c.diasCultivo, antes.diasCultivo, 0, " dias") +
-    (c.receita > 0 ? `<div class="rced-prev-linha"><span>Receita bruta</span><b>R$ ${formatarNumeroBR(c.receita, 2)}</b></div>` : "") +
-    (c.sobrevivencia > 100
-      ? `<p class="rced-alerta">Sobrevivência acima de 100%. Ainda tem camarão sendo contado duas vezes, ou o peso médio está errado.</p>`
-      : "");
-}
-
-async function salvarEdicaoRelatorioCiclo(botao) {
-  if (botao?.disabled) return; // trava contra duplo toque
-  const ciclo = _relEdCiclo;
-  const erroEl = document.getElementById("msg-rced-erro");
-  const erro = (msg) => { if (erroEl) { erroEl.textContent = msg; erroEl.style.display = "block"; } };
-  if (erroEl) erroEl.style.display = "none";
-
-  const c = _relEdCalcular();
-
-  if (!c.dataEncerramento) { erro("Informe a data de encerramento."); return; }
-  if (!(c.producaoFinal > 0)) { erro("A despesca final precisa ser maior que zero."); return; }
-  if (!(c.pesoFinal > 0)) { erro("O peso médio final precisa ser maior que zero."); return; }
-  if (c.dataEncerramento < ciclo.dataPovoamento) {
-    erro("A data de encerramento não pode ser anterior ao povoamento.");
-    return;
-  }
-
-  const restaurar = _travarBotao(botao, "Salvando...");
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) { restaurar(); return; }
-
-  const observacoes = document.getElementById("rcedObs")?.value || null;
-
-  // As parciais removidas somem da fotografia do ciclo — é o único lugar onde
-  // elas ainda existem, porque a tabela "despescas" foi limpa no encerramento.
-  const despescasJson = c.parciais.map(d => ({
-    data: d.data, tipo: "Parcial",
-    quantidadeKg: d.quantidadeKg, pesoMedio: d.pesoMedio, precoKg: d.precoKg,
-  }));
-
-  // custo_fixo_rateado fica como está de propósito: foi congelado com a
-  // configuração de custos fixos vigente no dia do encerramento. Recalcular
-  // agora usaria a configuração de hoje e mudaria um número que não tem nada a
-  // ver com a despesca duplicada que ele veio corrigir.
-  const { error } = await supabaseClient
-    .from("ciclos")
-    .update({
-      data_encerramento: c.dataEncerramento,
-      dias_cultivo: c.diasCultivo,
-      producao_final: c.producaoFinal,
-      despesca_parcial: c.despescaParcial,
-      producao_total: c.producaoTotal,
-      produtividade: c.produtividade,
-      peso_final: c.pesoFinal,
-      fca: c.fca,
-      sobrevivencia: c.sobrevivencia,
-      preco_venda: c.precoVenda || null,
-      observacoes: observacoes,
-      despescas_json: despescasJson,
-    })
-    .eq("id", ciclo.id)
-    .eq("user_id", usuario.id);
-
-  if (error) {
-    console.log(error);
-    restaurar();
-    erro("Erro ao salvar: " + error.message);
-    return;
-  }
-
-  // Só depois de o banco confirmar é que o objeto em memória muda.
-  ciclo.dataEncerramento = c.dataEncerramento;
-  ciclo.diasCultivo = c.diasCultivo;
-  ciclo.producaoFinal = c.producaoFinal;
-  ciclo.despescaParcial = c.despescaParcial;
-  ciclo.producaoTotal = c.producaoTotal;
-  ciclo.produtividade = c.produtividade;
-  ciclo.pesoFinal = c.pesoFinal;
-  ciclo.fca = c.fca;
-  ciclo.sobrevivencia = c.sobrevivencia;
-  ciclo.precoVenda = c.precoVenda || 0;
-  ciclo.observacoes = observacoes;
-  ciclo.despescas = despescasJson;
-
-  _toastSucesso("Relatório corrigido.");
-  _renderRelatorioCiclo(_relEdIndex, ciclo, _relEdOrigem);
 }
 
 // Séries do ciclo para os gráficos — biomassa/FCA estimados descontando as
