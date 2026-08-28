@@ -1855,6 +1855,35 @@ body.tema-escuro .ciclo-btn-relatorio { background: #374151; color: #e5e7eb; bor
     overflow: hidden;
 }
 
+/* Nota explicativa no alto de um formulário de lançamento.
+   Âmbar e não vermelha: isto não é erro, é orientação. Vermelho no topo de
+   uma tela que a pessoa acabou de abrir dá susto e ensina a ignorar aviso. */
+.form-nota {
+    display: flex;
+    gap: 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 12px 13px;
+    margin-bottom: 16px;
+}
+.form-nota svg {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+    stroke: #b45309; fill: none; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.form-nota div { font-size: 12.5px; line-height: 1.5; color: #92400e; }
+.form-nota b { font-weight: 800; color: #78350f; }
+/* A segunda parte — onde lançar a final — em bloco separado e um pouco mais
+   apagada: quem já sabe passa direto, quem está perdido acha. */
+.form-nota span { display: block; margin-top: 7px; color: #a16207; }
+
+body.tema-escuro .form-nota { background: #3a2f14; border-color: #78350f; }
+body.tema-escuro .form-nota div { color: #fcd34d; }
+body.tema-escuro .form-nota b { color: #fde68a; }
+body.tema-escuro .form-nota span { color: #eab308; }
+body.tema-escuro .form-nota svg { stroke: #fbbf24; }
+
 .campo-form input[type="text"],
 .campo-form input[type="number"],
 .campo-form input[type="date"],

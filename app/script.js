@@ -2773,6 +2773,24 @@ function abrirDespesca(index) {
         <h2 class="form-titulo">Lançar Despesca Parcial</h2>
       </div>
       <div class="form-corpo">
+
+        <!-- Fica ANTES dos campos de propósito: depois de digitar a
+             quantidade a pessoa já decidiu que é aqui, e um aviso no rodapé
+             chega tarde. É este texto que separa a despesca parcial da final
+             — foi confundir as duas que fechou um ciclo com o dobro de
+             camarão. -->
+        <div class="form-nota">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div>
+            <b>Só despesca parcial entra aqui</b> — quando sai parte do
+            camarão e o viveiro <b>continua em cultivo</b>.
+            <span>A despesca que <b>encerra o ciclo</b> não se lança por aqui.
+              Ela é informada em <b>Encerrar ciclo</b>, na própria tela do
+              viveiro, em "Ações de administração". Lançar a mesma despesca
+              nos dois lugares faz o sistema contar o camarão duas vezes.</span>
+          </div>
+        </div>
+
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
