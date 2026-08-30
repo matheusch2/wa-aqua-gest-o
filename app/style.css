@@ -5652,3 +5652,69 @@ body.tema-escuro .rel-carregando { color: #9ca3af; }
     text-decoration: underline; cursor: pointer;
 }
 body.tema-escuro .sim-voltar-est { color: #6ee7d8; }
+
+/* ─── PEDIDO DE NOME E TELEFONE ──────────────────────────────────────────────
+   Aparece na abertura quando o cadastro está incompleto. Segue o mesmo formato
+   de diálogo já usado em custos fixos (.cf-vig-*), para não inventar um visual
+   novo só para esta tela. */
+
+.ct-fundo {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(15,23,42,0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px;
+}
+
+.ct-caixa {
+    position: relative;
+    background: #fff; border-radius: 16px;
+    padding: 22px 18px 18px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+    max-height: 90vh; overflow-y: auto;
+}
+
+/* O X fica no canto e é um alvo de 40px: precisa ser fácil de acertar. Botão
+   de fechar difícil de tocar não protege ninguém — só irrita. */
+.ct-fechar {
+    position: absolute; top: 8px; right: 8px;
+    width: 40px; height: 40px;
+    background: none; border: none; padding: 0;
+    font-size: 26px; line-height: 1; color: #9ca3af;
+    cursor: pointer;
+}
+.ct-fechar:active { color: #4b5563; }
+
+.ct-ico {
+    width: 48px; height: 48px; margin: 0 auto 12px;
+    border-radius: 14px; background: rgba(6,107,99,0.10);
+    display: flex; align-items: center; justify-content: center;
+}
+.ct-ico svg {
+    width: 24px; height: 24px; stroke: rgb(6,107,99);
+    fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.ct-caixa h4 {
+    margin: 0 0 16px; text-align: center;
+    font-size: 17px; font-weight: 800; color: #111827;
+}
+
+.ct-caixa .campo-form { margin-bottom: 12px; }
+
+.ct-erro {
+    color: #e53e3e; background: #fff5f5;
+    border: 1px solid #feb2b2; border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; margin-bottom: 10px;
+}
+
+.ct-privacidade {
+    display: block; text-align: center; margin-top: 12px;
+    font-size: 11.5px; color: #9ca3af; text-decoration: none;
+}
+
+body.tema-escuro .ct-caixa { background: #1f2937; }
+body.tema-escuro .ct-caixa h4 { color: #f3f4f6; }
+body.tema-escuro .ct-ico { background: rgba(52,211,153,0.12); }
+body.tema-escuro .ct-ico svg { stroke: #34d399; }
+body.tema-escuro .ct-fechar { color: #6b7280; }

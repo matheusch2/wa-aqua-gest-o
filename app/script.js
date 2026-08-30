@@ -10,6 +10,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let viveiros = [];
 let produtos = []; let tiposRacao = [];
 let boletos = [];
+let contato = null;   // nome e telefone do dono da conta (tabela contatos)
 let custosFixos = [];
 let assinatura = null;
 let _planosCiclo = "mensal";
@@ -238,6 +239,7 @@ async function abrirConfiguracoes() {
       </div>
       <div class="cfg-lista">
         ${_cfgItem("fazenda", "Fazenda", "Nome, e-mail e foto", "abrirFazenda()")}
+        ${_cfgItem("conta", "Meus dados", "Nome e WhatsApp para contato", "abrirMeusDados()")}
         ${_cfgItem("seguranca", "Segurança", "Alterar senha", "abrirSeguranca()")}
         ${_cfgItem("aparencia", "Aparência", "Tema claro ou escuro", "abrirAparencia()")}
         ${_cfgItem("conta", "Minha conta", "Plano e assinatura", "abrirMinhaConta()")}
@@ -9787,7 +9789,7 @@ async function carregarViveiros(usuarioConhecido) {
   const tabela = (nome) => supabaseClient.from(nome).select("*").eq("user_id", usuario.id);
   const [
     rViveiros, rRacoes, rBiometrias, rDespescas, rCiclos,
-    rProdutos, rTiposRacao, rBoletos, rCustosFixos, rAssinatura, rCustos,
+    rProdutos, rTiposRacao, rBoletos, rCustosFixos, rAssinatura, rCustos, rContato,
   ] = await Promise.all([
     tabela("viveiros").eq("ativo", true).order("nome", { ascending: true }),
     tabela("racoes"),
@@ -9809,6 +9811,7 @@ async function carregarViveiros(usuarioConhecido) {
     tabela("custos_fixos"),
     tabela("assinaturas").maybeSingle(),
     tabela("custos"),
+    tabela("contatos").maybeSingle(),
   ]);
 
   // Rede de segurança da consulta acima: nomear colunas é mais leve, mas se uma
@@ -9868,6 +9871,8 @@ async function carregarViveiros(usuarioConhecido) {
     dataFim: c.data_fim || null,
   }));
   assinatura = rAssinatura.data || null;
+  // Tabela nova: se ainda nao existir no banco do usuario, segue sem quebrar.
+  contato = (rContato && !rContato.error) ? (rContato.data || null) : null;
 
   const racoesData = rRacoes.data || [];
   const biometriasData = rBiometrias.data || [];
@@ -10108,6 +10113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("menuGestao").style.display = "grid";
         _mostrarBannerLeitura();
       }
+      _talvezPedirContato();
     } else {
       window.location.replace("login.html");
     }
@@ -10116,6 +10122,157 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.replace("login.html");
   }
 });
+
+
+// ─── NOME E TELEFONE DO CLIENTE ─────────────────────────────────────────────
+// Por que existe: a conta é criada só com e-mail, e e-mail é um canal ruim para
+// falar com produtor. Com o telefone dá para perguntar como o sistema está indo
+// e resolver problema antes de virar cancelamento.
+//
+// Mora numa tabela PRÓPRIA (contatos), e não em "perfis", de propósito: perfis
+// guarda a coluna "role" e não tem política de escrita nenhuma. Se a gente
+// liberasse UPDATE ali para o cliente salvar o telefone, ele salvaria o cargo
+// de administrador no mesmo comando.
+
+const _CONTATO_DIAS = 3;   // quantos dias esperar depois de um "X" antes de perguntar de novo
+
+function _contatoCompleto() {
+  return !!(contato && String(contato.nome || "").trim() && String(contato.telefone || "").trim());
+}
+
+// Já pediu recentemente? Guarda no banco e não no aparelho: no celular o
+// armazenamento local se perde ao limpar dados, e aí o pedido recomeçaria do
+// zero — justamente com quem já disse não.
+function _contatoPodePedir() {
+  if (_contatoCompleto()) return false;
+  if (!contato || !contato.visto_em) return true;
+  const visto = new Date(contato.visto_em);
+  if (isNaN(visto.getTime())) return true;
+  return (Date.now() - visto.getTime()) >= _CONTATO_DIAS * 86400000;
+}
+
+// (88) 99249-8067 — formata enquanto digita, e aceita colar com ou sem máscara.
+function _mascaraTelefone(valor) {
+  const d = String(valor || "").replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2)  return d.length ? "(" + d : "";
+  if (d.length <= 6)  return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+}
+
+function _telefoneNoCampo(campo) {
+  campo.value = _mascaraTelefone(campo.value);
+}
+
+function _abrirPedidoContato() {
+  if (document.getElementById("ct-fundo")) return;   // já está aberto
+
+  const div = document.createElement("div");
+  div.id = "ct-fundo";
+  div.className = "ct-fundo";
+  div.innerHTML = `
+    <div class="ct-caixa" role="dialog" aria-labelledby="ct-titulo">
+      <button class="ct-fechar" onclick="_recusarContato()" aria-label="Fechar">&times;</button>
+
+      <div class="ct-ico">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+
+      <h4 id="ct-titulo">Complete seu cadastro</h4>
+
+      <div class="campo-form">
+        <div class="campo-label"><label>Seu nome completo</label></div>
+        <input type="text" id="ctNome" autocomplete="name" placeholder="Ex: João da Silva"
+               value="${(contato && contato.nome) ? String(contato.nome).replace(/"/g, "&quot;") : ""}">
+      </div>
+
+      <div class="campo-form">
+        <div class="campo-label"><label>WhatsApp com DDD</label></div>
+        <input type="tel" id="ctTelefone" inputmode="numeric" autocomplete="tel"
+               placeholder="(88) 99999-9999" maxlength="16"
+               oninput="_telefoneNoCampo(this)"
+               value="${(contato && contato.telefone) ? _mascaraTelefone(contato.telefone) : ""}">
+      </div>
+
+      <div id="ct-erro" class="ct-erro" style="display:none"></div>
+
+      <button class="botao-salvar" style="margin-top:4px" onclick="_salvarContato(this)">Salvar</button>
+
+      <a class="ct-privacidade" href="/privacidade.html" target="_blank" rel="noopener">Privacidade</a>
+    </div>`;
+  document.body.appendChild(div);
+  setTimeout(() => document.getElementById("ctNome")?.focus(), 120);
+}
+
+function _fecharPedidoContato() {
+  document.getElementById("ct-fundo")?.remove();
+}
+
+// O "X". Marca a data para só voltar a perguntar daqui a _CONTATO_DIAS, e conta
+// a recusa — número de recusas é sinal de cliente incomodado, e vale olhar.
+async function _recusarContato() {
+  _fecharPedidoContato();
+  try {
+    const usuario = await pegarUsuarioLogado();
+    if (!usuario) return;
+    const linha = {
+      user_id: usuario.id,
+      visto_em: new Date().toISOString(),
+      recusas: ((contato && Number(contato.recusas)) || 0) + 1,
+    };
+    const { error } = await supabaseClient.from("contatos").upsert(linha, { onConflict: "user_id" });
+    if (error) { console.log("contato (recusa):", error); return; }
+    contato = { ...(contato || {}), ...linha };
+  } catch (e) { console.log("contato (recusa):", e); }
+}
+
+async function _salvarContato(botao) {
+  if (botao?.disabled) return;                       // trava contra duplo toque
+
+  const nome = document.getElementById("ctNome").value.trim();
+  const telBruto = document.getElementById("ctTelefone").value;
+  const digitos = telBruto.replace(/\D/g, "");
+
+  const erroEl = document.getElementById("ct-erro");
+  const erro = (m) => { if (erroEl) { erroEl.textContent = m; erroEl.style.display = "block"; } };
+  if (erroEl) erroEl.style.display = "none";
+
+  if (nome.length < 3) { erro("Escreva seu nome completo."); return; }
+  // 10 dígitos = fixo com DDD, 11 = celular com o 9 na frente.
+  if (digitos.length < 10 || digitos.length > 11) { erro("Telefone incompleto. Use DDD + número."); return; }
+
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
+  const linha = {
+    user_id: usuario.id,
+    nome: nome,
+    telefone: digitos,                                // guarda só números: facilita buscar e montar link de WhatsApp
+    visto_em: new Date().toISOString(),
+    atualizado_em: new Date().toISOString(),
+  };
+
+  const { error } = await supabaseClient.from("contatos").upsert(linha, { onConflict: "user_id" });
+  if (error) { console.log(error); restaurar(); erro("Erro ao salvar: " + error.message); return; }
+
+  contato = { ...(contato || {}), ...linha };
+  _fecharPedidoContato();
+  _toastSucesso("Cadastro salvo. Obrigado!");
+}
+
+// Chamado na abertura, depois de a tela já estar utilizável.
+function _talvezPedirContato() {
+  if (!_contatoPodePedir()) return;
+  setTimeout(_abrirPedidoContato, 900);   // deixa o app desenhar antes
+}
+
+// Mesmo formulário, agora dentro de Configurações — para quem fechou no X e
+// depois resolveu preencher, e para quem quiser corrigir o número.
+function abrirMeusDados() {
+  _abrirPedidoContato();
+}
+
 
 // Feedback de toque: onda de brilho (ripple) saindo do ponto tocado.
 // Delegado no documento (captura) para valer também em botões criados dinamicamente.

@@ -102,7 +102,13 @@
         .b-venc-perto { background: #fef3c7; color: #92400e; }
         .b-vencido { background: #fee2e2; color: #991b1b; }
         .b-viv { background: #ede9fe; color: #5b21b6; }
-        .cli-meta { display: flex; gap: 14px; margin-top: 7px; }
+        .cli-meta { display: flex; gap: 14px; margin-top: 7px; flex-wrap: wrap; }
+        /* Linha do contato: o telefone é o que o Matheus vem buscar aqui, então
+           ganha destaque. Quem não deu fica cinza, com a contagem de recusas —
+           recusar várias vezes é sinal de cliente incomodado, e vale olhar. */
+        .cli-contato a { color: var(--verde); text-decoration: none; }
+        .cli-contato a:active { text-decoration: underline; }
+        .cli-contato .sem-contato { color: #b6c1c6; font-style: italic; }
         .cli-meta span { font-size: 11px; color: var(--cinza); font-weight: 600; }
         .cli-meta b { color: #45565f; }
         .cli-seta { color: #b8c4c9; font-size: 20px; transition: transform .15s; }
@@ -398,8 +404,39 @@
         async function carregarClientes() {
             const data = await chamar({ action: "listar" });
             clientes = data.clientes || [];
+            await juntarContatos();
             renderDashboard();
             renderLista();
+        }
+
+        // Nome e WhatsApp vêm da tabela "contatos", lida DIRETO daqui. Existe uma
+        // política de RLS que deixa quem tem role='admin' ler todas as linhas —
+        // por isso o painel mostra o contato sem precisar mexer na Edge Function.
+        // Falhar aqui não pode derrubar a lista: sem contato o painel funciona,
+        // só não mostra telefone.
+        async function juntarContatos() {
+            try {
+                const { data, error } = await sb
+                    .from("contatos")
+                    .select("user_id, nome, telefone, recusas");
+                if (error) { console.log("contatos:", error.message); return; }
+                const porId = new Map((data || []).map(c => [c.user_id, c]));
+                clientes.forEach(c => {
+                    const ct = porId.get(c.id);
+                    if (!ct) return;
+                    c.contato_nome = ct.nome || null;
+                    c.telefone     = ct.telefone || null;
+                    c.recusas      = ct.recusas || 0;
+                });
+            } catch (e) { console.log("contatos:", e); }
+        }
+
+        // 88992498067 → (88) 99249-8067
+        function fmtTel(t) {
+            const d = String(t || "").replace(/\D/g, "");
+            if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+            if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+            return d;
         }
 
         // ── Dashboard: stat tiles + gráficos ──
@@ -418,6 +455,7 @@
                 `<div class="stat"><div class="stat-ico ${cls}">${ico}</div><div class="stat-num">${num}${sub ? `<small>${sub}</small>` : ""}</div><div class="stat-lbl">${lbl}</div></div>`;
             document.getElementById("adm-stats").innerHTML =
                 tile("👥", "i-azul", total, "", "Clientes") +
+                tile("📱", "i-verde", clientes.filter(c => c.telefone).length, `/${total}`, "Com telefone") +
                 tile("🟢", "i-verde", ativos7, "", "Ativos (7 dias)") +
                 tile("💳", "i-verde", pagantes, "", "Pagantes") +
                 tile("💰", "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
@@ -540,6 +578,13 @@
                             <div class="cli-meta">
                                 <span>Último acesso: <b>${relativo(c.ultimo_acesso)}</b></span>
                                 <span><b>${c.lancamentos || 0}</b> lançamentos</span>
+                            </div>
+                            <div class="cli-meta cli-contato">
+                                ${c.telefone
+                                  ? `<span>📱 <a href="https://wa.me/55${esc(c.telefone)}" target="_blank" rel="noopener"
+                                        onclick="event.stopPropagation()"><b>${esc(fmtTel(c.telefone))}</b></a></span>`
+                                  : `<span class="sem-contato">sem telefone${c.recusas ? ` · recusou ${c.recusas}x` : ""}</span>`}
+                                ${c.contato_nome ? `<span>👤 ${esc(c.contato_nome)}</span>` : ""}
                             </div>
                         </div>
                         <span class="cli-seta">›</span>
