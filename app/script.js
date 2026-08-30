@@ -3749,33 +3749,20 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
 
-  // DELETE + INSERT contorna restrição de RLS em UPDATE
-  const { error: erroDel } = await supabaseClient
+  // UPDATE de verdade. Antes daqui era DELETE + INSERT, porque a tabela não
+  // tinha política de RLS para UPDATE e o banco recusava. O contorno tinha um
+  // preço: entre apagar e inserir existia um instante em que a biometria não
+  // existia em lugar nenhum — internet caindo ali, o dado do cliente sumia.
+  // A política foi criada em 30/08/2026 e o contorno saiu.
+  const { error } = await supabaseClient
     .from("biometrias")
-    .delete()
+    .update({ data: novaData, gramatura: novaQtd })
     .eq("id", bio.id)
     .eq("user_id", usuario.id);
 
-  if (erroDel) { console.log(erroDel); restaurar(); _toastErro("Erro ao salvar: " + erroDel.message); return; }
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao salvar: " + error.message); return; }
 
-  const { data: inserido, error: erroIns } = await supabaseClient
-    .from("biometrias")
-    .insert([{
-      viveiro_id: viveiros[viveiroIndex].id,
-      data: novaData,
-      gramatura: novaQtd,
-      user_id: usuario.id,
-    }])
-    .select();
-
-  if (erroIns || !inserido || inserido.length === 0) {
-    console.log(erroIns);
-    restaurar();
-    _toastErro("Erro ao salvar edição. Tente novamente.");
-    return;
-  }
-
-  viveiros[viveiroIndex].biometrias[bioIndex].id = inserido[0].id;
+  // O id não muda mais: é a mesma linha, editada.
   viveiros[viveiroIndex].biometrias[bioIndex].data = novaData;
   viveiros[viveiroIndex].biometrias[bioIndex].gramatura = novaQtd;
 
@@ -3912,35 +3899,22 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
 
-  // DELETE + INSERT contorna restrição de RLS em UPDATE
-  const { error: erroDel } = await supabaseClient
+  // UPDATE de verdade — ver a nota em salvarEdicaoBiometria. Aqui o contorno
+  // era ainda mais arriscado: a despesca carrega quantidade, peso e preço, e
+  // é dela que saem produção, FCA e receita do ciclo.
+  const { error } = await supabaseClient
     .from("despescas")
-    .delete()
-    .eq("id", desp.id)
-    .eq("user_id", usuario.id);
-
-  if (erroDel) { console.log(erroDel); restaurar(); _toastErro("Erro ao salvar: " + erroDel.message); return; }
-
-  const { data: inserido, error: erroIns } = await supabaseClient
-    .from("despescas")
-    .insert([{
-      viveiro_id: viveiros[viveiroIndex].id,
+    .update({
       data: novaData,
       quantidade_kg: novaQtd,
       peso_medio: novoPeso,
       preco_kg: novoPreco,
-      user_id: usuario.id,
-    }])
-    .select();
+    })
+    .eq("id", desp.id)
+    .eq("user_id", usuario.id);
 
-  if (erroIns || !inserido || inserido.length === 0) {
-    console.log(erroIns);
-    restaurar();
-    _toastErro("Erro ao salvar edição. Tente novamente.");
-    return;
-  }
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao salvar: " + error.message); return; }
 
-  viveiros[viveiroIndex].despescas[despIndex].id = inserido[0].id;
   viveiros[viveiroIndex].despescas[despIndex].data = novaData;
   viveiros[viveiroIndex].despescas[despIndex].quantidadeKg = novaQtd;
   viveiros[viveiroIndex].despescas[despIndex].pesoMedio = novoPeso;
@@ -4014,33 +3988,25 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   const novoTipo = (novoTipoIdx !== "" && novoTipoIdx !== undefined)
     ? tiposRacao[novoTipoIdx] : null;
 
-  // DELETE + INSERT contorna restrição de RLS em UPDATE
-  const { error: erroDel } = await supabaseClient
-    .from("racoes").delete().eq("id", racao.id).eq("user_id", usuario.id);
-
-  if (erroDel) { restaurar(); _toastErro("Erro ao salvar: " + erroDel.message); return; }
-
-  const { data: inserido, error: erroIns } = await supabaseClient
+  // UPDATE de verdade — ver a nota em salvarEdicaoBiometria.
+  const { error } = await supabaseClient
     .from("racoes")
-    .insert([{
-      viveiro_id: viveiros[viveiroIndex].id,
+    .update({
       data: novaData,
       racao: novaQtd,
-      user_id: usuario.id,
       nome_racao: novoTipo ? novoTipo.nome : null,
       tipo_racao_id: novoTipo ? novoTipo.id : null,
-    }])
-    .select();
+    })
+    .eq("id", racao.id)
+    .eq("user_id", usuario.id);
 
-  if (erroIns || !inserido || inserido.length === 0) {
-    restaurar();
-    _toastErro("Erro ao salvar edição. Tente novamente.");
-    return;
-  }
+  if (error) { restaurar(); _toastErro("Erro ao salvar: " + error.message); return; }
 
+  // A data antiga é lida ANTES de sobrescrever o objeto: é ela que diz de qual
+  // dia os custos automáticos de protocolo precisam ser refeitos, logo abaixo.
   const dataAntiga = racao.data;
   viveiros[viveiroIndex].racoes[racaoIndex] = {
-    id: inserido[0].id, data: novaData, racao: novaQtd,
+    id: racao.id, data: novaData, racao: novaQtd,
     nomeRacao: novoTipo ? novoTipo.nome : null,
     tipoRacaoId: novoTipo ? novoTipo.id : null,
   };
