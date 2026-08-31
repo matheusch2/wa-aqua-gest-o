@@ -421,6 +421,7 @@
             revelarPainel();               // é admin: agora o painel pode aparecer
             clientes = data.clientes || [];
             await juntarContatos();
+            await juntarAcessos();
             // Os gráficos são desenhados com o painel JÁ visível. Chart.js mede o
             // tamanho do container ao desenhar; num container escondido isso dá
             // zero e o gráfico sai quebrado — que era o "gráfico vazio" que
@@ -449,6 +450,29 @@
                     c.recusas      = ct.recusas || 0;
                 });
             } catch (e) { console.log("contatos:", e); }
+        }
+
+        // Último acesso REAL: o app grava um "visto agora" na tabela "acessos" a
+        // cada abertura. O ultimo_acesso que a Edge Function devolve vem do
+        // last_sign_in_at (só muda em login novo, congela para quem usa a
+        // sessão salva). Aqui usamos o MAIS RECENTE dos dois — assim quem abriu
+        // hoje aparece como hoje, mesmo sem ter refeito login.
+        async function juntarAcessos() {
+            try {
+                const { data, error } = await sb
+                    .from("acessos")
+                    .select("user_id, ultimo_acesso");
+                if (error) { console.log("acessos:", error.message); return; }
+                const porId = new Map((data || []).map(a => [a.user_id, a.ultimo_acesso]));
+                clientes.forEach(c => {
+                    const real = porId.get(c.id);
+                    if (!real) return;
+                    // fica com a data mais recente entre login e "visto agora"
+                    if (!c.ultimo_acesso || new Date(real) > new Date(c.ultimo_acesso)) {
+                        c.ultimo_acesso = real;
+                    }
+                });
+            } catch (e) { console.log("acessos:", e); }
         }
 
         // 88992498067 → (88) 99249-8067

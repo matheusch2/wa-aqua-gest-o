@@ -10117,6 +10117,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       verificarBoletosVencendo();
       _armarVerificacaoDeVersao();
+      _registrarAcesso(session.user);
       if (window.innerWidth >= 900) {
         mostrarListaViveiros();
       } else {
@@ -10270,6 +10271,41 @@ async function _salvarContato(botao) {
   contato = { ...(contato || {}), ...linha };
   _fecharPedidoContato();
   _toastSucesso("Cadastro salvo. Obrigado!");
+}
+
+// ─── ÚLTIMO ACESSO ──────────────────────────────────────────────────────────
+// Por que existe: o painel admin mostrava "último acesso" vindo do
+// last_sign_in_at do Supabase, que só muda quando a pessoa DIGITA a senha de
+// novo. Mas o app guarda a sessão — o cliente abre todo dia e nunca refaz
+// login, então o número congelava no último login manual (dava "14 dias" para
+// quem usou hoje). Aqui gravamos um "visto agora" a cada abertura, numa tabela
+// própria (acessos), e o painel passa a usar o mais recente dos dois.
+//
+// Throttle: não adianta gravar a cada recarregar de tela. Se o último registro
+// local for de menos de 15 min atrás, não grava de novo — 15 min de resolução
+// já é de sobra para "está usando hoje" contra "sumiu faz semanas", e poupa
+// escrita no banco.
+const _ACESSO_INTERVALO_MIN = 15;
+
+async function _registrarAcesso(usuario) {
+  try {
+    if (!usuario) return;
+    const agora = Date.now();
+    // localStorage só como freio de escrita — se falhar (aba privada), grava
+    // mesmo assim; o dado no banco é o que importa, o local é só otimização.
+    try {
+      const ultimo = Number(localStorage.getItem("wa_acesso_ts") || 0);
+      if (agora - ultimo < _ACESSO_INTERVALO_MIN * 60000) return;
+    } catch (e) {}
+
+    const { error } = await supabaseClient
+      .from("acessos")
+      .upsert({ user_id: usuario.id, ultimo_acesso: new Date(agora).toISOString() },
+              { onConflict: "user_id" });
+    if (error) { console.log("registrar acesso:", error.message); return; }
+
+    try { localStorage.setItem("wa_acesso_ts", String(agora)); } catch (e) {}
+  } catch (e) { console.log("registrar acesso:", e); }
 }
 
 // Chamado na abertura, depois de a tela já estar utilizável.
