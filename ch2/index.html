@@ -358,20 +358,33 @@
             entrarPainel(data.session);
         }
 
-        async function entrarPainel(session) {
+        // Troca a tela de login pelo painel. Só é chamada quando já se sabe que
+        // a conta é admin — ver carregarClientes.
+        function revelarPainel() {
             document.getElementById("tela-login").style.display = "none";
             document.getElementById("tela-painel").style.display = "block";
+        }
+
+        async function entrarPainel(session) {
+            // O e-mail do topo é o da própria pessoa, não vaza nada — pode ser
+            // escrito antes, mesmo com o painel ainda escondido.
             document.getElementById("adm-quem").textContent = session.user.email;
             renderFiltros();
             try {
+                // carregarClientes revela o painel por dentro, e SÓ depois de a
+                // função admin-clientes confirmar que a conta é admin. Antes o
+                // painel aparecia primeiro e só então pedia os dados — então uma
+                // conta comum via a moldura vazia piscar por um segundo antes de
+                // ser barrada. Agora quem não é admin nunca chega a ver a moldura.
                 await carregarClientes();
             } catch (e) {
                 if (e.message === "SEM_ACESSO") {
-                    document.getElementById("tela-painel").style.display = "none";
-                    document.getElementById("tela-login").style.display = "block";
                     msgLogin("Esta conta não tem acesso administrativo.");
                     await sb.auth.signOut();
                 } else {
+                    // Erro de rede num admin legítimo: revela o painel para ele
+                    // ver o aviso e tentar de novo, em vez de ficar preso no login.
+                    revelarPainel();
                     document.getElementById("adm-lista").innerHTML = `<div class="adm-carregando">Erro: ${esc(e.message)}</div>`;
                 }
             }
@@ -402,9 +415,16 @@
         }
 
         async function carregarClientes() {
+            // Esta chamada lança SEM_ACESSO (via 401/403) para quem não é admin,
+            // ANTES de revelar o painel. Só quem passa daqui vê a tela.
             const data = await chamar({ action: "listar" });
+            revelarPainel();               // é admin: agora o painel pode aparecer
             clientes = data.clientes || [];
             await juntarContatos();
+            // Os gráficos são desenhados com o painel JÁ visível. Chart.js mede o
+            // tamanho do container ao desenhar; num container escondido isso dá
+            // zero e o gráfico sai quebrado — que era o "gráfico vazio" que
+            // aparecia antes.
             renderDashboard();
             renderLista();
         }
