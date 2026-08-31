@@ -60,6 +60,17 @@ let _swipeViveirosAbort = null;
 let _swipeRacaoAbort = null;
 
 
+// Escapa texto livre do cliente antes de ele entrar em innerHTML. Sem isto,
+// um nome de viveiro como <img src=x onerror=...> viraria código executável.
+// Hoje o dano fica na propria sessao do cliente; a defesa e higiene, e blinda
+// o dia em que esse texto aparecer em outra tela (como o painel admin).
+// NAO use nos toasts: eles montam com textContent, que ja e seguro.
+function _esc(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function _toastErro(msg) {
   const el = document.createElement("div");
   el.style.cssText = "position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:#dc2626;z-index:9999;max-width:90vw;text-align:center;pointer-events:none";
@@ -877,7 +888,7 @@ function toggleSenha(inputId, botao) {
 function abreviarViveiro(nome) {
   const numero = nome.replace(/\D/g, "");
   const letra = nome.trim()[0].toUpperCase();
-  return numero ? `${letra}${numero}` : nome;
+  return _esc(numero ? `${letra}${numero}` : nome);
 }
 
 function limparAreaGestao() {
@@ -1243,14 +1254,14 @@ function _resumoFazenda() {
   }
   if (bioVelha.length) {
     alertas.push({ tipo: "aviso", texto: `${bioVelha.length === 1 ? "1 viveiro" : bioVelha.length + " viveiros"} sem biometria há mais de 10 dias`,
-      detalhe: bioVelha.map(x => `${x.nome} (${x.diasSemBio} dias)`).join(", "), acao: `abrirBiometria(${bioVelha[0].index})` });
+      detalhe: bioVelha.map(x => `${_esc(x.nome)} (${x.diasSemBio} dias)`).join(", "), acao: `abrirBiometria(${bioVelha[0].index})` });
   }
 
   // 2) Chegou no peso de despesca.
   const noPonto = cultivo.filter(x => x.pesoAtual && x.pesoAtual >= _PESO_DESPESCA);
   if (noPonto.length) {
     alertas.push({ tipo: "bom", texto: `${noPonto.length === 1 ? "1 viveiro passou" : noPonto.length + " viveiros passaram"} de ${_PESO_DESPESCA} g`,
-      detalhe: noPonto.map(x => `${x.nome} (${fmtG(x.pesoAtual)} g)`).join(", "), acao: `abrirSimularVenda()` });
+      detalhe: noPonto.map(x => `${_esc(x.nome)} (${fmtG(x.pesoAtual)} g)`).join(", "), acao: `abrirSimularVenda()` });
   }
 
   // 3) Boletos — mesma regra do aviso que já existia no menu.
@@ -1261,7 +1272,7 @@ function _resumoFazenda() {
     const vencidos = bol.filter(x => x.st.tipo === "vencido").length;
     alertas.push({ tipo: vencidos ? "urgente" : "aviso",
       texto: `${bol.length} boleto${bol.length > 1 ? "s" : ""} ${vencidos ? "vencido(s) ou vencendo" : "vencendo"}`,
-      detalhe: bol.map(x => `${x.b.nome} — ${x.st.label.toLowerCase()}`).join(", "),
+      detalhe: bol.map(x => `${_esc(x.b.nome)} — ${x.st.label.toLowerCase()}`).join(", "),
       acao: `abrirBoletos('${vencidos ? "todos" : "vencendo"}')` });
   }
 
@@ -1335,7 +1346,7 @@ function abrirPainel() {
       <div class="pnl-linha-nome">
         <div class="pnl-linha-avatar">🦐</div>
         <div>
-          <strong>${x.nome}</strong>
+          <strong>${_esc(x.nome)}</strong>
           <span class="pnl-linha-situacao">● Em cultivo · ${x.dias} d</span>
         </div>
       </div>
@@ -1398,7 +1409,7 @@ function abrirPainel() {
         ${vazios.length ? `
           <div class="pnl-vazios-titulo">Vazios</div>
           <div class="pnl-vazios">
-            ${vazios.map(x => `<button type="button" class="pnl-vazio" onclick="abrirViveiro(${x.index})">${x.nome}</button>`).join("")}
+            ${vazios.map(x => `<button type="button" class="pnl-vazio" onclick="abrirViveiro(${x.index})">${_esc(x.nome)}</button>`).join("")}
           </div>` : ""}
       </article>
 
@@ -1411,7 +1422,7 @@ function abrirPainel() {
           ${comCurva.length > 1 ? `
             <select id="pnl-seletor" class="pnl-select" aria-label="Escolher viveiro do gráfico"
                     onchange="_painelDesenharGrafico(Number(this.value))">
-              ${comCurva.map((x, i) => `<option value="${x.index}"${i === 0 ? " selected" : ""}>${x.nome}</option>`).join("")}
+              ${comCurva.map((x, i) => `<option value="${x.index}"${i === 0 ? " selected" : ""}>${_esc(x.nome)}</option>`).join("")}
             </select>` : ""}
         </div>
 
@@ -1526,7 +1537,7 @@ function _rotuloCurtoViveiro(nome) {
   const limpo = String(nome || "").trim();
   const semPrefixo = limpo.replace(/^viveiro\s*[-–—:]?\s*/i, "").trim();
   const escolhido = semPrefixo || limpo || "?";
-  return escolhido.length > 7 ? escolhido.slice(0, 6) + "…" : escolhido;
+  return _esc(escolhido.length > 7 ? escolhido.slice(0, 6) + "…" : escolhido);
 }
 
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
@@ -1589,7 +1600,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       <div class="vc-topo">
         <div class="vc-icone-box">🦐</div>
         <div class="vc-titulo-area">
-          <h3 class="vc-nome-viveiro">${viveiro.nome}<button class="vc-editar-nome" onclick="editarNomeViveiro(${indexOriginal})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></h3>
+          <h3 class="vc-nome-viveiro">${_esc(viveiro.nome)}<button class="vc-editar-nome" onclick="editarNomeViveiro(${indexOriginal})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></h3>
           ${viveiro.dataPovoamento
             ? `<span class="vc-badge-cultivo">● Em cultivo</span>`
             : `<span class="vc-badge-vazio">● Vazio</span>`}
@@ -1614,7 +1625,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
           <div class="vc-info-icone azul">🧪</div>
           <div>
             <strong>Laboratório</strong>
-            <p>${viveiro.laboratorio || "--"}</p>
+            <p>${_esc(viveiro.laboratorio || "--")}</p>
           </div>
         </div>
         <div class="vc-info-item">
@@ -1924,7 +1935,7 @@ function abrirViveiro(index) {
           <svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
         </div>
         <div class="vv-header-info">
-          <h2 class="vv-titulo">${viveiro.nome.toUpperCase()}</h2>
+          <h2 class="vv-titulo">${_esc(viveiro.nome.toUpperCase())}</h2>
           <span class="vv-badge"><span class="vv-badge-dot"></span>Em cultivo</span>
         </div>
         <div class="vv-pls">${totalFormatado} PLs</div>
@@ -1944,7 +1955,7 @@ function abrirViveiro(index) {
             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </div>
           <small>Laboratório</small>
-          <strong>${viveiro.laboratorio || "--"}</strong>
+          <strong>${_esc(viveiro.laboratorio || "--")}</strong>
         </div>
 
         <div class="info-box">
@@ -2088,7 +2099,7 @@ function abrirViveiro(index) {
       </div>
 
       <div id="confirmar-excluir-viveiro-${index}" style="display:none;margin:0 16px 10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:9px 11px">
-        <p style="margin:0 0 1px;font-size:12px;font-weight:700;color:#dc2626">Excluir "${viveiro.nome}"?</p>
+        <p style="margin:0 0 1px;font-size:12px;font-weight:700;color:#dc2626">Excluir "${_esc(viveiro.nome)}"?</p>
         <p style="margin:0 0 7px;font-size:10.5px;color:#7f1d1d;line-height:1.3">Os dados serão desativados (recuperáveis pelo suporte).</p>
         <div style="display:flex;gap:6px">
           <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index}, this)">Sim, excluir</button>
@@ -2287,7 +2298,7 @@ function abrirVerTiposRacao() {
           ${tiposRacao.map((t, i) => ({ t, i })).sort((a, b) => a.t.nome.localeCompare(b.t.nome, "pt-BR", { sensitivity: "base" })).map(({ t, i }) => `
             <div class="produto-item" id="tipo-racao-item-${i}">
               <div class="produto-info">
-                <span class="produto-nome">${t.nome}</span>
+                <span class="produto-nome">${_esc(t.nome)}</span>
                 <span class="produto-detalhe">${formatarNumeroBR(t.pesoSacoKg, 0)} kg/saco · R$ ${formatarNumeroBR(t.valorSaco, 2)}/saco · R$ ${formatarNumeroBR(t.custoPorKg, 2)}/kg</span>
               </div>
               <span class="col-acoes">
@@ -2308,7 +2319,7 @@ function confirmarExcluirTipoRacao(i) {
   if (!item) return;
   item.innerHTML = `
     <div class="confirmar-exclusao-custo">
-      <span>Excluir <strong>${tiposRacao[i].nome}</strong>?</span>
+      <span>Excluir <strong>${_esc(tiposRacao[i].nome)}</strong>?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirTipoRacao(${i}, this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirVerTiposRacao()">Cancelar</button>
@@ -2474,7 +2485,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
               <label>Viveiro</label>
             </div>
             <select id="viveiroRacao">
-              ${viveiros.map((v, i) => v.dataPovoamento ? `<option value="${i}">${v.nome}</option>` : "").join("")}
+              ${viveiros.map((v, i) => v.dataPovoamento ? `<option value="${i}">${_esc(v.nome)}</option>` : "").join("")}
             </select>
           </div>
         ` : ""}
@@ -2495,7 +2506,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           </div>
           <select id="tipoRacaoSelect">
             <option value="">— Não especificado —</option>
-            ${tiposRacao.map((t, i) => `<option value="${i}">${t.nome}</option>`).join("")}
+            ${tiposRacao.map((t, i) => `<option value="${i}">${_esc(t.nome)}</option>`).join("")}
           </select>
         </div>
         ` : ""}
@@ -2629,7 +2640,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   // Avisa quais protocolos automáticos entraram junto (custo já lançado)
   if (_protAplicados.length) {
-    const txt = _protAplicados.map(a => `${a.nome} (${_fmtQtdCusto(a.quantidadeG)})`).join(", ");
+    const txt = _protAplicados.map(a => `${_esc(a.nome)} (${_fmtQtdCusto(a.quantidadeG)})`).join(", ");
     setTimeout(() => _toastSucesso("Protocolo aplicado: " + txt), 500);
   }
 }
@@ -2968,7 +2979,7 @@ function mostrarHistoricoCultivo(indexSelecionado = "") {
           <select id="viveiroHistorico" onchange="mostrarOpcoesHistorico()">
             <option value="">Escolha um viveiro</option>
             ${viveiros.map((viveiro, index) => `
-              <option value="${index}" ${String(index) === String(indexSelecionado) ? "selected" : ""}>${viveiro.nome}</option>
+              <option value="${index}" ${String(index) === String(indexSelecionado) ? "selected" : ""}>${_esc(viveiro.nome)}</option>
             `).join("")}
           </select>
         </div>
@@ -3557,7 +3568,7 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
               <div class="linha-historico-racao" id="racao-row-${index}-${iOriginal}">
                 <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
                 <span class="col-centro">${formatarData(item.data)}</span>
-                <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${item.nomeRacao}</small>` : ""}</span>
+                <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${_esc(item.nomeRacao)}</small>` : ""}</span>
                 <span class="col-acoes">
                   <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">✏️</button>
                   <button class="botao-editar botao-excluir" onclick="confirmarExcluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">🗑️</button>
@@ -3649,7 +3660,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAt
           </div>
           <select id="tipoRacaoEdicaoSelect">
             <option value="">— Não especificado —</option>
-            ${tiposRacao.map((t, i) => `<option value="${i}" ${i === tipoAtualIdx ? "selected" : ""}>${t.nome}</option>`).join("")}
+            ${tiposRacao.map((t, i) => `<option value="${i}" ${i === tipoAtualIdx ? "selected" : ""}>${_esc(t.nome)}</option>`).join("")}
           </select>
         </div>
         ` : ""}
@@ -4301,7 +4312,7 @@ async function excluirViveiro(index, botao) {
     _toastSucesso(`Viveiro "${viveiro.nome}" excluído.`);
     return;
   }
-  mostrarListaViveiros(0, "", `Viveiro "${viveiro.nome}" excluído com sucesso.`);
+  mostrarListaViveiros(0, "", `Viveiro "${_esc(viveiro.nome)}" excluído com sucesso.`);
 }
 
 function renderizarHistoricoDespesca(index, elementoId, direto) {
@@ -4573,7 +4584,7 @@ function verificarBoletosVencendo() {
       </div>
       <div class="boleto-banner-texto">
         <strong>${alertas.length} boleto${alertas.length > 1 ? "s" : ""} ${alertas.length > 1 ? "precisam" : "precisa"} de atenção</strong>
-        <span>${alertas.map(x => x.b.nome).join(", ")}</span>
+        <span>${_esc(alertas.map(x => x.b.nome).join(", "))}</span>
       </div>
       <span class="boleto-banner-seta">›</span>
     </div>
@@ -4807,7 +4818,7 @@ function abrirAssinatura() {
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
         <div class="plano-card-corpo">
-          <span class="plano-nome">${p.nome}</span>
+          <span class="plano-nome">${_esc(p.nome)}</span>
           <span class="plano-viv">${p.viveiros}</span>
           ${precoBloco}
           <ul class="plano-recursos">
@@ -4892,7 +4903,7 @@ function abrirSimularVenda() {
         </div>
         <select id="simVenda-viveiro" onchange="_simVendaTrocouViveiro()">
           <option value="">Selecione o viveiro</option>
-          ${ativos.map(o => `<option value="${o.i}">${o.v.nome}</option>`).join("")}
+          ${ativos.map(o => `<option value="${o.i}">${_esc(o.v.nome)}</option>`).join("")}
         </select>
       </div>
 
@@ -5075,7 +5086,7 @@ function abrirCustosFixos() {
         <div class="cf-card${c.ativo ? "" : " cf-card-off"}">
           <div class="cf-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div class="cf-card-info">
-            <span class="cf-card-nome">${c.nome}</span>
+            <span class="cf-card-nome">${_esc(c.nome)}</span>
             <span class="cf-card-cat">${_custoFixoCatLabel(c.categoria)}${c.dataInicio ? " · desde " + formatarData(c.dataInicio) : ""}${c.dataFim ? " até " + formatarData(c.dataFim) : (c.ativo ? "" : " · inativo")}</span>
           </div>
           <div class="cf-card-valor">R$ ${formatarNumeroBR(c.valorMensal, 2)}<small>/mês</small></div>
@@ -5690,17 +5701,17 @@ function abrirBoletos(filtro) {
     const saldoLbl = b.pago ? "valor pago" : "restante";
     return `
       <div class="bt-card${b.pago ? " bt-card-pago" : ""}"
-           data-busca="${(b.nome + " " + (b.fornecedor || "")).toLowerCase()}"
+           data-busca="${_attr((b.nome + " " + (b.fornecedor || "")).toLowerCase())}"
            data-pago="${b.pago ? 1 : 0}" data-rest="${rest}" data-vpago="${b.valorPago || 0}" data-valor="${b.valor || 0}">
         <div class="bt-card-main" onclick="verDetalhesBoleto(${i})">
           <div class="bt-card-head">
-            <span class="bt-card-nome">${b.nome}</span>
+            <span class="bt-card-nome">${_esc(b.nome)}</span>
             <div class="bt-badges">
               <span class="bt-badge bt-badge-fin-${finCls}">${finLabel}</span>
               ${b.pago ? "" : `<span class="bt-badge bt-badge-${st.tipo}">${st.label}</span>`}
             </div>
           </div>
-          <div class="bt-card-forn">${b.fornecedor || "—"}</div>
+          <div class="bt-card-forn">${_esc(b.fornecedor || "—")}</div>
           ${b.valor ? `<div class="bt-card-saldo${b.pago ? " quit" : ""}"><b>${_rs(saldoVal)}</b><small>${saldoLbl}</small></div>` : ""}
           ${parcial ? `<div class="bt-card-aux">Valor original: ${_rs(b.valor)} · Pago: ${_rs(b.valorPago || 0)}</div>` : ""}
           <div class="bt-card-foot">
@@ -5859,8 +5870,8 @@ function imprimirBoletos() {
       ? "R$ " + formatarNumeroBR(b.pago ? b.valor : rest, 2) + (!b.pago && (b.valorPago || 0) > 0 ? `<br><small style="color:#888">de R$ ${formatarNumeroBR(b.valor, 2)}</small>` : "")
       : "-";
     return `<tr>
-      <td>${b.nome}</td>
-      <td>${b.fornecedor || "-"}</td>
+      <td>${_esc(b.nome)}</td>
+      <td>${_esc(b.fornecedor || "-")}</td>
       <td style="text-align:center">${st.dataFmt}</td>
       <td style="text-align:center">${situacao}</td>
       <td style="text-align:right;font-weight:600">${valor}</td>
@@ -6021,7 +6032,7 @@ function verDetalhesBoleto(index) {
   const dataCompraFmt = new Date(ano, mes - 1, dia).toLocaleDateString("pt-BR");
 
   area.innerHTML = `
-    <h3 class="titulo-secao">${b.nome}</h3>
+    <h3 class="titulo-secao">${_esc(b.nome)}</h3>
     <div class="cfg-wrap">
       <div class="bt-det-topo">
         <div class="bt-det-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
@@ -6032,7 +6043,7 @@ function verDetalhesBoleto(index) {
         </div>
       </div>
       <div class="bt-det-info">
-        <div class="bt-det-linha"><span>Fornecedor</span><strong>${b.fornecedor || "—"}</strong></div>
+        <div class="bt-det-linha"><span>Fornecedor</span><strong>${_esc(b.fornecedor || "—")}</strong></div>
         <div class="bt-det-linha"><span>Data da compra</span><strong>${dataCompraFmt}</strong></div>
         <div class="bt-det-linha"><span>Prazo</span><strong>${b.prazoDias} dias</strong></div>
         <div class="bt-det-linha"><span>Vencimento</span><strong>${st.dataFmt}</strong></div>
@@ -6269,7 +6280,7 @@ function abrirFinanceiro() {
         </div>
         <select id="viveiroFinanceiro" onchange="_finPagina=0;mostrarCustosFinanceiro()">
           <option value="">Todos os viveiros</option>
-          ${viveiros.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("")}
+          ${viveiros.map((v, i) => `<option value="${i}">${_esc(v.nome)}</option>`).join("")}
         </select>
       </div>
       <div class="campo-form" style="margin-bottom:6px">
@@ -6469,12 +6480,12 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
     ? `<div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior lançamento</span></div>
         <strong>R$ ${formatarNumeroBR(Number(maior.valor), 2)}</strong>
-        <small>${maior.nomeProduto || "—"} · ${formatarData(maior.data)}</small>
+        <small>${_esc(maior.nomeProduto || "—")} · ${formatarData(maior.data)}</small>
       </div>`
     : `<div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior categoria</span></div>
         <strong>R$ ${formatarNumeroBR(maiorCat ? maiorCat.total : 0, 2)}</strong>
-        <small>${maiorCat ? maiorCat.nome : "—"}</small>
+        <small>${_esc(maiorCat ? maiorCat.nome : "—")}</small>
       </div>`;
 
   // Lista: por viveiro = lançamento a lançamento (com ordenação/paginação);
@@ -6493,7 +6504,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
           <div class="fin-linha${c.virtual ? " fin-linha-virtual" : ""}">
             <span class="fin-linha-data">${formatarData(c.data)}</span>
             <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
-            <span class="fin-linha-desc">${c.nomeProduto || "—"}<small>${c.virtual ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
+            <span class="fin-linha-desc">${_esc(c.nomeProduto || "—")}<small>${c.virtual ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
             <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
           </div>
         `).join("")}
@@ -6511,7 +6522,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
       <div class="fin-lista">
         ${grupos.map(g => `
           <div class="fin-linha fin-linha-cat">
-            <span class="fin-linha-desc">${g.nome}<small>${g.qtd} lançamento${g.qtd > 1 ? "s" : ""} · ${g.viveiros.size} viveiro${g.viveiros.size > 1 ? "s" : ""}</small></span>
+            <span class="fin-linha-desc">${_esc(g.nome)}<small>${g.qtd} lançamento${g.qtd > 1 ? "s" : ""} · ${g.viveiros.size} viveiro${g.viveiros.size > 1 ? "s" : ""}</small></span>
             <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
           </div>
         `).join("")}
@@ -6580,7 +6591,7 @@ function _finRenderPorTipo(resultado, custos, total) {
         ${naPizza.map((g, i) => `
           <div class="fin-leg-item">
             <span class="fin-leg-dot" style="background:${cores[i % cores.length]}"></span>
-            <span class="fin-leg-nome">${g.nome}</span>
+            <span class="fin-leg-nome">${_esc(g.nome)}</span>
             <span class="fin-leg-val">R$ ${formatarNumeroBR(g.total, 2)} <small>${total > 0 ? Math.round((g.total / total) * 100) : 0}%</small></span>
           </div>
         `).join("")}
@@ -6591,7 +6602,7 @@ function _finRenderPorTipo(resultado, custos, total) {
       ${lista.map((g, i) => `
         <div class="fin-rank-linha">
           <span class="fin-rank-pos">${i + 1}</span>
-          <span class="fin-rank-nome">${g.nome}</span>
+          <span class="fin-rank-nome">${_esc(g.nome)}</span>
           <span class="fin-rank-val">R$ ${formatarNumeroBR(g.total, 2)}</span>
         </div>
       `).join("")}
@@ -6634,14 +6645,14 @@ function imprimirRelatorioFinanceiro() {
     subtitulo = custos[0].viveiroNome || "";
     const ordenados = [...custos].sort((a, b) => b.data.localeCompare(a.data));
     cabecalho = `<tr><th>Data</th><th>Viveiro</th><th>Descrição</th><th>Valor</th></tr>`;
-    linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${c.viveiroNome || ""}</td><td>${c.nomeProduto || ""}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("")
+    linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${c.viveiroNome || ""}</td><td>${_esc(c.nomeProduto || "")}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("")
       + `<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
   } else {
     // Todos os viveiros: consolidado por categoria
     subtitulo = "Todos os viveiros";
     const grupos = _finGruposCategoria(custos);
     cabecalho = `<tr><th>Categoria</th><th style="text-align:center">Lançamentos</th><th style="text-align:center">Viveiros</th><th>Valor</th></tr>`;
-    linhas = grupos.map(g => `<tr><td>${g.nome}</td><td style="text-align:center">${g.qtd}</td><td style="text-align:center">${g.viveiros.size}</td><td style="text-align:right">R$ ${formatarNumeroBR(g.total, 2)}</td></tr>`).join("")
+    linhas = grupos.map(g => `<tr><td>${_esc(g.nome)}</td><td style="text-align:center">${g.qtd}</td><td style="text-align:center">${g.viveiros.size}</td><td style="text-align:right">R$ ${formatarNumeroBR(g.total, 2)}</td></tr>`).join("")
       + `<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
   }
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório financeiro</title>
@@ -6958,7 +6969,7 @@ function mostrarViveiroSemCiclo(index) {
           <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         </div>
         <span class="form-caption">${viveiro.tamanho ? viveiro.tamanho + " ha" : ""}</span>
-        <h2 class="form-titulo">${viveiro.nome}</h2>
+        <h2 class="form-titulo">${_esc(viveiro.nome)}</h2>
       </div>
       ${viveiro.dataPreparacao ? `
       <div class="prep-status">
@@ -6996,7 +7007,7 @@ function mostrarViveiroSemCiclo(index) {
       </button>
 
       <div id="confirm-excluir-viveiro-${index}" style="display:none;margin-top:10px;padding:9px 11px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
-        <p style="margin:0 0 1px;font-size:12px;font-weight:700;color:#dc2626">Excluir "${viveiro.nome}"?</p>
+        <p style="margin:0 0 1px;font-size:12px;font-weight:700;color:#dc2626">Excluir "${_esc(viveiro.nome)}"?</p>
         <p style="margin:0 0 7px;font-size:10.5px;color:#7f1d1d;line-height:1.3">Os dados serão desativados (recuperáveis pelo suporte).</p>
         <div style="display:flex;gap:6px">
           <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirViveiro(${index}, this)">Sim, excluir</button>
@@ -7105,7 +7116,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
 
       <div class="rc2-head">
         <h2 class="rc2-titulo">RELATÓRIO DE CICLO</h2>
-        <div class="rc2-viveiro">${ciclo.nomeViveiro}</div>
+        <div class="rc2-viveiro">${_esc(ciclo.nomeViveiro)}</div>
         <div class="rc2-periodo">${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)} · ${ciclo.diasCultivo} dias</div>
       </div>
 
@@ -7116,7 +7127,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
              Number("420.000") lê o ponto como decimal e devolve 420 — o
              relatório mostrava 420 PLs onde eram 420 mil. -->
         <div class="rc2-cell"><small>PLs</small><b>${Number(String(ciclo.totalPovoado || "").replace(/\./g, "") || 0).toLocaleString("pt-BR")}</b></div>
-        <div class="rc2-cell"><small>Laboratório</small><b>${ciclo.laboratorio || "—"}</b></div>
+        <div class="rc2-cell"><small>Laboratório</small><b>${_esc(ciclo.laboratorio || "—")}</b></div>
         <div class="rc2-cell"><small>Área</small><b>${ciclo.tamanho} ha</b></div>
         ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `<div class="rc2-cell"><small>Preparação</small><b>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</b></div>` : ""}
       </div>
@@ -7382,7 +7393,7 @@ function gerarRelatorioImpressao() {
 
   const legendaDist = distLista.map((d, i) => `
     <div class="leg-item"><span class="leg-dot" style="background:${cores[i % cores.length]}"></span>
-      <span class="leg-nome">${d.nome}<br><b>R$ ${fmt(d.total, 2)}</b></span>
+      <span class="leg-nome">${_esc(d.nome)}<br><b>R$ ${fmt(d.total, 2)}</b></span>
       <span class="leg-pct">${custoTotal > 0 ? fmt(d.total / custoTotal * 100, 1) : "0"}%</span></div>`).join("");
 
   // Rodapé / identificação
@@ -7478,7 +7489,7 @@ function gerarRelatorioImpressao() {
   }).join("")}</tbody></table>` : "";
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
-<title>Relatório Final do Ciclo — ${ciclo.nomeViveiro}</title>
+<title>Relatório Final do Ciclo — ${_esc(ciclo.nomeViveiro)}</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
 <style>
   @page { size: A4; margin: 12mm; }
@@ -7557,7 +7568,7 @@ function gerarRelatorioImpressao() {
 
   <div class="cab">
     <div class="cab-marca"><div class="cab-logo">WA<br>AQUA</div><div><b>WA Aqua Gestão</b><br><small>TECNOLOGIA PARA AQUICULTURA</small></div></div>
-    <div class="cab-centro"><h1>RELATÓRIO FINAL DO CICLO</h1><span class="viv">${(ciclo.nomeViveiro || "").toUpperCase()}</span></div>
+    <div class="cab-centro"><h1>RELATÓRIO FINAL DO CICLO</h1><span class="viv">${_esc((ciclo.nomeViveiro || "").toUpperCase())}</span></div>
     <div class="cab-periodo"><small>PERÍODO DO CICLO</small><b>${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)}</b>${ciclo.diasCultivo} dias de cultivo</div>
   </div>
 
@@ -7569,7 +7580,7 @@ function gerarRelatorioImpressao() {
   <div class="grid info6">
     <div class="cel"><small>Data do povoamento</small><b>${formatarData(ciclo.dataPovoamento)}</b></div>
     <div class="cel"><small>Total de PLs</small><b>${Number(String(ciclo.totalPovoado).replace(/\./g,"")||0).toLocaleString("pt-BR")}</b></div>
-    <div class="cel"><small>Laboratório</small><b>${ciclo.laboratorio || "-"}</b></div>
+    <div class="cel"><small>Laboratório</small><b>${_esc(ciclo.laboratorio || "-")}</b></div>
     <div class="cel"><small>Área do viveiro</small><b>${fmt(tamanhoNum, 1)} ha</b></div>
     <div class="cel"><small>Fim do ciclo</small><b>${formatarData(ciclo.dataEncerramento)}</b></div>
     <div class="cel"><small>Dias de cultivo</small><b>${ciclo.diasCultivo} dias</b></div>
@@ -7640,7 +7651,7 @@ function gerarRelatorioImpressao() {
   <div class="obs-duas">
     <div>
       <h2 class="sec" style="margin-top:0">§. Observações</h2>
-      <div class="obs-box">${(ciclo.observacoes || "").trim()}</div>
+      <div class="obs-box">${_esc((ciclo.observacoes || "").trim())}</div>
     </div>
     <div>
       <h2 class="sec" style="margin-top:0">Conclusão técnica</h2>
@@ -8072,7 +8083,7 @@ function abrirManejoAutomatico(index) {
           const orfao = !prod; // produto foi excluído dos Insumos
           return `<div class="ma-item ${p.ativo && !orfao ? "" : "ma-inativo"}${orfao ? " ma-orfao" : ""}">
             <div class="ma-item-info">
-              <span class="ma-item-nome">${prod ? prod.nome : (p.nomeProduto || "Produto removido")}${orfao ? ` <span class="ma-badge-alerta">produto excluído</span>` : ""}</span>
+              <span class="ma-item-nome">${_esc(prod ? prod.nome : (p.nomeProduto || "Produto removido"))}${orfao ? ` <span class="ma-badge-alerta">produto excluído</span>` : ""}</span>
               <span class="ma-item-regra">${orfao
                 ? "Não está lançando — o produto saiu dos Insumos. Edite para escolher outro, ou exclua o protocolo."
                 : `${p.tipo === "racao" ? "Atrelado à ração" : "Programado semanal"} · ${_maResumoProtocolo(p)}`}</span>
@@ -8137,7 +8148,7 @@ function abrirFormProtocolo(index, protId) {
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><label>Produto</label></div>
         <select id="protProduto" onchange="_protPrevia()">
-          ${produtos.map(pr => `<option value="${pr.id}" ${p && p.produtoId === pr.id ? "selected" : ""}>${pr.nome} (${pr.categoria})</option>`).join("")}
+          ${produtos.map(pr => `<option value="${pr.id}" ${p && p.produtoId === pr.id ? "selected" : ""}>${_esc(pr.nome)} (${_esc(pr.categoria)})</option>`).join("")}
         </select>
       </div>
       <div class="campo-form">
@@ -8225,14 +8236,14 @@ function _protPrevia() {
     // Referência: quanto de ração o viveiro costuma lançar por vez
     const rac = (viveiros[_maPreviaIndex]?.racoes || []).filter(r => r.racao > 0);
     const refKg = rac.length ? rac.reduce((s, r) => s + r.racao, 0) / rac.length : 50;
-    el.innerHTML = `<b>${formatarNumeroBR(dosePorKgG, 2)} g</b> de ${prod.nome} por kg de ração
+    el.innerHTML = `<b>${formatarNumeroBR(dosePorKgG, 2)} g</b> de ${_esc(prod.nome)} por kg de ração
       · custo <b>${rs(dosePorKgG * porG)}</b> por kg lançado<br>
       <small>Num lançamento de ${formatarNumeroBR(refKg, 1)} kg${rac.length ? " (média deste viveiro)" : ""}: ${formatarNumeroBR(dosePorKgG * refKg, 0)} g — ${rs(dosePorKgG * refKg * porG)}</small>`;
   } else {
     const qtd = parseDecimalBR(document.getElementById("protQtd")?.value) || 0;
     if (qtd <= 0) { el.innerHTML = ""; return; }
     const nDias = document.querySelectorAll(".ma-dia.sel").length || 1;
-    el.innerHTML = `<b>${formatarNumeroBR(qtd, 0)} g</b> de ${prod.nome} por aplicação
+    el.innerHTML = `<b>${formatarNumeroBR(qtd, 0)} g</b> de ${_esc(prod.nome)} por aplicação
       · <b>${rs(qtd * porG)}</b> cada<br>
       <small>Com ${nDias} dia${nDias !== 1 ? "s" : ""} por semana: ${rs(qtd * porG * nDias)}/semana — ${rs(qtd * porG * nDias * 4.3)}/mês</small>`;
   }
@@ -8596,8 +8607,8 @@ function abrirVerProdutos() {
               ${produtos.map((p, i) => ({ p, i })).sort((a, b) => a.p.nome.localeCompare(b.p.nome, "pt-BR", { sensitivity: "base" })).map(({ p, i }) => `
                 <div class="produto-item" id="produto-item-${i}">
                   <div class="produto-info">
-                    <span class="produto-nome">${p.nome}</span>
-                    <span class="produto-detalhe">${p.categoria} · ${formatarNumeroBR(p.pesoKg, 0)} kg · R$ ${formatarNumeroBR(p.valorPago, 2)} · R$ ${formatarNumeroBR(p.valorPago / p.pesoKg, 2)}/kg</span>
+                    <span class="produto-nome">${_esc(p.nome)}</span>
+                    <span class="produto-detalhe">${_esc(p.categoria)} · ${formatarNumeroBR(p.pesoKg, 0)} kg · R$ ${formatarNumeroBR(p.valorPago, 2)} · R$ ${formatarNumeroBR(p.valorPago / p.pesoKg, 2)}/kg</span>
                   </div>
                   <span class="col-acoes">
                     <button class="botao-editar" onclick="abrirEdicaoProduto(${i})">✏️</button>
@@ -8619,7 +8630,7 @@ function confirmarExcluirProduto(i) {
   if (!item) return;
   item.innerHTML = `
     <div class="confirmar-exclusao-custo">
-      <span>Excluir <strong>${produtos[i].nome}</strong>?</span>
+      <span>Excluir <strong>${_esc(produtos[i].nome)}</strong>?</span>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirProduto(${i}, this)">Sim, excluir</button>
         <button class="ciclo-btn-relatorio" style="flex:1" onclick="abrirVerProdutos()">Cancelar</button>
@@ -8842,7 +8853,7 @@ function abrirLancarCustoProduto(index) {
           </div>
           <select id="selectProduto" onchange="atualizarPreviaCusto()">
             <option value="">Escolha um produto</option>
-            ${produtos.map((p, i) => `<option value="${i}">${p.nome} (${p.categoria})</option>`).join("")}
+            ${produtos.map((p, i) => `<option value="${i}">${_esc(p.nome)} (${_esc(p.categoria)})</option>`).join("")}
           </select>
         </div>
         <div class="campo-form">
@@ -9318,11 +9329,11 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
           : "";
         html += `<div class="cd-card${racao ? " cd-card-auto" : ""}" id="custo-row-${index}-${i}">
           <div class="cd-l1">
-            <span class="cd-nome">${c.nomeProduto || c.categoria || "Custo"}</span>
+            <span class="cd-nome">${_esc(c.nomeProduto || c.categoria || "Custo")}</span>
             <span class="cd-valor">R$ ${formatarNumeroBR(Number(c.valor) || 0, 2)}</span>
           </div>
           <div class="cd-l2">
-            <span class="cd-cat">${racao ? "Lançamento automático" : (c.categoria || "Insumo")}</span>
+            <span class="cd-cat">${_esc(racao ? "Lançamento automático" : (c.categoria || "Insumo"))}</span>
             ${racao ? `<span class="cd-badge">Automático</span>` : ""}
           </div>
           ${l3}
@@ -9352,7 +9363,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
           return `<div class="custo-card" id="cg-${index}-${gi}">
             <div class="custo-card-ico">${dolarIco}</div>
             <div class="custo-card-info">
-              <span class="custo-card-nome">${g.nome}</span>
+              <span class="custo-card-nome">${_esc(g.nome)}</span>
               <span class="custo-card-qtd">${qtd || "—"}</span>
             </div>
             <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
@@ -9710,10 +9721,10 @@ function imprimirCustos(viveiroIndex) {
 
   const linhas = lista.map(g => {
     const qtd = _fmtQtdCusto(g.quantidadeG);
-    return `<tr><td>${g.nome}</td><td>${qtd || "-"}</td><td>R$ ${formatarNumeroBR(g.valor, 2)}</td></tr>`;
+    return `<tr><td>${_esc(g.nome)}</td><td>${qtd || "-"}</td><td>R$ ${formatarNumeroBR(g.valor, 2)}</td></tr>`;
   }).join("");
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custos - ${viveiro.nome}</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custos - ${_esc(viveiro.nome)}</title>
   <style>
     body{font-family:Arial,sans-serif;padding:24px;color:#222;max-width:700px;margin:0 auto}
     h1{font-size:20px;color:#066b63;margin:0 0 20px;text-align:center}
@@ -9727,7 +9738,7 @@ function imprimirCustos(viveiroIndex) {
     .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63}
     @media print{body{padding:0}}
   </style></head><body>
-  <h1>Custos — ${viveiro.nome}</h1>
+  <h1>Custos — ${_esc(viveiro.nome)}</h1>
   <table>
     <thead><tr><th>Descrição</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
     <tbody>
