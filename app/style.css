@@ -2233,6 +2233,23 @@ body.tema-escuro .viveiro-header {
     color: #f3f4f6;
 }
 
+/* No tema escuro o cartao do viveiro fica com fundo escuro (#1f2937), mas
+   estes textos traziam #111827 (quase preto) fixo e sumiam — preto no preto.
+   Cada um define a propria cor, entao herdar o claro do pai nao basta; precisam
+   de override direto. O nome do viveiro ainda exige a especificidade do
+   original (h3 + as duas classes) para vencer. */
+body.tema-escuro .vc-titulo-area h3.vc-nome-viveiro,
+body.tema-escuro .vc-info-item strong {
+    color: #f3f4f6;
+}
+
+/* Os valores secundarios (data, laboratorio) usam #6b7280, que no fundo
+   escuro cai para 3:1 — legivel, mas abaixo do confortavel. Um cinza mais
+   claro no escuro sobe para ~5:1 sem chamar mais atencao que o rotulo. */
+body.tema-escuro .vc-info-item p {
+    color: #9ca3af;
+}
+
 body.tema-escuro .nav-viveiros {
     background: #1f2937;
 }
