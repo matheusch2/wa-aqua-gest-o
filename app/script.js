@@ -2634,6 +2634,10 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   const msgSucesso = document.getElementById("msg-racao-sucesso");
   if (msgSucesso) {
+    // Mostra o viveiro no proprio aviso, pra confirmar de olho onde entrou.
+    // textContent ja escapa o nome — nao precisa de _esc aqui.
+    const alvoTexto = msgSucesso.querySelector(".msg-texto");
+    if (alvoTexto) alvoTexto.textContent = `Ração lançada no ${viveiros[index].nome}!`;
     msgSucesso.style.display = "flex";
     setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
   }
