@@ -762,6 +762,25 @@ function parseMoedaBR(str) {
   return n === null ? 0 : n;
 }
 
+// Tamanho do viveiro (ha) sempre como numero. O campo é de texto, e quem
+// digitava "2,5" gravava a string "2,5" — que parseFloat lê como 2 e Number
+// lê como NaN, estourando a produtividade (kg/ha) e o lucro/ha do relatório.
+// Passar por aqui na hora de gravar E na hora de carregar conserta o que
+// entra agora e cura o que já ficou torto no banco. Devolve null se vazio.
+function _tamanhoHa(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = parseDecimalBR(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Mostra o tamanho (ha) no padrão brasileiro: 2,5 em vez de 2.5. Como agora
+// guardamos numero, sem isto a tela exibiria ponto.
+function _fmtHa(v) {
+  const n = Number(v);
+  if (v === null || v === undefined || v === "" || !Number.isFinite(n)) return "--";
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
 function formatarMoedaBlur(input) {
   const v = input.value.trim();
   if (!v) return;
@@ -1071,7 +1090,7 @@ async function salvarViveiro() {
 
   const nome = document.getElementById("nomeViveiro").value.trim();
   const modo = document.getElementById("cadModo")?.value || "cultivo";
-  const tamanho = document.getElementById("tamanhoViveiro").value;
+  const tamanho = _tamanhoHa(document.getElementById("tamanhoViveiro").value);
   const erroViveiro = document.getElementById("msg-viveiro-erro");
   const mostrarErroViveiro = (msg) => { if (erroViveiro) { erroViveiro.textContent = msg; erroViveiro.style.display = "block"; } };
   if (erroViveiro) erroViveiro.style.display = "none";
@@ -1159,7 +1178,7 @@ async function salvarViveiro() {
     dataPovoamento: it.data_povoamento,
     dataPreparacao: it.data_preparacao || null,
     totalPovoado: it.total_povoado,
-    tamanho: it.tamanho,
+    tamanho: _tamanhoHa(it.tamanho),
     laboratorio: it.laboratorio,
     cicloId: it.ciclo_id || null,
     racoes: [], biometrias: [], despescas: [], ciclosFinalizados: [], custos: [],
@@ -1632,7 +1651,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
           <div class="vc-info-icone roxo">📐</div>
           <div>
             <strong>Tamanho</strong>
-            <p>${viveiro.tamanho || "--"} ha</p>
+            <p>${_fmtHa(viveiro.tamanho)} ha</p>
           </div>
         </div>
       </div>
@@ -1800,8 +1819,8 @@ async function salvarNomeViveiro(index, botao) {
   }
 
   const v = viveiros[index];
-  const tamanho = (document.getElementById("editTamanhoViveiro")?.value || "").trim();
-  if (!tamanho || Number(tamanho) <= 0) { erro("Informe o tamanho do viveiro."); return; }
+  const tamanho = _tamanhoHa(document.getElementById("editTamanhoViveiro")?.value || "");
+  if (!tamanho || tamanho <= 0) { erro("Informe o tamanho do viveiro."); return; }
 
   const dados = { nome: novo, tamanho };
   const mem = { nome: novo, tamanho };
@@ -1971,7 +1990,7 @@ function abrirViveiro(index) {
             <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
           </div>
           <small>Área do viveiro</small>
-          <strong>${viveiro.tamanho || "--"} ha</strong>
+          <strong>${_fmtHa(viveiro.tamanho)} ha</strong>
         </div>
 
         <div class="info-box">
@@ -6342,7 +6361,12 @@ function _finItensRateioFixo(alvos) {
     const vIni = v.dataPreparacao || v.dataPovoamento; // ciclo ativo: prep ou cultivo
     if (!vIni) continue;
     for (const cf of custosFixos) {
-      if (cf.ativo === false) continue;
+      // Legado desativado sem data de fim nunca vale em data nenhuma — pula.
+      // Os demais (ativos, ou desativados COM data de fim) contam nos dias em
+      // que valiam, exatamente como o rateio por ciclo. Antes, um custo
+      // desativado era descartado inteiro aqui, e o relatório financeiro
+      // subestimava o total e divergia do "Custo parcial" do viveiro.
+      if (!cf.dataFim && cf.ativo === false) continue;
       // Janela = max(data_inicio do custo, início do viveiro) .. hoje,
       // interceptada com o período do filtro financeiro.
       let ini = vIni;
@@ -6351,10 +6375,11 @@ function _finItensRateioFixo(alvos) {
       if (pIni && pIni > ini) ini = pIni;
       if (pFim && pFim < fim) fim = pFim;
       if (ini > fim) continue;
-      // Acumula a parcela diária deste custo (função-base compartilhada, dias reais do mês)
+      // Acumula a parcela diária deste custo (função-base compartilhada, dias reais do mês).
+      // _custoFixoValeNaData respeita início E fim do custo — mesma fonte do ciclo.
       let val = 0, cur = ini, guard = 0;
       while (cur <= fim && guard < 5000) {
-        if (!cf.dataInicio || cf.dataInicio <= cur) {
+        if (_custoFixoValeNaData(cf, cur)) {
           val += _rateioFixoDia(cf.valorMensal, cur, _viveirosAtivosNaData(cur, hoje));
         }
         cur = _maAddDias(cur, 1); guard++;
@@ -6972,7 +6997,7 @@ function mostrarViveiroSemCiclo(index) {
         <div class="form-icone-circulo" style="background:rgba(6,107,99,0.07);border-color:rgba(6,107,99,0.15)">
           <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         </div>
-        <span class="form-caption">${viveiro.tamanho ? viveiro.tamanho + " ha" : ""}</span>
+        <span class="form-caption">${viveiro.tamanho ? _fmtHa(viveiro.tamanho) + " ha" : ""}</span>
         <h2 class="form-titulo">${_esc(viveiro.nome)}</h2>
       </div>
       ${viveiro.dataPreparacao ? `
@@ -7132,7 +7157,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
              relatório mostrava 420 PLs onde eram 420 mil. -->
         <div class="rc2-cell"><small>PLs</small><b>${Number(String(ciclo.totalPovoado || "").replace(/\./g, "") || 0).toLocaleString("pt-BR")}</b></div>
         <div class="rc2-cell"><small>Laboratório</small><b>${_esc(ciclo.laboratorio || "—")}</b></div>
-        <div class="rc2-cell"><small>Área</small><b>${ciclo.tamanho} ha</b></div>
+        <div class="rc2-cell"><small>Área</small><b>${_fmtHa(ciclo.tamanho)} ha</b></div>
         ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `<div class="rc2-cell"><small>Preparação</small><b>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</b></div>` : ""}
       </div>
 
@@ -9901,7 +9926,7 @@ async function carregarViveiros(usuarioConhecido) {
     dataPovoamento: item.data_povoamento,
     dataPreparacao: item.data_preparacao || null,
     totalPovoado: item.total_povoado,
-    tamanho: item.tamanho,
+    tamanho: _tamanhoHa(item.tamanho),
     laboratorio: item.laboratorio,
     cicloId: item.ciclo_id || null,
 
@@ -9940,7 +9965,7 @@ async function carregarViveiros(usuarioConhecido) {
         id: ciclo.id,
         nomeViveiro: ciclo.nome_viveiro,
         laboratorio: ciclo.laboratorio,
-        tamanho: ciclo.tamanho,
+        tamanho: _tamanhoHa(ciclo.tamanho),
         totalPovoado: ciclo.total_povoado,
         dataPovoamento: ciclo.data_povoamento,
         dataEncerramento: ciclo.data_encerramento,
