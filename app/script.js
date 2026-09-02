@@ -2647,8 +2647,10 @@ async function salvarLancamentoRacao(indexDireto = "") {
   const [ay, am, ad] = data.split("-").map(Number);
   const prox = new Date(ay, am - 1, ad + 1);
   const proxStr = `${prox.getFullYear()}-${String(prox.getMonth() + 1).padStart(2, "0")}-${String(prox.getDate()).padStart(2, "0")}`;
-  document.getElementById("dataRacao").value = proxStr;
-  document.getElementById("consumoRacao").value = "";
+  // Guarda contra a tela ter mudado durante o await: sem isto, um getElementById
+  // nulo estouraria antes do restaurar() e o botão ficaria preso em "Salvando...".
+  const _dataRacaoEl = document.getElementById("dataRacao"); if (_dataRacaoEl) _dataRacaoEl.value = proxStr;
+  const _consumoRacaoEl = document.getElementById("consumoRacao"); if (_consumoRacaoEl) _consumoRacaoEl.value = "";
   restaurar();
 
   const msgSucesso = document.getElementById("msg-racao-sucesso");
@@ -2781,8 +2783,9 @@ async function salvarBiometria(index) {
     gramatura: gramatura,
   });
 
-  document.getElementById("dataBiometria").value = _hojeLocal();
-  document.getElementById("gramaturaBiometria").value = "";
+  // Guarda contra a tela ter mudado durante o await (senão trava o botão).
+  const _dataBioEl = document.getElementById("dataBiometria"); if (_dataBioEl) _dataBioEl.value = _hojeLocal();
+  const _gramBioEl = document.getElementById("gramaturaBiometria"); if (_gramBioEl) _gramBioEl.value = "";
   restaurar();
 
   const msgSucesso = document.getElementById("msg-bio-sucesso");
@@ -4401,8 +4404,11 @@ function _toggleDetalheDespesca(index, i) {
   if (jaAberto) return; // clicou no que já estava aberto só fecha
 
   const viveiro = viveiros[index];
-  const despescas = [...(viveiro.despescas || [])].sort((a, b) => a.data.localeCompare(b.data));
-  const d = despescas[i];
+  // 'i' é o índice no array ORIGINAL (viveiro.despescas), o mesmo que a linha e
+  // o botão de editar/excluir usam. NÃO reordenar aqui: se ordenasse por data,
+  // este índice apontaria para outra despesca e o detalhe mostraria os números
+  // de um registro diferente do que foi tocado.
+  const d = (viveiro.despescas || [])[i];
   if (!d) return;
   const kg = Number(d.quantidadeKg) || 0;
   const peso = Number(d.pesoMedio) || 0;
