@@ -8579,13 +8579,18 @@ async function salvarProduto() {
     return;
   }
 
-  // Passou nas validações: fecha a porta antes do primeiro await
+  // Passou nas validações: fecha a porta antes do primeiro await. Mostra
+  // "Salvando..." com spinner — antes o botão só apagava um pouco, sem texto,
+  // e numa conexão lenta parecia travado ("não salvou"), até aparecer o ✅.
   const botao = botaoTopo;
-  if (botao) { botao.disabled = true; botao.style.opacity = "0.65"; }
+  if (botao) {
+    botao.disabled = true; botao.style.opacity = "0.65";
+    botao.innerHTML = `<span class="btn-spinner"></span>Salvando...`;
+  }
 
   const usuario = await pegarUsuarioLogado();
   if (!usuario) {
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; botao.innerHTML = _TXT_SALVAR_PRODUTO; }
     return;
   }
 
@@ -8597,7 +8602,7 @@ async function salvarProduto() {
     .select();
 
   if (error) {
-    if (botao) { botao.disabled = false; botao.style.opacity = ""; }
+    if (botao) { botao.disabled = false; botao.style.opacity = ""; botao.innerHTML = _TXT_SALVAR_PRODUTO; }
     const erroEl = document.getElementById("erro-produto");
     if (erroEl) {
       erroEl.textContent = error.code === "42P01"
@@ -9881,19 +9886,27 @@ async function carregarViveiros(usuarioConhecido) {
 
   // Tabelas acessórias: seguem graciosas se ainda não existirem no banco.
   if (!rProdutos.error && rProdutos.data) {
-    produtos = rProdutos.data.map(p => ({
-      id: p.id, nome: p.nome, categoria: p.categoria,
-      pesoKg: Number(p.peso_kg), valorPago: Number(p.valor_pago),
-      custoPorGrama: Number(p.custo_por_grama),
-    }));
+    produtos = rProdutos.data.map(p => {
+      const pesoKg = Number(p.peso_kg);
+      const valorPago = Number(p.valor_pago);
+      // Recalcula o custo/grama a partir do peso e do valor ORIGINAIS (guardados
+      // com precisão), em vez de confiar no custo_por_grama gravado. Num insumo
+      // barato e pesado (arroz R$ 100 / 30 kg = 0,00333.../g), o valor derivado
+      // volta do banco arredondado e, ao multiplicar pelo saco (×30.000), não
+      // fechava os R$ 100 — dava "quebrado". Do peso e valor a conta fecha certa.
+      const custoPorGrama = pesoKg > 0 ? valorPago / (pesoKg * 1000) : (Number(p.custo_por_grama) || 0);
+      return { id: p.id, nome: p.nome, categoria: p.categoria, pesoKg, valorPago, custoPorGrama };
+    });
   }
   if (rTiposRacao.data) {
-    tiposRacao = rTiposRacao.data.map(t => ({
-      id: t.id, nome: t.nome,
-      pesoSacoKg: Number(t.peso_saco_kg),
-      valorSaco: Number(t.valor_saco),
-      custoPorKg: Number(t.custo_por_kg),
-    }));
+    tiposRacao = rTiposRacao.data.map(t => {
+      const pesoSacoKg = Number(t.peso_saco_kg);
+      const valorSaco = Number(t.valor_saco);
+      // Mesmo motivo do produto: recalcula o custo/kg do saco a partir do peso e
+      // valor originais, sem depender do custo_por_kg gravado (que pode arredondar).
+      const custoPorKg = pesoSacoKg > 0 ? valorSaco / pesoSacoKg : (Number(t.custo_por_kg) || 0);
+      return { id: t.id, nome: t.nome, pesoSacoKg, valorSaco, custoPorKg };
+    });
   }
   boletos = (rBoletos.data || []).map(b => ({
     id: b.id,
