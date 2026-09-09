@@ -9,7 +9,7 @@
   "scope": "/app/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#066b63",
   "theme_color": "#066b63",
   "categories": [
     "business",
