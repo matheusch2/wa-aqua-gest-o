@@ -22,7 +22,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#066b63">
     <link rel="manifest" href="manifest.json?v=20260821">
-    <link rel="stylesheet" href="style.css?v=20260909a">
+    <link rel="stylesheet" href="style.css?v=20260909b">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -45,7 +45,7 @@
     <!-- ═══ TELA DE ABERTURA (splash) ═══════════════════════════════════════
          CSS INLINE de propósito: precisa pintar ANTES do style.css baixar, pra
          cobrir a tela branca enquanto o JS confere a sessão e busca os dados.
-         Logo do WA Aqua no centro e um camarão girando em volta. O JS chama
+         Logo do WA Aqua no centro e um peixe girando em volta. O JS chama
          _esconderSplash() quando o app fica pronto (ver script.js). -->
     <style>
       .splash-wa{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
@@ -60,16 +60,16 @@
         border:2px dashed rgba(255,255,255,.16);}
       .splash-wa-orbita{position:absolute;width:150px;height:150px;
         animation:splash-wa-girar 2.6s linear infinite;}
-      .splash-wa-camarao{position:absolute;top:-2px;left:50%;margin-left:-15px;width:30px;
+      .splash-wa-peixe{position:absolute;top:-2px;left:50%;margin-left:-15px;width:30px;
         filter:drop-shadow(0 2px 3px rgba(0,0,0,.28));
         animation:splash-wa-contra 2.6s linear infinite;}
-      .splash-wa-camarao svg{display:block;width:100%;height:auto;}
+      .splash-wa-peixe svg{display:block;width:100%;height:auto;}
       @keyframes splash-wa-girar{to{transform:rotate(360deg);}}
       @keyframes splash-wa-contra{to{transform:rotate(-360deg);}}
       .splash-wa-texto{margin:0;font-family:Arial,sans-serif;font-size:13.5px;
         color:rgba(255,255,255,.82);letter-spacing:.3px;}
       @media (prefers-reduced-motion:reduce){
-        .splash-wa-orbita,.splash-wa-camarao{animation-duration:7s;}
+        .splash-wa-orbita,.splash-wa-peixe{animation-duration:7s;}
       }
     </style>
 </head>
@@ -83,10 +83,11 @@
       <div class="splash-wa-marca">
         <div class="splash-wa-track"></div>
         <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua" class="splash-wa-logo">
-        <div class="splash-wa-orbita"><span class="splash-wa-camarao"><svg viewBox="0 0 40 40" aria-hidden="true">
-          <g fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M28 9 C31 15 31 23 25 27 C20 31 13 30 9 27"/></g>
-          <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"><path d="M9 27 l-4 -2"/><path d="M9 27 l-2 -4"/><path d="M9 27 l-5 1"/><path d="M23 27 l1 4"/><path d="M18 29 l0 4"/><path d="M13 28 l-1 4"/><path d="M28 9 c3 -3 5 -3 7 -2"/></g>
-          <circle cx="27" cy="12" r="1.8" fill="rgb(6,107,99)"/>
+        <div class="splash-wa-orbita"><span class="splash-wa-peixe"><svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M6 20 C12 12 23 12 28 20 C23 28 12 28 6 20 Z" fill="#ffffff"/>
+          <path d="M28 20 L37 14 L34.5 20 L37 26 Z" fill="#ffffff"/>
+          <path d="M15 13 C17 9.5 21 9.5 23 12.5 Z" fill="#ffffff"/>
+          <circle cx="12" cy="18.5" r="1.7" fill="rgb(6,107,99)"/>
         </svg></span></div>
       </div>
       <p class="splash-wa-texto">Carregando...</p>
@@ -185,7 +186,7 @@
 
     </div>
 
-    <script src="script.js?v=20260909a"></script>
+    <script src="script.js?v=20260909b"></script>
 
 </body>
 </html>
