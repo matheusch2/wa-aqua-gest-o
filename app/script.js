@@ -10118,6 +10118,17 @@ async function _garantirCicloIdViveirosAtivos() {
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
+// Esconde a tela de abertura (splash) com um fade e a remove. Só é chamada
+// quando o app já está pronto na tela — enquanto carrega, a splash cobre a
+// tela branca. Em caso de redirecionamento pro login, NÃO escondemos: a splash
+// do login assume, e a entrada fica contínua.
+function _esconderSplash() {
+  const s = document.getElementById("splash-wa");
+  if (!s) return;
+  s.classList.add("sumindo");
+  setTimeout(() => s.remove(), 500); // depois do fade (.45s no CSS)
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   if (localStorage.getItem("tema") === "escuro") {
     document.body.classList.add("tema-escuro");
@@ -10174,8 +10185,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         _mostrarBannerLeitura();
       }
       _talvezPedirContato();
+      _esconderSplash();   // app pronto na tela: tira a abertura
     } else {
-      window.location.replace("login.html");
+      window.location.replace("login.html"); // splash fica até o login assumir
     }
   } catch (error) {
     console.log("Erro na inicialização:", error);

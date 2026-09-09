@@ -22,7 +22,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#066b63">
     <link rel="manifest" href="manifest.json?v=20260821">
-    <link rel="stylesheet" href="style.css?v=20260908a">
+    <link rel="stylesheet" href="style.css?v=20260909a">
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
@@ -93,8 +93,51 @@
         });
       }
     </script>
+
+    <!-- ═══ TELA DE ABERTURA (splash) ═══ CSS inline pra pintar antes do
+         style.css baixar. Mesma da index.html, pra entrada ficar contínua.
+         Some quando o formulário de login aparece (mostrarLogin). -->
+    <style>
+      .splash-wa{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:22px;
+        background:linear-gradient(135deg,rgb(4,75,70) 0%,rgb(6,107,99) 60%,rgb(7,125,115) 100%);
+        transition:opacity .45s ease;}
+      .splash-wa.sumindo{opacity:0;pointer-events:none;}
+      .splash-wa-marca{position:relative;width:150px;height:150px;display:grid;place-items:center;}
+      .splash-wa-logo{width:84px;height:84px;border-radius:20%;object-fit:cover;
+        box-shadow:0 4px 18px rgba(0,0,0,.28);}
+      .splash-wa-track{position:absolute;width:150px;height:150px;border-radius:50%;
+        border:2px dashed rgba(255,255,255,.16);}
+      .splash-wa-orbita{position:absolute;width:150px;height:150px;
+        animation:splash-wa-girar 2.6s linear infinite;}
+      .splash-wa-camarao{position:absolute;top:-2px;left:50%;margin-left:-15px;width:30px;
+        filter:drop-shadow(0 2px 3px rgba(0,0,0,.28));
+        animation:splash-wa-contra 2.6s linear infinite;}
+      .splash-wa-camarao svg{display:block;width:100%;height:auto;}
+      @keyframes splash-wa-girar{to{transform:rotate(360deg);}}
+      @keyframes splash-wa-contra{to{transform:rotate(-360deg);}}
+      .splash-wa-texto{margin:0;font-family:Arial,sans-serif;font-size:13.5px;
+        color:rgba(255,255,255,.82);letter-spacing:.3px;}
+      @media (prefers-reduced-motion:reduce){
+        .splash-wa-orbita,.splash-wa-camarao{animation-duration:7s;}
+      }
+    </style>
 </head>
 <body class="notranslate">
+
+    <!-- Tela de abertura: some quando o login aparece ou o app assume -->
+    <div id="splash-wa" class="splash-wa">
+      <div class="splash-wa-marca">
+        <div class="splash-wa-track"></div>
+        <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua" class="splash-wa-logo">
+        <div class="splash-wa-orbita"><span class="splash-wa-camarao"><svg viewBox="0 0 40 40" aria-hidden="true">
+          <g fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M28 9 C31 15 31 23 25 27 C20 31 13 30 9 27"/></g>
+          <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"><path d="M9 27 l-4 -2"/><path d="M9 27 l-2 -4"/><path d="M9 27 l-5 1"/><path d="M23 27 l1 4"/><path d="M18 29 l0 4"/><path d="M13 28 l-1 4"/><path d="M28 9 c3 -3 5 -3 7 -2"/></g>
+          <circle cx="27" cy="12" r="1.8" fill="rgb(6,107,99)"/>
+        </svg></span></div>
+      </div>
+      <p class="splash-wa-texto">Carregando...</p>
+    </div>
 
     <div id="card-gestao" class="card modo-login">
         <div id="area-login"></div>
@@ -104,6 +147,16 @@
         const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
         const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Esconde a tela de abertura (splash). Chamada quando um formulário
+        // aparece. Se for redirecionar pro app (_irPorPerfil), NÃO chamamos:
+        // a splash fica até o index.html assumir, e a entrada fica contínua.
+        function _esconderSplash() {
+            const s = document.getElementById("splash-wa");
+            if (!s) return;
+            s.classList.add("sumindo");
+            setTimeout(() => s.remove(), 500);
+        }
 
         // Detecta o fluxo de recuperação de senha (link recebido por e-mail)
         const _ehRecuperacao = (window.location.hash || "").includes("type=recovery");
@@ -177,6 +230,7 @@
         }
 
         function mostrarLogin() {
+            _esconderSplash();
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
@@ -217,6 +271,7 @@
         }
 
         function mostrarCadastro() {
+            _esconderSplash();
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
@@ -330,6 +385,7 @@
 
         // Tela mostrada ao abrir o link de recuperação recebido por e-mail
         function mostrarDefinirNovaSenha() {
+            _esconderSplash();
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
