@@ -6913,9 +6913,14 @@ async function salvarEncerramentoCiclo(index) {
     supabaseClient.from("despescas").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
   ]);
 
+  // O ciclo já foi salvo COM a cópia congelada do histórico (biometrias_json,
+  // racoes_json, despescas_json), então nada se perde. Mas se a limpeza falhar
+  // (internet oscilou), pode sobrar lançamento antigo no viveiro — em vez de
+  // seguir calado, marcamos pra avisar o usuário no fim.
+  let limpezaIncompleta = false;
   if (erroDelRacao || erroDelBio || erroDelDesp) {
     console.error("Erro ao limpar lançamentos:", erroDelRacao || erroDelBio || erroDelDesp);
-    // Continua mesmo assim — o ciclo foi salvo, tentamos limpar o máximo possível
+    limpezaIncompleta = true;
   }
 
   // Congela o custo de Ração do ciclo encerrado como registro definitivo no
@@ -6993,11 +6998,15 @@ async function salvarEncerramentoCiclo(index) {
   const novoCicloIdPrep = _novoCicloId();
 
   // Zera o ciclo e volta o viveiro para "Em preparação" (conta desde o encerramento)
-  await supabaseClient
+  const { error: erroReset } = await supabaseClient
     .from("viveiros")
     .update({ data_povoamento: null, total_povoado: null, laboratorio: null, data_preparacao: dataEncerramento, ciclo_id: novoCicloIdPrep })
     .eq("id", viveiro.id)
     .eq("user_id", usuario.id);
+  // Este é o passo mais sensível: se falhar, o viveiro fica "ativo" no banco e
+  // o ciclo já foi gravado — no recarregar reaparece o ciclo antigo. Antes o
+  // erro passava batido; agora avisamos.
+  if (erroReset) { console.error("Erro ao reiniciar o viveiro:", erroReset); limpezaIncompleta = true; }
 
   viveiro.dataPovoamento = null;
   viveiro.totalPovoado = null;
@@ -7013,6 +7022,13 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.ciclosFinalizados.push(cicloFinalizado);
 
   mostrarRelatorioCiclo(index, cicloFinalizado, "viveiro");
+
+  // Se a limpeza ou o reinício não completaram (internet oscilou), o ciclo
+  // está salvo, mas o app pode estar mostrando um estado que o banco ainda não
+  // confirmou. Avisa pra recarregar em vez de deixar o usuário sem saber.
+  if (limpezaIncompleta) {
+    setTimeout(() => _toastErro("Ciclo salvo! Mas a conexão oscilou ao finalizar — recarregue o app e confira o viveiro. Se aparecer lançamento antigo, encerre de novo ou me avise."), 500);
+  }
 }
 
 function mostrarViveiroSemCiclo(index) {
