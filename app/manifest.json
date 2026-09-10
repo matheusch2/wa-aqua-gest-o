@@ -9,8 +9,8 @@
   "scope": "/app/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#066b63",
-  "theme_color": "#066b63",
+  "background_color": "#054f4b",
+  "theme_color": "#054f4b",
   "categories": [
     "business",
     "productivity",
