@@ -489,3 +489,191 @@ body.tema-escuro .prep-status-ico { background: #422006; }
 body.tema-escuro .prep-status-txt { color: #fcd34d; }
 body.tema-escuro .prep-status-txt strong { color: #fbbf24; }
 body.tema-escuro .prep-status-desde { color: #d97706; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HISTÓRICO DE BIOMETRIA — refinamento visual sem alterar a estrutura
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bio-titulo {
+    margin-bottom: 12px;
+}
+
+.bio-tabela {
+    margin-top: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1.5px solid #dfe8e6;
+    border-radius: 14px;
+}
+
+.bio-tabela .linha-historico-acoes {
+    grid-template-columns: minmax(98px, 1.15fr) minmax(58px, .75fr) minmax(66px, .82fr) 78px;
+    gap: 5px;
+    min-height: 58px;
+    padding: 12px 10px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #edf1f0;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.bio-tabela .linha-historico-acoes:last-child {
+    border-bottom: none;
+}
+
+.bio-tabela .linha-historico-acoes.cabecalho {
+    min-height: auto;
+    padding: 11px 10px;
+    background: #f4f8f7;
+    color: #607472;
+    border-bottom: 1px solid #dfe8e6;
+    font-size: 11.5px;
+    letter-spacing: .04em;
+}
+
+.bio-data {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    color: #344644;
+}
+
+.bio-data b {
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.bio-data small {
+    color: #148174;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .055em;
+    line-height: 1;
+}
+
+.bio-peso {
+    color: #203d3a;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.bio-crescimento {
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.bio-crescimento.positivo { color: #188351; }
+.bio-crescimento.neutro { color: #98a4a2; }
+
+.bio-linha-mais-recente {
+    background: #f1faf7;
+    box-shadow: inset 3px 0 #119486;
+}
+
+.bio-acoes {
+    gap: 4px;
+    justify-content: center;
+}
+
+.bio-acao-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 9px;
+    background: #f3f6f5;
+    color: #526966;
+    transition: background .15s, transform .1s;
+}
+
+.bio-acao-btn:active {
+    background: #e4eeec;
+    transform: scale(.94);
+}
+
+.bio-acao-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.bio-acao-excluir {
+    background: #fff0f0;
+    color: #d65b5b;
+}
+
+.bio-acao-excluir:active {
+    background: #ffe1e1;
+}
+
+.bio-tabela > .sobrevivencia-texto {
+    margin: 0;
+    padding: 24px 14px;
+    text-align: center;
+}
+
+body.tema-escuro .bio-tabela {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+body.tema-escuro .bio-tabela .linha-historico-acoes {
+    background: #1f2937;
+    border-bottom-color: #374151;
+}
+
+body.tema-escuro .bio-tabela .linha-historico-acoes.cabecalho {
+    background: #263341;
+    color: #9ca3af;
+    border-bottom-color: #435064;
+}
+
+body.tema-escuro .bio-linha-mais-recente {
+    background: #12312d !important;
+    box-shadow: inset 3px 0 #34d399;
+}
+
+body.tema-escuro .bio-data { color: #d1d5db; }
+body.tema-escuro .bio-data small { color: #5eead4; }
+body.tema-escuro .bio-peso { color: #f3f4f6; }
+body.tema-escuro .bio-crescimento.positivo { color: #6ee7b7; }
+body.tema-escuro .bio-crescimento.neutro { color: #788493; }
+
+body.tema-escuro .bio-acao-btn {
+    background: #374151;
+    color: #d1d5db;
+}
+
+body.tema-escuro .bio-acao-btn:active { background: #4b5563; }
+
+body.tema-escuro .bio-acao-excluir {
+    background: #3b2428;
+    color: #fca5a5;
+}
+
+body.tema-escuro .bio-acao-excluir:active { background: #51272d; }
+
+@media (max-width: 380px) {
+    .bio-tabela .linha-historico-acoes {
+        grid-template-columns: minmax(82px, 1fr) minmax(52px, .7fr) minmax(58px, .78fr) 64px;
+        gap: 4px;
+        padding-left: 7px;
+        padding-right: 7px;
+        font-size: 12.5px;
+    }
+    .bio-tabela .linha-historico-acoes.cabecalho {
+        padding-left: 7px;
+        padding-right: 7px;
+        font-size: 10.5px;
+    }
+    .bio-data b { font-size: 12.5px; }
+    .bio-acao-btn { width: 30px; height: 30px; }
+    .bio-acao-btn svg { width: 15px; height: 15px; }
+}
+
