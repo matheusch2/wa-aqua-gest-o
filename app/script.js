@@ -3158,14 +3158,14 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
   const biometrias = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
 
   resultado.innerHTML = `
-        <h3 class="titulo-secao">Biometria - ${abreviarViveiro(viveiro.nome)}</h3>
+        <h3 class="titulo-secao bio-titulo">Biometria - ${abreviarViveiro(viveiro.nome)}</h3>
 
-        <div class="tabela-historico">
+        <div class="tabela-historico bio-tabela">
             <div class="linha-historico-acoes cabecalho">
                 <span>DATA</span>
                 <span class="col-centro">PESO</span>
                 <span class="col-centro">CRESC.</span>
-                <span></span>
+                <span class="col-centro">AÇÕES</span>
             </div>
 
             ${
@@ -3182,14 +3182,22 @@ function renderizarHistoricoBiometria(index, elementoId, direto) {
                       // Passar a posição da tela abria/apagava outra biometria
                       // sempre que alguém lançava uma com data retroativa.
                       const iOriginal = viveiro.biometrias.findIndex(b => b.id === item.id);
+                      const maisRecente = i === biometrias.length - 1;
                       return `
-                        <div class="linha-historico-acoes" id="bio-row-${index}-${iOriginal}">
-                            <span>${formatarData(item.data)}</span>
-                            <span class="col-centro">${fmtG(item.gramatura)} g</span>
-                            <span class="col-centro">${crescimento}</span>
-                            <span class="col-acoes">
-                              <button class="botao-editar" onclick="abrirEdicaoBiometria(${index}, ${iOriginal}, '${elementoId}', ${direto})">✏️</button>
-                              <button class="botao-editar botao-excluir" onclick="confirmarExcluirBiometria(${index}, ${iOriginal}, '${elementoId}', ${direto})">🗑️</button>
+                        <div class="linha-historico-acoes${maisRecente ? " bio-linha-mais-recente" : ""}" id="bio-row-${index}-${iOriginal}">
+                            <span class="bio-data">
+                              ${maisRecente ? "<small>MAIS RECENTE</small>" : ""}
+                              <b>${formatarData(item.data)}</b>
+                            </span>
+                            <span class="col-centro bio-peso">${fmtG(item.gramatura)} g</span>
+                            <span class="col-centro bio-crescimento ${i > 0 ? "positivo" : "neutro"}">${crescimento}</span>
+                            <span class="col-acoes bio-acoes">
+                              <button class="botao-editar bio-acao-btn" aria-label="Editar biometria de ${formatarData(item.data)}" title="Editar" onclick="abrirEdicaoBiometria(${index}, ${iOriginal}, '${elementoId}', ${direto})">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l4.5-1 12-12-3.5-3.5-12 12L3 21z"/><path d="M14 6l3.5 3.5"/></svg>
+                              </button>
+                              <button class="botao-editar botao-excluir bio-acao-btn bio-acao-excluir" aria-label="Excluir biometria de ${formatarData(item.data)}" title="Excluir" onclick="confirmarExcluirBiometria(${index}, ${iOriginal}, '${elementoId}', ${direto})">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V3h8v3"/><path d="M6 6l1 15h10l1-15"/><path d="M10 10v7M14 10v7"/></svg>
+                              </button>
                             </span>
                         </div>
                     `;
