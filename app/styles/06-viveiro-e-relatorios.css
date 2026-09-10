@@ -123,8 +123,10 @@
     font-size: 16.5px;
 }
 
-.vv-custos-grid .info-box:last-child,
-.vv-cadastro-grid .info-box:last-child {
+/* O cartão de destaque (Laboratório / Custo por quilo) é o PRIMEIRO de cada
+   bloco e ocupa a linha inteira, em cima dos dois menores. */
+.vv-custos-grid .info-box:first-child,
+.vv-cadastro-grid .info-box:first-child {
     grid-column: 1 / -1;
 }
 
@@ -287,8 +289,8 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     .vv-producao-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .vv-custos-grid,
     .vv-cadastro-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .vv-custos-grid .info-box:last-child,
-    .vv-cadastro-grid .info-box:last-child { grid-column: auto; }
+    .vv-custos-grid .info-box:first-child,
+    .vv-cadastro-grid .info-box:first-child { grid-column: auto; }
     .vv-manejo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .vv-admin-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .vv-admin-btn:last-child { grid-column: auto; }

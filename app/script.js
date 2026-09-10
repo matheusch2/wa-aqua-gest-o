@@ -1963,6 +1963,35 @@ function abrirViveiro(index) {
       </div>
 
       <div class="vv-resumo-grupos">
+        <section class="vv-indicadores-grupo vv-grupo-cadastro">
+          <h3 class="vv-grupo-titulo">Dados do viveiro</h3>
+          <div class="painel-info vv-cadastro-grid">
+            <div class="info-box">
+              <div class="info-box-icone">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <small>Laboratório</small>
+              <strong>${_esc(viveiro.laboratorio || "--")}</strong>
+            </div>
+
+            <div class="info-box">
+              <div class="info-box-icone">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <small>Povoamento</small>
+              <strong>${formatarData(viveiro.dataPovoamento)}</strong>
+            </div>
+
+            <div class="info-box">
+              <div class="info-box-icone">
+                <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              </div>
+              <small>Área do viveiro</small>
+              <strong>${_fmtHa(viveiro.tamanho)} ha</strong>
+            </div>
+          </div>
+        </section>
+
         <section class="vv-indicadores-grupo vv-grupo-producao">
           <h3 class="vv-grupo-titulo">Produção</h3>
           <div class="painel-info vv-producao-grid">
@@ -2021,6 +2050,14 @@ function abrirViveiro(index) {
           <div class="painel-info vv-custos-grid">
             <div class="info-box">
               <div class="info-box-icone">
+                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+              </div>
+              <small>Custo por quilo</small>
+              <strong>${custoKgProduzidoStr}</strong>
+            </div>
+
+            <div class="info-box">
+              <div class="info-box-icone">
                 <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
               </div>
               <small>Ração consumida</small>
@@ -2033,43 +2070,6 @@ function abrirViveiro(index) {
               </div>
               <small>Custo parcial</small>
               <strong>${totalCustos > 0 ? "R$ " + formatarNumeroBR(totalCustos, 2) : "--"}</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-              </div>
-              <small>Custo por quilo</small>
-              <strong>${custoKgProduzidoStr}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section class="vv-indicadores-grupo vv-grupo-cadastro">
-          <h3 class="vv-grupo-titulo">Dados do viveiro</h3>
-          <div class="painel-info vv-cadastro-grid">
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <small>Povoamento</small>
-              <strong>${formatarData(viveiro.dataPovoamento)}</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-              </div>
-              <small>Área do viveiro</small>
-              <strong>${_fmtHa(viveiro.tamanho)} ha</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </div>
-              <small>Laboratório</small>
-              <strong>${_esc(viveiro.laboratorio || "--")}</strong>
             </div>
           </div>
         </section>
