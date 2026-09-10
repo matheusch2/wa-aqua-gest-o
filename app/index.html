@@ -41,7 +41,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
-    <link rel="stylesheet" href="style.css?v=20260910f">
+    <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20260910g">
+    <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20260910g">
+    <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20260910g">
+    <link rel="stylesheet" href="styles/04-desktop-e-configuracoes.css?v=20260910g">
+    <link rel="stylesheet" href="styles/05-financeiro.css?v=20260910g">
+    <link rel="stylesheet" href="styles/06-viveiro-e-relatorios.css?v=20260910g">
+    <link rel="stylesheet" href="styles/07-planos-e-complementos.css?v=20260910g">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -62,7 +69,7 @@
     </script>
 
     <!-- ═══ TELA DE ABERTURA (splash) ═══════════════════════════════════════
-         CSS INLINE de propósito: precisa pintar ANTES do style.css baixar, pra
+         CSS INLINE de propósito: precisa pintar ANTES dos arquivos CSS baixarem, pra
          cobrir a tela branca enquanto o JS confere a sessão e busca os dados.
          Logo do WA Aqua no centro e um peixe girando em volta. O JS chama
          _esconderSplash() quando o app fica pronto (ver script.js). -->

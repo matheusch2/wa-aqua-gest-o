@@ -41,7 +41,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
-    <link rel="stylesheet" href="style.css?v=20260910f">
+    <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20260910g">
+    <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20260910g">
+    <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20260910g">
+    <link rel="stylesheet" href="styles/04-desktop-e-configuracoes.css?v=20260910g">
+    <link rel="stylesheet" href="styles/05-financeiro.css?v=20260910g">
+    <link rel="stylesheet" href="styles/06-viveiro-e-relatorios.css?v=20260910g">
+    <link rel="stylesheet" href="styles/07-planos-e-complementos.css?v=20260910g">
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }
@@ -114,7 +121,7 @@
     </script>
 
     <!-- ═══ TELA DE ABERTURA (splash) ═══ CSS inline pra pintar antes do
-         style.css baixar. Mesma da index.html, pra entrada ficar contínua.
+         os arquivos CSS baixarem. Mesma da index.html, pra entrada ficar contínua.
          Some quando o formulário de login aparece (mostrarLogin). -->
     <style>
       .splash-wa{position:fixed;inset:0;z-index:9999;min-height:100dvh;overflow:hidden;

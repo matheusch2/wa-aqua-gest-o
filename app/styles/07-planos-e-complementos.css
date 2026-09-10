@@ -1,0 +1,353 @@
+
+/* ─── Assinatura / Planos (redesign) ──────────────────────────────────── */
+.assin-status {
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+  border: 1px solid #e5e7eb; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.assin-status b { font-weight: 800; }
+.assin-status-l1 { font-size: 15px; color: #111827; }
+.assin-status-l2 { font-size: 12.5px; color: #6b7280; margin-top: 2px; }
+.assin-status-hint { font-size: 12px; color: #9ca3af; margin-top: 8px; line-height: 1.4; }
+.assin-status-ok .assin-status-l1 b { color: #166534; }
+.assin-status-pend { border-color: #fcd34d; background: #fffbeb; }
+.assin-status-pend .assin-status-l2 { color: #92400e; }
+.assin-status-free .assin-status-l1 b { color: #066b63; }
+
+.assin-toggle { display: flex; background: #eef0f2; border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+.assin-toggle-btn { flex: 1; border: none; background: transparent; padding: 10px 6px; border-radius: 9px; font-size: 13px; font-weight: 700; color: #6b7280; cursor: pointer; }
+.assin-toggle-btn.ativo { background: #fff; color: rgb(6,107,99); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.assin-toggle-eco { font-size: 11px; font-weight: 600; opacity: .85; }
+
+.planos-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 760px) { .planos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.plano-card {
+  display: flex; flex-direction: column;
+  border: 1px solid #e5e7eb; border-radius: 16px; background: #fff;
+  padding: 18px 18px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.plano-card-corpo { flex: 1 1 auto; display: flex; flex-direction: column; }
+.plano-card-rodape { margin-top: 14px; }
+.plano-card-atual { border-color: #86efac; background: #f6fef9; }
+
+.plano-nome { font-size: 17px; font-weight: 800; color: #111827; }
+.plano-viv { font-size: 12.5px; color: #6b7280; margin-top: 2px; }
+.plano-preco { font-size: 26px; font-weight: 900; color: #111827; margin: 12px 0 0; line-height: 1.05; }
+.plano-preco small { display: block; font-size: 12px; font-weight: 600; color: #9ca3af; margin-top: 3px; }
+.plano-preco-sub { font-size: 12.5px; color: #6b7280; margin-top: 4px; }
+.plano-economia { font-size: 12px; font-weight: 700; color: #16a34a; margin-top: 3px; }
+.plano-recursos { list-style: none; padding: 0; margin: 12px 0 0; }
+.plano-recursos li { font-size: 12.5px; color: #4b5563; padding: 4px 0 4px 20px; position: relative; }
+.plano-recursos li:before { content: "✓"; position: absolute; left: 0; color: #066b63; font-weight: 900; }
+
+.plano-btn { width: 100%; padding: 12px; background: rgb(6,107,99); color: #fff; border: none; border-radius: 11px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.plano-atual-tag { width: 100%; padding: 12px; text-align: center; background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 11px; font-size: 14px; font-weight: 800; }
+
+.assin-obs { font-size: 11.5px; color: #9ca3af; text-align: center; margin: 16px 0 4px; line-height: 1.4; }
+.assin-obs b { color: #6b7280; }
+
+body.tema-escuro .assin-status { background: #1f2937; border-color: #374151; }
+body.tema-escuro .assin-status-l1 { color: #f3f4f6; }
+body.tema-escuro .assin-status-pend { background: #2d1f00; border-color: #78350f; }
+body.tema-escuro .assin-toggle { background: #374151; }
+body.tema-escuro .assin-toggle-btn.ativo { background: #111827; color: #34d399; }
+body.tema-escuro .plano-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .plano-card-atual { background: #05261f; border-color: #0f5132; }
+body.tema-escuro .plano-nome,
+body.tema-escuro .plano-preco { color: #f3f4f6; }
+body.tema-escuro .plano-viv,
+body.tema-escuro .plano-preco-sub { color: #9ca3af; }
+body.tema-escuro .plano-recursos li { color: #d1d5db; }
+body.tema-escuro .plano-atual-tag { background: #05331f; color: #86efac; border-color: #0f5132; }
+
+/* ─── Simular venda ───────────────────────────────────────────────────── */
+.sim-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sim-card { background: #f9fafb; border: 1px solid #eef0f2; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.sim-card small { font-size: 11px; color: #9ca3af; font-weight: 600; }
+.sim-card strong { font-size: 16px; font-weight: 800; color: #1f2937; }
+.sim-card.sim-ok strong { color: #16a34a; }
+.sim-card.sim-neg strong { color: #dc2626; }
+.sim-hint { font-size: 11.5px; color: #9ca3af; margin-top: 10px; line-height: 1.4; }
+.sim-aviso { font-size: 13px; color: #92400e; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 12px 14px; margin-top: 4px; line-height: 1.4; }
+body.tema-escuro .sim-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sim-card strong { color: #f3f4f6; }
+body.tema-escuro .sim-card.sim-ok strong { color: #34d399; }
+
+/* ─── Detalhe da despesca (toque na linha) ────────────────────────────── */
+.despesca-clicavel { cursor: pointer; }
+.despesca-detalhe { background: #f0fdf9; border: 1px solid #99f6e4; border-radius: 10px; padding: 8px 13px; margin: 2px 0 8px; }
+.dd-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px dashed #cffafe; font-size: 13px; }
+.dd-row span { color: #6b7280; }
+.dd-row b { color: #111827; font-weight: 700; text-align: right; }
+.dd-total { border-top: 1.5px solid #066b63; border-bottom: none; margin-top: 2px; padding-top: 9px; }
+.dd-total span,
+.dd-total b { color: #066b63; font-weight: 800; font-size: 14px; }
+body.tema-escuro .despesca-detalhe { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .dd-row { border-bottom-color: #0f4d47; }
+body.tema-escuro .dd-row b { color: #f3f4f6; }
+body.tema-escuro .dd-row span { color: #9ca3af; }
+
+/* Selo de viveiro fora do plano (lista de viveiros) */
+.vc-badge-bloqueado {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #b91c1c;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 20px;
+    padding: 3px 9px;
+    margin-top: 4px;
+    cursor: pointer;
+}
+
+body.tema-escuro .vc-badge-bloqueado { background: #3f1d1d; border-color: #7f1d1d; color: #fca5a5; }
+
+/* ── Boleto: pagamento parcial ── */
+.bt-prog { margin-top: 14px; }
+.bt-prog-topo { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: #6b7280; margin-bottom: 6px; }
+.bt-prog-topo b { color: #16323c; }
+.bt-prog-falta { font-weight: 700; color: #b45309; }
+.bt-prog-barra { height: 9px; background: #eef2f4; border-radius: 6px; overflow: hidden; }
+.bt-prog-fill { height: 100%; background: #f59e0b; border-radius: 6px; transition: width .3s; }
+.bt-prog-fill.cheio { background: #16a34a; }
+.bt-pagform { margin-top: 10px; background: #f8fafb; border: 1px solid #e6ecea; border-radius: 12px; padding: 12px; }
+.bt-pagform label { display: block; font-size: 12.5px; font-weight: 700; color: #45565f; margin-bottom: 5px; }
+.bt-pagform input { width: 100%; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 11px; font-size: 15px; outline: none; }
+.bt-pagform input:focus { border-color: #066b63; }
+.bt-pagform-dica { font-size: 11.5px; color: #9ca3af; margin-top: 6px; }
+.bt-pagform-btns { display: flex; gap: 8px; margin-top: 10px; }
+.bt-pag-cancelar { flex: 1; padding: 11px; background: #f1f5f9; color: #475569; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.bt-pag-ok { flex: 2; padding: 11px; background: #066b63; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+body.tema-escuro .bt-prog-barra { background: #374151; }
+body.tema-escuro .bt-prog-topo b { color: #f3f4f6; }
+body.tema-escuro .bt-pagform { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-pagform input { background: #111827; border-color: #374151; color: #f3f4f6; }
+body.tema-escuro .bt-pag-cancelar { background: #374151; color: #e5e7eb; }
+
+/* ── Boleto card: saldo em destaque + badges separados (spec ChatGPT) ── */
+.bt-badges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+.bt-badge-fin-aberto { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.bt-badge-fin-parcial { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.bt-badge-fin-pago { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+.bt-card-forn { font-size: 11.5px; color: #6b7280; margin: 1px 0 6px; }
+.bt-card-saldo { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+.bt-card-saldo b { font-size: 20px; font-weight: 800; color: #066b63; line-height: 1; }
+.bt-card-saldo small { font-size: 11px; color: #9ca3af; font-weight: 600; }
+.bt-card-saldo.quit b { color: #16a34a; }
+.bt-card-aux { font-size: 10.5px; color: #9ca3af; margin-bottom: 6px; }
+.bt-card-verdet { font-size: 11px; color: #066b63; font-weight: 700; }
+body.tema-escuro .bt-card-saldo b { color: #34d399; }
+body.tema-escuro .bt-card-forn,
+body.tema-escuro .bt-card-aux { color: #9ca3af; }
+body.tema-escuro .bt-badge-fin-aberto { background: #374151; color: #d1d5db; border-color: #4b5563; }
+body.tema-escuro .bt-badge-fin-parcial { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }
+
+/* Excluir minha conta — discreto (zona de perigo), não compete com "Sair" */
+.cfg-perigo { margin-top: 16px; padding-top: 12px; border-top: 1px solid #eef0f2; text-align: center; }
+.cfg-excluir-link { background: none; border: none; color: #b91c1c; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 6px 10px; opacity: .8; }
+.cfg-excluir-link:active { opacity: 1; text-decoration: underline; }
+body.tema-escuro .cfg-perigo { border-top-color: #374151; }
+body.tema-escuro .cfg-excluir-link { color: #fca5a5; }
+
+/* Relatório de custos: alternar Geral / Detalhado */
+.custo-modo-toggle { display: flex; gap: 8px; margin: 4px 0 12px; }
+.custo-modo-toggle .cmt-btn { flex: 1; background: #fff; border: 1.5px solid #e5e7eb; color: #4b5563; border-radius: 10px; padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.custo-modo-toggle .cmt-btn.ativo { background: rgb(6,107,99); border-color: rgb(6,107,99); color: #fff; }
+body.tema-escuro .custo-modo-toggle .cmt-btn { background: #1f2937; border-color: #374151; color: #d1d5db; }
+body.tema-escuro .custo-modo-toggle .cmt-btn.ativo { background: rgb(6,107,99); border-color: rgb(6,107,99); color: #fff; }
+
+/* ===== Extrato Detalhado dos custos do viveiro ===== */
+.custo-grupo-lista-det { gap: 8px; }
+.cd-resumo { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 2px 8px; font-size: 13px; color: #6b7280; font-weight: 600; }
+.cd-resumo-val { font-size: 15px; font-weight: 800; color: rgb(6,107,99); }
+.cd-data-header { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #9ca3af; text-transform: uppercase; margin: 8px 2px 2px; }
+.cd-card { position: relative; background: #fff; border: 1px solid #eef1f0; border-left: 3px solid rgb(6,107,99); border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(6,107,99,.05); }
+.cd-card-auto { border-left-color: #cbd5e1; }
+.cd-l1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.cd-nome { font-size: 14px; font-weight: 700; color: #1f2937; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: normal; overflow-wrap: anywhere; }
+.cd-valor { font-size: 14px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; flex-shrink: 0; }
+.cd-l2 { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.cd-cat { font-size: 12px; color: #9ca3af; font-weight: 500; }
+.cd-badge { font-size: 10px; font-weight: 800; letter-spacing: .03em; color: rgb(6,107,99); background: rgba(6,107,99,.10); padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
+.cd-l3 { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; min-height: 22px; }
+.cd-meta { font-size: 12px; color: #9ca3af; font-weight: 600; }
+.cd-menu-wrap { position: relative; margin-left: auto; }
+.cd-menu-btn { background: none; border: none; color: #9ca3af; font-size: 20px; line-height: 1; padding: 0 6px; cursor: pointer; border-radius: 8px; }
+.cd-menu-btn:hover { color: #4b5563; background: #f3f4f6; }
+.cd-menu { display: none; position: absolute; right: 0; top: 26px; z-index: 30; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.12); overflow: hidden; min-width: 170px; }
+.cd-menu.aberto { display: block; }
+.cd-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 11px 14px; font-size: 13px; font-weight: 600; color: #374151; cursor: pointer; }
+.cd-menu button:hover { background: #f3f4f6; }
+.cd-menu .cd-menu-excluir { color: #dc2626; border-top: 1px solid #f3f4f6; }
+body.tema-escuro .cd-resumo { color: #9ca3af; }
+body.tema-escuro .cd-card { background: #1f2937; border-color: #374151; border-left-color: rgb(6,107,99); box-shadow: none; }
+body.tema-escuro .cd-card-auto { border-left-color: #4b5563; }
+body.tema-escuro .cd-nome { color: #f3f4f6; }
+body.tema-escuro .cd-cat,
+body.tema-escuro .cd-meta { color: #9ca3af; }
+body.tema-escuro .cd-badge { color: #6ee7d8; background: rgba(6,107,99,.28); }
+body.tema-escuro .cd-menu { background: #111827; border-color: #374151; }
+body.tema-escuro .cd-menu button { color: #e5e7eb; }
+body.tema-escuro .cd-menu button:hover { background: #1f2937; }
+body.tema-escuro .cd-menu-btn:hover { background: #374151; color: #e5e7eb; }
+body.tema-escuro .cd-menu .cd-menu-excluir { color: #f87171; border-top-color: #1f2937; }
+
+/* ─── ENERGIA (rateio manual por período de leitura) ─────────────────────── */
+.en-form { display: flex; flex-direction: column; }
+.en-datas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.en-erro { color: #ef4444; font-size: 13px; margin: 2px 0 10px; text-align: center; font-weight: 500; }
+
+.en-sec-tit {
+    font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    color: #6b7280; margin: 20px 2px 6px;
+}
+.en-dica { font-size: 12.5px; color: #6b7280; margin: 0 2px 10px; line-height: 1.45; }
+.en-dica b { color: #374151; }
+.en-vazio {
+    text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.5;
+    padding: 20px 12px; margin-top: 14px;
+    background: #f9fafb; border: 1.5px dashed #e5e7eb; border-radius: 13px;
+}
+
+.en-atalhos { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.en-atalho {
+    width: auto; flex: 1 1 auto; background: #f0f7f5; border: 1.5px solid #d6e8e4;
+    color: rgb(6,107,99); border-radius: 10px; padding: 8px 12px;
+    font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.en-atalho:active { background: #dcefeb; }
+
+.en-lista { display: flex; flex-direction: column; gap: 8px; }
+.en-item {
+    display: flex; align-items: center; gap: 10px;
+    background: white; border: 1.5px solid #e5e7eb; border-radius: 13px; padding: 11px 13px;
+}
+/* Fatia de ciclo que já encerrou: o custo vai para AQUELE ciclo, não para o
+   novo. Marcar visualmente evita a dúvida de "isso não vai bagunçar o ciclo?". */
+.en-item.en-encerrado { background: #fffbeb; border-color: #fde68a; }
+.en-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.en-item-nome { font-size: 14.5px; font-weight: 800; color: #1f2937; }
+.en-item-sub { font-size: 12px; color: #6b7280; }
+.en-badge {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+    background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .03em; vertical-align: 1px;
+}
+.en-item-val { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.en-item-rs { font-size: 12px; font-weight: 700; color: #9ca3af; }
+.en-item-val input {
+    width: 96px; text-align: right; border: 1.5px solid #e5e7eb; border-radius: 9px;
+    padding: 8px 9px; font-size: 14px; font-weight: 700; color: #1f2937;
+    background: #fff; outline: none;
+}
+.en-item-val input:focus { border-color: rgb(6,107,99); }
+
+.en-total {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    flex-wrap: wrap; border-radius: 11px; padding: 10px 12px; margin-top: 10px;
+    font-size: 13px; font-weight: 600;
+}
+.en-total b { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.en-total small { font-size: 11.5px; font-weight: 600; opacity: .9; }
+.en-total.ok { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.en-total.falta { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.en-total.passou { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+body.tema-escuro .en-dica,
+body.tema-escuro .en-sec-tit,
+body.tema-escuro .en-item-sub { color: #9ca3af; }
+body.tema-escuro .en-dica b { color: #d1d5db; }
+body.tema-escuro .en-vazio { background: #1a1f1e; border-color: #2b3a37; color: #9ca3af; }
+body.tema-escuro .en-atalho { background: #16241f; border-color: #2b3a37; color: #6ee7d8; }
+body.tema-escuro .en-item { background: #1a1f1e; border-color: #2b3a37; }
+body.tema-escuro .en-item-nome { color: #e5e7eb; }
+body.tema-escuro .en-item.en-encerrado { background: #26200f; border-color: #574512; }
+body.tema-escuro .en-badge { background: rgba(245,158,11,0.22); color: #fcd34d; }
+body.tema-escuro .en-item-val input { background: #12191a; border-color: #2b3a37; color: #e5e7eb; }
+body.tema-escuro .en-total.ok { background: #10241d; border-color: #14532d; color: #6ee7b7; }
+body.tema-escuro .en-total.falta { background: #26200f; border-color: #574512; color: #fcd34d; }
+body.tema-escuro .en-total.passou { background: #2a1414; border-color: #7f1d1d; color: #fca5a5; }
+
+/* Espera enquanto o histórico do ciclo é buscado (ele não vem na abertura) */
+.rel-carregando {
+    text-align: center; color: #6b7280; font-size: 14px; line-height: 1.6;
+    padding: 44px 18px;
+}
+body.tema-escuro .rel-carregando { color: #9ca3af; }
+
+/* Botão "usar o estimado" da simulação de venda — volta a biomassa digitada
+   para o valor que o app calculou. Fica dentro de um parágrafo, então precisa
+   anular a largura total que o CSS dá a todo button. */
+.sim-voltar-est {
+    width: auto; display: inline; background: none; border: none; padding: 0;
+    color: rgb(6,107,99); font-size: inherit; font-weight: 700; font-family: inherit;
+    text-decoration: underline; cursor: pointer;
+}
+body.tema-escuro .sim-voltar-est { color: #6ee7d8; }
+
+/* ─── PEDIDO DE NOME E TELEFONE ──────────────────────────────────────────────
+   Aparece na abertura quando o cadastro está incompleto. Segue o mesmo formato
+   de diálogo já usado em custos fixos (.cf-vig-*), para não inventar um visual
+   novo só para esta tela. */
+
+.ct-fundo {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(15,23,42,0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px;
+}
+
+.ct-caixa {
+    position: relative;
+    background: #fff; border-radius: 16px;
+    padding: 22px 18px 18px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+    max-height: 90vh; overflow-y: auto;
+}
+
+/* O X fica no canto e é um alvo de 40px: precisa ser fácil de acertar. Botão
+   de fechar difícil de tocar não protege ninguém — só irrita. */
+.ct-fechar {
+    position: absolute; top: 8px; right: 8px;
+    width: 40px; height: 40px;
+    background: none; border: none; padding: 0;
+    font-size: 26px; line-height: 1; color: #9ca3af;
+    cursor: pointer;
+}
+.ct-fechar:active { color: #4b5563; }
+
+.ct-ico {
+    width: 48px; height: 48px; margin: 0 auto 12px;
+    border-radius: 14px; background: rgba(6,107,99,0.10);
+    display: flex; align-items: center; justify-content: center;
+}
+.ct-ico svg {
+    width: 24px; height: 24px; stroke: rgb(6,107,99);
+    fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.ct-caixa h4 {
+    margin: 0 0 16px; text-align: center;
+    font-size: 17px; font-weight: 800; color: #111827;
+}
+
+.ct-caixa .campo-form { margin-bottom: 12px; }
+
+.ct-erro {
+    color: #e53e3e; background: #fff5f5;
+    border: 1px solid #feb2b2; border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; margin-bottom: 10px;
+}
+
+.ct-privacidade {
+    display: block; text-align: center; margin-top: 12px;
+    font-size: 11.5px; color: #9ca3af; text-decoration: none;
+}
+
+body.tema-escuro .ct-caixa { background: #1f2937; }
+body.tema-escuro .ct-caixa h4 { color: #f3f4f6; }
+body.tema-escuro .ct-ico { background: rgba(52,211,153,0.12); }
+body.tema-escuro .ct-ico svg { stroke: #34d399; }
+body.tema-escuro .ct-fechar { color: #6b7280; }

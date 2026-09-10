@@ -21,9 +21,9 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v4 força
-// a renovação do CSS após a limpeza dos estilos antigos.
-const CACHE = "waaqua-v4";
+// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v5 força
+// a renovação após a divisão segura do CSS em arquivos menores.
+const CACHE = "waaqua-v5";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -38,7 +38,13 @@ const ESSENCIAIS = [
   // O sistema
   "/app/login.html",
   "/app/index.html",
-  "/app/style.css",
+  "/app/styles/01-base-e-painel.css",
+  "/app/styles/02-viveiros-e-formularios.css",
+  "/app/styles/03-tema-custos-e-crescimento.css",
+  "/app/styles/04-desktop-e-configuracoes.css",
+  "/app/styles/05-financeiro.css",
+  "/app/styles/06-viveiro-e-relatorios.css",
+  "/app/styles/07-planos-e-complementos.css",
   "/app/script.js",   // o cérebro do app: sem ele no precache, a PRIMEIRA
                       // abertura offline carregava a casca sem funcionar.
                       // Continua rede-primeiro; isto é só a reserva offline.

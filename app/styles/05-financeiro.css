@@ -1,0 +1,603 @@
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓDULO FINANCEIRO — reorganização
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ícones coloridos do hub */
+.cfg-item-ico-amber { background: #fffbeb !important; }
+.cfg-item-ico-amber svg { stroke: #d97706 !important; }
+.cfg-item-ico-roxo { background: #f5f3ff !important; }
+.cfg-item-ico-roxo svg { stroke: #7c3aed !important; }
+.cfg-item-ico-verde { background: #ecfdf5 !important; }
+.cfg-item-ico-verde svg { stroke: #059669 !important; }
+
+/* ── Custos fixos mensais ── */
+.cf-explica {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: #f0fdfa; border: 1px solid #99f6e4;
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+    font-size: 12.5px; color: #0f766e; line-height: 1.45;
+}
+.cf-explica svg { width: 18px; height: 18px; flex-shrink: 0; stroke: #0d9488; fill: none; stroke-width: 2; margin-top: 1px; }
+.cf-explica strong { color: #0f766e; }
+
+.cf-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.cf-resumo-card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 12px 10px; text-align: center;
+}
+.cf-resumo-card small { display: block; font-size: 10.5px; color: #9ca3af; margin-bottom: 4px; }
+.cf-resumo-card strong { font-size: 15px; color: #111827; font-weight: 700; }
+
+.cf-lista { display: flex; flex-direction: column; gap: 10px; }
+.cf-card {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+    padding: 12px 14px;
+}
+.cf-card-off { opacity: 0.55; }
+.cf-card-ico {
+    width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
+    background: #ecfdf5; display: flex; align-items: center; justify-content: center;
+}
+.cf-card-ico svg { width: 20px; height: 20px; stroke: #059669; fill: none; stroke-width: 2; }
+.cf-card-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cf-card-nome { font-size: 14px; font-weight: 600; color: #111827; }
+.cf-card-cat { font-size: 11.5px; color: #9ca3af; }
+.cf-card-valor { font-size: 15px; font-weight: 700; color: #059669; white-space: nowrap; }
+.cf-card-valor small { font-size: 10.5px; font-weight: 500; color: #9ca3af; }
+.cf-card-acoes { display: flex; gap: 6px; }
+/* Diálogo: o novo valor vale a partir de hoje ou desde o início? */
+.cf-vig-fundo {
+    position: fixed; inset: 0; z-index: 9998; background: rgba(15,23,42,0.45);
+    display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.cf-vig-caixa {
+    background: #fff; border-radius: 16px; padding: 18px; width: 100%; max-width: 380px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+}
+.cf-vig-caixa h4 { margin: 0 0 4px; font-size: 16px; color: rgb(6,107,99); font-weight: 800; }
+.cf-vig-sub { margin: 0 0 14px; font-size: 12.5px; color: #6b7280; }
+.cf-vig-sub b { color: #1f2937; }
+.cf-vig-data {
+    width: 100%; padding: 11px 12px; border: 1.5px solid #e5e7eb; border-radius: 12px;
+    font-size: 15px; color: #1f2937; background: #fff; box-sizing: border-box;
+}
+.cf-vig-atalhos { display: flex; gap: 7px; flex-wrap: wrap; margin: 9px 0 4px; }
+.cf-vig-chip {
+    width: auto; background: #f0f7f5; color: rgb(6,107,99); border: 1px solid #d6e8e4;
+    border-radius: 999px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.cf-vig-chip:hover { background: #e2f0ec; }
+.cf-vig-nota { margin: 6px 0 12px; font-size: 11.5px; color: #6b7280; line-height: 1.4; }
+.cf-vig-ok { margin: 0; }
+.cf-vig-cancelar {
+    width: 100%; background: none; border: none; color: #6b7280;
+    font-size: 13px; font-weight: 600; padding: 8px; cursor: pointer;
+}
+body.tema-escuro .cf-vig-caixa { background: #1f2937; }
+body.tema-escuro .cf-vig-data { background: #111827; border-color: #374151; color: #f3f4f6; }
+body.tema-escuro .cf-vig-chip { background: #16241f; border-color: #2b3a37; color: #6ee7d8; }
+body.tema-escuro .cf-vig-sub b { color: #f3f4f6; }
+
+.cf-btn-acao {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
+    background: #f9fafb; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+}
+.cf-btn-acao svg { width: 16px; height: 16px; stroke: #6b7280; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cf-btn-acao:hover { background: #f3f4f6; }
+.cf-btn-excluir svg { stroke: #dc2626; }
+.cf-confirmar {
+    flex-basis: 100%; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px; padding-top: 10px; border-top: 1px dashed #e5e7eb;
+    font-size: 13px; color: #374151;
+}
+.cf-confirmar span { flex: 1; }
+
+/* Topo com ação à direita */
+.fin-topo-acoes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.fin-novo-btn {
+    background: rgb(6,107,99);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.fin-novo-btn:active { background: rgb(4,85,79); }
+
+.bt-topo-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.fin-novo-btn-sec {
+    background: #fff;
+    color: rgb(6,107,99);
+    border: 1.5px solid rgb(6,107,99);
+}
+.fin-novo-btn-sec:active { background: #eef7f6; }
+
+/* Seletor de fornecedor (filtro opcional) */
+.bt-forn-filtro {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px; padding: 4px 10px;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.bt-forn-filtro svg { width: 15px; height: 15px; flex-shrink: 0; stroke: #6b7280; fill: none; stroke-width: 2; }
+.bt-forn-filtro select {
+    flex: 1; border: none; background: transparent; font-size: 13px;
+    color: #374151; padding: 6px 0; outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+}
+body.tema-escuro .bt-forn-filtro { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-forn-filtro svg { stroke: #9ca3af; }
+body.tema-escuro .bt-forn-filtro select { color: #e5e7eb; }
+
+/* Barra de total dos boletos (conforme o filtro) */
+.bt-total-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px; padding: 12px 16px;
+    background: #f0fdfa; border: 1.5px solid #99f6e4; border-radius: 12px;
+}
+.bt-total-bar span { font-size: 13px; color: #0f766e; font-weight: 600; text-transform: capitalize; }
+.bt-total-bar span small { color: #5e6b6a; font-weight: 500; text-transform: none; }
+.bt-total-bar strong { font-size: 17px; color: #0f766e; font-weight: 800; }
+body.tema-escuro .fin-novo-btn-sec { background: #1f2937; color: #34d399; border-color: #34d399; }
+body.tema-escuro .bt-total-bar { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .bt-total-bar span { color: #5eead4; }
+body.tema-escuro .bt-total-bar span small { color: #94a3a1; }
+body.tema-escuro .bt-total-bar strong { color: #5eead4; }
+
+/* Período */
+.fin-periodo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fin-periodo-row input {
+    flex: 1;
+    min-width: 0;
+}
+.fin-periodo-row span { font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+
+.fin-limpar-filtros {
+    display: block;
+    margin: 0 0 12px auto;
+    background: none;
+    border: none;
+    color: rgb(6,107,99);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+/* Toggle Detalhado / Por tipo */
+.fin-modo-toggle {
+    display: flex;
+    background: #eef0f2;
+    border-radius: 11px;
+    padding: 3px;
+    margin-bottom: 14px;
+}
+.fin-modo-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.fin-modo-btn.ativo { background: white; color: rgb(6,107,99); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* 4 cards de indicadores */
+.fin-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.fin-card {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.fin-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.fin-card-top svg {
+    width: 15px;
+    height: 15px;
+    stroke: rgb(6,107,99);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.fin-card-top span {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+}
+.fin-card strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 800;
+    color: rgb(6,107,99);
+}
+.fin-card small {
+    display: block;
+    font-size: 10.5px;
+    color: #9ca3af;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Lista de lançamentos */
+.fin-lista-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.fin-lista-head span {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1f2937;
+}
+.fin-ordenar {
+    width: auto !important;
+    padding: 6px 28px 6px 10px !important;
+    font-size: 12.5px !important;
+    font-weight: 600;
+    border-radius: 9px !important;
+}
+.fin-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+.fin-linha {
+    display: grid;
+    grid-template-columns: auto 44px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 9px;
+}
+.fin-linha-virtual { background: #f0fdfa; border-color: #99f6e4; border-left: 3px solid #14b8a6; }
+body.tema-escuro .fin-linha-virtual { background: #052e2b; border-color: #0f4d47; border-left-color: #14b8a6; }
+.fin-linha-data { font-size: 11.5px; color: #6b7280; font-weight: 600; }
+.fin-linha-viveiro { font-size: 11.5px; font-weight: 800; color: rgb(6,107,99); }
+.fin-linha-desc {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fin-linha-desc small {
+    display: block;
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+.fin-linha-valor { font-size: 13px; font-weight: 700; color: #1f2937; justify-self: end; }
+
+/* Linha consolidada por categoria (Todos os viveiros) */
+.fin-linha-cat {
+    grid-template-columns: 1fr auto;
+    padding: 12px;
+}
+.fin-linha-cat .fin-linha-desc {
+    font-size: 14px;
+    font-weight: 800;
+    white-space: normal;
+}
+.fin-linha-cat .fin-linha-valor { font-size: 14.5px; }
+.fin-lista-hint { font-size: 11px; color: #9ca3af; font-weight: 600; }
+body.tema-escuro .fin-lista-hint { color: #9ca3af; }
+
+/* Paginação */
+.fin-paginacao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.fin-paginacao button {
+    background: white;
+    border: 1.5px solid #d1d5db;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: rgb(6,107,99);
+    cursor: pointer;
+}
+.fin-paginacao button:disabled { opacity: 0.4; cursor: default; }
+.fin-paginacao span { font-size: 12px; color: #9ca3af; font-weight: 600; }
+
+/* Total geral */
+.fin-total-geral {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+.fin-total-geral-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: rgb(6,107,99);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fin-total-geral-ico svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fin-total-geral-txt { display: flex; flex-direction: column; }
+.fin-total-geral-txt span { font-size: 12px; color: #15803d; font-weight: 600; }
+.fin-total-geral-txt strong { font-size: 20px; font-weight: 900; color: rgb(6,107,99); }
+
+/* Por tipo — pizza + ranking */
+.fin-secao-titulo {
+    font-size: 11px;
+    font-weight: 800;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+}
+.fin-pizza-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+.fin-pizza-canvas {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    flex-shrink: 0;
+    margin: 0 auto;
+}
+.fin-pizza-centro {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+.fin-pizza-centro span { display: block; font-size: 10px; color: #9ca3af; font-weight: 600; }
+.fin-pizza-centro strong { display: block; font-size: 12px; font-weight: 800; color: #1f2937; }
+.fin-pizza-legenda {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.fin-leg-item { display: flex; align-items: center; gap: 8px; }
+.fin-leg-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.fin-leg-nome { flex: 1; font-size: 13px; font-weight: 600; color: #374151; }
+.fin-leg-val { font-size: 12.5px; font-weight: 700; color: #1f2937; }
+.fin-leg-val small { font-size: 11px; color: #9ca3af; font-weight: 600; }
+
+.fin-ranking { margin-bottom: 4px; }
+.fin-rank-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 9px;
+    margin-bottom: 6px;
+}
+.fin-rank-pos {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgb(6,107,99);
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fin-rank-nome { flex: 1; font-size: 13px; font-weight: 600; color: #1f2937; }
+.fin-rank-val { font-size: 13px; font-weight: 700; color: rgb(6,107,99); }
+
+/* Formulário de boleto — vencimento auto */
+.fin-venc-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0fdf4;
+    border: 1.5px solid #d1fae5;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 4px;
+}
+.fin-venc-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #15803d; }
+.fin-venc-label svg { width: 17px; height: 17px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fin-venc-valor { font-size: 15px; font-weight: 800; color: rgb(6,107,99); }
+.fin-venc-dica { font-size: 11px; color: #9ca3af; margin: 6px 2px 10px; }
+
+/* Boletos — busca + cards */
+.bt-busca {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 14px;
+    margin-bottom: 12px;
+}
+.bt-busca svg { width: 17px; height: 17px; stroke: #9ca3af; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.bt-busca input { flex: 1; border: none; outline: none; padding: 11px 0; font-size: 14px; background: transparent; }
+
+.bt-chip-sub { font-size: 10px; color: #6b7280; font-weight: 700; margin-top: 2px; }
+.bt-chip-ok { color: #16a34a; }
+
+.bt-card {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 11px;
+    margin-bottom: 6px;
+    overflow: visible;
+}
+.bt-card .bt-confirmar-inline {
+    flex-basis: 100%;
+    border-top: 1px solid #fecaca;
+    border-radius: 0 0 10px 10px;
+}
+.bt-card-pago { opacity: 0.72; }
+.bt-card-main { flex: 1; padding: 8px 12px; cursor: pointer; min-width: 0; }
+.bt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.bt-card-nome { font-size: 13px; font-weight: 800; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bt-card-venc { font-size: 11px; color: #6b7280; font-weight: 500; }
+
+/* Detalhe do boleto */
+.bt-det-topo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.bt-det-ico {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bt-det-ico svg { width: 28px; height: 28px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bt-det-info {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 4px 16px;
+}
+.bt-det-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f1f3;
+    font-size: 13.5px;
+    color: #6b7280;
+}
+.bt-det-linha:last-child { border-bottom: none; }
+.bt-det-linha strong { font-size: 14px; font-weight: 700; color: #1f2937; }
+.bt-det-valor strong { font-size: 18px; color: rgb(6,107,99); }
+
+.bt-det-historico {
+    background: #f9fafb;
+    border: 1.5px solid #eef0f2;
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-top: 14px;
+}
+.bt-det-historico h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; color: #1f2937; }
+.bt-hist-linha { display: flex; gap: 12px; padding: 5px 0; font-size: 12.5px; }
+.bt-hist-data { color: #9ca3af; font-weight: 600; flex-shrink: 0; }
+.bt-hist-txt { color: #4b5563; }
+
+/* DARK MODE — financeiro */
+body.tema-escuro .fin-modo-toggle { background: #374151; }
+body.tema-escuro .fin-modo-btn.ativo { background: #1f2937; color: #34d399; }
+body.tema-escuro .fin-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .fin-card strong { color: #34d399; }
+body.tema-escuro .cf-explica { background: #052e2b; border-color: #0f4d47; color: #5eead4; }
+body.tema-escuro .cf-explica strong { color: #5eead4; }
+body.tema-escuro .cf-resumo-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .cf-resumo-card strong { color: #f3f4f6; }
+body.tema-escuro .cf-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .cf-card-ico { background: #052e2b; }
+body.tema-escuro .cf-card-ico svg { stroke: #34d399; }
+body.tema-escuro .cf-card-nome { color: #f3f4f6; }
+body.tema-escuro .cf-card-valor { color: #34d399; }
+body.tema-escuro .cf-btn-acao { background: #374151; border-color: #4b5563; }
+body.tema-escuro .cf-btn-acao svg { stroke: #d1d5db; }
+body.tema-escuro .fin-card-top span { color: #9ca3af; }
+body.tema-escuro .fin-card-top svg { stroke: #34d399; }
+body.tema-escuro .fin-lista-head span { color: #f3f4f6; }
+body.tema-escuro .fin-linha { background: #374151; border-color: #4b5563; }
+body.tema-escuro .fin-linha-desc { color: #f3f4f6; }
+body.tema-escuro .fin-linha-valor { color: #f3f4f6; }
+body.tema-escuro .fin-linha-viveiro { color: #34d399; }
+body.tema-escuro .fin-total-geral { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .fin-total-geral-txt strong { color: #34d399; }
+body.tema-escuro .fin-paginacao button { background: #1f2937; border-color: #4b5563; color: #34d399; }
+body.tema-escuro .fin-rank-linha { background: #374151; border-color: #4b5563; }
+body.tema-escuro .fin-rank-nome { color: #f3f4f6; }
+body.tema-escuro .fin-rank-val { color: #34d399; }
+body.tema-escuro .fin-leg-nome { color: #d1d5db; }
+body.tema-escuro .fin-leg-val { color: #f3f4f6; }
+body.tema-escuro .fin-pizza-centro strong { color: #f3f4f6; }
+body.tema-escuro .fin-venc-box { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .fin-venc-valor,
+body.tema-escuro .fin-venc-label { color: #34d399; }
+body.tema-escuro .fin-venc-label svg { stroke: #34d399; }
+body.tema-escuro .bt-busca { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-busca input { color: #f3f4f6; }
+body.tema-escuro .bt-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-card-nome { color: #f3f4f6; }
+body.tema-escuro .bt-det-info { background: #1f2937; border-color: #374151; }
+body.tema-escuro .bt-det-linha { border-bottom-color: #374151; color: #9ca3af; }
+body.tema-escuro .bt-det-linha strong { color: #f3f4f6; }
+body.tema-escuro .bt-det-valor strong { color: #34d399; }
+body.tema-escuro .bt-det-ico { background: #052e2b; }
+body.tema-escuro .bt-det-ico svg { stroke: #34d399; }
+body.tema-escuro .bt-det-historico { background: #374151; border-color: #4b5563; }
+body.tema-escuro .bt-det-historico h4 { color: #f3f4f6; }
+body.tema-escuro .bt-hist-txt { color: #d1d5db; }
+
+/* Ajuste de espaçamento de chips/abas no novo layout do Financeiro */
+.cfg-wrap .bt-chips { padding: 0; margin-bottom: 12px; }
+.cfg-wrap .bt-abas { padding: 0; margin-bottom: 14px; }
+.cfg-wrap .bt-lista { margin-bottom: 4px; }
+.cfg-wrap .bt-empty { padding: 24px 8px; text-align: center; color: #9ca3af; font-size: 13px; }

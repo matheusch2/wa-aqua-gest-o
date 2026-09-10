@@ -1,0 +1,671 @@
+
+/* ─── NAVEGAÇÃO ENTRE VIVEIROS ───────────────────────────────────────────── */
+
+
+.titulo-secao {
+    text-align: center;
+    color: rgb(6,107,99);
+    text-transform: uppercase;
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0 0 20px 0;
+    letter-spacing: 0.3px;
+}
+
+/* Tira para escolher o viveiro direto, sem passar um por um.
+   Rola na horizontal: com 20 viveiros não cabem todos na tela do celular. */
+.vv-seletor {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 8px;
+    margin: -6px 0 14px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    /* O card inteiro tem swipe lateral; sem isto o navegador ficaria em dúvida
+       entre rolar a tira e virar o card. */
+    touch-action: pan-x;
+}
+
+.vv-seletor::-webkit-scrollbar { display: none; }
+
+.vv-chip {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 46px;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1.5px solid #dde5e3;
+    background: #fff;
+    color: #53656a;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    /* O ponto de situação fica embaixo do número, dentro da mesma pastilha. */
+    position: relative;
+}
+
+/* Ponto verde = em cultivo. Sem ponto = vazio. */
+.vv-chip.cultivo::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 5px;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #10b981;
+}
+
+.vv-chip.bloqueado {
+    opacity: .55;
+}
+
+.vv-chip.ativo {
+    background: rgb(6,107,99);
+    border-color: rgb(6,107,99);
+    color: #fff;
+}
+
+.vv-chip.ativo.cultivo::after { background: #fff; }
+
+.nav-viveiros {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding: 0 4px;
+}
+
+.botao-nav-viveiro {
+    background: transparent;
+    color: rgb(6,107,99);
+    border: none;
+    padding: 8px 4px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: auto;
+}
+
+/* ─── ANIMAÇÃO DE TRANSIÇÃO ENTRE VIVEIROS ───────────────────────────────── */
+
+@keyframes slideEntradaDireita {
+    from { transform: translateX(60px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slideEntradaEsquerda {
+    from { transform: translateX(-60px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+.slide-in-direita {
+    animation: slideEntradaDireita 0.28s ease-out;
+}
+
+.slide-in-esquerda {
+    animation: slideEntradaEsquerda 0.28s ease-out;
+}
+
+.nav-viveiros-contador {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 600;
+}
+
+.botao-entrar {
+    width: 100%;
+    padding: 14px;
+    background: rgb(6, 107, 99);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.botao-entrar:hover {
+    background: rgb(4, 85, 79);
+}
+
+.link-esqueci {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 13px;
+    color: rgb(6, 107, 99);
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    padding: 4px;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 3px;
+}
+
+.link-esqueci:hover {
+    color: rgb(4, 85, 79);
+}
+
+.separador-login {
+    display: flex;
+    align-items: center;
+    margin: 16px 0 12px 0;
+    gap: 10px;
+}
+
+.separador-login::before,
+.separador-login::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.separador-login span {
+    color: #9ca3af;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.botao-criar-conta {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: rgb(6, 107, 99);
+    border: 2px solid rgb(6, 107, 99);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.botao-criar-conta:hover {
+    background: rgba(6, 107, 99, 0.06);
+}
+
+/* ─── CHIP DE TOTAL ──────────────────────────────────────────────────────────── */
+
+.total-chip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 14px 0 4px;
+}
+
+.total-chip-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #16a34a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.total-chip-valor {
+    font-size: 16px;
+    font-weight: 800;
+    color: #15803d;
+}
+
+/* ─── CARD DE CICLO ENCERRADO ────────────────────────────────────────────────── */
+
+.ciclo-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.ciclo-card-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ciclo-card-nome {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+.ciclo-card-producao {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgb(6,107,99);
+    background: rgba(6,107,99,0.08);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.ciclo-card-infos {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.ciclo-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ciclo-info-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.ciclo-info-valor {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.ciclo-card-acoes {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.ciclo-btn-relatorio,
+.ciclo-btn-excluir,
+.ciclo-btn-relatorio {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    width: auto;
+    transition: background 0.12s;
+}
+
+.ciclo-btn-relatorio {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+.ciclo-btn-relatorio:active { background: #e5e7eb; }
+
+.ciclo-btn-excluir {
+    background: #dc2626;
+    color: #fff;
+}
+.ciclo-btn-excluir:active { background: #b91c1c; }
+body.tema-escuro .ciclo-btn-relatorio { background: #374151; color: #e5e7eb; border-color: #4b5563; }
+
+/* ─── FORMULÁRIO DE LANÇAMENTO ──────────────────────────────────────────────── */
+
+.form-lancamento {
+    margin-top: 8px;
+}
+
+.form-topo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-top: 4px;
+}
+
+.form-icone-circulo {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(6,107,99,0.09);
+    border: 2px solid rgba(6,107,99,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 16px rgba(6,107,99,0.10);
+}
+
+.form-icone-circulo svg {
+    width: 36px;
+    height: 36px;
+    stroke: rgb(6,107,99);
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.form-caption {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    margin: 0 0 4px 0;
+    display: block;
+}
+
+.form-titulo {
+    font-size: 20px;
+    font-weight: 900;
+    color: #1f2937;
+    letter-spacing: 0.3px;
+    margin: 0;
+    text-align: center;
+}
+
+.form-corpo {
+    background: #eef2f0;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1.5px solid #d1e4df;
+    overflow: hidden;
+}
+
+/* Nota explicativa no alto de um formulário de lançamento.
+   Âmbar e não vermelha: isto não é erro, é orientação. Vermelho no topo de
+   uma tela que a pessoa acabou de abrir dá susto e ensina a ignorar aviso. */
+.form-nota {
+    display: flex;
+    gap: 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 12px 13px;
+    margin-bottom: 16px;
+}
+.form-nota svg {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+    stroke: #b45309; fill: none; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.form-nota div { font-size: 12.5px; line-height: 1.5; color: #92400e; }
+.form-nota b { font-weight: 800; color: #78350f; }
+/* A segunda parte — onde lançar a final — em bloco separado e um pouco mais
+   apagada: quem já sabe passa direto, quem está perdido acha. */
+.form-nota span { display: block; margin-top: 7px; color: #a16207; }
+
+body.tema-escuro .form-nota { background: #3a2f14; border-color: #78350f; }
+body.tema-escuro .form-nota div { color: #fcd34d; }
+body.tema-escuro .form-nota b { color: #fde68a; }
+body.tema-escuro .form-nota span { color: #eab308; }
+body.tema-escuro .form-nota svg { stroke: #fbbf24; }
+
+.campo-form input[type="text"],
+.campo-form input[type="number"],
+.campo-form input[type="date"],
+.campo-form select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #1f2937;
+    background: white;
+    box-sizing: border-box;
+    margin-bottom: 0;
+    outline: none;
+    font-family: Arial, sans-serif;
+    transition: border-color 0.2s;
+}
+
+.campo-form input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    text-align: left;
+    height: 46px;
+    line-height: 1;
+}
+
+.campo-form input:focus,
+.campo-form select:focus {
+    border-color: rgb(6,107,99);
+}
+
+.campo-input-unidade {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.campo-input-unidade:focus-within {
+    border-color: rgb(6,107,99);
+}
+
+.campo-input-unidade input {
+    flex: 1 !important;
+    border: none !important;
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+    color: #1f2937;
+    background: transparent;
+    outline: none;
+    margin-bottom: 0 !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    border-radius: 0 !important;
+    font-family: Arial, sans-serif;
+    transition: none !important;
+}
+
+.campo-unidade {
+    padding: 0 14px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 700;
+    border-left: 1.5px solid #d1d5db;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.previa-equiv {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    opacity: .75;
+    margin-top: 3px;
+}
+
+.unidade-toggle {
+    display: flex;
+    gap: 2px;
+    background: #e5e7eb;
+    border-radius: 8px;
+    padding: 2px;
+    margin-left: auto;
+}
+
+.unidade-btn {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+}
+
+.unidade-btn.ativo {
+    background: white;
+    color: rgb(6,107,99);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.separador-ou {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.separador-ou::before,
+.separador-ou::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.msg-sucesso-lancamento {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.msg-sucesso-lancamento .msg-emoji {
+    font-size: 20px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.msg-sucesso-lancamento .msg-texto {
+    font-size: 14px;
+    font-weight: 700;
+    color: #16a34a;
+}
+
+.toast-sucesso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #16a34a;
+    animation: slideEntradaDireita 0.25s ease-out;
+}
+
+.toast-sucesso svg {
+    width: 18px;
+    height: 18px;
+    stroke: #16a34a;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.viveiro-sem-ciclo-msg {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    background: #f0f9ff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #0369a1;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.viveiro-sem-ciclo-msg svg {
+    width: 16px;
+    height: 16px;
+    stroke: #0284c7;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.aviso-reinicio {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+    padding: 11px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.45;
+}
+
+/* ─── IMPRESSÃO ──────────────────────────────────────────────────────────────── */
+
+@media print {
+    @page {
+        margin: 0.6cm 0.8cm;
+        size: A4 portrait;
+    }
+
+    html,
+body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Esconde tudo exceto o relatório */
+    .topo,
+.botoes-gestao,
+button,
+.limpar,
+#menuGestao,
+.toast-sucesso {
+        display: none !important;
+    }
+
+    /* Remove o margin-top do container pai */
+    .resultado {
+        margin-top: 0 !important;
+    }
+
+    /* Relatório ocupa a página inteira */
+
+    /* Seções mais compactas para caber em 1 página */
+
+}
