@@ -80,10 +80,6 @@ const pagina = (w, h) => {
       box-shadow:0 ${Math.round(card * .2)}px ${Math.round(card * .43)}px rgba(0,29,32,.34),
         0 0 0 ${Math.round(card * .064)}px rgba(255,255,255,.07);}
     img{display:block;width:100%;height:100%;border-radius:${raioLogo}px;object-fit:cover;}
-    .peixe{position:absolute;z-index:3;top:${Math.round(card * .045)}px;left:50%;
-      width:${peixe}px;margin-left:-${Math.round(peixe / 2)}px;
-      filter:drop-shadow(0 ${Math.round(card * .035)}px ${Math.round(card * .045)}px rgba(0,24,27,.34));}
-    .peixe svg{display:block;width:100%;height:auto;}
     .identidade{margin-top:${Math.round(card * .145)}px;text-align:center;display:flex;flex-direction:column;
       gap:${Math.round(card * .075)}px;}
     .identidade strong{font-size:${titulo}px;line-height:1;font-weight:800;letter-spacing:.21em;padding-left:.21em;}
@@ -92,16 +88,22 @@ const pagina = (w, h) => {
     .carregamento{width:${Math.round(card * 1.62)}px;margin-top:${Math.round(card * .31)}px;
       display:flex;flex-direction:column;align-items:center;gap:${Math.round(card * .11)}px;}
     .carregamento p{margin:0;font-size:${texto}px;line-height:1.3;font-weight:500;color:rgba(237,255,252,.84);}
-    .barra{width:100%;height:${Math.max(3, Math.round(card * .036))}px;border-radius:999px;
-      background:rgba(224,255,250,.14);overflow:hidden;}
-    .barra span{display:block;width:58%;height:100%;border-radius:inherit;background:#91eadc;}
+    .barra{position:relative;width:100%;height:${Math.max(3, Math.round(card * .036))}px;}
+    .trilho{position:absolute;inset:0;border-radius:999px;background:rgba(224,255,250,.14);overflow:hidden;}
+    .trilho span{display:block;width:58%;height:100%;border-radius:inherit;background:#91eadc;}
+    .peixe-barra{position:absolute;z-index:3;top:50%;left:58%;width:${peixe}px;
+      margin-left:-${Math.round(peixe / 2)}px;transform:translateY(-50%);
+      filter:drop-shadow(0 ${Math.round(card * .025)}px ${Math.round(card * .04)}px rgba(0,24,27,.34));}
+    .peixe-barra svg{display:block;width:100%;height:auto;transform:scaleX(-1);}
   </style></head><body><div class="conteudo">
     <div class="marca"><div class="halo"></div><div class="track"></div>
       <div class="logo"><img src="${LOGO}"></div>
-      <div class="peixe"><svg viewBox="0 0 40 40"><path d="M6 20 C12 12 23 12 28 20 C23 28 12 28 6 20 Z" fill="#ffffff"/><path d="M28 20 L37 14 L34.5 20 L37 26 Z" fill="#ffffff"/><path d="M15 13 C17 9.5 21 9.5 23 12.5 Z" fill="#ffffff"/><circle cx="12" cy="18.5" r="1.7" fill="#066b63"/></svg></div>
     </div>
     <div class="identidade"><strong>WA AQUA</strong><span>GESTÃO INTELIGENTE</span></div>
-    <div class="carregamento"><p>Preparando seu cultivo</p><div class="barra"><span></span></div></div>
+    <div class="carregamento"><p>Preparando seu cultivo</p><div class="barra">
+      <div class="trilho"><span></span></div>
+      <div class="peixe-barra"><svg viewBox="0 0 40 40"><path d="M6 20 C12 12 23 12 28 20 C23 28 12 28 6 20 Z" fill="#ffffff"/><path d="M28 20 L37 14 L34.5 20 L37 26 Z" fill="#ffffff"/><path d="M15 13 C17 9.5 21 9.5 23 12.5 Z" fill="#ffffff"/><circle cx="12" cy="18.5" r="1.7" fill="#066b63"/></svg></div>
+    </div></div>
   </div></body></html>`;
 };
 
