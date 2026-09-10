@@ -925,10 +925,10 @@ button:active:not(:disabled) {
 
 .pnl-cabecalho {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .pnl-ola {
@@ -941,70 +941,95 @@ button:active:not(:disabled) {
 
 .pnl-sublinha {
     margin: 5px 0 0;
-    font-size: 13px;
+    font-size: 13.5px;
     color: #68747d;
 }
 
 .pnl-data { text-align: right; flex-shrink: 0; }
-.pnl-data strong { display: block; font-size: 12.5px; color: #0b2030; }
-.pnl-data span { display: block; font-size: 11px; color: #8b979e; margin-top: 2px; }
+.pnl-data strong {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #e6f3f0;
+    color: #08796f;
+    font-size: 12.5px;
+    line-height: 1.2;
+    max-width: 132px;
+    text-align: center;
+}
+.pnl-data span { display: none; }
 
 /* ── Os três cartões do topo ── */
 
 .pnl-stats {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
     margin-bottom: 14px;
-}
-
-.pnl-stat {
+    overflow: hidden;
     background: #fff;
     border: 1px solid #e2e9e7;
     border-radius: 14px;
     box-shadow: 0 8px 28px rgba(5,76,69,.06);
-    padding: 17px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
 }
 
-.pnl-stat-txt { min-width: 0; }
+.pnl-stat {
+    min-width: 0;
+    min-height: 132px;
+    padding: 13px 10px 12px;
+    display: grid;
+    align-content: start;
+    gap: 7px;
+    background: transparent;
+    border: 0;
+    border-right: 1px solid #edf2f0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.pnl-stat:last-child { border-right: 0; }
+
+.pnl-stat-txt { min-width: 0; width: 100%; }
 
 .pnl-stat-rotulo {
     display: block;
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 800;
     color: #40505a;
-    letter-spacing: .04em;
+    letter-spacing: .02em;
+    line-height: 1.2;
 }
 
 .pnl-stat-valor {
     display: block;
-    margin-top: 8px;
-    font-size: 25px;
+    margin-top: 6px;
+    font-size: clamp(15px, 4.5vw, 19px);
     font-weight: 800;
-    line-height: 1;
+    line-height: 1.12;
     color: #0b2030;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    overflow-wrap: anywhere;
 }
 
 .pnl-stat small {
     display: block;
-    margin-top: 8px;
+    margin-top: 6px;
     color: #68747d;
-    font-size: 11px;
+    font-size: 11.5px;
+    line-height: 1.25;
 }
 
 .pnl-stat-icone {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
     display: grid;
     place-items: center;
-    border-radius: 14px;
-    font-size: 22px;
+    border-radius: 10px;
+    font-size: 16px;
     font-weight: 800;
+    order: -1;
 }
 
 .pnl-stat-icone.verde   { background: #e4f3ef; color: #08796f; }
@@ -1016,8 +1041,21 @@ button:active:not(:disabled) {
 .pnl-alertas {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 8px;
     margin-bottom: 16px;
+}
+
+.pnl-alertas::before {
+    content: "Precisa de atenção";
+    margin: 1px 0 1px 2px;
+    color: #0b2030;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.pnl-alertas:has(.pnl-alerta.bom.sem-acao)::before {
+    content: "Situação da fazenda";
 }
 
 .pnl-alerta {
@@ -1025,7 +1063,7 @@ button:active:not(:disabled) {
     align-items: center;
     gap: 10px;
     border-radius: 12px;
-    padding: 11px 13px;
+    padding: 12px 13px;
     cursor: pointer;
     border: 1px solid transparent;
 }
@@ -1036,11 +1074,11 @@ button:active:not(:disabled) {
 .pnl-alerta.bom     { background: #eefaf3; border-color: #cee9da; }
 
 .pnl-alerta-txt { flex: 1; min-width: 0; }
-.pnl-alerta-txt strong { display: block; font-size: 13.5px; color: #24363b; }
+.pnl-alerta-txt strong { display: block; font-size: 14px; color: #24363b; }
 
 .pnl-alerta-txt small {
     display: block;
-    font-size: 11.5px;
+    font-size: 12.5px;
     color: #6b7c81;
     margin-top: 2px;
     /* Uma linha só: com 20 viveiros a lista de nomes seria enorme e empurraria
@@ -1064,7 +1102,7 @@ button:active:not(:disabled) {
 .pnl-painel {
     background: #fff;
     border: 1px solid #e2e9e7;
-    border-radius: 15px;
+    border-radius: 14px;
     box-shadow: 0 8px 28px rgba(5,76,69,.06);
     padding: 17px;
     min-width: 0;
@@ -1132,6 +1170,7 @@ button:active:not(:disabled) {
     border-radius: 12px;
     padding: 12px 13px;
     cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, transform .12s ease;
 }
 
 .pnl-linha.bloqueado { opacity: .55; }
@@ -1252,29 +1291,31 @@ button:active:not(:disabled) {
 
 .pnl-acoes-grade {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 9px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
 }
 
 .pnl-acao {
     width: 100%;
     background: #fff;
     border: 1px solid #e2e9e7;
-    border-radius: 13px;
+    border-radius: 14px;
     box-shadow: 0 8px 28px rgba(5,76,69,.05);
-    padding: 14px 15px;
+    min-height: 74px;
+    padding: 12px;
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 10px;
     cursor: pointer;
     text-align: left;
+    transition: border-color .16s ease, background .16s ease, transform .12s ease, box-shadow .16s ease;
 }
 
 .pnl-acao-icone {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 11px;
     background: #e4f3ef;
     color: #08796f;
     display: grid;
@@ -1283,8 +1324,21 @@ button:active:not(:disabled) {
     font-weight: 800;
 }
 
-.pnl-acao-txt strong { display: block; font-size: 14.5px; color: #0b2030; }
-.pnl-acao-txt small { display: block; font-size: 11.5px; color: #68747d; margin-top: 2px; }
+.pnl-acao-txt { min-width: 0; }
+.pnl-acao-txt strong { display: block; font-size: 14px; line-height: 1.2; color: #0b2030; }
+.pnl-acao-txt small { display: block; font-size: 12px; line-height: 1.25; color: #68747d; margin-top: 3px; }
+
+.pnl-linha:active,
+.pnl-acao:active { transform: scale(.985); }
+
+@media (hover: hover) {
+    .pnl-linha:hover { background: #f8fbfa; border-color: #cdded9; }
+    .pnl-acao:hover {
+        background: #fbfdfc;
+        border-color: #cdded9;
+        box-shadow: 0 10px 30px rgba(5,76,69,.09);
+    }
+}
 
 /* ── Rodapé informativo ── */
 
@@ -1294,7 +1348,7 @@ button:active:not(:disabled) {
     gap: 11px;
     background: #f3f8f7;
     border: 1px solid #e2e9e7;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 13px 15px;
 }
 
@@ -1306,7 +1360,7 @@ button:active:not(:disabled) {
 .pnl-vazio-geral {
     background: #fff;
     border: 1px solid #e2e9e7;
-    border-radius: 15px;
+    border-radius: 14px;
     padding: 34px 22px;
     text-align: center;
     display: flex;

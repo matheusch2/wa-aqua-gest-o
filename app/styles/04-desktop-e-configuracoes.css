@@ -166,8 +166,35 @@
   #area-gestao .pnl-vazio-geral { max-width: 1120px; margin-left: auto; margin-right: auto; }
 
   #area-gestao .pnl-ola { font-size: 27px; }
-  #area-gestao .pnl-stats { grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  #area-gestao .pnl-stat { padding: 21px 22px; }
+  #area-gestao .pnl-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #area-gestao .pnl-stat {
+    min-height: 0;
+    padding: 21px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e9e7;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(5,76,69,.06);
+  }
+  #area-gestao .pnl-stat-icone {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 14px;
+    font-size: 22px;
+    order: 0;
+  }
   #area-gestao .pnl-stat-valor { font-size: 28px; }
   #area-gestao .pnl-grade { grid-template-columns: 1fr 1fr; gap: 18px; }
   #area-gestao .pnl-painel { padding: 20px; }
@@ -201,6 +228,12 @@
   #area-gestao .pnl-celula b { font-size: 14px; }
   #area-gestao .pnl-linha-seta { display: block; color: #9ca3af; font-size: 19px; text-align: center; }
   #area-gestao .pnl-grafico { height: 250px; }
+
+  body.tema-escuro #area-gestao .pnl-stat {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: none;
+  }
 
   /* Na tela grande cabe tudo: a tira quebra em linhas em vez de rolar. */
   #area-gestao .vv-seletor { max-width: 760px; margin-left: auto; margin-right: auto; flex-wrap: wrap; overflow-x: visible; justify-content: center; }

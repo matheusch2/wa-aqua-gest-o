@@ -114,6 +114,7 @@ body.tema-escuro .nav-viveiros {
 }
 
 body.tema-escuro .pnl-stat,
+body.tema-escuro .pnl-stats,
 body.tema-escuro .pnl-painel,
 body.tema-escuro .pnl-acao,
 body.tema-escuro .pnl-vazio-geral {
@@ -123,9 +124,11 @@ body.tema-escuro .pnl-vazio-geral {
 }
 
 body.tema-escuro .pnl-linha { border-color: #374151; }
+body.tema-escuro .pnl-stat { border-right-color: #374151; }
 
 body.tema-escuro .pnl-ola,
 body.tema-escuro .pnl-data strong,
+body.tema-escuro .pnl-alertas::before,
 body.tema-escuro .pnl-stat-valor,
 body.tema-escuro .pnl-painel h2,
 body.tema-escuro .pnl-linha-nome strong,
@@ -152,6 +155,8 @@ body.tema-escuro .pnl-vazio-geral p { color: #9ca3af; }
 body.tema-escuro .pnl-kicker,
 body.tema-escuro .pnl-grafico-meta strong,
 body.tema-escuro .pnl-info span { color: #5eead4; }
+
+body.tema-escuro .pnl-data strong { background: #12312d; }
 
 /* Os quadradinhos de icone e o avatar do viveiro seguem coloridos, so que em
    tons que nao estouram no fundo escuro. */
