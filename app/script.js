@@ -4572,7 +4572,12 @@ async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
   if (error) {
     restaurar();
     const div = document.getElementById(`confirm-excluir-${viveiroIndex}-${cicloIndex}`);
-    if (div) div.innerHTML = `<p style="color:#dc2626;font-size:13px;margin:0">Erro: ${error.message}</p>`;
+    if (div) {
+      const aviso = document.createElement("p");
+      aviso.style.cssText = "color:#dc2626;font-size:13px;margin:0";
+      aviso.textContent = "Erro: " + error.message;
+      div.replaceChildren(aviso);
+    }
     return;
   }
 
@@ -7027,7 +7032,7 @@ async function salvarEncerramentoCiclo(index) {
   // está salvo, mas o app pode estar mostrando um estado que o banco ainda não
   // confirmou. Avisa pra recarregar em vez de deixar o usuário sem saber.
   if (limpezaIncompleta) {
-    setTimeout(() => _toastErro("Ciclo salvo! Mas a conexão oscilou ao finalizar — recarregue o app e confira o viveiro. Se aparecer lançamento antigo, encerre de novo ou me avise."), 500);
+    setTimeout(() => _toastErro("Ciclo salvo, mas a finalização não foi concluída no banco. Recarregue o app e confira o viveiro. Não tente encerrar novamente antes da conferência."), 500);
   }
 }
 

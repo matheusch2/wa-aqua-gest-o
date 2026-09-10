@@ -21,9 +21,9 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-// v2: a mudança de endereços (app foi para /app) invalidou tudo o que estava
-// guardado. Trocar o nome do cache faz o "activate" apagar o antigo sozinho.
-const CACHE = "waaqua-v2";
+// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v3 força
+// a renovação do script local incluído no precache depois das correções.
+const CACHE = "waaqua-v3";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
