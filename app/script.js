@@ -1962,117 +1962,102 @@ function abrirViveiro(index) {
         <div class="vv-pls">${totalFormatado} PLs</div>
       </div>
 
-      <div class="vv-resumo-grupos">
-        <section class="vv-indicadores-grupo vv-grupo-cadastro">
-          <h3 class="vv-grupo-titulo">Dados do viveiro</h3>
-          <div class="painel-info vv-cadastro-grid">
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </div>
-              <small>Laboratório</small>
-              <strong>${_esc(viveiro.laboratorio || "--")}</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <small>Povoamento</small>
-              <strong>${formatarData(viveiro.dataPovoamento)}</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-              </div>
-              <small>Área do viveiro</small>
-              <strong>${_fmtHa(viveiro.tamanho)} ha</strong>
-            </div>
+      <div class="painel-info">
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
-        </section>
+          <small>Povoamento</small>
+          <strong>${formatarData(viveiro.dataPovoamento)}</strong>
+        </div>
 
-        <section class="vv-indicadores-grupo vv-grupo-producao">
-          <h3 class="vv-grupo-titulo">Produção</h3>
-          <div class="painel-info vv-producao-grid">
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
-              </div>
-              <small>Última biometria</small>
-              <strong>${ultimaBiometria} g</strong>
-            </div>
-
-            <div class="info-box info-box-destaque">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-              </div>
-              <small>Biomassa estimada</small>
-              <strong>${biomassaAtualStr}</strong>
-            </div>
-
-            <div class="info-box info-box-destaque">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <small>Sobrevivência est.</small>
-              <strong>${sobrevivenciaEstimada}</strong>
-            </div>
-
-            <div class="info-box info-box-destaque">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              </div>
-              <small>FCA estimado</small>
-              <strong>${fciEstimado}</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <small>Dias de cultivo</small>
-              <strong>${diasCultivo} dias</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              </div>
-              <small>Média de crescimento</small>
-              <strong>${mediaCrescimento}</strong>
-            </div>
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </div>
-        </section>
+          <small>Laboratório</small>
+          <strong>${_esc(viveiro.laboratorio || "--")}</strong>
+        </div>
 
-        <section class="vv-indicadores-grupo vv-grupo-custos">
-          <h3 class="vv-grupo-titulo">Custos do ciclo</h3>
-          <div class="painel-info vv-custos-grid">
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-              </div>
-              <small>Custo por quilo</small>
-              <strong>${custoKgProduzidoStr}</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
-              </div>
-              <small>Ração consumida</small>
-              <strong>${formatarNumeroBR(totalRacao, 1)} kg</strong>
-            </div>
-
-            <div class="info-box">
-              <div class="info-box-icone">
-                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <small>Custo parcial</small>
-              <strong>${totalCustos > 0 ? "R$ " + formatarNumeroBR(totalCustos, 2) : "--"}</strong>
-            </div>
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-        </section>
+          <small>Dias de cultivo</small>
+          <strong>${diasCultivo} dias</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </div>
+          <small>Área do viveiro</small>
+          <strong>${_fmtHa(viveiro.tamanho)} ha</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
+          </div>
+          <small>Ração consumida</small>
+          <strong>${formatarNumeroBR(totalRacao, 1)} kg</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <small>Custo parcial</small>
+          <strong>${totalCustos > 0 ? "R$ " + formatarNumeroBR(totalCustos, 2) : "--"}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+          </div>
+          <small>Última biometria</small>
+          <strong>${ultimaBiometria} g</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <small>Média de crescimento</small>
+          <strong>${mediaCrescimento}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <small>Sobrevivência est.</small>
+          <strong>${sobrevivenciaEstimada}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <small>FCA estimado</small>
+          <strong>${fciEstimado}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <small>Biomassa estimada</small>
+          <strong>${biomassaAtualStr}</strong>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-icone">
+            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <small>Custo por quilo</small>
+          <strong>${custoKgProduzidoStr}</strong>
+        </div>
       </div>
 
       ${sobrevInconsistente ? `<div class="vv-alerta-inconsistencia">
