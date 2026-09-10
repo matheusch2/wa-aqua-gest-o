@@ -87,8 +87,8 @@ const pagina = (w, h) => {
     .identidade{margin-top:${Math.round(card * .145)}px;text-align:center;display:flex;flex-direction:column;
       gap:${Math.round(card * .075)}px;}
     .identidade strong{font-size:${titulo}px;line-height:1;font-weight:800;letter-spacing:.21em;padding-left:.21em;}
-    .identidade span{font-size:${subtitulo}px;line-height:1;font-weight:650;letter-spacing:.27em;
-      padding-left:.27em;color:rgba(224,255,250,.74);}
+    .identidade span{font-size:${subtitulo}px;line-height:1;font-weight:650;letter-spacing:.18em;
+      padding-left:.18em;color:rgba(224,255,250,.74);}
     .carregamento{width:${Math.round(card * 1.62)}px;margin-top:${Math.round(card * .31)}px;
       display:flex;flex-direction:column;align-items:center;gap:${Math.round(card * .11)}px;}
     .carregamento p{margin:0;font-size:${texto}px;line-height:1.3;font-weight:500;color:rgba(237,255,252,.84);}
@@ -100,7 +100,7 @@ const pagina = (w, h) => {
       <div class="logo"><img src="${LOGO}"></div>
       <div class="peixe"><svg viewBox="0 0 40 40"><path d="M6 20 C12 12 23 12 28 20 C23 28 12 28 6 20 Z" fill="#ffffff"/><path d="M28 20 L37 14 L34.5 20 L37 26 Z" fill="#ffffff"/><path d="M15 13 C17 9.5 21 9.5 23 12.5 Z" fill="#ffffff"/><circle cx="12" cy="18.5" r="1.7" fill="#066b63"/></svg></div>
     </div>
-    <div class="identidade"><strong>WA AQUA</strong><span>GESTÃO AQUÍCOLA</span></div>
+    <div class="identidade"><strong>WA AQUA</strong><span>GESTÃO INTELIGENTE</span></div>
     <div class="carregamento"><p>Preparando seu cultivo</p><div class="barra"><span></span></div></div>
   </div></body></html>`;
 };
