@@ -39,6 +39,9 @@ const ESSENCIAIS = [
   "/app/login.html",
   "/app/index.html",
   "/app/style.css",
+  "/app/script.js",   // o cérebro do app: sem ele no precache, a PRIMEIRA
+                      // abertura offline carregava a casca sem funcionar.
+                      // Continua rede-primeiro; isto é só a reserva offline.
   "/app/manifest.json",
   "/logo-wa.jpg",
   // Comuns

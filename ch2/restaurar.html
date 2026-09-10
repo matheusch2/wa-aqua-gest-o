@@ -173,10 +173,13 @@ function gerar(){
   try {
     const r = gerarSQL(_dump);
     _sql = r.sql;
+    // Escapa o que vem do arquivo de backup antes do innerHTML (defesa mesmo
+    // sendo uso só do admin com o próprio backup).
+    const escH = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     let html = "<table>";
-    html += "<tr><td><b>Backup de</b></td><td>" + (_dump.gerado_em ? _dump.gerado_em.split("T")[0] : "?") + "</td></tr>";
-    r.resumo.forEach(x => { html += "<tr><td>" + x.nome + "</td><td>" + x.n + "</td></tr>"; });
-    html += "<tr><td><b>Total</b></td><td>" + r.total + "</td></tr></table>";
+    html += "<tr><td><b>Backup de</b></td><td>" + escH(_dump.gerado_em ? _dump.gerado_em.split("T")[0] : "?") + "</td></tr>";
+    r.resumo.forEach(x => { html += "<tr><td>" + escH(x.nome) + "</td><td>" + escH(x.n) + "</td></tr>"; });
+    html += "<tr><td><b>Total</b></td><td>" + escH(r.total) + "</td></tr></table>";
     document.getElementById("resumo").innerHTML = html;
     document.getElementById("cardResultado").classList.remove("oculto");
     document.getElementById("cardPassos").classList.remove("oculto");
