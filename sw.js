@@ -21,9 +21,9 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v3 força
-// a renovação do script local incluído no precache depois das correções.
-const CACHE = "waaqua-v3";
+// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v4 força
+// a renovação do CSS após a limpeza dos estilos antigos.
+const CACHE = "waaqua-v4";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).

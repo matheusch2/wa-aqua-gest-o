@@ -461,32 +461,6 @@ body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
 
-/* ─── VIVEIRO HEADER ─────────────────────────────────────────────────────── */
-
-.viveiro-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 18px;
-}
-
-.viveiro-titulo {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 900;
-    color: #1f2937;
-    letter-spacing: 0.3px;
-}
-
-.viveiro-pls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: rgba(6,107,99,0.08);
-    border-radius: 12px;
-    padding: 10px 16px;
-}
-
 /* ─── INFO BOXES ─────────────────────────────────────────────────────────── */
 
 .painel-info {
@@ -542,10 +516,6 @@ body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
     font-size: 15px;
     font-weight: 700;
 }
-
-/* KPI em destaque, largura total */
-
-/* ─── BOTÕES DO PAINEL ───────────────────────────────────────────────────── */
 
 .tabela-historico {
     margin-top: 15px;
@@ -723,29 +693,9 @@ body.tema-escuro .botao-voltar-form.botao-perigo-outline:active {
     background: rgba(220,38,38,0.14);
 }
 
-/* ─── RELATÓRIO REDESIGN ─────────────────────────────────────────────────── */
-
-/* Header: centralizado */
-
-/* Período */
-
-/* Seções */
-
-/* Linhas de info compactas */
-
-/* Métricas de resultado produtivo */
-
-/* Sobrevivência: linha full-width */
-
-/* Produção final — linha de fechamento compacta */
-
 #menuGestao {
     display: none;
 }
-
-/* ─── BOAS VINDAS ────────────────────────────────────────────────────────── */
-
-/* ─── LOGIN / CADASTRO ───────────────────────────────────────────────────── */
 
 /* ─── LOGIN ───────────────────────────────────────────────────────────────── */
 
@@ -2227,8 +2177,7 @@ body.tema-escuro .campo-label label {
 }
 
 body.tema-escuro .vc-info-lista,
-body.tema-escuro .vc-info-item,
-body.tema-escuro .viveiro-header {
+body.tema-escuro .vc-info-item {
     background: #1f2937;
     color: #f3f4f6;
 }
@@ -2548,118 +2497,6 @@ body.tema-escuro .leitura-banner-texto strong { color: #fecaca; }
 body.tema-escuro .leitura-banner-texto span { color: #fca5a5; }
 body.tema-escuro .leitura-banner-seta { color: #fca5a5; }
 
-.boleto-lista {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.boleto-resumo-bar {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-
-.boleto-resumo-chip {
-    font-size: 12px;
-    color: rgb(6, 107, 99);
-    background: #f0fdf4;
-    border: 1px solid #d1fae5;
-    border-radius: 20px;
-    padding: 4px 12px;
-    white-space: nowrap;
-}
-
-.boleto-resumo-chip strong {
-    font-weight: 700;
-}
-
-.boleto-resumo-chip.vencido {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
-}
-
-.boleto-item {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-.boleto-item-linha {
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-.boleto-item-nome {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1f2937;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-    text-align: left;
-}
-
-.boleto-valor-slim {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 700;
-    color: rgb(6, 107, 99);
-    white-space: nowrap;
-    text-align: center;
-}
-
-.boleto-item-btns {
-    display: flex;
-    gap: 2px;
-    flex-shrink: 0;
-}
-
-.boleto-dias-text {
-    flex: 1;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-    text-align: right;
-}
-
-.boleto-dias-ok { color: rgb(6, 107, 99); }
-.boleto-dias-proximo { color: #92400e; }
-.boleto-dias-hoje { color: #c2410c; }
-.boleto-dias-vencido { color: #dc2626; }
-.boleto-dias-pago { color: #16a34a; }
-
-.boleto-valor {
-    font-size: 14px;
-    font-weight: 700;
-    color: rgb(6, 107, 99);
-}
-
-.boleto-item-acoes {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.boleto-item-dir {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
 .boleto-badge {
     font-size: 11px;
     font-weight: 700;
@@ -2696,16 +2533,6 @@ body.tema-escuro .leitura-banner-seta { color: #fca5a5; }
     background: #f0fdf4;
     color: #16a34a;
     border: 1px solid #86efac;
-}
-
-.boleto-item-pago {
-    opacity: 0.6;
-    background: #f9fafb;
-}
-
-.boleto-item-pago .boleto-item-nome {
-    text-decoration: line-through;
-    text-decoration-color: #9ca3af;
 }
 
 .painel-confirmar-boleto {
@@ -2749,62 +2576,6 @@ body.tema-escuro .leitura-banner-seta { color: #fca5a5; }
     color: white;
 }
 
-/* boleto detalhe */
-.boleto-detalhe-status {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 16px;
-}
-
-.boleto-detalhe-grid {
-    background: #f9fafb;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1.5px solid #e5e7eb;
-}
-
-.boleto-detalhe-linha {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.boleto-detalhe-linha:last-child {
-    border-bottom: none;
-}
-
-.boleto-detalhe-destaque {
-    background: #f0fdf4;
-}
-
-.boleto-detalhe-label {
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 500;
-}
-
-.boleto-detalhe-valor {
-    font-size: 14px;
-    color: #1f2937;
-    font-weight: 600;
-    text-align: right;
-}
-
-body.tema-escuro .boleto-detalhe-grid {
-    background: #1f2937;
-    border-color: #374151;
-}
-body.tema-escuro .boleto-detalhe-linha {
-    border-bottom-color: #374151;
-}
-body.tema-escuro .boleto-detalhe-destaque {
-    background: #064e3b;
-}
-body.tema-escuro .boleto-detalhe-label { color: #9ca3af; }
-body.tema-escuro .boleto-detalhe-valor { color: #f9fafb; }
-
 /* dark mode */
 body.tema-escuro .boleto-banner {
     background: #422006;
@@ -2817,17 +2588,7 @@ body.tema-escuro .boleto-banner-texto strong { color: #fde68a; }
 body.tema-escuro .boleto-banner-texto span { color: #fcd34d; }
 body.tema-escuro .boleto-banner-seta { color: #fcd34d; }
 
-body.tema-escuro .boleto-item {
-    background: #1f2937;
-    border-color: #374151;
-}
-body.tema-escuro .boleto-item-nome { color: #f9fafb; }
-body.tema-escuro .boleto-valor-slim { color: #34d399; }
-body.tema-escuro .boleto-valor { color: #34d399; }
 body.tema-escuro .painel-confirmar-boleto { border-top-color: #374151; color: #d1d5db; }
-body.tema-escuro .boleto-item-pago { background: #111827; }
-body.tema-escuro .boleto-resumo-chip { background: #052e2b; border-color: #0f4d47; color: #34d399; }
-body.tema-escuro .boleto-resumo-chip.vencido { background: #2a1414; border-color: #5b2020; color: #f87171; }
 
 /* ─── BOLETOS TABELA ─────────────────────────────────────────────────────────── */
 
@@ -4781,10 +4542,8 @@ body.tema-escuro .fin-lista-hint { color: #9ca3af; }
 .bt-card-main { flex: 1; padding: 8px 12px; cursor: pointer; min-width: 0; }
 .bt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
 .bt-card-nome { font-size: 13px; font-weight: 800; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bt-card-sub { font-size: 11px; color: #6b7280; margin-bottom: 2px; }
 .bt-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .bt-card-venc { font-size: 11px; color: #6b7280; font-weight: 500; }
-.bt-card-valor { font-size: 13px; font-weight: 800; color: rgb(6,107,99); }
 
 /* Detalhe do boleto */
 .bt-det-topo {
@@ -4875,7 +4634,6 @@ body.tema-escuro .bt-busca { background: #1f2937; border-color: #374151; }
 body.tema-escuro .bt-busca input { color: #f3f4f6; }
 body.tema-escuro .bt-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .bt-card-nome { color: #f3f4f6; }
-body.tema-escuro .bt-card-valor { color: #34d399; }
 body.tema-escuro .bt-det-info { background: #1f2937; border-color: #374151; }
 body.tema-escuro .bt-det-linha { border-bottom-color: #374151; color: #9ca3af; }
 body.tema-escuro .bt-det-linha strong { color: #f3f4f6; }
