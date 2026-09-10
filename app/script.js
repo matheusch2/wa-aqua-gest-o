@@ -218,10 +218,10 @@ async function atualizarAvatarTopo() {
   const avatarTopo = document.getElementById("avatar-topo");
   if (!avatarTopo) return;
   if (fotoUrl) {
-    avatarTopo.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    avatarTopo.innerHTML = `<img src="${_attr(fotoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
     const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-    avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${ini}</span>`;
+    avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${_esc(ini)}</span>`;
   }
 }
 
@@ -235,7 +235,9 @@ async function abrirConfiguracoes() {
   const email = user?.email || "";
   const fotoUrl = user?.user_metadata?.avatar_url || null;
   const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-  const avatarHtml = fotoUrl ? `<img src="${fotoUrl}" alt="">` : `<span>${ini}</span>`;
+  // Escapa nome/email/foto: vêm de user_metadata (que o usuário pode definir) e
+  // do e-mail. Sem escapar, um nome como <img onerror=...> executaria no innerHTML.
+  const avatarHtml = fotoUrl ? `<img src="${_attr(fotoUrl)}" alt="">` : `<span>${_esc(ini)}</span>`;
 
   area.innerHTML = `
     <h3 class="titulo-secao">Configurações</h3>
@@ -243,8 +245,8 @@ async function abrirConfiguracoes() {
       <div class="cfg-header">
         <div class="cfg-header-avatar">${avatarHtml}</div>
         <div class="cfg-header-info">
-          <span class="cfg-header-nome">${nome}</span>
-          <span class="cfg-header-email">${email}</span>
+          <span class="cfg-header-nome">${_esc(nome)}</span>
+          <span class="cfg-header-email">${_esc(email)}</span>
           <span class="cfg-header-online">● Online</span>
         </div>
       </div>
@@ -343,7 +345,7 @@ async function abrirFazenda() {
     <h3 class="titulo-secao">Fazenda</h3>
     <div class="cfg-wrap">
       <div class="fazenda-foto-wrap">
-        <div id="fazenda-foto" class="fazenda-foto">${fotoUrl ? `<img src="${fotoUrl}" alt="">` : `<span>${ini}</span>`}</div>
+        <div id="fazenda-foto" class="fazenda-foto">${fotoUrl ? `<img src="${_attr(fotoUrl)}" alt="">` : `<span>${_esc(ini)}</span>`}</div>
         <label class="fazenda-foto-edit">
           <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <input type="file" accept="image/*" onchange="uploadFotoFazenda(this)" style="display:none">
@@ -2429,7 +2431,7 @@ async function salvarEdicaoTipoRacao(i) {
   const _erroEdit = (msg) => { if (erroEl) { erroEl.textContent = msg; erroEl.style.display = "block"; } };
   if (erroEl) erroEl.style.display = "none";
 
-  if (!nome || !pesoSacoKg || !valorSaco) { _erroEdit("Preencha todos os campos."); return; }
+  if (!nome || !(pesoSacoKg > 0) || !(valorSaco > 0)) { _erroEdit("Preencha nome, peso e valor (maiores que zero)."); return; }
 
   const custoPorKg = valorSaco / pesoSacoKg;
   const restaurar = _travarBotao(botao, "Salvando...");
@@ -2738,8 +2740,10 @@ async function salvarBiometria(index) {
   const mostrarErroBio = (msg) => { if (msgErro) { msgErro.textContent = msg; msgErro.style.display = "block"; } };
   if (msgErro) msgErro.style.display = "none";
 
-  if (!data || !gramatura || isNaN(gramatura)) {
-    mostrarErroBio("Preencha a data e a gramatura.");
+  // !(x > 0) rejeita vazio, zero, negativo E NaN de uma vez (peso de camarão
+  // negativo estragaria biomassa, FCA e sobrevivência).
+  if (!data || !(gramatura > 0)) {
+    mostrarErroBio("Preencha a data e uma gramatura maior que zero.");
     return;
   }
 
@@ -2910,8 +2914,10 @@ async function salvarDespesca(index) {
   // despesca FINAL (ver o cálculo da receita em _renderRelatorioCiclo). Uma
   // parcial vendida em junho a R$ 18 entrava a R$ 25 se o ciclo fechou em
   // setembro a R$ 25 — um chute com cara de dado, e sem aviso nenhum.
-  if (!data || !quantidadeKg || !pesoMedio || !precoKg) {
-    mostrarErroDespesca("Preencha a data, quantidade, peso médio e preço de venda.");
+  // !(x > 0) barra vazio, zero, negativo e NaN (valores negativos furavam a
+  // checagem antiga com "!x", porque número negativo é "verdadeiro" em JS).
+  if (!data || !(quantidadeKg > 0) || !(pesoMedio > 0) || !(precoKg > 0)) {
+    mostrarErroDespesca("Preencha a data, e quantidade, peso médio e preço maiores que zero.");
     return;
   }
 
@@ -3773,7 +3779,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
   // número usado nos outros 20 campos do app, e entende ponto de milhar também.
   const novaQtd = parseDecimalBR(document.getElementById("qtdEdicaoBio").value);
 
-  if (!novaData || !novaQtd || isNaN(novaQtd)) { _toastErro("Preencha a data e a gramatura."); return; }
+  if (!novaData || !(novaQtd > 0)) { _toastErro("Preencha a data e uma gramatura maior que zero."); return; }
 
   // Impede duas biometrias na mesma data (ignora a própria que está sendo editada)
   const dataDuplicada = (viveiros[viveiroIndex].biometrias || [])
@@ -3931,7 +3937,7 @@ async function salvarEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto)
   // Preço também é obrigatório aqui: se fosse exigido só no lançamento, dava
   // para apagá-lo depois abrindo a edição — e a despesca voltaria a ser
   // valorizada pelo preço da despesca final.
-  if (!novaData || !novaQtd || !novoPeso || !novoPreco) { _toastErro("Preencha todos os campos, inclusive o preço."); return; }
+  if (!novaData || !(novaQtd > 0) || !(novoPeso > 0) || !(novoPreco > 0)) { _toastErro("Preencha todos os campos com valores maiores que zero, inclusive o preço."); return; }
 
   const restaurar = _travarBotao(botao, "Salvando...");
   const desp = viveiros[viveiroIndex].despescas[despIndex];
@@ -4275,7 +4281,8 @@ async function salvarNovoCiclo(index, modo = "reiniciar") {
       laboratorio: novoLaboratorio,
       ciclo_id: novoCicloId,
     })
-    .eq("id", viveiros[index].id);
+    .eq("id", viveiros[index].id)
+    .eq("user_id", usuario.id);
 
   if (error) {
     console.log(error);
@@ -4317,10 +4324,16 @@ async function excluirViveiro(index, botao) {
 
   const restaurar = _travarBotao(botao, "Excluindo...");
 
+  // Filtra também por user_id: cinto + suspensório com o RLS, pra ninguém
+  // conseguir apagar viveiro de outra conta nem que a política falhe.
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
   const { error } = await supabaseClient
     .from("viveiros")
     .update({ ativo: false })
-    .eq("id", viveiro.id);
+    .eq("id", viveiro.id)
+    .eq("user_id", usuario.id);
 
   if (error) {
     console.log(error);
@@ -5809,7 +5822,7 @@ function abrirBoletos(filtro) {
         <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
         <select onchange="_setBoletoFornecedor(this.value)">
           <option value="">Todos os fornecedores</option>
-          ${fornecedores.map(f => `<option value="${f.replace(/"/g, "&quot;")}"${_boletosFornecedor === f ? " selected" : ""}>${f}</option>`).join("")}
+          ${fornecedores.map(f => `<option value="${_attr(f)}"${_boletosFornecedor === f ? " selected" : ""}>${_esc(f)}</option>`).join("")}
         </select>
       </div>` : ""}
       <div class="bt-lista">
@@ -6214,7 +6227,7 @@ async function salvarBoleto(index) {
   if (editando) {
     const { error } = await supabaseClient.from("boletos").update({
       nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
-    }).eq("id", boletos[index].id);
+    }).eq("id", boletos[index].id).eq("user_id", usuario.id);
     if (error) { restaurar(); return mostrarErroBoleto("Erro ao salvar. Tente novamente."); }
     boletos[index] = { ...boletos[index], nome, fornecedor, valor, dataCompra, prazoDias };
   } else {
@@ -6232,8 +6245,10 @@ async function excluirBoleto(index, botao) {
   if (_bloqueioEdicao()) return;
   if (botao?.disabled) return;
   const restaurar = _travarBotao(botao, "Excluindo...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
   const { error } = await supabaseClient.from("boletos")
-    .update({ ativo: false }).eq("id", boletos[index].id);
+    .update({ ativo: false }).eq("id", boletos[index].id).eq("user_id", usuario.id);
   if (error) { console.error(error); restaurar(); _toastErro("Erro ao excluir."); return; }
   boletos.splice(index, 1);
   abrirBoletos();
@@ -6792,8 +6807,8 @@ async function salvarEncerramentoCiclo(index) {
   const mostrarErroEncerrar = (msg) => { if (erroEncerrar) { erroEncerrar.textContent = msg; erroEncerrar.style.display = "block"; } };
   if (erroEncerrar) erroEncerrar.style.display = "none";
 
-  if (!dataEncerramento || !producaoFinal || !pesoFinal) {
-    mostrarErroEncerrar("Preencha data de encerramento, produção final e peso médio final.");
+  if (!dataEncerramento || !(producaoFinal > 0) || !(pesoFinal > 0)) {
+    mostrarErroEncerrar("Preencha data de encerramento, e produção final e peso médio final maiores que zero.");
     return;
   }
 
@@ -6866,9 +6881,14 @@ async function salvarEncerramentoCiclo(index) {
     despescas_json: despescas,
   };
 
-  let { error } = await supabaseClient
+  // .select() traz de volta a linha inserida — precisamos do id do ciclo para
+  // guardá-lo em memória. Sem ele, excluir o ciclo recém-fechado (sem recarregar)
+  // só sumia da tela e o ciclo voltava depois, porque a exclusão trata ciclo sem
+  // id como registro só local.
+  let { data: cicloSalvo, error } = await supabaseClient
     .from("ciclos")
-    .insert([cicloBanco]);
+    .insert([cicloBanco])
+    .select();
 
   // A coluna custo_fixo_rateado pode ainda não existir no banco do usuário.
   // Nesse caso, encerra sem congelar o rateio (comportamento antigo) em vez de
@@ -6876,7 +6896,7 @@ async function salvarEncerramentoCiclo(index) {
   if (error && /custo_fixo_rateado/.test(error.message || "")) {
     const { custo_fixo_rateado, ...semCampoNovo } = cicloBanco;
     console.log("Coluna custo_fixo_rateado ausente — encerrando sem congelar o rateio.");
-    ({ error } = await supabaseClient.from("ciclos").insert([semCampoNovo]));
+    ({ data: cicloSalvo, error } = await supabaseClient.from("ciclos").insert([semCampoNovo]).select());
   }
 
   if (error) {
@@ -6933,6 +6953,9 @@ async function salvarEncerramentoCiclo(index) {
 
   // Montar cicloFinalizado ANTES de zerar o viveiro (para preservar dados no objeto local)
   const cicloFinalizado = {
+    // id do banco: sem ele, a exclusão trataria o ciclo como só-local e ele
+    // reapareceria no próximo carregamento.
+    id: (cicloSalvo && cicloSalvo[0] && cicloSalvo[0].id) || null,
     nomeViveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
     tamanho: viveiro.tamanho,
@@ -8558,8 +8581,8 @@ async function salvarProduto() {
   const valorPago = parseMoedaBR(document.getElementById("valorPagoProduto").value);
   const erroProd = document.getElementById("erro-produto");
 
-  if (!nome || !pesoKg || !valorPago) {
-    if (erroProd) { erroProd.textContent = "Preencha todos os campos."; erroProd.style.display = "block"; }
+  if (!nome || !(pesoKg > 0) || !(valorPago > 0)) {
+    if (erroProd) { erroProd.textContent = "Preencha nome, peso e valor (maiores que zero)."; erroProd.style.display = "block"; }
     return;
   }
   // Trava contra duplicado: mesmo nome na mesma categoria
@@ -8779,7 +8802,7 @@ async function salvarEdicaoProduto(i) {
   const _erroEditProd = (msg) => { if (erroEditProd) { erroEditProd.textContent = msg; erroEditProd.style.display = "block"; } };
   if (erroEditProd) erroEditProd.style.display = "none";
 
-  if (!nome || !pesoKg || !valorPago) { _erroEditProd("Preencha todos os campos."); return; }
+  if (!nome || !(pesoKg > 0) || !(valorPago > 0)) { _erroEditProd("Preencha nome, peso e valor (maiores que zero)."); return; }
 
   if (_mostrarAvisoProduto("aviso-edit-produto", pesoKg, valorPago) && !_produtoConfirmado) {
     _produtoConfirmado = true;
@@ -9880,7 +9903,10 @@ async function carregarViveiros(usuarioConhecido) {
     [rDespescas, "despescas"], [rCiclosOk, "ciclos"],
   ];
   for (const [r, rotulo] of essenciais) {
-    if (r.error) { console.log(r.error); _erroCarregamento(`Erro ao carregar ${rotulo}.`); return; }
+    // return false: sinaliza falha para o init NÃO sobrescrever o aviso de erro
+    // com uma lista vazia ("Nenhum viveiro cadastrado"), que faria o usuário
+    // pensar que perdeu os dados numa simples oscilação de internet.
+    if (r.error) { console.log(r.error); _erroCarregamento(`Erro ao carregar ${rotulo}.`); return false; }
   }
   const viveirosData = rViveiros.data || [];
 
@@ -10147,7 +10173,14 @@ document.addEventListener("DOMContentLoaded", async () => {
           <p style="margin:0;font-size:14px">Carregando...</p>
         </div>
       `;
-      await carregarViveiros(session.user);
+      const carregouOk = await carregarViveiros(session.user);
+      if (carregouOk === false) {
+        // Carregamento essencial falhou: carregarViveiros já desenhou o aviso
+        // de erro + botão Recarregar. Revela ele (tira a splash) e PARA — não
+        // segue pro render, que apagaria o aviso e mostraria lista vazia.
+        _esconderSplash();
+        return;
+      }
 
       // O avatar sai da sessão que já temos em mãos — pedir o usuário de novo
       // ao servidor era mais uma ida e volta só para desenhar um círculo.
@@ -10157,10 +10190,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "?";
         const avatarTopo = document.getElementById("avatar-topo");
         if (fotoUrl) {
-          avatarTopo.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+          avatarTopo.innerHTML = `<img src="${_attr(fotoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
         } else {
           const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
-          avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${iniciais || "?"}</span>`;
+          avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${_esc(iniciais || "?")}</span>`;
         }
       }
 
