@@ -21,9 +21,9 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v6 força
-// a renovação após a melhoria visual do Painel da Fazenda.
-const CACHE = "waaqua-v6";
+// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v7 força
+// a renovação após a reorganização visual da tela do viveiro.
+const CACHE = "waaqua-v7";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).

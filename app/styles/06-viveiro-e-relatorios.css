@@ -5,14 +5,16 @@
 
 .vv-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 14px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e8efed;
 }
 .vv-header-ico {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
+    width: 50px;
+    height: 50px;
+    border-radius: 13px;
     background: #eef4f3;
     display: flex;
     align-items: center;
@@ -20,8 +22,8 @@
     flex-shrink: 0;
 }
 .vv-header-ico svg {
-    width: 28px;
-    height: 28px;
+    width: 25px;
+    height: 25px;
     stroke: rgb(6,107,99);
     fill: none;
     stroke-width: 2;
@@ -31,7 +33,7 @@
 .vv-header-info { flex: 1; min-width: 0; }
 .vv-titulo {
     margin: 0;
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 900;
     color: rgb(6,107,99);
     letter-spacing: -0.5px;
@@ -55,24 +57,85 @@
 .vv-pls {
     background: #eef4f3;
     color: rgb(6,107,99);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
-    padding: 10px 14px;
-    border-radius: 12px;
+    padding: 8px 11px;
+    border-radius: 11px;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
-/* Card de indicador em destaque (Custo parcial) */
+/* Indicadores separados pela decisão que ajudam a tomar. */
+.vv-resumo-grupos {
+    display: grid;
+    gap: 12px;
+}
+
+.vv-indicadores-grupo {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #e5edeb;
+    border-radius: 14px;
+    background: #f7faf9;
+}
+
+.vv-grupo-titulo {
+    margin: 0 0 10px 2px;
+    color: #34454b;
+    font-size: 13.5px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.vv-indicadores-grupo .painel-info {
+    margin: 0;
+    gap: 8px;
+}
+
+.vv-indicadores-grupo .info-box {
+    min-width: 0;
+    padding: 11px 8px;
+    background: #fff;
+    border: 1px solid #edf2f1;
+    border-radius: 12px;
+}
+
+.vv-indicadores-grupo .info-box small {
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.vv-indicadores-grupo .info-box strong {
+    max-width: 100%;
+    font-size: 15.5px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.vv-indicadores-grupo .info-box-destaque {
+    border-color: #b9ddd6;
+    background: #f1faf7;
+    box-shadow: 0 5px 18px rgba(6,107,99,.07);
+}
+
+.vv-indicadores-grupo .info-box-destaque strong {
+    color: #075f58;
+    font-size: 16.5px;
+}
+
+.vv-custos-grid .info-box:last-child,
+.vv-cadastro-grid .info-box:last-child {
+    grid-column: 1 / -1;
+}
 
 /* Rótulos de seção de ações */
 .vv-secao-lbl {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 800;
     color: #9ca3af;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin: 18px 2px 10px;
+    letter-spacing: 0.025em;
+    margin: 20px 2px 10px;
 }
 
 /* Alerta de sobrevivência inconsistente (>100%) */
@@ -89,23 +152,25 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
 /* Ações de manejo — 4 botões compactos */
 .vv-manejo-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
 }
 .vv-manejo-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 7px;
+    justify-content: flex-start;
+    min-height: 60px;
+    gap: 10px;
     background: rgb(6,107,99);
     border: none;
-    border-radius: 13px;
-    padding: 14px 4px;
+    border-radius: 14px;
+    padding: 12px 13px;
     cursor: pointer;
     color: white;
-    transition: background 0.15s;
+    text-align: left;
+    transition: background .15s ease, transform .12s ease, box-shadow .15s ease;
 }
-.vv-manejo-btn:active { background: rgb(4,85,79); }
+.vv-manejo-btn:active { background: rgb(4,85,79); transform: scale(.985); }
 .vv-manejo-btn svg {
     width: 22px;
     height: 22px;
@@ -116,10 +181,10 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     stroke-linejoin: round;
 }
 .vv-manejo-btn span {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 700;
-    line-height: 1.2;
-    text-align: center;
+    line-height: 1.25;
+    text-align: left;
 }
 
 /* Consultas — botão Histórico */
@@ -137,8 +202,9 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     font-weight: 700;
     color: rgb(6,107,99);
     cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .12s ease;
 }
-.vv-consulta-btn:active { background: #f3f4f6; }
+.vv-consulta-btn:active { background: #f3f4f6; transform: scale(.985); }
 .vv-consulta-btn svg {
     width: 19px;
     height: 19px;
@@ -149,44 +215,84 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     stroke-linejoin: round;
 }
 
-/* Ações de administração — 3 botões coloridos */
+/* Administração com menos destaque que as ações usadas no manejo diário. */
 .vv-admin-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
 }
 .vv-admin-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 7px;
-    border: none;
-    border-radius: 13px;
-    padding: 14px 4px;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 11px 10px;
     cursor: pointer;
-    color: white;
+    transition: background .15s ease, transform .12s ease;
 }
+.vv-admin-btn:last-child { grid-column: 1 / -1; }
+.vv-admin-btn:active { transform: scale(.985); }
 .vv-admin-btn svg {
-    width: 21px;
-    height: 21px;
-    stroke: white;
+    width: 19px;
+    height: 19px;
+    stroke: currentColor;
     fill: none;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 .vv-admin-btn span {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     line-height: 1.2;
-    text-align: center;
+    text-align: left;
 }
-.vv-admin-amber { background: #f59e0b; }
-.vv-admin-amber:active { background: #d97706; }
-.vv-admin-cinza { background: #6b7280; }
-.vv-admin-cinza:active { background: #4b5563; }
-.vv-admin-vermelho { background: #ef4444; }
-.vv-admin-vermelho:active { background: #dc2626; }
+.vv-admin-amber { background: #fff8e8; border-color: #f0d49a; color: #9a5b00; }
+.vv-admin-amber:active { background: #ffefc8; }
+.vv-admin-cinza { background: #f7f8fa; border-color: #d9dde3; color: #5a6573; }
+.vv-admin-cinza:active { background: #eceff3; }
+.vv-admin-vermelho { background: #fff3f3; border-color: #f2c4c4; color: #c93636; }
+.vv-admin-vermelho:active { background: #ffe2e2; }
+
+@media (hover: hover) {
+    .vv-manejo-btn:hover { background: rgb(4,85,79); box-shadow: 0 8px 22px rgba(6,107,99,.18); }
+    .vv-consulta-btn:hover { background: #f4faf8; border-color: #9dc9c1; }
+    .vv-admin-btn:hover { filter: brightness(.98); }
+}
+
+@media (max-width: 430px) {
+    .vv-header {
+        display: grid;
+        grid-template-columns: 50px minmax(0, 1fr);
+        gap: 10px 12px;
+    }
+    .vv-header-ico { grid-row: 1 / span 2; }
+    .vv-pls {
+        grid-column: 2;
+        justify-self: start;
+        margin-top: -3px;
+    }
+}
+
+@media (min-width: 900px) {
+    .painel-viveiro {
+        max-width: 1120px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 26px;
+    }
+    .vv-producao-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .vv-custos-grid,
+    .vv-cadastro-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .vv-custos-grid .info-box:last-child,
+    .vv-cadastro-grid .info-box:last-child { grid-column: auto; }
+    .vv-manejo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .vv-admin-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .vv-admin-btn:last-child { grid-column: auto; }
+}
 
 /* Dark mode */
 body.tema-escuro .vv-header-ico { background: #052e2b; }
@@ -194,6 +300,20 @@ body.tema-escuro .vv-header-ico svg { stroke: #34d399; }
 body.tema-escuro .vv-titulo { color: #34d399; }
 
 body.tema-escuro .vv-pls { background: #052e2b; color: #34d399; }
+
+body.tema-escuro .vv-header { border-bottom-color: #374151; }
+body.tema-escuro .vv-indicadores-grupo { background: #18212e; border-color: #344151; }
+body.tema-escuro .vv-grupo-titulo { color: #d1d5db; }
+body.tema-escuro .vv-indicadores-grupo .info-box { background: #202b3a; border-color: #374151; }
+body.tema-escuro .vv-indicadores-grupo .info-box-icone { background: #163c36; }
+body.tema-escuro .vv-indicadores-grupo .info-box-icone svg { stroke: #5eead4; }
+body.tema-escuro .vv-indicadores-grupo .info-box small { color: #aeb8c5; }
+body.tema-escuro .vv-indicadores-grupo .info-box strong { color: #f3f4f6; }
+body.tema-escuro .vv-indicadores-grupo .info-box-destaque { background: #12312d; border-color: #285e55; box-shadow: none; }
+body.tema-escuro .vv-indicadores-grupo .info-box-destaque strong { color: #6ee7d2; }
+body.tema-escuro .vv-admin-amber { background: #332711; border-color: #6b501d; color: #f4c35f; }
+body.tema-escuro .vv-admin-cinza { background: #242d3a; border-color: #465264; color: #c8d0da; }
+body.tema-escuro .vv-admin-vermelho { background: #351d21; border-color: #6d343b; color: #f58a94; }
 
 body.tema-escuro .vv-consulta-btn { background: #1f2937; border-color: #4b5563; color: #34d399; }
 body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
