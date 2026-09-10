@@ -22,8 +22,8 @@
  */
 
 // Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v8 força
-// a renovação após a restauração do visual anterior da tela do viveiro.
-const CACHE = "waaqua-v8";
+// a renovação após o refinamento do histórico de biometria.
+const CACHE = "waaqua-v9";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
