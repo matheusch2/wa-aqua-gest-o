@@ -8479,7 +8479,7 @@ function abrirCadastrarProduto() {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             <label>Nome do produto</label>
           </div>
-          <input type="text" id="nomeProduto" placeholder="Ex: Ração">
+          <input type="text" id="nomeProduto" placeholder="Ex: Probiótico">
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -8487,7 +8487,6 @@ function abrirCadastrarProduto() {
             <label>Categoria</label>
           </div>
           <select id="categoriaProduto">
-            <option value="Ração">Ração</option>
             <option value="Probiótico">Probiótico</option>
             <option value="Calcário">Calcário</option>
             <option value="Outros">Outros</option>
@@ -8781,7 +8780,7 @@ function abrirEdicaoProduto(i) {
             <label>Categoria</label>
           </div>
           <select id="editCategoriaProduto">
-            <option value="Ração" ${p.categoria === "Ração" ? "selected" : ""}>Ração</option>
+            ${p.categoria === "Ração" ? `<option value="Ração" selected>Ração</option>` : ""}
             <option value="Probiótico" ${p.categoria === "Probiótico" ? "selected" : ""}>Probiótico</option>
             <option value="Calcário" ${p.categoria === "Calcário" ? "selected" : ""}>Calcário</option>
             <option value="Outros" ${p.categoria === "Outros" ? "selected" : ""}>Outros</option>
