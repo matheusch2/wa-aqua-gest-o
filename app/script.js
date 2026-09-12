@@ -27,15 +27,20 @@ function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElem
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
 
 // ── Tabela de taxas de alimentação WA Aqua ──────────────────────────────────
+// Curva contínua e suave (v2), calibrada pela referência comercial (Jory 1995) —
+// âncora em 6 g = 5,10 %. A versão anterior tinha dois degraus artificiais
+// (14→15 g e, sobretudo, 20→21 g) que faziam a sobrevivência estimada "pular"
+// de ~63 % para ~79 % quando o camarão crescia 1 g. A queda agora é gradual do
+// início ao fim e no topo continua caindo em vez de travar em 1,30 %.
 const _TABELA_TAXA = [
-  {peso:1,taxa:8.00},{peso:2,taxa:8.00},{peso:3,taxa:7.00},{peso:4,taxa:6.50},
-  {peso:5,taxa:5.50},{peso:6,taxa:5.10},{peso:7,taxa:4.44},{peso:8,taxa:4.22},
-  {peso:9,taxa:4.04},{peso:10,taxa:3.88},{peso:11,taxa:3.74},{peso:12,taxa:3.62},
-  {peso:13,taxa:3.51},{peso:14,taxa:3.42},{peso:15,taxa:2.92},{peso:16,taxa:2.88},
-  {peso:17,taxa:2.79},{peso:18,taxa:2.65},{peso:19,taxa:2.57},{peso:20,taxa:2.39},
-  {peso:21,taxa:1.80},{peso:22,taxa:1.70},{peso:23,taxa:1.60},{peso:24,taxa:1.50},
-  {peso:25,taxa:1.50},{peso:26,taxa:1.30},{peso:27,taxa:1.30},{peso:28,taxa:1.30},
-  {peso:29,taxa:1.30},{peso:30,taxa:1.30},
+  {peso:1,taxa:8.00},{peso:2,taxa:7.30},{peso:3,taxa:6.60},{peso:4,taxa:6.00},
+  {peso:5,taxa:5.50},{peso:6,taxa:5.10},{peso:7,taxa:4.70},{peso:8,taxa:4.30},
+  {peso:9,taxa:3.95},{peso:10,taxa:3.65},{peso:11,taxa:3.38},{peso:12,taxa:3.15},
+  {peso:13,taxa:2.98},{peso:14,taxa:2.83},{peso:15,taxa:2.70},{peso:16,taxa:2.58},
+  {peso:17,taxa:2.47},{peso:18,taxa:2.37},{peso:19,taxa:2.27},{peso:20,taxa:2.18},
+  {peso:21,taxa:2.09},{peso:22,taxa:2.00},{peso:23,taxa:1.92},{peso:24,taxa:1.84},
+  {peso:25,taxa:1.77},{peso:26,taxa:1.70},{peso:27,taxa:1.63},{peso:28,taxa:1.57},
+  {peso:29,taxa:1.51},{peso:30,taxa:1.45},
 ];
 function _obterTaxa(peso) {
   if (peso < 1) return null;
