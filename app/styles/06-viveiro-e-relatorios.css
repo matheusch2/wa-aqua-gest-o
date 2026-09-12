@@ -5,16 +5,14 @@
 
 .vv-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
-    margin-bottom: 14px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e8efed;
+    margin-bottom: 16px;
 }
 .vv-header-ico {
-    width: 50px;
-    height: 50px;
-    border-radius: 13px;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     background: #eef4f3;
     display: flex;
     align-items: center;
@@ -22,8 +20,8 @@
     flex-shrink: 0;
 }
 .vv-header-ico svg {
-    width: 25px;
-    height: 25px;
+    width: 28px;
+    height: 28px;
     stroke: rgb(6,107,99);
     fill: none;
     stroke-width: 2;
@@ -33,7 +31,7 @@
 .vv-header-info { flex: 1; min-width: 0; }
 .vv-titulo {
     margin: 0;
-    font-size: 21px;
+    font-size: 22px;
     font-weight: 900;
     color: rgb(6,107,99);
     letter-spacing: -0.5px;
@@ -57,87 +55,24 @@
 .vv-pls {
     background: #eef4f3;
     color: rgb(6,107,99);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
-    padding: 8px 11px;
-    border-radius: 11px;
+    padding: 10px 14px;
+    border-radius: 12px;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
-/* Indicadores separados pela decisão que ajudam a tomar. */
-.vv-resumo-grupos {
-    display: grid;
-    gap: 12px;
-}
-
-.vv-indicadores-grupo {
-    min-width: 0;
-    padding: 12px;
-    border: 1px solid #e5edeb;
-    border-radius: 14px;
-    background: #f7faf9;
-}
-
-.vv-grupo-titulo {
-    margin: 0 0 10px 2px;
-    color: #34454b;
-    font-size: 13.5px;
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.vv-indicadores-grupo .painel-info {
-    margin: 0;
-    gap: 8px;
-}
-
-.vv-indicadores-grupo .info-box {
-    min-width: 0;
-    padding: 11px 8px;
-    background: #fff;
-    border: 1px solid #edf2f1;
-    border-radius: 12px;
-}
-
-.vv-indicadores-grupo .info-box small {
-    font-size: 12px;
-    line-height: 1.2;
-}
-
-.vv-indicadores-grupo .info-box strong {
-    max-width: 100%;
-    font-size: 15.5px;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-}
-
-.vv-indicadores-grupo .info-box-destaque {
-    border-color: #b9ddd6;
-    background: #f1faf7;
-    box-shadow: 0 5px 18px rgba(6,107,99,.07);
-}
-
-.vv-indicadores-grupo .info-box-destaque strong {
-    color: #075f58;
-    font-size: 16.5px;
-}
-
-/* O cartão de destaque (Laboratório / Custo por quilo) é o PRIMEIRO de cada
-   bloco e ocupa a linha inteira, em cima dos dois menores. */
-.vv-custos-grid .info-box:first-child,
-.vv-cadastro-grid .info-box:first-child {
-    grid-column: 1 / -1;
-}
+/* Card de indicador em destaque (Custo parcial) */
 
 /* Rótulos de seção de ações */
 .vv-secao-lbl {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 800;
     color: #9ca3af;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
-    margin: 20px 2px 10px;
+    letter-spacing: 0.04em;
+    margin: 18px 2px 10px;
 }
 
 /* Alerta de sobrevivência inconsistente (>100%) */
@@ -154,25 +89,23 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
 /* Ações de manejo — 4 botões compactos */
 .vv-manejo-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
 }
 .vv-manejo-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    min-height: 60px;
-    gap: 10px;
+    gap: 7px;
     background: rgb(6,107,99);
     border: none;
-    border-radius: 14px;
-    padding: 12px 13px;
+    border-radius: 13px;
+    padding: 14px 4px;
     cursor: pointer;
     color: white;
-    text-align: left;
-    transition: background .15s ease, transform .12s ease, box-shadow .15s ease;
+    transition: background 0.15s;
 }
-.vv-manejo-btn:active { background: rgb(4,85,79); transform: scale(.985); }
+.vv-manejo-btn:active { background: rgb(4,85,79); }
 .vv-manejo-btn svg {
     width: 22px;
     height: 22px;
@@ -183,10 +116,10 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     stroke-linejoin: round;
 }
 .vv-manejo-btn span {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 700;
-    line-height: 1.25;
-    text-align: left;
+    line-height: 1.2;
+    text-align: center;
 }
 
 /* Consultas — botão Histórico */
@@ -204,9 +137,8 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     font-weight: 700;
     color: rgb(6,107,99);
     cursor: pointer;
-    transition: background .15s ease, border-color .15s ease, transform .12s ease;
 }
-.vv-consulta-btn:active { background: #f3f4f6; transform: scale(.985); }
+.vv-consulta-btn:active { background: #f3f4f6; }
 .vv-consulta-btn svg {
     width: 19px;
     height: 19px;
@@ -217,84 +149,44 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     stroke-linejoin: round;
 }
 
-/* Administração com menos destaque que as ações usadas no manejo diário. */
+/* Ações de administração — 3 botões coloridos */
 .vv-admin-row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
 }
 .vv-admin-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 48px;
-    border: 1px solid;
-    border-radius: 12px;
-    padding: 11px 10px;
+    gap: 7px;
+    border: none;
+    border-radius: 13px;
+    padding: 14px 4px;
     cursor: pointer;
-    transition: background .15s ease, transform .12s ease;
+    color: white;
 }
-.vv-admin-btn:last-child { grid-column: 1 / -1; }
-.vv-admin-btn:active { transform: scale(.985); }
 .vv-admin-btn svg {
-    width: 19px;
-    height: 19px;
-    stroke: currentColor;
+    width: 21px;
+    height: 21px;
+    stroke: white;
     fill: none;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 .vv-admin-btn span {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     line-height: 1.2;
-    text-align: left;
+    text-align: center;
 }
-.vv-admin-amber { background: #fff8e8; border-color: #f0d49a; color: #9a5b00; }
-.vv-admin-amber:active { background: #ffefc8; }
-.vv-admin-cinza { background: #f7f8fa; border-color: #d9dde3; color: #5a6573; }
-.vv-admin-cinza:active { background: #eceff3; }
-.vv-admin-vermelho { background: #fff3f3; border-color: #f2c4c4; color: #c93636; }
-.vv-admin-vermelho:active { background: #ffe2e2; }
-
-@media (hover: hover) {
-    .vv-manejo-btn:hover { background: rgb(4,85,79); box-shadow: 0 8px 22px rgba(6,107,99,.18); }
-    .vv-consulta-btn:hover { background: #f4faf8; border-color: #9dc9c1; }
-    .vv-admin-btn:hover { filter: brightness(.98); }
-}
-
-@media (max-width: 430px) {
-    .vv-header {
-        display: grid;
-        grid-template-columns: 50px minmax(0, 1fr);
-        gap: 10px 12px;
-    }
-    .vv-header-ico { grid-row: 1 / span 2; }
-    .vv-pls {
-        grid-column: 2;
-        justify-self: start;
-        margin-top: -3px;
-    }
-}
-
-@media (min-width: 900px) {
-    .painel-viveiro {
-        max-width: 1120px;
-        margin-left: auto;
-        margin-right: auto;
-        padding: 26px;
-    }
-    .vv-producao-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .vv-custos-grid,
-    .vv-cadastro-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .vv-custos-grid .info-box:first-child,
-    .vv-cadastro-grid .info-box:first-child { grid-column: auto; }
-    .vv-manejo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .vv-admin-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .vv-admin-btn:last-child { grid-column: auto; }
-}
+.vv-admin-amber { background: #f59e0b; }
+.vv-admin-amber:active { background: #d97706; }
+.vv-admin-cinza { background: #6b7280; }
+.vv-admin-cinza:active { background: #4b5563; }
+.vv-admin-vermelho { background: #ef4444; }
+.vv-admin-vermelho:active { background: #dc2626; }
 
 /* Dark mode */
 body.tema-escuro .vv-header-ico { background: #052e2b; }
@@ -302,20 +194,6 @@ body.tema-escuro .vv-header-ico svg { stroke: #34d399; }
 body.tema-escuro .vv-titulo { color: #34d399; }
 
 body.tema-escuro .vv-pls { background: #052e2b; color: #34d399; }
-
-body.tema-escuro .vv-header { border-bottom-color: #374151; }
-body.tema-escuro .vv-indicadores-grupo { background: #18212e; border-color: #344151; }
-body.tema-escuro .vv-grupo-titulo { color: #d1d5db; }
-body.tema-escuro .vv-indicadores-grupo .info-box { background: #202b3a; border-color: #374151; }
-body.tema-escuro .vv-indicadores-grupo .info-box-icone { background: #163c36; }
-body.tema-escuro .vv-indicadores-grupo .info-box-icone svg { stroke: #5eead4; }
-body.tema-escuro .vv-indicadores-grupo .info-box small { color: #aeb8c5; }
-body.tema-escuro .vv-indicadores-grupo .info-box strong { color: #f3f4f6; }
-body.tema-escuro .vv-indicadores-grupo .info-box-destaque { background: #12312d; border-color: #285e55; box-shadow: none; }
-body.tema-escuro .vv-indicadores-grupo .info-box-destaque strong { color: #6ee7d2; }
-body.tema-escuro .vv-admin-amber { background: #332711; border-color: #6b501d; color: #f4c35f; }
-body.tema-escuro .vv-admin-cinza { background: #242d3a; border-color: #465264; color: #c8d0da; }
-body.tema-escuro .vv-admin-vermelho { background: #351d21; border-color: #6d343b; color: #f58a94; }
 
 body.tema-escuro .vv-consulta-btn { background: #1f2937; border-color: #4b5563; color: #34d399; }
 body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
@@ -611,3 +489,191 @@ body.tema-escuro .prep-status-ico { background: #422006; }
 body.tema-escuro .prep-status-txt { color: #fcd34d; }
 body.tema-escuro .prep-status-txt strong { color: #fbbf24; }
 body.tema-escuro .prep-status-desde { color: #d97706; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HISTÓRICO DE BIOMETRIA — refinamento visual sem alterar a estrutura
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bio-titulo {
+    margin-bottom: 12px;
+}
+
+.bio-tabela {
+    margin-top: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1.5px solid #dfe8e6;
+    border-radius: 14px;
+}
+
+.bio-tabela .linha-historico-acoes {
+    grid-template-columns: minmax(98px, 1.15fr) minmax(58px, .75fr) minmax(66px, .82fr) 78px;
+    gap: 5px;
+    min-height: 58px;
+    padding: 12px 10px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #edf1f0;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.bio-tabela .linha-historico-acoes:last-child {
+    border-bottom: none;
+}
+
+.bio-tabela .linha-historico-acoes.cabecalho {
+    min-height: auto;
+    padding: 11px 10px;
+    background: #f4f8f7;
+    color: #607472;
+    border-bottom: 1px solid #dfe8e6;
+    font-size: 11.5px;
+    letter-spacing: .04em;
+}
+
+.bio-data {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    color: #344644;
+}
+
+.bio-data b {
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.bio-data small {
+    color: #148174;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .055em;
+    line-height: 1;
+}
+
+.bio-peso {
+    color: #203d3a;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.bio-crescimento {
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.bio-crescimento.positivo { color: #188351; }
+.bio-crescimento.neutro { color: #98a4a2; }
+
+.bio-linha-mais-recente {
+    background: #f1faf7;
+    box-shadow: inset 3px 0 #119486;
+}
+
+.bio-acoes {
+    gap: 4px;
+    justify-content: center;
+}
+
+.bio-acao-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 9px;
+    background: #f3f6f5;
+    color: #526966;
+    transition: background .15s, transform .1s;
+}
+
+.bio-acao-btn:active {
+    background: #e4eeec;
+    transform: scale(.94);
+}
+
+.bio-acao-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.bio-acao-excluir {
+    background: #fff0f0;
+    color: #d65b5b;
+}
+
+.bio-acao-excluir:active {
+    background: #ffe1e1;
+}
+
+.bio-tabela > .sobrevivencia-texto {
+    margin: 0;
+    padding: 24px 14px;
+    text-align: center;
+}
+
+body.tema-escuro .bio-tabela {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+body.tema-escuro .bio-tabela .linha-historico-acoes {
+    background: #1f2937;
+    border-bottom-color: #374151;
+}
+
+body.tema-escuro .bio-tabela .linha-historico-acoes.cabecalho {
+    background: #263341;
+    color: #9ca3af;
+    border-bottom-color: #435064;
+}
+
+body.tema-escuro .bio-linha-mais-recente {
+    background: #12312d !important;
+    box-shadow: inset 3px 0 #34d399;
+}
+
+body.tema-escuro .bio-data { color: #d1d5db; }
+body.tema-escuro .bio-data small { color: #5eead4; }
+body.tema-escuro .bio-peso { color: #f3f4f6; }
+body.tema-escuro .bio-crescimento.positivo { color: #6ee7b7; }
+body.tema-escuro .bio-crescimento.neutro { color: #788493; }
+
+body.tema-escuro .bio-acao-btn {
+    background: #374151;
+    color: #d1d5db;
+}
+
+body.tema-escuro .bio-acao-btn:active { background: #4b5563; }
+
+body.tema-escuro .bio-acao-excluir {
+    background: #3b2428;
+    color: #fca5a5;
+}
+
+body.tema-escuro .bio-acao-excluir:active { background: #51272d; }
+
+@media (max-width: 380px) {
+    .bio-tabela .linha-historico-acoes {
+        grid-template-columns: minmax(82px, 1fr) minmax(52px, .7fr) minmax(58px, .78fr) 64px;
+        gap: 4px;
+        padding-left: 7px;
+        padding-right: 7px;
+        font-size: 12.5px;
+    }
+    .bio-tabela .linha-historico-acoes.cabecalho {
+        padding-left: 7px;
+        padding-right: 7px;
+        font-size: 10.5px;
+    }
+    .bio-data b { font-size: 12.5px; }
+    .bio-acao-btn { width: 30px; height: 30px; }
+    .bio-acao-btn svg { width: 15px; height: 15px; }
+}
+
