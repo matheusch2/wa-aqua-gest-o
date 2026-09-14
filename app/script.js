@@ -4439,7 +4439,7 @@ function abrirMenuCusto() {
       </div>
       <div class="form-corpo">
         <div class="historico-opcoes-grid">
-          <button class="botao-historico-opcao" onclick="abrirEscolherViveiroCusto('produto')">
+          <button class="botao-historico-opcao" onclick="abrirLancarCustoProduto()">
             <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             Produto cadastrado
           </button>
@@ -4451,59 +4451,13 @@ function abrirMenuCusto() {
             <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             Energia
           </button>
-          <button class="botao-historico-opcao" onclick="abrirEscolherViveiroCusto('outro')">
+          <button class="botao-historico-opcao" onclick="abrirLancarOutroCusto()">
             <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Outro custo
           </button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-      </div>
-    </div>
-  `;
-}
-
-// Escolhe em qual viveiro lancar o custo, quando aberto pelo menu (fora do
-// viveiro). destino: "produto" (produto cadastrado) ou "outro" (outro custo).
-function abrirEscolherViveiroCusto(destino) {
-  esconderMenu();
-  const area = document.getElementById("area-gestao");
-  const alvo = destino === "produto" ? "abrirLancarCustoProduto" : "abrirLancarOutroCusto";
-  const rotulo = destino === "produto" ? "Produto cadastrado" : "Outro custo";
-  const ativos = viveiros.map((v, i) => ({ v, i })).filter(x => x.v.dataPovoamento || x.v.dataPreparacao);
-  if (ativos.length === 0) {
-    area.innerHTML = `
-      <div class="form-lancamento">
-        <div class="form-topo">
-          <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <h2 class="form-titulo">${rotulo}</h2>
-        </div>
-        <div class="viveiro-sem-ciclo-msg">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>Nenhum viveiro com ciclo ativo. Inicie um ciclo antes de lançar custo.</span>
-        </div>
-        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
-      </div>
-    `;
-    return;
-  }
-  area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg></div>
-        <span class="form-caption">${rotulo}</span>
-        <h2 class="form-titulo">Escolha o viveiro</h2>
-      </div>
-      <div class="form-corpo">
-        <div class="historico-opcoes-grid">
-          ${ativos.map(x => `
-          <button class="botao-historico-opcao" onclick="${alvo}(${x.i})">
-            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            ${_esc(x.v.nome)}
-          </button>`).join("")}
-        </div>
-        <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
       </div>
     </div>
   `;
@@ -8807,10 +8761,27 @@ function abrirLancarCusto(index) {
   `;
 }
 
-function abrirLancarCustoProduto(index) {
-  const viveiro = viveiros[index];
+function abrirLancarCustoProduto(index = "") {
+  const dentro = index !== "" && index !== null && index !== undefined;
   const area = document.getElementById("area-gestao");
   const hoje = _hojeLocal();
+  const ativos = viveiros.map((v, i) => ({ v, i })).filter(x => x.v.dataPovoamento || x.v.dataPreparacao);
+  if (!dentro && ativos.length === 0) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <h2 class="form-titulo">Lançar Produto</h2>
+        </div>
+        <div class="viveiro-sem-ciclo-msg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Nenhum viveiro com ciclo ativo. Inicie um ciclo antes de lançar custo.</span>
+        </div>
+        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
+      </div>`;
+    return;
+  }
+  const viveiro = dentro ? viveiros[index] : null;
 
   // A unidade é lembrada numa variável do arquivo, e a tela é redesenhada com
   // "g" marcado sempre. Sem zerar aqui, quem lançasse em saco, saísse e
@@ -8833,7 +8804,7 @@ function abrirLancarCustoProduto(index) {
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span>Nenhum produto cadastrado. Vá em Custos e Insumos Cadastrar produto primeiro.</span>
           </div>
-          <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})">Voltar</button>
+          <button class="botao-voltar-form" onclick="${dentro ? `abrirLancarCusto(${index})` : "abrirMenuCusto()"}">Voltar</button>
         </div>
       </div>
     `;
@@ -8846,10 +8817,20 @@ function abrirLancarCustoProduto(index) {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         </div>
-        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        ${dentro ? `<span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>` : ""}
         <h2 class="form-titulo">Lançar Produto</h2>
       </div>
       <div class="form-corpo">
+        ${dentro ? "" : `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Viveiro</label>
+          </div>
+          <select id="viveiroCustoProduto">
+            ${ativos.map(x => `<option value="${x.i}">${_esc(x.v.nome)}</option>`).join("")}
+          </select>
+        </div>`}
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -8886,12 +8867,12 @@ function abrirLancarCustoProduto(index) {
           <span id="previa-custo-equiv" class="previa-equiv" style="display:none"></span>
         </div>
         <div id="msg-custo-produto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarCustoProduto(${index})">
+        <button class="botao-salvar" onclick="salvarCustoProduto(${dentro ? index : ""})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})">Voltar</button>
+        <button class="botao-voltar-form" onclick="${dentro ? `abrirLancarCusto(${index})` : "abrirMenuCusto()"}">Voltar</button>
       </div>
     </div>
   `;
@@ -9020,7 +9001,13 @@ function atualizarPreviaCusto() {
   if (div) div.style.display = "none";
 }
 
-async function salvarCustoProduto(index) {
+async function salvarCustoProduto(index = "") {
+  // Aberto pelo menu (sem viveiro fixo): pega o viveiro escolhido no seletor.
+  if (index === "" || index === null || index === undefined) {
+    const sel = document.getElementById("viveiroCustoProduto");
+    index = sel ? Number(sel.value) : NaN;
+  }
+  if (!(index >= 0) || !viveiros[index]) return;
   if (_bloqueioViveiro(index)) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
@@ -9071,10 +9058,28 @@ async function salvarCustoProduto(index) {
   _toastSucesso(`Custo lançado: ${prod.nome} — R$ ${formatarNumeroBR(valor, 2)}`);
 }
 
-function abrirLancarOutroCusto(index) {
-  const viveiro = viveiros[index];
+function abrirLancarOutroCusto(index = "") {
+  const dentro = index !== "" && index !== null && index !== undefined;
   const area = document.getElementById("area-gestao");
   const hoje = _hojeLocal();
+  const ativos = viveiros.map((v, i) => ({ v, i })).filter(x => x.v.dataPovoamento || x.v.dataPreparacao);
+
+  if (!dentro && ativos.length === 0) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h2 class="form-titulo">Outro Custo</h2>
+        </div>
+        <div class="viveiro-sem-ciclo-msg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Nenhum viveiro com ciclo ativo. Inicie um ciclo antes de lançar custo.</span>
+        </div>
+        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
+      </div>`;
+    return;
+  }
+  const viveiro = dentro ? viveiros[index] : null;
 
   area.innerHTML = `
     <div class="form-lancamento">
@@ -9082,10 +9087,20 @@ function abrirLancarOutroCusto(index) {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        ${dentro ? `<span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>` : ""}
         <h2 class="form-titulo">Outro Custo</h2>
       </div>
       <div class="form-corpo">
+        ${dentro ? "" : `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Viveiro</label>
+          </div>
+          <select id="viveiroOutroCusto">
+            ${ativos.map(x => `<option value="${x.i}">${_esc(x.v.nome)}</option>`).join("")}
+          </select>
+        </div>`}
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -9111,18 +9126,24 @@ function abrirLancarOutroCusto(index) {
           </div>
         </div>
         <div id="msg-outro-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarOutroCusto(${index})">
+        <button class="botao-salvar" onclick="salvarOutroCusto(${dentro ? index : ""})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})">Voltar</button>
+        <button class="botao-voltar-form" onclick="${dentro ? `abrirLancarCusto(${index})` : "abrirMenuCusto()"}">Voltar</button>
       </div>
     </div>
   `;
 }
 
-async function salvarOutroCusto(index) {
+async function salvarOutroCusto(index = "") {
+  // Aberto pelo menu (sem viveiro fixo): pega o viveiro escolhido no seletor.
+  if (index === "" || index === null || index === undefined) {
+    const sel = document.getElementById("viveiroOutroCusto");
+    index = sel ? Number(sel.value) : NaN;
+  }
+  if (!(index >= 0) || !viveiros[index]) return;
   if (_bloqueioViveiro(index)) return;
   const botao = document.querySelector(".botao-salvar");
   if (botao?.disabled) return; // trava contra duplo toque
