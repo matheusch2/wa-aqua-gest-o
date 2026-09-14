@@ -113,6 +113,17 @@ test("_calcularBiomassa: peso fora da tabela (0,5 g) devolve null", () => {
   assert.equal(app._calcularBiomassa(100000, 30, 0.5), null);
 });
 
+test("_pesoMedioAmostra: peso da amostra dividido pela quantidade contada", () => {
+  assert.ok(perto(app._pesoMedioAmostra(250, 30), 8.333)); // 250 g / 30 camarões
+  assert.equal(app._pesoMedioAmostra(300, 25), 12);
+});
+
+test("_pesoMedioAmostra: sem dado ou divisao por zero devolve null (nao chuta)", () => {
+  assert.equal(app._pesoMedioAmostra(250, 0), null);
+  assert.equal(app._pesoMedioAmostra(0, 30), null);
+  assert.equal(app._pesoMedioAmostra(NaN, 30), null);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Datas do ciclo (dias de cultivo) — sem cair para o dia anterior por fuso
 // ─────────────────────────────────────────────────────────────────────────────

@@ -2336,6 +2336,25 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
 // ═══ BIOMETRIAS ════════════════════════════════════════════════════════════════
 
+// Peso medio de uma biometria: pesa-se uma amostra e conta-se quantos camaroes
+// ha nela (250 g / 30 = 8,33 g). Devolve null quando falta dado, para a tela
+// nao sobrescrever um peso medio digitado a mao. Funcao pura -> tem teste.
+function _pesoMedioAmostra(amostraG, qtd) {
+  return (amostraG > 0 && qtd > 0) ? amostraG / qtd : null;
+}
+
+// Preenche o campo "Peso medio" ao vivo enquanto a pessoa digita amostra e
+// quantidade. O campo continua editavel: quem ja sabe a media digita direto
+// (deixando amostra/quantidade em branco).
+function _calcPesoMedioBio() {
+  const amostra = parseDecimalBR(document.getElementById("amostraBiometria").value);
+  const qtd = parseDecimalBR(document.getElementById("qtdBiometria").value);
+  const campo = document.getElementById("gramaturaBiometria");
+  if (!campo) return;
+  const pm = _pesoMedioAmostra(amostra, qtd);
+  if (pm !== null) campo.value = formatarNumeroBR(pm, 2);
+}
+
 function abrirBiometria(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
@@ -2359,15 +2378,36 @@ function abrirBiometria(index) {
           <input type="date" id="dataBiometria" value="${hoje}">
         </div>
 
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              <label>Peso da amostra</label>
+            </div>
+            <div class="campo-input-unidade">
+              <input type="text" inputmode="decimal" id="amostraBiometria" placeholder="Ex: 250" oninput="_calcPesoMedioBio()">
+              <span class="campo-unidade">g</span>
+            </div>
+          </div>
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <label>Qtd de camarões</label>
+            </div>
+            <input type="text" inputmode="numeric" id="qtdBiometria" placeholder="Ex: 30" oninput="_calcPesoMedioBio()">
+          </div>
+        </div>
+
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="12"/><line x1="14" y1="10" x2="14" y2="12"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
-            <label>Gramatura média</label>
+            <label>Peso médio</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="gramaturaBiometria" placeholder="Ex: 10,5">
             <span class="campo-unidade">g</span>
           </div>
+          <p style="font-size:12px;color:#6b7280;margin:6px 2px 0">Calcula sozinho pela amostra ÷ quantidade — você também pode digitar direto.</p>
         </div>
 
         <div id="msg-bio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
@@ -2452,6 +2492,8 @@ async function salvarBiometria(index) {
   // Guarda contra a tela ter mudado durante o await (senão trava o botão).
   const _dataBioEl = document.getElementById("dataBiometria"); if (_dataBioEl) _dataBioEl.value = _hojeLocal();
   const _gramBioEl = document.getElementById("gramaturaBiometria"); if (_gramBioEl) _gramBioEl.value = "";
+  const _amBioEl = document.getElementById("amostraBiometria"); if (_amBioEl) _amBioEl.value = "";
+  const _qtBioEl = document.getElementById("qtdBiometria"); if (_qtBioEl) _qtBioEl.value = "";
   restaurar();
 
   const msgSucesso = document.getElementById("msg-bio-sucesso");
