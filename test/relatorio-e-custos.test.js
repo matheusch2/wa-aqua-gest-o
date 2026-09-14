@@ -183,3 +183,14 @@ test("_custosCicloAtivo: rateio congelado ZERO e respeitado (nao recalcula)", ()
   assert.equal(r.rateioFixo, 0);
   assert.equal(r.total, 170); // so os custos manuais, sem rateio
 });
+
+test("_ratearIgual: divide um custo avulso em partes iguais (ex: diarista)", () => {
+  // R$ 300 entre 3 viveiros ativos = R$ 100 em cada
+  assert.equal(app._ratearIgual(300, 3), 100);
+  assert.ok(perto(app._ratearIgual(100, 3), 33.333));
+});
+
+test("_ratearIgual: sem valor ou sem viveiro ativo devolve null (nao divide por zero)", () => {
+  assert.equal(app._ratearIgual(300, 0), null);
+  assert.equal(app._ratearIgual(0, 3), null);
+});
