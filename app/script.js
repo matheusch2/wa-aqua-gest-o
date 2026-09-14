@@ -4439,6 +4439,10 @@ function abrirMenuCusto() {
       </div>
       <div class="form-corpo">
         <div class="historico-opcoes-grid">
+          <button class="botao-historico-opcao" onclick="abrirEscolherViveiroCusto('produto')">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Produto cadastrado
+          </button>
           <button class="botao-historico-opcao" onclick="abrirCustosFixos()">
             <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
             Custos fixos
@@ -4447,9 +4451,59 @@ function abrirMenuCusto() {
             <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             Energia
           </button>
+          <button class="botao-historico-opcao" onclick="abrirEscolherViveiroCusto('outro')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Outro custo
+          </button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
+// Escolhe em qual viveiro lancar o custo, quando aberto pelo menu (fora do
+// viveiro). destino: "produto" (produto cadastrado) ou "outro" (outro custo).
+function abrirEscolherViveiroCusto(destino) {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const alvo = destino === "produto" ? "abrirLancarCustoProduto" : "abrirLancarOutroCusto";
+  const rotulo = destino === "produto" ? "Produto cadastrado" : "Outro custo";
+  const ativos = viveiros.map((v, i) => ({ v, i })).filter(x => x.v.dataPovoamento || x.v.dataPreparacao);
+  if (ativos.length === 0) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="form-topo">
+          <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h2 class="form-titulo">${rotulo}</h2>
+        </div>
+        <div class="viveiro-sem-ciclo-msg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Nenhum viveiro com ciclo ativo. Inicie um ciclo antes de lançar custo.</span>
+        </div>
+        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
+      </div>
+    `;
+    return;
+  }
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg></div>
+        <span class="form-caption">${rotulo}</span>
+        <h2 class="form-titulo">Escolha o viveiro</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="historico-opcoes-grid">
+          ${ativos.map(x => `
+          <button class="botao-historico-opcao" onclick="${alvo}(${x.i})">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            ${_esc(x.v.nome)}
+          </button>`).join("")}
+        </div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
       </div>
     </div>
   `;
