@@ -200,9 +200,7 @@ document.addEventListener("click", function(e) {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  CONFIGURAÇÕES
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══ CONFIGURAÇÕES ═══════════════════════════════════════════════════════════
 
 const _ICO = {
   atualizar:`<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
@@ -899,7 +897,7 @@ function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
   return dias > 0 ? dias : 0;
 }
 
-// ─── FUNÇÕES UTILITÁRIAS (antes ausentes) ───────────────────────────────────
+// ═══ FUNÇÕES UTILITÁRIAS COMPARTILHADAS ═══════════════════════════════════════
 
 // Escapa texto para dentro de um atributo HTML de aspas duplas (value="...").
 // Sem isso, um nome como Fazenda "Boa Vista" fecha o atributo antes da hora: o
@@ -920,6 +918,12 @@ function _dataLocalISO(d) {
 // "Hoje" na data local — padrão dos formulários e fim das janelas de cálculo.
 function _hojeLocal() {
   return _dataLocalISO(new Date());
+}
+
+function _compararViveirosPorNome(a, b) {
+  const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
+  const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
+  return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
 }
 
 function toggleSenha(inputId, botao) {
@@ -947,11 +951,7 @@ function limparAreaGestao() {
 }
 
 function posicaoNaLista(index) {
-  const ordenados = [...viveiros].sort((a, b) => {
-    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
-    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
-    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
-  });
+  const ordenados = [...viveiros].sort(_compararViveirosPorNome);
   return Math.max(0, ordenados.findIndex(v => v.id === viveiros[index].id));
 }
 
@@ -1011,7 +1011,7 @@ function voltarMenuGestao() {
   _toggleVoltarTopo(false);
 }
 
-// ─── VIVEIRO ─────────────────────────────────────────────────────────────────
+// ═══ VIVEIROS ═════════════════════════════════════════════════════════════════
 
 function mostrarCadastroViveiro() {
   esconderMenu();
@@ -1215,11 +1215,7 @@ async function salvarViveiro() {
     racoes: [], biometrias: [], despescas: [], ciclosFinalizados: [], custos: [],
     protocolos: Array.isArray(it.protocolos) ? it.protocolos : [],
   });
-  viveiros.sort((a, b) => {
-    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
-    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
-    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
-  });
+  viveiros.sort(_compararViveirosPorNome);
 
   // Mostra a lista já posicionada no viveiro recém-criado
   const pos = viveiros.findIndex(v => v.id === it.id);
@@ -1249,11 +1245,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     return;
   }
 
-  const viveirosOrdenados = [...viveiros].sort((a, b) => {
-    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
-    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
-    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
-  });
+  const viveirosOrdenados = [...viveiros].sort(_compararViveirosPorNome);
 
   const total = viveirosOrdenados.length;
   const viveiro = viveirosOrdenados[posicao];
@@ -1476,11 +1468,7 @@ function editarNomeViveiro(index) {
 // Posição do viveiro na lista ordenada (mesma ordem de mostrarListaViveiros)
 function _posicaoViveiro(index) {
   const alvo = viveiros[index];
-  const ordenados = [...viveiros].sort((a, b) => {
-    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
-    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
-    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
-  });
+  const ordenados = [...viveiros].sort(_compararViveirosPorNome);
   return Math.max(0, ordenados.indexOf(alvo));
 }
 
@@ -1809,7 +1797,7 @@ function abrirViveiro(index) {
   `;
 }
 
-// ─── RAÇÕES CATÁLOGO ──────────────────────────────────────────────────────────
+// ═══ CATÁLOGO DE RAÇÕES ════════════════════════════════════════════════════════
 
 function abrirRacoesCatalogo() {
   esconderMenu();
@@ -2126,7 +2114,7 @@ async function salvarEdicaoTipoRacao(i) {
   abrirVerTiposRacao();
 }
 
-// ─── RAÇÃO ────────────────────────────────────────────────────────────────────
+// ═══ LANÇAMENTOS DE RAÇÃO ══════════════════════════════════════════════════════
 
 function mostrarLancamentoRacao(indexSelecionado = "") {
   if (indexSelecionado === "") esconderMenu();
@@ -2348,7 +2336,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   }
 }
 
-// ─── BIOMETRIA ────────────────────────────────────────────────────────────────
+// ═══ BIOMETRIAS ════════════════════════════════════════════════════════════════
 
 function abrirBiometria(index) {
   const viveiro = viveiros[index];
@@ -2475,7 +2463,7 @@ async function salvarBiometria(index) {
   }
 }
 
-// ─── DESPESCA ─────────────────────────────────────────────────────────────────
+// ═══ DESPESCAS ═════════════════════════════════════════════════════════════════
 
 function abrirDespesca(index) {
   const viveiro = viveiros[index];
@@ -2649,7 +2637,7 @@ async function salvarDespesca(index) {
   }
 }
 
-// ─── HISTÓRICO ────────────────────────────────────────────────────────────────
+// ═══ HISTÓRICOS ════════════════════════════════════════════════════════════════
 
 function mostrarHistoricoCultivo(indexSelecionado = "") {
   esconderMenu();
@@ -3401,7 +3389,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAt
   `;
 }
 
-// ─── EDITAR / EXCLUIR BIOMETRIA ───────────────────────────────────────────────
+// ─── EDIÇÃO E EXCLUSÃO DE BIOMETRIAS ──────────────────────────────────────────
 
 function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
   salvarScroll();
@@ -3536,7 +3524,7 @@ async function excluirBiometria(viveiroIndex, bioIndex, elementoId, direto, bota
   restaurarScroll();
 }
 
-// ─── EDITAR / EXCLUIR DESPESCA ────────────────────────────────────────────────
+// ─── EDIÇÃO E EXCLUSÃO DE DESPESCAS ───────────────────────────────────────────
 
 function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
   salvarScroll();
@@ -3866,7 +3854,7 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
   restaurarScroll();
 }
 
-// ─── CICLO ───────────────────────────────────────────────────────────────────
+// ═══ CICLOS ════════════════════════════════════════════════════════════════════
 
 function reiniciarCiclo(index) {
   mostrarFormularioReinicio(index);
@@ -4276,7 +4264,7 @@ async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
   mostrarHistoricoCiclos();
 }
 
-// ─── BOLETOS A VENCER ─────────────────────────────────────────────────────────
+// ═══ BOLETOS A VENCER ══════════════════════════════════════════════════════════
 
 function _statusBoleto(dataCompra, prazoDias) {
   const hoje = new Date();
@@ -4366,7 +4354,7 @@ function abrirMenuFinanceiro() {
   `;
 }
 
-// ─── ASSINATURA / PLANOS ────────────────────────────────────────────────────
+// ═══ ASSINATURA E PLANOS ═══════════════════════════════════════════════════════
 // Contratação manual via WhatsApp: cliente chama, paga por Pix e o admin
 // libera pelo painel /admin. Número obrigatório (DDI+DDD+número).
 const _WHATSAPP_COMERCIAL = "5588992498067";
@@ -4389,7 +4377,7 @@ function _planoLabel(key) {
   return p ? p.nome : "Grátis";
 }
 
-// ─── TRAVA / MODO SOMENTE LEITURA ───────────────────────────────────────────
+// ─── CONTROLE DO MODO SOMENTE LEITURA ─────────────────────────────────────────
 // Regra do produto:
 //  • 1 viveiro é grátis para sempre. A partir do 2º, precisa de um plano.
 //  • Se o pagamento de um plano pago parar, a conta entra em "somente leitura":
@@ -4583,7 +4571,7 @@ function abrirAssinatura() {
 
 // Porta de entrada legada: qualquer botão antigo "Assinar" cai no WhatsApp.
 
-// ─── SIMULAR VENDA ──────────────────────────────────────────────────────────
+// ═══ SIMULAÇÃO DE VENDA ════════════════════════════════════════════════════════
 // Estima a biomassa produzida (atual + despescada) e o custo total do ciclo,
 // reaproveitando exatamente as mesmas contas da tela do viveiro.
 function _simularDadosViveiro(viveiro) {
@@ -4799,7 +4787,7 @@ function _simVendaCalcular() {
     ${avisoSemPreco}`;
 }
 
-// ─── CUSTOS FIXOS MENSAIS — TELA E CRUD ─────────────────────────────────────
+// ═══ CUSTOS FIXOS MENSAIS — TELA E CRUD ════════════════════════════════════════
 
 function abrirCustosFixos() {
   esconderMenu();
@@ -5082,7 +5070,7 @@ async function excluirCustoFixo(index, botao) {
   abrirCustosFixos();
 }
 
-// ─── ENERGIA (rateio manual por período de leitura) ──────────────────────────
+// ═══ ENERGIA — RATEIO POR PERÍODO DE LEITURA ═══════════════════════════════════
 // A conta de luz chega DEPOIS do consumo e não é proporcional a dias: viveiro
 // com oito aeradores gasta muito mais que um com dois. Por isso aqui o app
 // apenas SUGERE uma divisão e o produtor ajusta cada valor na mão.
@@ -5987,7 +5975,7 @@ async function desmarcarBoletoPago(index, voltarDetalhe, botao) {
 }
 
 
-// ─── FINANCEIRO ───────────────────────────────────────────────────────────────
+// ═══ FINANCEIRO ════════════════════════════════════════════════════════════════
 
 function abrirFinanceiro() {
   esconderMenu();
@@ -7496,7 +7484,7 @@ function _maAddDias(s, n) {
   const d = _maParse(s); d.setDate(d.getDate() + n); return _maYmd(d);
 }
 
-// ─── CUSTOS FIXOS MENSAIS (mão de obra, energia…) ───────────────────────────
+// ─── CÁLCULO DOS CUSTOS FIXOS MENSAIS ─────────────────────────────────────────
 // Cada custo fixo tem um valor mensal. O sistema rateia esse valor por dia
 // entre os viveiros que estavam ativos (em preparação OU em cultivo) em cada
 // data, e acumula a parcela de cada viveiro ao longo do seu ciclo.
@@ -8095,7 +8083,7 @@ async function salvarProtocolo(index, protId, botao) {
   abrirManejoAutomatico(index);
 }
 
-// ─── CUSTOS E INSUMOS ─────────────────────────────────────────────────────────
+// ═══ CUSTOS E INSUMOS ══════════════════════════════════════════════════════════
 
 function abrirCustosInsumos() {
   esconderMenu();
@@ -9551,7 +9539,7 @@ async function excluirCusto(viveiroIndex, custoIndex, elementoId, direto, botao)
 }
 
 
-// ─── CARREGAR DADOS ───────────────────────────────────────────────────────────
+// ═══ CARREGAMENTO DE DADOS ═════════════════════════════════════════════════════
 
 // usuarioConhecido: na abertura do app a sessão já traz o usuário, então não
 // há por que pedi-lo de novo ao servidor só para montar as consultas.
@@ -9757,12 +9745,7 @@ async function carregarViveiros(usuarioConhecido) {
     protocolos: Array.isArray(item.protocolos) ? item.protocolos : [],
   }));
 
-  // Ordenar viveiros por número no nome (Viveiro 1, Viveiro 2...)
-  viveiros.sort((a, b) => {
-    const numA = parseInt(a.nome.replace(/\D/g, "")) || 0;
-    const numB = parseInt(b.nome.replace(/\D/g, "")) || 0;
-    return numA - numB || a.nome.localeCompare(b.nome, "pt-BR");
-  });
+  viveiros.sort(_compararViveirosPorNome);
 
   // Monta o custo de Ração derivado (preço do catálogo × kg lançados no ciclo)
   _montarCustoRacaoVirtual();
@@ -9846,7 +9829,7 @@ async function _garantirCicloIdViveirosAtivos() {
   }
 }
 
-// ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
+// ═══ INICIALIZAÇÃO ═════════════════════════════════════════════════════════════
 
 // Esconde a tela de abertura (splash) com um fade e a remove. Só é chamada
 // quando o app já está pronto na tela — enquanto carrega, a splash cobre a
@@ -9933,7 +9916,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-// ─── NOME E TELEFONE DO CLIENTE ─────────────────────────────────────────────
+// ─── NOME E TELEFONE DO CLIENTE ────────────────────────────────────────────────
 // Por que existe: a conta é criada só com e-mail, e e-mail é um canal ruim para
 // falar com produtor. Com o telefone dá para perguntar como o sistema está indo
 // e resolver problema antes de virar cancelamento.
@@ -10070,7 +10053,7 @@ async function _salvarContato(botao) {
   _toastSucesso("Cadastro salvo. Obrigado!");
 }
 
-// ─── ÚLTIMO ACESSO ──────────────────────────────────────────────────────────
+// ─── REGISTRO DO ÚLTIMO ACESSO ─────────────────────────────────────────────────
 // Por que existe: o painel admin mostrava "último acesso" vindo do
 // last_sign_in_at do Supabase, que só muda quando a pessoa DIGITA a senha de
 // novo. Mas o app guarda a sessão — o cliente abre todo dia e nunca refaz
