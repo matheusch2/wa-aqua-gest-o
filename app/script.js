@@ -1886,7 +1886,7 @@ function abrirCadastrarTipoRacao() {
           Salvar
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirCustosInsumos()">Voltar</button>
+        <button class="botao-voltar-form" onclick="abrirRacoesCatalogo()">Voltar</button>
       </div>
     </div>
   `;
@@ -1974,7 +1974,7 @@ function abrirVerTiposRacao() {
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span>Nenhuma ração cadastrada ainda.</span>
           </div>
-          <button class="botao-voltar-form" onclick="abrirCustosInsumos()">Voltar</button>
+          <button class="botao-voltar-form" onclick="abrirRacoesCatalogo()">Voltar</button>
         </div>
       </div>
     `;
@@ -2004,7 +2004,7 @@ function abrirVerTiposRacao() {
             </div>
           `).join("")}
         </div>
-        <button class="botao-voltar-form" onclick="abrirCustosInsumos()">Voltar</button>
+        <button class="botao-voltar-form" onclick="abrirRacoesCatalogo()">Voltar</button>
       </div>
     </div>
   `;
@@ -4393,80 +4393,6 @@ function verificarBoletosVencendo() {
   area.insertBefore(div, area.firstChild);
 }
 
-// Menu "Lançar custo": junta os custos fixos da fazenda (antes no Financeiro)
-// com o lançamento de custo por viveiro. Deixa o Financeiro só com relatório,
-// boletos e cadastro de boleto.
-function abrirMenuCusto() {
-  esconderMenu();
-  const area = document.getElementById("area-gestao");
-  area.innerHTML = `
-    <h3 class="titulo-secao">Lançar custo</h3>
-    <div class="cfg-wrap">
-      <div class="cfg-hero">
-        <div class="cfg-hero-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <h4>Custos</h4>
-        <p>Custos fixos da fazenda e lançamentos por viveiro.</p>
-      </div>
-      <div class="cfg-lista">
-        <button class="cfg-item" onclick="abrirCustosFixos()">
-          <div class="cfg-item-ico cfg-item-ico-verde"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">Mão de obra, aluguel, energia… rateados entre os viveiros</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirEnergia()">
-          <div class="cfg-item-ico cfg-item-ico-amber"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Energia</span><span class="cfg-item-sub">Lance a conta pelo período da leitura e rateie na mão</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirLancarCustoEscolher()">
-          <div class="cfg-item-ico cfg-item-ico-roxo"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Lançar custo num viveiro</span><span class="cfg-item-sub">Produto, insumo ou outro gasto de um viveiro</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
-    </div>
-  `;
-}
-
-// Escolhe em qual viveiro lançar o custo (quando aberto pelo menu, fora do viveiro).
-function abrirLancarCustoEscolher() {
-  esconderMenu();
-  const area = document.getElementById("area-gestao");
-  const ativos = viveiros.map((v, i) => ({ v, i })).filter(x => x.v.dataPovoamento || x.v.dataPreparacao);
-  if (ativos.length === 0) {
-    area.innerHTML = `
-      <div class="form-lancamento">
-        <div class="form-topo">
-          <div class="form-icone-circulo"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <h2 class="form-titulo">Lançar custo</h2>
-        </div>
-        <div class="viveiro-sem-ciclo-msg">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>Nenhum viveiro com ciclo ativo. Inicie um ciclo antes de lançar custo.</span>
-        </div>
-        <button class="botao-voltar-form" onclick="abrirMenuCusto()">Voltar</button>
-      </div>
-    `;
-    return;
-  }
-  area.innerHTML = `
-    <h3 class="titulo-secao">Lançar custo num viveiro</h3>
-    <div class="cfg-wrap">
-      <p class="rc-print-dica" style="text-align:center;margin:0 0 10px">Escolha o viveiro para lançar o custo.</p>
-      <div class="cfg-lista">
-        ${ativos.map(x => `
-        <button class="cfg-item" onclick="abrirLancarCusto(${x.i})">
-          <div class="cfg-item-ico cfg-item-ico-verde"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">${_esc(x.v.nome)}</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>`).join("")}
-      </div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuCusto()">Voltar</button>
-    </div>
-  `;
-}
-
 function abrirMenuFinanceiro() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -4492,6 +4418,16 @@ function abrirMenuFinanceiro() {
         <button class="cfg-item" onclick="abrirFormBoleto()">
           <div class="cfg-item-ico cfg-item-ico-roxo"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg></div>
           <div class="cfg-item-texto"><span class="cfg-item-titulo">Cadastrar boleto</span><span class="cfg-item-sub">Cadastre uma nova conta a pagar</span></div>
+          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="cfg-item" onclick="abrirCustosFixos()">
+          <div class="cfg-item-ico cfg-item-ico-verde"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">Mão de obra, aluguel… rateados entre os viveiros</span></div>
+          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="cfg-item" onclick="abrirEnergia()">
+          <div class="cfg-item-ico cfg-item-ico-amber"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div class="cfg-item-texto"><span class="cfg-item-titulo">Energia</span><span class="cfg-item-sub">Lance a conta pelo período da leitura e rateie na mão</span></div>
           <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -4995,7 +4931,7 @@ function abrirCustosFixos() {
         </div>
       </div>
       <div class="cf-lista">${cards}</div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuCusto()">Voltar</button>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">Voltar</button>
     </div>
   `;
 }
@@ -5400,7 +5336,7 @@ function abrirEnergia() {
 
       <div id="en-rateio"></div>
 
-      <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuCusto()">Voltar</button>
+      <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuFinanceiro()">Voltar</button>
     </div>
   `;
 }
@@ -5595,7 +5531,7 @@ async function salvarEnergia(botao) {
     setTimeout(() => _toastErro(`R$ ${formatarNumeroBR(sobra, 2)} não foram rateados e ficaram fora do custo do cultivo.`), 3600);
   }
   _energiaSegs = [];
-  abrirMenuCusto();
+  abrirMenuFinanceiro();
 }
 
 function abrirBoletos(filtro) {
@@ -8308,26 +8244,17 @@ function abrirCustosInsumos() {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         </div>
-        <h2 class="form-titulo">Insumos e Rações</h2>
+        <h2 class="form-titulo">Insumos</h2>
       </div>
       <div class="form-corpo">
-        <p class="rc-print-dica" style="text-align:center;margin:0 0 10px">A ração também é um insumo — cadastre tudo aqui.</p>
         <div class="historico-opcoes-grid">
-          <button class="botao-historico-opcao" onclick="abrirCadastrarTipoRacao()">
-            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            Cadastrar ração
-          </button>
-          <button class="botao-historico-opcao" onclick="abrirVerTiposRacao()">
-            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            Ver rações
-          </button>
           <button class="botao-historico-opcao" onclick="abrirCadastrarProduto()">
-            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            Cadastrar insumo
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Cadastrar produto
           </button>
           <button class="botao-historico-opcao" onclick="abrirVerProdutos()">
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-            Ver insumos
+            Ver produtos
           </button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
