@@ -1,0 +1,16 @@
+{
+  "name": "wa-aqua-gestao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ferramentas de DESENVOLVIMENTO do WA Aqua (verificacao de codigo). Nao faz parte do aplicativo publicado nem e carregado no navegador do cliente.",
+  "type": "commonjs",
+  "scripts": {
+    "verificar": "eslint .",
+    "verificar:resumo": "eslint . --quiet"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0"
+  }
+}

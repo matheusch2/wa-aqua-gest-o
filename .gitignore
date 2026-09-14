@@ -1,0 +1,3 @@
+# Dependências das ferramentas de desenvolvimento (ESLint etc.).
+# NÃO faz parte do app publicado; cada pessoa recria com "npm install".
+node_modules/
