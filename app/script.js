@@ -257,27 +257,18 @@ async function abrirConfiguracoes() {
   fecharMenuUsuario();
   esconderMenu();
   const area = document.getElementById("area-gestao");
-  // Limpa a tela ANTES da espera do getUser(): sem isto, o conteudo anterior
-  // (o menu com o aviso de boletos no topo) fica piscando por um instante ate a
-  // chamada de rede voltar. Mostra logo o titulo, e o card entra quando pronto.
-  area.innerHTML = `<h3 class="titulo-secao">Configurações</h3>`;
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Minha fazenda";
-  const email = user?.email || "";
-  const fotoUrl = user?.user_metadata?.avatar_url || null;
-  const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-  // Escapa nome/email/foto: vêm de user_metadata (que o usuário pode definir) e
-  // do e-mail. Sem escapar, um nome como <img onerror=...> executaria no innerHTML.
-  const avatarHtml = fotoUrl ? `<img src="${_attr(fotoUrl)}" alt="">` : `<span>${_esc(ini)}</span>`;
-
+  // Desenha a tela INTEIRA de uma vez (lista + botoes) com o cabecalho ainda
+  // vazio, SEM esperar a rede. Assim nao aparece so o titulo primeiro nem pisca
+  // o conteudo anterior. Os dados do usuario entram logo em seguida via
+  // getSession() (leitura LOCAL, quase instantanea), preenchendo o cabecalho.
   area.innerHTML = `
     <h3 class="titulo-secao">Configurações</h3>
     <div class="cfg-wrap">
       <div class="cfg-header">
-        <div class="cfg-header-avatar">${avatarHtml}</div>
+        <div class="cfg-header-avatar" id="cfg-avatar"></div>
         <div class="cfg-header-info">
-          <span class="cfg-header-nome">${_esc(nome)}</span>
-          <span class="cfg-header-email">${_esc(email)}</span>
+          <span class="cfg-header-nome" id="cfg-nome">&nbsp;</span>
+          <span class="cfg-header-email" id="cfg-email"></span>
           <span class="cfg-header-online">● Online</span>
         </div>
       </div>
@@ -321,6 +312,24 @@ async function abrirConfiguracoes() {
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
   `;
+
+  // Preenche o cabecalho com o usuario da sessao — getSession() le do
+  // armazenamento local (sem rede), entao entra quase instantaneo.
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const user = session?.user;
+    const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Minha fazenda";
+    const email = user?.email || "";
+    const fotoUrl = user?.user_metadata?.avatar_url || null;
+    const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+    const elAvatar = document.getElementById("cfg-avatar");
+    const elNome = document.getElementById("cfg-nome");
+    const elEmail = document.getElementById("cfg-email");
+    // avatar usa innerHTML com _attr/_esc (seguro); nome/email via textContent.
+    if (elAvatar) elAvatar.innerHTML = fotoUrl ? `<img src="${_attr(fotoUrl)}" alt="">` : `<span>${_esc(ini)}</span>`;
+    if (elNome) elNome.textContent = nome;
+    if (elEmail) elEmail.textContent = email;
+  } catch (e) {}
 }
 
 function confirmarSairConta() {
