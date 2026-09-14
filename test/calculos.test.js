@@ -124,6 +124,17 @@ test("_pesoMedioAmostra: sem dado ou divisao por zero devolve null (nao chuta)",
   assert.equal(app._pesoMedioAmostra(NaN, 30), null);
 });
 
+test("_custoRacaoEstimado: quilos x custo por kg (o custo que aparece ao lancar racao)", () => {
+  // 10 kg de uma racao de R$ 6,965/kg = R$ 69,65
+  assert.ok(perto(app._custoRacaoEstimado(10, 6.965), 69.65));
+  assert.equal(app._custoRacaoEstimado(50, 4), 200);
+});
+
+test("_custoRacaoEstimado: sem consumo ou sem preco devolve null (nao mostra caixa)", () => {
+  assert.equal(app._custoRacaoEstimado(0, 6.965), null);
+  assert.equal(app._custoRacaoEstimado(10, 0), null);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Datas do ciclo (dias de cultivo) — sem cair para o dia anterior por fuso
 // ─────────────────────────────────────────────────────────────────────────────

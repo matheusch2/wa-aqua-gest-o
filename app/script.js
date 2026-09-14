@@ -2114,6 +2114,32 @@ async function salvarEdicaoTipoRacao(i) {
 
 // ═══ LANÇAMENTOS DE RAÇÃO ══════════════════════════════════════════════════════
 
+// Custo estimado de um lancamento de racao: quilos consumidos x custo por kg
+// do tipo de racao escolhido. Devolve null quando falta dado (nao mostra caixa).
+// Funcao pura -> tem teste.
+function _custoRacaoEstimado(consumoKg, custoPorKg) {
+  return (consumoKg > 0 && custoPorKg > 0) ? consumoKg * custoPorKg : null;
+}
+
+// Atualiza a caixa "Custo estimado" ao vivo, conforme a pessoa escolhe o tipo
+// de racao e digita os quilos. So aparece com tipo (que tem preco) + consumo.
+function _calcCustoRacao() {
+  const div = document.getElementById("previa-custo-racao");
+  const el = document.getElementById("previa-custo-racao-valor");
+  if (!div || !el) return;
+  const consumo = parseDecimalBR(document.getElementById("consumoRacao")?.value);
+  const sel = document.getElementById("tipoRacaoSelect");
+  const idx = sel && sel.value !== "" ? Number(sel.value) : -1;
+  const tipo = idx >= 0 ? tiposRacao[idx] : null;
+  const custo = tipo ? _custoRacaoEstimado(consumo, tipo.custoPorKg) : null;
+  if (custo !== null) {
+    el.textContent = "R$ " + formatarNumeroBR(custo, 2);
+    div.style.display = "block";
+  } else {
+    div.style.display = "none";
+  }
+}
+
 function mostrarLancamentoRacao(indexSelecionado = "") {
   if (indexSelecionado === "") esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -2187,7 +2213,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <label>Tipo de ração</label>
           </div>
-          <select id="tipoRacaoSelect">
+          <select id="tipoRacaoSelect" onchange="_calcCustoRacao()">
             <option value="">— Não especificado —</option>
             ${tiposRacao.map((t, i) => `<option value="${i}">${_esc(t.nome)}</option>`).join("")}
           </select>
@@ -2199,9 +2225,13 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <label>Consumo de ração</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="consumoRacao" placeholder="Ex: 50" oninput="document.getElementById('msg-racao-erro')&&(document.getElementById('msg-racao-erro').style.display='none')">
+            <input type="text" inputmode="decimal" id="consumoRacao" placeholder="Ex: 50" oninput="document.getElementById('msg-racao-erro')&&(document.getElementById('msg-racao-erro').style.display='none');_calcCustoRacao()">
             <span class="campo-unidade">kg</span>
           </div>
+        </div>
+
+        <div id="previa-custo-racao" class="custo-por-grama-preview" style="display:none">
+          Custo estimado: <strong id="previa-custo-racao-valor">—</strong>
         </div>
 
         <div id="msg-racao-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
