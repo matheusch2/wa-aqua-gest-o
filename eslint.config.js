@@ -44,7 +44,9 @@ module.exports = [
       ...js.configs.recommended.rules,
       "no-undef": "error",
       "no-unreachable": "error",
-      "no-unused-vars": ["warn", { args: "after-used", vars: "all" }],
+      // caughtErrors:"none" — nao acusa o "e" de catch(e) sem uso: aqui isso e
+      // so o padrao de ignorar a falha, nao codigo morto.
+      "no-unused-vars": ["warn", { args: "after-used", vars: "all", caughtErrors: "none" }],
       // catch vazio e proposital aqui ("tenta; se falhar, segue"). Continua
       // pegando if/for/while realmente vazios (esses sim costumam ser defeito).
       "no-empty": ["error", { allowEmptyCatch: true }],
@@ -68,7 +70,7 @@ module.exports = [
     },
     rules: {
       ...js.configs.recommended.rules,
-      "no-unused-vars": "warn",
+      "no-unused-vars": ["warn", { caughtErrors: "none" }],
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-useless-escape": "warn",
     },
@@ -87,7 +89,7 @@ module.exports = [
     },
     rules: {
       ...js.configs.recommended.rules,
-      "no-unused-vars": "warn",
+      "no-unused-vars": ["warn", { caughtErrors: "none" }],
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-useless-escape": "warn",
     },
