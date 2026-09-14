@@ -21,8 +21,9 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. A v8 força
-// a renovação após a primeira organização segura do JavaScript.\nconst CACHE = "waaqua-v10";
+// Trocar o nome do cache faz o "activate" apagar o antigo sozinho.
+// A v11 força a renovação após a segunda organização segura do JavaScript.
+const CACHE = "waaqua-v11";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
