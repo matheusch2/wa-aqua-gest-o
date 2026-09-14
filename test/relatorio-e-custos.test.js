@@ -141,3 +141,45 @@ test("_rotuloCurtoViveiro: tira o 'Viveiro -' e encurta nomes longos", () => {
   assert.equal(app._rotuloCurtoViveiro("Berçário"), "Berçár…");
   assert.equal(app._rotuloCurtoViveiro(""), "?");
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _custosManuaisDoCiclo / _custosCicloAtivo — custos do ciclo + rateio fixo
+// ─────────────────────────────────────────────────────────────────────────────
+// Quatro custos: dois do ciclo "A" (por id), um do ciclo "B", e um legado sem
+// ciclo_id (so a data diz a qual ciclo pertence).
+const custosExemplo = [
+  { tipo: "produto", valor: 100, data: "2026-01-05", cicloId: "A" },
+  { tipo: "outro", valor: 50, data: "2026-01-10", cicloId: "A" },
+  { tipo: "produto", valor: 30, data: "2026-02-20", cicloId: "B" },
+  { tipo: "outro", valor: 20, data: "2026-01-08", cicloId: null },
+];
+
+test("_custosManuaisDoCiclo: casa pelo ciclo_id e pega o legado pela janela de datas", () => {
+  // ciclo A em janeiro: os dois do A (por id) + o legado sem id que caiu em janeiro.
+  // O do ciclo B (fevereiro) fica de fora.
+  const m = app._custosManuaisDoCiclo(custosExemplo, "A", "2026-01-01", "2026-01-31");
+  assert.equal(m.length, 3);
+  assert.equal(arr(m).reduce((s, c) => s + c.valor, 0), 170);
+});
+
+test("_custosManuaisDoCiclo: sem ciclo_id, filtra so pela janela de datas", () => {
+  const m = app._custosManuaisDoCiclo(custosExemplo, null, "2026-01-01", "2026-01-31");
+  assert.equal(m.length, 3); // o de fevereiro (ciclo B) fica de fora
+});
+
+test("_custosCicloAtivo: separa produtos de outros e soma o rateio congelado", () => {
+  const r = app._custosCicloAtivo({ custos: custosExemplo }, "A", "2026-01-01", "2026-01-31", 200);
+  assert.equal(r.totalProdutos, 100); // so o produto do ciclo A
+  assert.equal(r.totalOutros, 70); // 50 (A) + 20 (legado de janeiro)
+  assert.equal(r.totalManuais, 170);
+  assert.equal(r.rateioFixo, 200); // rateio congelado e respeitado
+  assert.equal(r.total, 370); // 170 + 200
+  assert.equal(r.manuais.length, 3);
+});
+
+test("_custosCicloAtivo: rateio congelado ZERO e respeitado (nao recalcula)", () => {
+  // 0 e "falsy", mas o codigo checa null/undefined/NaN — entao zero vale como zero.
+  const r = app._custosCicloAtivo({ custos: custosExemplo }, "A", "2026-01-01", "2026-01-31", 0);
+  assert.equal(r.rateioFixo, 0);
+  assert.equal(r.total, 170); // so os custos manuais, sem rateio
+});

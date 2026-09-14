@@ -79,6 +79,7 @@ const NOMES = [
   // Relatorio de ciclo e custos
   "_seriesCiclo", "_statusBoleto",
   "_custoFixoCatLabel", "_normNomeCusto", "_melhorRotulo", "_rotuloCurtoViveiro",
+  "_custosCicloAtivo", "_custosManuaisDoCiclo",
 ];
 const epilogo = "\n;globalThis.__TESTE__ = {" +
   NOMES.map((n) => `${n}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(",") +
