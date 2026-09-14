@@ -4424,6 +4424,37 @@ function verificarBoletosVencendo() {
   area.insertBefore(div, area.firstChild);
 }
 
+// Menu "Lançar custo" (antigo botao Insumos). Reune Energia e Custos fixos
+// (que sairam do Financeiro). Produto cadastrado / Outro custo entram na 3b.
+function abrirMenuCusto() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h2 class="form-titulo">Lançar Custo</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="historico-opcoes-grid">
+          <button class="botao-historico-opcao" onclick="abrirCustosFixos()">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+            Custos fixos
+          </button>
+          <button class="botao-historico-opcao" onclick="abrirEnergia()">
+            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Energia
+          </button>
+        </div>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
+      </div>
+    </div>
+  `;
+}
+
 function abrirMenuFinanceiro() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -4449,16 +4480,6 @@ function abrirMenuFinanceiro() {
         <button class="cfg-item" onclick="abrirFormBoleto()">
           <div class="cfg-item-ico cfg-item-ico-roxo"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg></div>
           <div class="cfg-item-texto"><span class="cfg-item-titulo">Cadastrar boleto</span><span class="cfg-item-sub">Cadastre uma nova conta a pagar</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirCustosFixos()">
-          <div class="cfg-item-ico cfg-item-ico-verde"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Custos fixos mensais</span><span class="cfg-item-sub">Mão de obra, aluguel… rateados entre os viveiros</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <button class="cfg-item" onclick="abrirEnergia()">
-          <div class="cfg-item-ico cfg-item-ico-amber"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Energia</span><span class="cfg-item-sub">Lance a conta pelo período da leitura e rateie na mão</span></div>
           <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -4962,7 +4983,7 @@ function abrirCustosFixos() {
         </div>
       </div>
       <div class="cf-lista">${cards}</div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">Voltar</button>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuCusto()">Voltar</button>
     </div>
   `;
 }
@@ -5367,7 +5388,7 @@ function abrirEnergia() {
 
       <div id="en-rateio"></div>
 
-      <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuFinanceiro()">Voltar</button>
+      <button class="botao-voltar-form" style="margin-top:12px" onclick="abrirMenuCusto()">Voltar</button>
     </div>
   `;
 }
@@ -5562,7 +5583,7 @@ async function salvarEnergia(botao) {
     setTimeout(() => _toastErro(`R$ ${formatarNumeroBR(sobra, 2)} não foram rateados e ficaram fora do custo do cultivo.`), 3600);
   }
   _energiaSegs = [];
-  abrirMenuFinanceiro();
+  abrirMenuCusto();
 }
 
 function abrirBoletos(filtro) {
