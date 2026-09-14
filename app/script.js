@@ -1829,32 +1829,13 @@ function abrirRacoesInsumos() {
             <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             Rações
           </button>
-          <button class="botao-historico-opcao" onclick="abrirInsumosEmBreve()">
+          <button class="botao-historico-opcao" onclick="abrirCustosInsumos()">
             <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             Insumos
           </button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-      </div>
-    </div>
-  `;
-}
-
-// Placeholder do Insumos (vazio por enquanto — sera preenchido depois).
-function abrirInsumosEmBreve() {
-  const area = document.getElementById("area-gestao");
-  area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        </div>
-        <h2 class="form-titulo">Insumos</h2>
-      </div>
-      <div class="form-corpo">
-        <p class="rc-print-dica" style="text-align:center;margin:12px 0">Em breve.</p>
-        <button class="botao-voltar-form" onclick="abrirRacoesInsumos()">Voltar</button>
       </div>
     </div>
   `;
