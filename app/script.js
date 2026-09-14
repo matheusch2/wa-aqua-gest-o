@@ -1524,8 +1524,6 @@ function abrirViveiro(index) {
   // + custo fixo rateado, desde a preparação/povoamento até hoje.
   const _inicioCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento;
   const _cc = _custosCicloAtivo(viveiro, viveiro.cicloId, _inicioCiclo, _hojeLocal());
-  const custosLancados = _cc.totalManuais;
-  const custoFixoViveiro = _cc.rateioFixo;
   const totalCustos = _cc.total;
 
   // Última biometria e média de crescimento
@@ -4117,7 +4115,6 @@ function voltarOpcoesHistorico() {
 function mostrarHistoricoCiclos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
-  const tituloHtml = `<h2 class="titulo-secao">Histórico de Ciclos</h2>`;
 
   let ciclos = [];
 
@@ -4782,7 +4779,6 @@ function abrirCustosFixos() {
   const area = document.getElementById("area-gestao");
 
   const hoje = _hojeLocal();
-  const ativos = custosFixos.filter(c => c.ativo);
   const totalMensal = _custoFixoMensalTotal();
   const nViveirosAtivos = _viveirosAtivosNaData(hoje, hoje);
   const custoDiaPorViveiro = nViveirosAtivos > 0 ? _custoFixoDiaTotalNaData(hoje) / nViveirosAtivos : 0;
@@ -7080,7 +7076,6 @@ function gerarRelatorioImpressao() {
   // ── Séries (biometrias) — biomassa/FCA estimados descontando as despescas ──
   const _serie = _seriesCiclo(ciclo);
   const bios = _serie.bios;
-  const popNum = _serie.popNum;
   const serieDias = _serie.dias, seriePeso = _serie.peso, serieCresc = _serie.cresc;
   const serieBiomassa = _serie.biomassa, serieFca = _serie.fca, serieRacaoAcum = _serie.racaoAcum;
   const fcaDias = _serie.fcaDias || [], fcaAcum = _serie.fcaAcum || [], fcaPeriodo = _serie.fcaPeriodo || [];
@@ -7117,19 +7112,6 @@ function gerarRelatorioImpressao() {
   const hoje = new Date();
   const dataEmissao = `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
 
-  const indicadores = [
-    { lbl: "Peso médio final", val: fmt(ciclo.pesoFinal, 1) + " g" },
-    { lbl: "Biomassa produzida", val: fmt(producaoTotal, 1) + " kg" },
-    { lbl: "Produtividade", val: fmt(ciclo.produtividade, 1) + " kg/ha" },
-    { lbl: "FCA final", val: fmt(ciclo.fca, 2) },
-    { lbl: "Sobrevivência", val: fmt(ciclo.sobrevivencia, 1) + " %" },
-    { lbl: "Ração consumida", val: fmt(ciclo.racaoConsumida, 1) + " kg" },
-    { lbl: "Custo total", val: "R$ " + fmt(custoTotal, 2) },
-    { lbl: "Custo por kg", val: "R$ " + fmt(custoPorKg, 2) },
-    { lbl: "Receita bruta", val: rs(receitaBruta) },
-    { lbl: "Lucro líquido", val: rs(lucroLiquido) },
-  ];
-
   const legendaDist = distLista.map((d, i) => `
     <div class="leg-item"><span class="leg-dot" style="background:${cores[i % cores.length]}"></span>
       <span class="leg-nome">${_esc(d.nome)}<br><b>R$ ${fmt(d.total, 2)}</b></span>
@@ -7137,8 +7119,6 @@ function gerarRelatorioImpressao() {
 
   // Rodapé / identificação
   const horaEmissao = `${String(hoje.getHours()).padStart(2, "0")}:${String(hoje.getMinutes()).padStart(2, "0")}`;
-  const VERSAO_SISTEMA = "2.6";
-  const codRel = `${(ciclo.nomeViveiro || "V").replace(/\s+/g, "").toUpperCase().slice(0, 6)}-${String(hoje.getDate()).padStart(2, "0")}${String(hoje.getMonth() + 1).padStart(2, "0")}${String(hoje.getFullYear()).slice(-2)}`;
 
   // Conclusão técnica automática — linguagem cautelosa, sem julgar sem critério
   const _dc = Number(ciclo.diasCultivo) || 0;
