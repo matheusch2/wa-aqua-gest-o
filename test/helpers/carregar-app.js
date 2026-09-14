@@ -76,6 +76,9 @@ const NOMES = [
   "parseDecimalBR", "parseMoedaBR", "_numeroMoedaBR",
   "_tamanhoHa", "_fmtHa", "formatarNumeroBR",
   "_parseDataLocal", "_dataLocalISO", "_hojeLocal", "calcularDiasCultivo",
+  // Relatorio de ciclo e custos
+  "_seriesCiclo", "_statusBoleto",
+  "_custoFixoCatLabel", "_normNomeCusto", "_melhorRotulo", "_rotuloCurtoViveiro",
 ];
 const epilogo = "\n;globalThis.__TESTE__ = {" +
   NOMES.map((n) => `${n}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(",") +

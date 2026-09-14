@@ -94,4 +94,23 @@ module.exports = [
       "no-useless-escape": "warn",
     },
   },
+
+  // ── Testes (Node): test/**/*.js ──────────────────────────────────────────
+  // Usam require/module e o runner nativo (node:test). Rodam no computador.
+  {
+    files: ["test/**/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      "no-unused-vars": ["warn", { caughtErrors: "none" }],
+      "no-empty": ["error", { allowEmptyCatch: true }],
+      "no-useless-escape": "warn",
+    },
+  },
 ];
