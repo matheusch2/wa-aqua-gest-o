@@ -257,6 +257,10 @@ async function abrirConfiguracoes() {
   fecharMenuUsuario();
   esconderMenu();
   const area = document.getElementById("area-gestao");
+  // Limpa a tela ANTES da espera do getUser(): sem isto, o conteudo anterior
+  // (o menu com o aviso de boletos no topo) fica piscando por um instante ate a
+  // chamada de rede voltar. Mostra logo o titulo, e o card entra quando pronto.
+  area.innerHTML = `<h3 class="titulo-secao">Configurações</h3>`;
   const { data: { user } } = await supabaseClient.auth.getUser();
   const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Minha fazenda";
   const email = user?.email || "";
