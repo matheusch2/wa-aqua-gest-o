@@ -255,15 +255,10 @@
         // Detecta o fluxo de recuperação de senha (link recebido por e-mail)
         const _ehRecuperacao = (window.location.hash || "").includes("type=recovery");
 
-        // Redireciona conforme o papel da conta: admin → painel /admin, user → sistema.
-        // Se a tabela de perfis ainda não existir, cai no fluxo normal.
+        // O login normal SEMPRE abre o sistema (o app). O painel de administração
+        // fica SEPARADO: só abre indo direto em /ch2, nunca pelo login — assim o
+        // ADM não cai no painel sem querer, e o painel não fica exposto no login.
         async function _irPorPerfil() {
-            try {
-                const { data } = await supabaseClient.from("perfis").select("role").maybeSingle();
-                // Caminho ABSOLUTO: o painel mora em /ch2, fora de /app. Relativo
-                // ("ch2/") viraria /app/ch2/ e o admin cairia numa página de erro.
-                if (data && data.role === "admin") { window.location.replace("/ch2/"); return; }
-            } catch (e) { /* segue o fluxo normal */ }
             window.location.replace("index.html");
         }
 
