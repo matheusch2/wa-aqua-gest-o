@@ -4509,9 +4509,9 @@ function _linkWhatsAppPlano(nomePlano, ciclo) {
 
 const _PLANOS_APP = [
   { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros", mensal: 50,  anual: 500 },
-  { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros", mensal: 90,  anual: 900 },
-  { key: "avancado",      nome: "Avançado",      viveiros: "até 20 viveiros", mensal: 160, anual: 1600 },
-  { key: "pro",           nome: "Pro",           viveiros: "viveiros ilimitados", mensal: 250, anual: 2500 },
+  { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros", mensal: 100, anual: 1000 },
+  { key: "avancado",      nome: "Avançado",      viveiros: "até 20 viveiros", mensal: 300, anual: 3000 },
+  { key: "pro",           nome: "Pro",           viveiros: "viveiros ilimitados", mensal: 500, anual: 5000 },
 ];
 
 function _planoLabel(key) {
@@ -4661,7 +4661,9 @@ function abrirAssinatura() {
 
   const ciclo = _planosCiclo;
   const cards = _PLANOS_APP.map(p => {
-    const atual = a.plano === p.key && a.status === "ativo";
+    // "Plano atual" só no ciclo que a pessoa realmente assinou (mensal OU anual).
+    // Se a assinatura antiga não tiver ciclo gravado, mantém o comportamento antigo.
+    const atual = a.plano === p.key && a.status === "ativo" && (!a.ciclo || a.ciclo === ciclo);
     let precoBloco;
     if (ciclo === "anual") {
       const equiv = p.anual / 12;
