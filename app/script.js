@@ -9964,6 +9964,18 @@ async function carregarViveiros(usuarioConhecido) {
     ativo: c.ativo !== false,
     dataFim: c.data_fim || null,
   }));
+  // Assinatura é a mais sensível das acessórias: se a consulta FALHA e a gente
+  // engolir o erro virando null, o app trataria um cliente PAGANTE como "grátis"
+  // e o deixaria só de leitura — punindo quem paga por uma oscilação de internet.
+  // Com maybeSingle(), "não tem assinatura" volta data:null SEM erro; só um erro
+  // de verdade (rede, permissão) preenche .error. A única falha que seguimos
+  // ignorando é a tabela ainda não existir no banco (42P01) — aí "grátis" é o
+  // certo. Qualquer outro erro aborta com aviso, como as tabelas essenciais.
+  if (rAssinatura.error && rAssinatura.error.code !== "42P01") {
+    console.log(rAssinatura.error);
+    _erroCarregamento("Erro ao carregar sua assinatura.");
+    return false;
+  }
   assinatura = rAssinatura.data || null;
   // Tabela nova: se ainda nao existir no banco do usuario, segue sem quebrar.
   contato = (rContato && !rContato.error) ? (rContato.data || null) : null;
