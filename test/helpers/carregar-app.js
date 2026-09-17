@@ -80,7 +80,7 @@ const NOMES = [
   "_seriesCiclo", "_statusBoleto",
   "_custoFixoCatLabel", "_normNomeCusto", "_melhorRotulo", "_rotuloCurtoViveiro",
   "_custosCicloAtivo", "_custosManuaisDoCiclo",
-  "_pesoMedioAmostra", "_custoRacaoEstimado", "_ratearIgual",
+  "_pesoMedioAmostra", "_custoRacaoEstimado", "_ratearIgual", "_checarDataCiclo",
 ];
 const epilogo = "\n;globalThis.__TESTE__ = {" +
   NOMES.map((n) => `${n}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(",") +

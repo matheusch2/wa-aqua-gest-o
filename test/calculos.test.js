@@ -147,6 +147,21 @@ test("calcularDiasCultivo: sem data de povoamento devolve 0", () => {
   assert.equal(app.calcularDiasCultivo(null, "2026-01-10"), 0);
 });
 
+test("_checarDataCiclo: data dentro do periodo e valida", () => {
+  assert.equal(app._checarDataCiclo("2026-06-15", "2026-06-01", "2026-09-17"), "");
+});
+
+test("_checarDataCiclo: limites sao validos (dia do povoamento e hoje)", () => {
+  assert.equal(app._checarDataCiclo("2026-06-01", "2026-06-01", "2026-09-17"), ""); // = inicio
+  assert.equal(app._checarDataCiclo("2026-09-17", "2026-06-01", "2026-09-17"), ""); // = hoje
+});
+
+test("_checarDataCiclo: futuro, antes do inicio e vazia sao barrados", () => {
+  assert.equal(app._checarDataCiclo("2026-09-18", "2026-06-01", "2026-09-17"), "futuro");
+  assert.equal(app._checarDataCiclo("2026-05-31", "2026-06-01", "2026-09-17"), "antes");
+  assert.equal(app._checarDataCiclo("", "2026-06-01", "2026-09-17"), "vazia");
+});
+
 test("datas locais: ida e volta nao cai para o dia anterior (fuso)", () => {
   // O bug classico do toISOString(): 15/mar viraria 14/mar a noite.
   assert.equal(app._dataLocalISO(new Date(2026, 2, 15)), "2026-03-15");

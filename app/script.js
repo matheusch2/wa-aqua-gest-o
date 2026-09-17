@@ -898,6 +898,26 @@ function _parseDataLocal(d) {
   return new Date(ano, (mes || 1) - 1, dia || 1);
 }
 
+// Valida se a data de um lancamento cabe no periodo do ciclo: nao pode ser
+// antes do inicio (preparacao/povoamento) nem no futuro. Pura -> tem teste.
+// Devolve "" (ok), "vazia", "futuro" ou "antes".
+function _checarDataCiclo(dataYmd, iniYmd, hojeYmd) {
+  if (!dataYmd) return "vazia";
+  if (dataYmd > hojeYmd) return "futuro";
+  if (iniYmd && dataYmd < iniYmd) return "antes";
+  return "";
+}
+
+// Mensagem pronta para a data de um lancamento (ou "" se estiver ok).
+function _erroDataCiclo(viveiro, dataYmd) {
+  const ini = (viveiro && (viveiro.dataPreparacao || viveiro.dataPovoamento)) || "";
+  const r = _checarDataCiclo(dataYmd, ini, _hojeLocal());
+  if (r === "vazia") return "Informe a data.";
+  if (r === "futuro") return "A data não pode ser no futuro.";
+  if (r === "antes") return `A data não pode ser anterior ao início do ciclo (${formatarData(ini)}).`;
+  return "";
+}
+
 function calcularDiasCultivo(dataPovoamento, dataFinal = new Date()) {
   if (!dataPovoamento) return 0;
 
@@ -2319,6 +2339,8 @@ async function salvarLancamentoRacao(indexDireto = "") {
     mostrarErroRacao("Preencha a data e a quantidade (pode ser 0 para dia sem ração).");
     return;
   }
+  const _eDataR = _erroDataCiclo(viveiros[index], data);
+  if (_eDataR) { mostrarErroRacao(_eDataR); return; }
 
   // Verifica se já existe lançamento nessa data (normaliza formato)
   const jaExiste = (viveiros[index].racoes || []).some(r => r.data.substring(0, 10) === data);
@@ -2532,6 +2554,8 @@ async function salvarBiometria(index) {
     mostrarErroBio("Preencha a data e uma gramatura maior que zero.");
     return;
   }
+  const _eDataB = _erroDataCiclo(viveiros[index], data);
+  if (_eDataB) { mostrarErroBio(_eDataB); return; }
 
   const dataDuplicada = (viveiros[index].biometrias || []).some(b => b.data === data);
   if (dataDuplicada) {
@@ -2708,6 +2732,8 @@ async function salvarDespesca(index) {
     mostrarErroDespesca("Preencha a data, e quantidade, peso médio e preço maiores que zero.");
     return;
   }
+  const _eDataD = _erroDataCiclo(viveiros[index], data);
+  if (_eDataD) { mostrarErroDespesca(_eDataD); return; }
 
   const restaurar = _travarBotao(botao, "Salvando...");
 
@@ -6726,6 +6752,8 @@ async function salvarEncerramentoCiclo(index) {
     mostrarErroEncerrar("Preencha data de encerramento, e produção final e peso médio final maiores que zero.");
     return;
   }
+  const _eDataE = _erroDataCiclo(viveiro, dataEncerramento);
+  if (_eDataE) { mostrarErroEncerrar(_eDataE); return; }
 
   const restaurar = _travarBotao(botao, "Encerrando...");
 
