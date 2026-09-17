@@ -2426,7 +2426,17 @@ function _calcPesoMedioBio() {
   const campo = document.getElementById("gramaturaBiometria");
   if (!campo) return;
   const pm = _pesoMedioAmostra(amostra, qtd);
-  if (pm !== null) campo.value = formatarNumeroBR(pm, 2);
+  if (pm !== null) {
+    // Calculou: preenche e marca que o valor veio da amostra (automatico).
+    campo.value = formatarNumeroBR(pm, 2);
+    campo.dataset.auto = "1";
+  } else if (campo.dataset.auto === "1") {
+    // Apagou a amostra ou a quantidade e o valor era automatico: limpa, para
+    // nao salvar um peso medio velho. Se a pessoa digitou a media a mao
+    // (dataset.auto vazio), respeita e nao apaga.
+    campo.value = "";
+    campo.dataset.auto = "";
+  }
 }
 
 function abrirBiometria(index) {
@@ -2468,7 +2478,7 @@ function abrirBiometria(index) {
               <svg class="campo-icone" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
               <label>Qtd de camarões</label>
             </div>
-            <input type="text" inputmode="numeric" id="qtdBiometria" placeholder="Ex: 30" oninput="_calcPesoMedioBio()">
+            <input type="text" inputmode="numeric" id="qtdBiometria" placeholder="Ex: 30" oninput="this.value=this.value.replace(/[^0-9]/g,'');_calcPesoMedioBio()">
           </div>
         </div>
 
@@ -2478,7 +2488,7 @@ function abrirBiometria(index) {
             <label>Peso médio</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="gramaturaBiometria" placeholder="Ex: 10,5">
+            <input type="text" inputmode="decimal" id="gramaturaBiometria" placeholder="Ex: 10,5" oninput="this.dataset.auto=''">
             <span class="campo-unidade">g</span>
           </div>
           <p style="font-size:12px;color:#6b7280;margin:6px 2px 0">Calcula sozinho pela amostra ÷ quantidade — você também pode digitar direto.</p>
