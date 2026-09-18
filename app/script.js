@@ -4095,43 +4095,19 @@ async function salvarNovoCiclo(index, modo = "reiniciar") {
   const povoar = modo === "povoar";
   const novoCicloId = povoar ? (viveiros[index].cicloId || _novoCicloId()) : _novoCicloId();
 
-  // Reinício NÃO é transacional no banco — o certo seria uma função (RPC) no
-  // Postgres que faz tudo ou nada. Enquanto ela não existe, a ORDEM e a checagem
-  // de CADA erro fazem o papel de rede de segurança:
-  //   1º) apaga os registros do ciclo anterior;
-  //   2º) SÓ SE todas as exclusões derem certo, avança o viveiro para o ciclo
-  //       novo.
-  // Assim uma queda de internet no meio nunca deixa um ciclo novo convivendo com
-  // rações/biometrias velhas — que voltariam "coladas" no ciclo atual, porque na
-  // abertura os lançamentos são lidos por viveiro_id, não por ciclo. Se algo
-  // falhar, nada de estado local é tocado e a tela não avança (o usuário tenta de
-  // novo; re-apagar o que já sumiu é inofensivo).
-  const idViveiro = viveiros[index].id;
-
-  const [rDelRacoes, rDelBiometrias, rDelDespescas] = await Promise.all([
-    supabaseClient.from("racoes").delete().eq("viveiro_id", idViveiro).eq("user_id", usuario.id),
-    supabaseClient.from("biometrias").delete().eq("viveiro_id", idViveiro).eq("user_id", usuario.id),
-    supabaseClient.from("despescas").delete().eq("viveiro_id", idViveiro).eq("user_id", usuario.id),
-  ]);
-
-  const erroExclusao = rDelRacoes.error || rDelBiometrias.error || rDelDespescas.error;
-  if (erroExclusao) {
-    console.log(erroExclusao);
-    restaurar();
-    mostrarErroReinicio("Erro ao limpar o ciclo anterior. Nada foi alterado — tente de novo.");
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("viveiros")
-    .update({
-      data_povoamento: novoPovoamento,
-      total_povoado: novoTotal,
-      laboratorio: novoLaboratorio,
-      ciclo_id: novoCicloId,
-    })
-    .eq("id", idViveiro)
-    .eq("user_id", usuario.id);
+  // Reinício ATÔMICO via RPC (função reiniciar_ciclo no Postgres): apagar os
+  // registros do ciclo anterior e avançar o viveiro para o ciclo novo acontecem
+  // na MESMA transação — ou tudo, ou nada. Assim uma queda de internet no meio
+  // nunca deixa um ciclo novo convivendo com rações/biometrias velhas (que
+  // voltariam "coladas" no ciclo atual, pois na abertura os lançamentos são lidos
+  // por viveiro_id). Num erro, nada muda no banco e a tela não avança.
+  const { error } = await supabaseClient.rpc("reiniciar_ciclo", {
+    p_viveiro: viveiros[index].id,
+    p_povoamento: novoPovoamento,
+    p_total: novoTotal,
+    p_laboratorio: novoLaboratorio,
+    p_ciclo_id: novoCicloId,
+  });
 
   if (error) {
     console.log(error);
@@ -6844,129 +6820,54 @@ async function salvarEncerramentoCiclo(index) {
     despescas_json: despescas,
   };
 
-  // O encerramento NÃO é transacional no banco (o ideal é uma RPC "tudo ou nada").
-  // Enquanto ela não existe, a proteção mais importante é a IDEMPOTÊNCIA: se uma
-  // tentativa anterior já gravou este ciclo (mesmo ciclo_id) mas não terminou a
-  // limpeza, tentar de novo NÃO pode criar um segundo ciclo igual. Por isso, antes
-  // de inserir, procuramos um ciclo já salvo com este ciclo_id e o reaproveitamos.
-  // (Só dá para deduplicar quando há ciclo_id; ciclos muito antigos, sem ele,
-  // seguem no comportamento de sempre.)
-  let cicloSalvo = null;
-  let error = null;
+  // ═══ Encerramento ATÔMICO via RPC (função encerrar_ciclo no Postgres) ═══
+  // Antes, os passos (gravar ciclo, apagar lançamentos, congelar ração, resetar
+  // o viveiro) iam soltos: uma queda de internet no meio deixava estado pela
+  // metade. Agora vão TODOS numa transação no banco — ou tudo, ou nada. A função
+  // também é idempotente por ciclo_id: se a transação commitou mas a resposta se
+  // perdeu na volta, tentar de novo não duplica o ciclo. Por isso, num erro aqui,
+  // nada mudou no banco (ou já está tudo certo) — é seguro não avançar e o usuário
+  // tenta de novo.
+  const der = _racaoDerivada(viveiro);
+  const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || null;
+  const congelaRacao = !!(der && viveiro.cicloId);
+  // Novo ciclo_id para a preparação que começa agora — assim, se outro ciclo
+  // iniciar no mesmo dia, os custos não se misturam com o ciclo recém-encerrado.
+  const novoCicloIdPrep = _novoCicloId();
 
-  if (viveiro.cicloId) {
-    const rExiste = await supabaseClient
-      .from("ciclos")
-      .select("id")
-      .eq("viveiro_id", viveiro.id)
-      .eq("user_id", usuario.id)
-      .eq("ciclo_id", viveiro.cicloId)
-      .limit(1);
-    // Um erro AQUI não pode ser lido como "não existe" e liberar uma inserção
-    // duplicada: na dúvida, aborta e pede para tentar de novo.
-    if (rExiste.error) {
-      console.log(rExiste.error);
-      restaurar();
-      mostrarErroEncerrar("Erro ao verificar o ciclo. Tente novamente.");
-      return;
-    }
-    if (rExiste.data && rExiste.data.length > 0) {
-      cicloSalvo = rExiste.data; // reaproveita o ciclo já gravado (sem duplicar)
-    }
+  const { data: rpcRes, error } = await supabaseClient.rpc("encerrar_ciclo", {
+    p_viveiro: viveiro.id,
+    p_ciclo_id: viveiro.cicloId || null,
+    p_novo_ciclo_id: novoCicloIdPrep,
+    p_data_encerramento: dataEncerramento,
+    p_ciclo: cicloBanco,
+    p_ini_ciclo: iniCiclo,
+    p_racao_valor: congelaRacao ? der.valor : null,
+    p_racao_qtd_g: congelaRacao ? der.qtdG : null,
+    p_racao_data: congelaRacao ? der.data : null,
+  });
+
+  if (error) {
+    console.log(error);
+    restaurar();
+    mostrarErroEncerrar("Erro ao encerrar ciclo: " + (error.message || "tente novamente."));
+    return;
   }
 
-  if (!cicloSalvo) {
-    // .select() traz de volta a linha inserida — precisamos do id do ciclo para
-    // guardá-lo em memória. Sem ele, excluir o ciclo recém-fechado (sem recarregar)
-    // só sumia da tela e o ciclo voltava depois, porque a exclusão trata ciclo sem
-    // id como registro só local.
-    ({ data: cicloSalvo, error } = await supabaseClient
-      .from("ciclos")
-      .insert([cicloBanco])
-      .select());
+  const rpc = rpcRes || {};
 
-    // A coluna custo_fixo_rateado pode ainda não existir no banco do usuário.
-    // Nesse caso, encerra sem congelar o rateio (comportamento antigo) em vez de
-    // impedir o encerramento do ciclo por causa de um campo novo.
-    if (error && /custo_fixo_rateado/.test(error.message || "")) {
-      const { custo_fixo_rateado, ...semCampoNovo } = cicloBanco;
-      console.log("Coluna custo_fixo_rateado ausente — encerrando sem congelar o rateio.");
-      ({ data: cicloSalvo, error } = await supabaseClient.from("ciclos").insert([semCampoNovo]).select());
-    }
-
-    if (error) {
-      console.log(error);
-      restaurar();
-      mostrarErroEncerrar("Erro ao encerrar ciclo: " + error.message);
-      return;
-    }
+  // Atualiza o custo de Ração em memória com o id que a função devolveu (para
+  // editar/excluir sem recarregar). Só quando ela realmente congelou o valor.
+  if (congelaRacao && rpc.custo_id) {
+    viveiro.custos = (viveiro.custos || []).filter(c => !(c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === viveiro.cicloId));
+    viveiro.custos.push({ id: rpc.custo_id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: der.qtdG, valor: der.valor, categoria: "Ração", data: der.data || dataEncerramento, observacao: null, cicloId: viveiro.cicloId });
   }
-
-  // Apagar todos os lançamentos do ciclo encerrado no banco
-  const [erroDelRacao, erroDelBio, erroDelDesp] = await Promise.all([
-    supabaseClient.from("racoes").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
-    supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
-    supabaseClient.from("despescas").delete().eq("viveiro_id", viveiro.id).eq("user_id", usuario.id).then(r => r.error),
-  ]);
-
-  // O ciclo já foi salvo COM a cópia congelada do histórico (biometrias_json,
-  // racoes_json, despescas_json), então nada se perde. Mas se a limpeza falhar
-  // (internet oscilou), pode sobrar lançamento antigo no viveiro — em vez de
-  // seguir calado, marcamos pra avisar o usuário no fim.
-  let limpezaIncompleta = false;
-  if (erroDelRacao || erroDelBio || erroDelDesp) {
-    console.error("Erro ao limpar lançamentos:", erroDelRacao || erroDelBio || erroDelDesp);
-    limpezaIncompleta = true;
-  }
-
-  // Congela o custo de Ração do ciclo encerrado como registro definitivo no
-  // banco (no dia a dia ele é derivado dos lançamentos; ao encerrar, os
-  // lançamentos são apagados, então o valor precisa ficar gravado p/ histórico)
-  try {
-    const der = _racaoDerivada(viveiro);
-    if (der && viveiro.cicloId) {
-      const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || null;
-      // #4: as chamadas do Supabase devolvem { error } em vez de ESTOURAR exceção —
-      // então o try/catch sozinho não pega uma falha de rede aqui. Conferimos o
-      // error de CADA etapa; se qualquer uma falhar, o ciclo não é dado como
-      // concluído com sucesso (limpezaIncompleta aciona o aviso no fim).
-      // remove qualquer registro antigo de Ração deste ciclo para não duplicar:
-      // tanto os com o ciclo_id do ciclo que fecha…
-      const rDelCusto1 = await supabaseClient.from("custos").delete()
-        .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
-        .eq("categoria", "Ração").eq("ciclo_id", viveiro.cicloId);
-      // …quanto os legados SEM ciclo_id dentro da janela do ciclo (senão eles
-      // ressurgem pela janela de datas e dobram a ração no relatório fechado)
-      let rDelCusto2 = { error: null };
-      if (iniCiclo) {
-        rDelCusto2 = await supabaseClient.from("custos").delete()
-          .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
-          .eq("categoria", "Ração").eq("nome_produto", "Ração")
-          .is("ciclo_id", null)
-          .gte("data", iniCiclo).lte("data", dataEncerramento);
-      }
-      const { data: salvoSnap, error: erroInsCusto } = await supabaseClient.from("custos").insert([{
-        user_id: usuario.id, viveiro_id: viveiro.id, tipo: "produto", produto_id: null,
-        nome_produto: "Ração", quantidade_g: der.qtdG, valor: der.valor,
-        categoria: "Ração", data: der.data, ciclo_id: viveiro.cicloId,
-      }]).select();
-
-      if (rDelCusto1.error || rDelCusto2.error || erroInsCusto) {
-        console.error("Congelar custo de ração:", rDelCusto1.error || rDelCusto2.error || erroInsCusto);
-        limpezaIncompleta = true;
-      }
-      if (salvoSnap && salvoSnap[0]) {
-        viveiro.custos = (viveiro.custos || []).filter(c => !(c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === viveiro.cicloId));
-        viveiro.custos.push({ id: salvoSnap[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: der.qtdG, valor: der.valor, categoria: "Ração", data: der.data, observacao: null, cicloId: viveiro.cicloId });
-      }
-    }
-  } catch (e) { console.log("Congelar custo de ração:", e); limpezaIncompleta = true; }
 
   // Montar cicloFinalizado ANTES de zerar o viveiro (para preservar dados no objeto local)
   const cicloFinalizado = {
-    // id do banco: sem ele, a exclusão trataria o ciclo como só-local e ele
-    // reapareceria no próximo carregamento.
-    id: (cicloSalvo && cicloSalvo[0] && cicloSalvo[0].id) || null,
+    // id do banco (vem da função encerrar_ciclo): sem ele, a exclusão trataria o
+    // ciclo como só-local e ele reapareceria no próximo carregamento.
+    id: rpc.ciclo_id_row || null,
     nomeViveiro: viveiro.nome,
     laboratorio: viveiro.laboratorio,
     tamanho: viveiro.tamanho,
@@ -6994,26 +6895,12 @@ async function salvarEncerramentoCiclo(index) {
     observacoes: observacoes,
   };
 
-  // Limpar estado local
+  // Sucesso total no banco: a função encerrar_ciclo já apagou os lançamentos e
+  // resetou o viveiro para "em preparação" na mesma transação. Aqui só espelhamos
+  // isso no estado local.
   viveiro.racoes = [];
   viveiro.biometrias = [];
   viveiro.despescas = [];
-
-  // Novo ciclo_id para a preparação que começa agora — assim, se outro ciclo
-  // iniciar no mesmo dia, os custos não se misturam com o ciclo recém-encerrado.
-  const novoCicloIdPrep = _novoCicloId();
-
-  // Zera o ciclo e volta o viveiro para "Em preparação" (conta desde o encerramento)
-  const { error: erroReset } = await supabaseClient
-    .from("viveiros")
-    .update({ data_povoamento: null, total_povoado: null, laboratorio: null, data_preparacao: dataEncerramento, ciclo_id: novoCicloIdPrep })
-    .eq("id", viveiro.id)
-    .eq("user_id", usuario.id);
-  // Este é o passo mais sensível: se falhar, o viveiro fica "ativo" no banco e
-  // o ciclo já foi gravado — no recarregar reaparece o ciclo antigo. Antes o
-  // erro passava batido; agora avisamos.
-  if (erroReset) { console.error("Erro ao reiniciar o viveiro:", erroReset); limpezaIncompleta = true; }
-
   viveiro.dataPovoamento = null;
   viveiro.totalPovoado = null;
   viveiro.laboratorio = null;
@@ -7028,13 +6915,6 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.ciclosFinalizados.push(cicloFinalizado);
 
   mostrarRelatorioCiclo(index, cicloFinalizado, "viveiro");
-
-  // Se a limpeza ou o reinício não completaram (internet oscilou), o ciclo
-  // está salvo, mas o app pode estar mostrando um estado que o banco ainda não
-  // confirmou. Avisa pra recarregar em vez de deixar o usuário sem saber.
-  if (limpezaIncompleta) {
-    setTimeout(() => _toastErro("Ciclo salvo, mas a finalização não terminou no banco. Recarregue o app e confira o viveiro; se ele ainda aparecer ativo, pode encerrar de novo com segurança (não gera ciclo duplicado)."), 500);
-  }
 }
 
 function mostrarViveiroSemCiclo(index) {
