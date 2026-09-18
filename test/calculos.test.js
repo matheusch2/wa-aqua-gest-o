@@ -162,6 +162,34 @@ test("_checarDataCiclo: futuro, antes do inicio e vazia sao barrados", () => {
   assert.equal(app._checarDataCiclo("", "2026-06-01", "2026-09-17"), "vazia");
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Numeracao dos ciclos por viveiro (Ciclo 1, 2, 3…) — base p/ comparar ciclos
+// ─────────────────────────────────────────────────────────────────────────────
+test("_numeroCicloEncerrado: numera em ordem cronologica, nao pela ordem no array", () => {
+  // Guardados fora de ordem de proposito: o 'B' encerrou antes do 'A'.
+  const viveiro = {
+    cicloId: "atual",
+    ciclosFinalizados: [
+      { cicloId: "A", dataEncerramento: "2026-06-01" },
+      { cicloId: "B", dataEncerramento: "2026-01-01" },
+    ],
+  };
+  assert.equal(app._numeroCicloEncerrado(viveiro, viveiro.ciclosFinalizados[1]), 1); // B = 1º
+  assert.equal(app._numeroCicloEncerrado(viveiro, viveiro.ciclosFinalizados[0]), 2); // A = 2º
+});
+
+test("_numeroCicloAtual: quantos ja encerraram + 1", () => {
+  assert.equal(app._numeroCicloAtual({ ciclosFinalizados: [{}, {}] }), 3);
+  assert.equal(app._numeroCicloAtual({ ciclosFinalizados: [] }), 1);
+  assert.equal(app._numeroCicloAtual({}), 1); // viveiro novo, sem historico
+});
+
+test("_numeroCicloEncerrado: ciclo legado sem id ainda e numerado (por identidade)", () => {
+  const legado = { dataEncerramento: "2026-03-01" }; // sem cicloId
+  const viveiro = { ciclosFinalizados: [legado] };
+  assert.equal(app._numeroCicloEncerrado(viveiro, legado), 1);
+});
+
 test("datas locais: ida e volta nao cai para o dia anterior (fuso)", () => {
   // O bug classico do toISOString(): 15/mar viraria 14/mar a noite.
   assert.equal(app._dataLocalISO(new Date(2026, 2, 15)), "2026-03-15");
