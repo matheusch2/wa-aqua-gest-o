@@ -6844,29 +6844,62 @@ async function salvarEncerramentoCiclo(index) {
     despescas_json: despescas,
   };
 
-  // .select() traz de volta a linha inserida — precisamos do id do ciclo para
-  // guardá-lo em memória. Sem ele, excluir o ciclo recém-fechado (sem recarregar)
-  // só sumia da tela e o ciclo voltava depois, porque a exclusão trata ciclo sem
-  // id como registro só local.
-  let { data: cicloSalvo, error } = await supabaseClient
-    .from("ciclos")
-    .insert([cicloBanco])
-    .select();
+  // O encerramento NÃO é transacional no banco (o ideal é uma RPC "tudo ou nada").
+  // Enquanto ela não existe, a proteção mais importante é a IDEMPOTÊNCIA: se uma
+  // tentativa anterior já gravou este ciclo (mesmo ciclo_id) mas não terminou a
+  // limpeza, tentar de novo NÃO pode criar um segundo ciclo igual. Por isso, antes
+  // de inserir, procuramos um ciclo já salvo com este ciclo_id e o reaproveitamos.
+  // (Só dá para deduplicar quando há ciclo_id; ciclos muito antigos, sem ele,
+  // seguem no comportamento de sempre.)
+  let cicloSalvo = null;
+  let error = null;
 
-  // A coluna custo_fixo_rateado pode ainda não existir no banco do usuário.
-  // Nesse caso, encerra sem congelar o rateio (comportamento antigo) em vez de
-  // impedir o encerramento do ciclo por causa de um campo novo.
-  if (error && /custo_fixo_rateado/.test(error.message || "")) {
-    const { custo_fixo_rateado, ...semCampoNovo } = cicloBanco;
-    console.log("Coluna custo_fixo_rateado ausente — encerrando sem congelar o rateio.");
-    ({ data: cicloSalvo, error } = await supabaseClient.from("ciclos").insert([semCampoNovo]).select());
+  if (viveiro.cicloId) {
+    const rExiste = await supabaseClient
+      .from("ciclos")
+      .select("id")
+      .eq("viveiro_id", viveiro.id)
+      .eq("user_id", usuario.id)
+      .eq("ciclo_id", viveiro.cicloId)
+      .limit(1);
+    // Um erro AQUI não pode ser lido como "não existe" e liberar uma inserção
+    // duplicada: na dúvida, aborta e pede para tentar de novo.
+    if (rExiste.error) {
+      console.log(rExiste.error);
+      restaurar();
+      mostrarErroEncerrar("Erro ao verificar o ciclo. Tente novamente.");
+      return;
+    }
+    if (rExiste.data && rExiste.data.length > 0) {
+      cicloSalvo = rExiste.data; // reaproveita o ciclo já gravado (sem duplicar)
+    }
   }
 
-  if (error) {
-    console.log(error);
-    restaurar();
-    mostrarErroEncerrar("Erro ao encerrar ciclo: " + error.message);
-    return;
+  if (!cicloSalvo) {
+    // .select() traz de volta a linha inserida — precisamos do id do ciclo para
+    // guardá-lo em memória. Sem ele, excluir o ciclo recém-fechado (sem recarregar)
+    // só sumia da tela e o ciclo voltava depois, porque a exclusão trata ciclo sem
+    // id como registro só local.
+    ({ data: cicloSalvo, error } = await supabaseClient
+      .from("ciclos")
+      .insert([cicloBanco])
+      .select());
+
+    // A coluna custo_fixo_rateado pode ainda não existir no banco do usuário.
+    // Nesse caso, encerra sem congelar o rateio (comportamento antigo) em vez de
+    // impedir o encerramento do ciclo por causa de um campo novo.
+    if (error && /custo_fixo_rateado/.test(error.message || "")) {
+      const { custo_fixo_rateado, ...semCampoNovo } = cicloBanco;
+      console.log("Coluna custo_fixo_rateado ausente — encerrando sem congelar o rateio.");
+      ({ data: cicloSalvo, error } = await supabaseClient.from("ciclos").insert([semCampoNovo]).select());
+    }
+
+    if (error) {
+      console.log(error);
+      restaurar();
+      mostrarErroEncerrar("Erro ao encerrar ciclo: " + error.message);
+      return;
+    }
   }
 
   // Apagar todos os lançamentos do ciclo encerrado no banco
@@ -6893,31 +6926,41 @@ async function salvarEncerramentoCiclo(index) {
     const der = _racaoDerivada(viveiro);
     if (der && viveiro.cicloId) {
       const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || null;
+      // #4: as chamadas do Supabase devolvem { error } em vez de ESTOURAR exceção —
+      // então o try/catch sozinho não pega uma falha de rede aqui. Conferimos o
+      // error de CADA etapa; se qualquer uma falhar, o ciclo não é dado como
+      // concluído com sucesso (limpezaIncompleta aciona o aviso no fim).
       // remove qualquer registro antigo de Ração deste ciclo para não duplicar:
       // tanto os com o ciclo_id do ciclo que fecha…
-      await supabaseClient.from("custos").delete()
+      const rDelCusto1 = await supabaseClient.from("custos").delete()
         .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
         .eq("categoria", "Ração").eq("ciclo_id", viveiro.cicloId);
       // …quanto os legados SEM ciclo_id dentro da janela do ciclo (senão eles
       // ressurgem pela janela de datas e dobram a ração no relatório fechado)
+      let rDelCusto2 = { error: null };
       if (iniCiclo) {
-        await supabaseClient.from("custos").delete()
+        rDelCusto2 = await supabaseClient.from("custos").delete()
           .eq("viveiro_id", viveiro.id).eq("user_id", usuario.id)
           .eq("categoria", "Ração").eq("nome_produto", "Ração")
           .is("ciclo_id", null)
           .gte("data", iniCiclo).lte("data", dataEncerramento);
       }
-      const { data: salvoSnap } = await supabaseClient.from("custos").insert([{
+      const { data: salvoSnap, error: erroInsCusto } = await supabaseClient.from("custos").insert([{
         user_id: usuario.id, viveiro_id: viveiro.id, tipo: "produto", produto_id: null,
         nome_produto: "Ração", quantidade_g: der.qtdG, valor: der.valor,
         categoria: "Ração", data: der.data, ciclo_id: viveiro.cicloId,
       }]).select();
-      if (salvoSnap) {
+
+      if (rDelCusto1.error || rDelCusto2.error || erroInsCusto) {
+        console.error("Congelar custo de ração:", rDelCusto1.error || rDelCusto2.error || erroInsCusto);
+        limpezaIncompleta = true;
+      }
+      if (salvoSnap && salvoSnap[0]) {
         viveiro.custos = (viveiro.custos || []).filter(c => !(c.categoria === "Ração" && c.nomeProduto === "Ração" && (c.cicloId || null) === viveiro.cicloId));
         viveiro.custos.push({ id: salvoSnap[0].id, tipo: "produto", produtoId: null, nomeProduto: "Ração", quantidadeG: der.qtdG, valor: der.valor, categoria: "Ração", data: der.data, observacao: null, cicloId: viveiro.cicloId });
       }
     }
-  } catch (e) { console.log("Congelar custo de ração:", e); }
+  } catch (e) { console.log("Congelar custo de ração:", e); limpezaIncompleta = true; }
 
   // Montar cicloFinalizado ANTES de zerar o viveiro (para preservar dados no objeto local)
   const cicloFinalizado = {
@@ -6990,7 +7033,7 @@ async function salvarEncerramentoCiclo(index) {
   // está salvo, mas o app pode estar mostrando um estado que o banco ainda não
   // confirmou. Avisa pra recarregar em vez de deixar o usuário sem saber.
   if (limpezaIncompleta) {
-    setTimeout(() => _toastErro("Ciclo salvo, mas a finalização não foi concluída no banco. Recarregue o app e confira o viveiro. Não tente encerrar novamente antes da conferência."), 500);
+    setTimeout(() => _toastErro("Ciclo salvo, mas a finalização não terminou no banco. Recarregue o app e confira o viveiro; se ele ainda aparecer ativo, pode encerrar de novo com segurança (não gera ciclo duplicado)."), 500);
   }
 }
 
