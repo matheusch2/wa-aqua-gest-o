@@ -4095,6 +4095,33 @@ async function salvarNovoCiclo(index, modo = "reiniciar") {
   const povoar = modo === "povoar";
   const novoCicloId = povoar ? (viveiros[index].cicloId || _novoCicloId()) : _novoCicloId();
 
+  // Reinício NÃO é transacional no banco — o certo seria uma função (RPC) no
+  // Postgres que faz tudo ou nada. Enquanto ela não existe, a ORDEM e a checagem
+  // de CADA erro fazem o papel de rede de segurança:
+  //   1º) apaga os registros do ciclo anterior;
+  //   2º) SÓ SE todas as exclusões derem certo, avança o viveiro para o ciclo
+  //       novo.
+  // Assim uma queda de internet no meio nunca deixa um ciclo novo convivendo com
+  // rações/biometrias velhas — que voltariam "coladas" no ciclo atual, porque na
+  // abertura os lançamentos são lidos por viveiro_id, não por ciclo. Se algo
+  // falhar, nada de estado local é tocado e a tela não avança (o usuário tenta de
+  // novo; re-apagar o que já sumiu é inofensivo).
+  const idViveiro = viveiros[index].id;
+
+  const [rDelRacoes, rDelBiometrias, rDelDespescas] = await Promise.all([
+    supabaseClient.from("racoes").delete().eq("viveiro_id", idViveiro).eq("user_id", usuario.id),
+    supabaseClient.from("biometrias").delete().eq("viveiro_id", idViveiro).eq("user_id", usuario.id),
+    supabaseClient.from("despescas").delete().eq("viveiro_id", idViveiro).eq("user_id", usuario.id),
+  ]);
+
+  const erroExclusao = rDelRacoes.error || rDelBiometrias.error || rDelDespescas.error;
+  if (erroExclusao) {
+    console.log(erroExclusao);
+    restaurar();
+    mostrarErroReinicio("Erro ao limpar o ciclo anterior. Nada foi alterado — tente de novo.");
+    return;
+  }
+
   const { error } = await supabaseClient
     .from("viveiros")
     .update({
@@ -4103,24 +4130,17 @@ async function salvarNovoCiclo(index, modo = "reiniciar") {
       laboratorio: novoLaboratorio,
       ciclo_id: novoCicloId,
     })
-    .eq("id", viveiros[index].id)
+    .eq("id", idViveiro)
     .eq("user_id", usuario.id);
 
   if (error) {
     console.log(error);
     restaurar();
-    mostrarErroReinicio("Erro ao salvar novo ciclo.");
+    mostrarErroReinicio("Erro ao salvar o novo ciclo. Tente novamente.");
     return;
   }
 
-  // Limpar dados do ciclo anterior no banco
-  await Promise.all([
-    supabaseClient.from("racoes").delete().eq("viveiro_id", viveiros[index].id).eq("user_id", usuario.id),
-    supabaseClient.from("biometrias").delete().eq("viveiro_id", viveiros[index].id).eq("user_id", usuario.id),
-    supabaseClient.from("despescas").delete().eq("viveiro_id", viveiros[index].id).eq("user_id", usuario.id),
-  ]);
-
-  // Atualizar estado local
+  // Atualizar estado local (só depois do sucesso completo no banco)
   viveiros[index].dataPovoamento = novoPovoamento;
   viveiros[index].totalPovoado = novoTotal;
   viveiros[index].laboratorio = novoLaboratorio;
