@@ -46,6 +46,12 @@ let _finOrdenacao = "data";
 let _finPagina = 0;
 let _finPeriodoIni = "";
 let _finPeriodoFim = "";
+// Seletor de ciclo do relatório financeiro (só vale com UM viveiro escolhido):
+// "" = por período (datas); "atual" = ciclo em andamento; senão = ciclo_id de um
+// ciclo já encerrado. _finCicloWin guarda a janela ini/fim do ciclo escolhido,
+// para os renderizadores mostrarem "dias" e "total do ciclo" em vez de período.
+let _finCicloSel = "";
+let _finCicloWin = null;
 let _scrollSalvo = 0;
 function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
 function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
@@ -6239,6 +6245,9 @@ async function desmarcarBoletoPago(index, voltarDetalhe, botao) {
 
 function abrirFinanceiro() {
   esconderMenu();
+  // O seletor de viveiro sempre abre em "Todos os viveiros", então o modo-ciclo
+  // (que só vale com um viveiro escolhido) começa desligado.
+  _finCicloSel = ""; _finCicloWin = null;
   // Período padrão: mês atual
   if (!_finPeriodoIni && !_finPeriodoFim) {
     const now = new Date();
@@ -6259,12 +6268,13 @@ function abrirFinanceiro() {
           <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
           <label>Viveiro</label>
         </div>
-        <select id="viveiroFinanceiro" onchange="_finPagina=0;mostrarCustosFinanceiro()">
+        <select id="viveiroFinanceiro" onchange="_finTrocarViveiro()">
           <option value="">Todos os viveiros</option>
           ${viveiros.map((v, i) => `<option value="${i}">${_esc(v.nome)}</option>`).join("")}
         </select>
       </div>
-      <div class="campo-form" style="margin-bottom:6px">
+      <div id="fin-ciclo-wrap"></div>
+      <div class="campo-form" id="fin-periodo-wrap" style="margin-bottom:6px">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <label>Período</label>
@@ -6284,6 +6294,8 @@ function abrirFinanceiro() {
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">Voltar</button>
     </div>
   `;
+  _finRenderCicloSel();
+  _finAtualizarPeriodoVisivel();
   mostrarCustosFinanceiro();
 }
 
@@ -6296,10 +6308,78 @@ function _finSetPeriodo() {
 
 function _finLimparFiltros() {
   _finPeriodoIni = ""; _finPeriodoFim = ""; _finPagina = 0;
+  _finCicloSel = ""; _finCicloWin = null;
   const a = document.getElementById("finPeriodoIni"); if (a) a.value = "";
   const b = document.getElementById("finPeriodoFim"); if (b) b.value = "";
   const v = document.getElementById("viveiroFinanceiro"); if (v) v.value = "";
+  _finRenderCicloSel();
+  _finAtualizarPeriodoVisivel();
   mostrarCustosFinanceiro();
+}
+
+// Monta (ou limpa) o seletor de ciclo. Só aparece quando há UM viveiro escolhido;
+// lista "Todos (por período)", "Ciclo atual" e cada ciclo já encerrado do viveiro.
+function _finRenderCicloSel() {
+  const wrap = document.getElementById("fin-ciclo-wrap");
+  if (!wrap) return;
+  const idx = document.getElementById("viveiroFinanceiro")?.value ?? "";
+  if (idx === "") { wrap.innerHTML = ""; return; }
+  const v = viveiros[idx];
+  const encerrados = [...(v.ciclosFinalizados || [])]
+    .filter(c => c.cicloId)
+    .sort((a, b) => (b.dataEncerramento || "").localeCompare(a.dataEncerramento || ""));
+  const opcoes = [
+    `<option value="">Todos (por período)</option>`,
+    `<option value="atual" ${_finCicloSel === "atual" ? "selected" : ""}>Ciclo atual</option>`,
+    ...encerrados.map(c => `<option value="${c.cicloId}" ${_finCicloSel === c.cicloId ? "selected" : ""}>Ciclo encerrado em ${formatarData(c.dataEncerramento)}</option>`),
+  ];
+  wrap.innerHTML = `
+    <div class="campo-form" style="margin-bottom:6px">
+      <div class="campo-label">
+        <svg class="campo-icone" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+        <label>Ciclo</label>
+      </div>
+      <select id="cicloFinanceiro" onchange="_finTrocarCiclo()">${opcoes.join("")}</select>
+    </div>`;
+}
+
+// Trocou o viveiro: volta para o modo período e remonta o seletor de ciclo.
+function _finTrocarViveiro() {
+  _finCicloSel = ""; _finCicloWin = null; _finPagina = 0;
+  _finRenderCicloSel();
+  _finAtualizarPeriodoVisivel();
+  mostrarCustosFinanceiro();
+}
+
+// Trocou o ciclo escolhido.
+function _finTrocarCiclo() {
+  _finCicloSel = document.getElementById("cicloFinanceiro")?.value || "";
+  _finPagina = 0;
+  _finAtualizarPeriodoVisivel();
+  mostrarCustosFinanceiro();
+}
+
+// Esconde o filtro de período quando um ciclo específico está escolhido (o ciclo
+// já define o intervalo). Volta a aparecer no modo "Todos (por período)".
+function _finAtualizarPeriodoVisivel() {
+  const p = document.getElementById("fin-periodo-wrap");
+  if (p) p.style.display = _finCicloSel ? "none" : "";
+}
+
+// Resolve a janela e o rateio congelado do ciclo escolhido no financeiro.
+function _finInfoCicloSel(v) {
+  if (_finCicloSel === "atual") {
+    const ini = v.dataPreparacao || v.dataPovoamento || null;
+    if (!ini) return null;
+    return { cicloId: v.cicloId, ini, fim: _hojeLocal(), rateioCongelado: null };
+  }
+  const cf = (v.ciclosFinalizados || []).find(c => c.cicloId === _finCicloSel);
+  if (!cf) return null;
+  const ini = cf.dataPreparacao || cf.dataPovoamento || null;
+  return {
+    cicloId: cf.cicloId, ini, fim: cf.dataEncerramento || _hojeLocal(),
+    rateioCongelado: (cf.custoFixoRateado != null ? cf.custoFixoRateado : null),
+  };
 }
 
 function _finTipoLabel(c) {
@@ -6360,6 +6440,33 @@ function _finItensRateioFixo(alvos) {
 function _finColetarCustos() {
   const viveiroIndex = document.getElementById("viveiroFinanceiro")?.value ?? "";
   const porViveiro = viveiroIndex !== "";
+
+  // Modo CICLO: um viveiro + um ciclo específico escolhido. Usa a MESMA fonte
+  // por-ciclo do card "Custo parcial" (_custosCicloAtivo), então o total bate
+  // exatamente com o que o produtor vê dentro do viveiro. O rateio dos custos
+  // fixos entra como um único item (do ciclo), não pelo cálculo por período.
+  if (porViveiro && _finCicloSel) {
+    const v = viveiros[viveiroIndex];
+    const info = _finInfoCicloSel(v);
+    if (info) {
+      _finCicloWin = { ini: info.ini, fim: info.fim };
+      const cc = _custosCicloAtivo(v, info.cicloId, info.ini, info.fim, info.rateioCongelado);
+      let custos = cc.manuais.map(c => ({ ...c, viveiroNome: v.nome }));
+      if (cc.rateioFixo > 0.005) {
+        custos = custos.concat([{
+          tipo: "fixo", produtoId: null,
+          nomeProduto: "Custos fixos — rateio do ciclo",
+          categoria: "Rateio automático",
+          quantidadeG: null, valor: Number(cc.rateioFixo.toFixed(2)),
+          data: info.fim, viveiroNome: v.nome, virtual: true,
+          periodoIni: info.ini, periodoFim: info.fim,
+        }]);
+      }
+      return { custos, porViveiro };
+    }
+  }
+
+  _finCicloWin = null;
   const alvos = porViveiro ? [viveiros[viveiroIndex]] : viveiros;
   let custos;
   if (porViveiro) {
@@ -6424,17 +6531,26 @@ function _finGruposCategoria(custos) {
 }
 
 function _finRenderDetalhado(resultado, custos, total, porViveiro) {
-  // % do total geral (mesmo período, todos os viveiros) — inclui o rateio fixo
-  let custosGeral = viveiros.flatMap(v => (v.custos || []));
-  if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
-  if (_finPeriodoFim) custosGeral = custosGeral.filter(c => c.data <= _finPeriodoFim);
-  custosGeral = custosGeral.concat(_finItensRateioFixo(viveiros));
-  const totalGeral = custosGeral.reduce((s, c) => s + Number(c.valor), 0);
-  const pct = totalGeral > 0 ? Math.round((total / totalGeral) * 100) : 100;
+  // No modo ciclo, a comparação "% do total do período" não se aplica (a tela
+  // mostra um ciclo inteiro, não uma fatia do mês). Fora dele, mantém a conta
+  // antiga: quanto este recorte representa do total geral no mesmo período.
+  const modoCiclo = !!_finCicloWin;
+  let pct = 100;
+  if (!modoCiclo) {
+    let custosGeral = viveiros.flatMap(v => (v.custos || []));
+    if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
+    if (_finPeriodoFim) custosGeral = custosGeral.filter(c => c.data <= _finPeriodoFim);
+    custosGeral = custosGeral.concat(_finItensRateioFixo(viveiros));
+    const totalGeral = custosGeral.reduce((s, c) => s + Number(c.valor), 0);
+    pct = totalGeral > 0 ? Math.round((total / totalGeral) * 100) : 100;
+  }
 
-  // dias do período
+  // dias: no modo ciclo, os dias reais do ciclo (povoamento/preparação → fim);
+  // fora dele, os dias do período escolhido.
   let dias;
-  if (_finPeriodoIni && _finPeriodoFim) {
+  if (modoCiclo && _finCicloWin.ini && _finCicloWin.fim) {
+    dias = Math.max(1, Math.round((_parseDataLocal(_finCicloWin.fim) - _parseDataLocal(_finCicloWin.ini)) / 86400000) + 1);
+  } else if (_finPeriodoIni && _finPeriodoFim) {
     dias = Math.max(1, Math.round((_parseDataLocal(_finPeriodoFim) - _parseDataLocal(_finPeriodoIni)) / 86400000) + 1);
   } else {
     const datas = custos.map(c => c.data).sort();
@@ -6520,7 +6636,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
       <div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Total de custos</span></div>
         <strong>R$ ${formatarNumeroBR(total, 2)}</strong>
-        <small>${pct}% do total</small>
+        <small>${modoCiclo ? "deste ciclo" : pct + "% do total"}</small>
       </div>
       <div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Lançamentos</span></div>
@@ -6530,7 +6646,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
       <div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Custo médio / dia</span></div>
         <strong>R$ ${formatarNumeroBR(mediaDia, 2)}</strong>
-        <small>No período</small>
+        <small>${modoCiclo ? "No ciclo" : "No período"}</small>
       </div>
       ${cardMaiorHtml}
     </div>
@@ -6539,7 +6655,7 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
     <div class="fin-total-geral">
       <div class="fin-total-geral-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       <div class="fin-total-geral-txt">
-        <span>Total geral no período</span>
+        <span>${modoCiclo ? "Total do ciclo" : "Total geral no período"}</span>
         <strong>R$ ${formatarNumeroBR(total, 2)}</strong>
       </div>
     </div>
