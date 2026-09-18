@@ -81,6 +81,7 @@ const NOMES = [
   "_custoFixoCatLabel", "_normNomeCusto", "_melhorRotulo", "_rotuloCurtoViveiro",
   "_custosCicloAtivo", "_custosManuaisDoCiclo",
   "_pesoMedioAmostra", "_custoRacaoEstimado", "_ratearIgual", "_checarDataCiclo",
+  "_ciclosEncerradosOrdenados", "_numeroCicloEncerrado", "_numeroCicloAtual",
 ];
 const epilogo = "\n;globalThis.__TESTE__ = {" +
   NOMES.map((n) => `${n}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(",") +

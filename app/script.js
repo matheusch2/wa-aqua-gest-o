@@ -4278,6 +4278,34 @@ function voltarOpcoesHistorico() {
   if (voltarFixo) voltarFixo.style.display = "";
 }
 
+// ═══ NUMERAÇÃO DOS CICLOS (Ciclo 1, 2, 3… por viveiro) ═══════════════════════
+// O número é a POSIÇÃO cronológica do ciclo na vida do viveiro. É calculado na
+// hora a partir do histórico (não gravado): assim os ciclos que já existem ficam
+// numerados de imediato e nada muda no banco. Quando os relatórios de comparação
+// chegarem, aí vale congelar esse número numa coluna — esta ordem é a base.
+
+// Ciclos ENCERRADOS do viveiro em ordem cronológica (do 1º ao mais recente).
+function _ciclosEncerradosOrdenados(viveiro) {
+  return [...((viveiro && viveiro.ciclosFinalizados) || [])].sort((a, b) =>
+    (a.dataEncerramento || a.dataPovoamento || "").localeCompare(b.dataEncerramento || b.dataPovoamento || "")
+    || (a.dataPovoamento || "").localeCompare(b.dataPovoamento || "")
+  );
+}
+
+// Número (1-based) de um ciclo ENCERRADO. Casa por ciclo_id quando há; senão,
+// pela identidade do objeto (ciclos legados sem id ainda ficam numerados).
+function _numeroCicloEncerrado(viveiro, ciclo) {
+  if (!viveiro || !ciclo) return null;
+  const ord = _ciclosEncerradosOrdenados(viveiro);
+  const i = ord.findIndex(c => (ciclo.cicloId && c.cicloId) ? c.cicloId === ciclo.cicloId : c === ciclo);
+  return i >= 0 ? i + 1 : null;
+}
+
+// Número do ciclo ATUAL (em andamento) = quantos já encerraram + 1.
+function _numeroCicloAtual(viveiro) {
+  return (((viveiro && viveiro.ciclosFinalizados) || []).length) + 1;
+}
+
 function mostrarHistoricoCiclos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -4321,7 +4349,7 @@ function mostrarHistoricoCiclos() {
   ` + ciclos.map(item => `
     <div class="ciclo-card">
       <div class="ciclo-card-topo">
-        <span class="ciclo-card-nome">${item.viveiro}</span>
+        <span class="ciclo-card-nome">${item.viveiro}${(() => { const n = _numeroCicloEncerrado(viveiros[item.viveiroIndex], item.ciclo); return n ? ` · Ciclo ${n}` : ""; })()}</span>
         <span class="ciclo-card-producao">${formatarNumeroBR(item.ciclo.producaoTotal || 0, 1)} kg</span>
       </div>
       <div class="ciclo-card-infos">
@@ -6330,8 +6358,11 @@ function _finRenderCicloSel() {
     .sort((a, b) => (b.dataEncerramento || "").localeCompare(a.dataEncerramento || ""));
   const opcoes = [
     `<option value="">Todos (por período)</option>`,
-    `<option value="atual" ${_finCicloSel === "atual" ? "selected" : ""}>Ciclo atual</option>`,
-    ...encerrados.map(c => `<option value="${c.cicloId}" ${_finCicloSel === c.cicloId ? "selected" : ""}>Ciclo encerrado em ${formatarData(c.dataEncerramento)}</option>`),
+    `<option value="atual" ${_finCicloSel === "atual" ? "selected" : ""}>Ciclo ${_numeroCicloAtual(v)} (atual)</option>`,
+    ...encerrados.map(c => {
+      const n = _numeroCicloEncerrado(v, c);
+      return `<option value="${c.cicloId}" ${_finCicloSel === c.cicloId ? "selected" : ""}>${n ? `Ciclo ${n} — ` : ""}encerrado ${formatarData(c.dataEncerramento)}</option>`;
+    }),
   ];
   wrap.innerHTML = `
     <div class="campo-form" style="margin-bottom:6px">
@@ -7192,7 +7223,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
 
       <div class="rc2-head">
         <h2 class="rc2-titulo">RELATÓRIO DE CICLO</h2>
-        <div class="rc2-viveiro">${_esc(ciclo.nomeViveiro)}</div>
+        <div class="rc2-viveiro">${_esc(ciclo.nomeViveiro)}${(() => { const n = _numeroCicloEncerrado(viveiros[index], ciclo); return n ? ` · Ciclo ${n}` : ""; })()}</div>
         <div class="rc2-periodo">${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)} · ${ciclo.diasCultivo} dias</div>
       </div>
 
