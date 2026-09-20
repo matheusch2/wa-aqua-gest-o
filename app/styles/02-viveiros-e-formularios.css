@@ -669,3 +669,47 @@ button,
     /* Seções mais compactas para caber em 1 página */
 
 }
+
+/* ─── HISTÓRICO DE RAÇÃO (redesenho: resumo + gráfico + linhas) ───────────────── */
+.rh-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 12px; }
+.rh-rcard { background: linear-gradient(160deg,#f6fbfa,#eef7f5); border: 1px solid #e2eeeb; border-radius: 12px; padding: 10px 6px; text-align: center; }
+.rh-rcard small { display: block; font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.rh-rcard strong { display: block; font-size: 15px; color: #054f4b; margin-top: 3px; }
+.rh-rcard strong span { font-size: 10.5px; font-weight: 600; color: #9ca3af; }
+
+.rh-grafico-wrap { background: #fff; border: 1px solid #eef1f0; border-radius: 14px; padding: 12px 12px 6px; margin-bottom: 12px; }
+.rh-grafico-tit { font-size: 12px; font-weight: 700; color: #066b63; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
+.rh-grafico-canvas { position: relative; height: 170px; }
+
+.rh-lista { display: flex; flex-direction: column; gap: 8px; }
+.rh-row { display: flex; align-items: center; gap: 11px; background: #fff; border: 1px solid #eef1f0; border-radius: 14px; padding: 10px 12px; flex-wrap: wrap; }
+.rh-dia { width: 42px; height: 42px; flex-shrink: 0; border-radius: 11px; background: #ecfdf5; color: #054f4b; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; line-height: 1; }
+.rh-dia b { font-size: 15px; }
+.rh-dia small { font-size: 8.5px; font-weight: 700; opacity: .7; text-transform: uppercase; letter-spacing: .5px; margin-top: 1px; }
+.rh-mid { flex: 1; min-width: 0; }
+.rh-mid-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rh-kg { font-size: 16px; font-weight: 800; color: #111827; }
+.rh-tipo { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #e0f2f1; color: #0f766e; text-transform: uppercase; letter-spacing: .3px; }
+.rh-data { font-size: 12px; color: #6b7280; margin-top: 2px; }
+.rh-acoes { display: flex; gap: 6px; flex-shrink: 0; }
+.rh-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rh-btn svg { width: 16px; height: 16px; fill: none; stroke-width: 2; }
+.rh-btn.edit svg { stroke: #066b63; }
+.rh-btn.del { border-color: #fde0e0; }
+.rh-btn.del svg { stroke: #dc2626; }
+/* Quando o "confirmar exclusão" substitui o conteúdo da linha, ele ocupa a largura toda. */
+.rh-row > .confirmar-exclusao-custo { flex: 1 1 100%; }
+
+/* Tema escuro */
+body.tema-escuro .rh-rcard { background: #16231f; border-color: #274b43; }
+body.tema-escuro .rh-rcard small { color: #9ca3af; }
+body.tema-escuro .rh-rcard strong { color: #5eead4; }
+body.tema-escuro .rh-grafico-wrap,
+body.tema-escuro .rh-row { background: #1f2937; border-color: #374151; }
+body.tema-escuro .rh-grafico-tit { color: #5eead4; }
+body.tema-escuro .rh-dia { background: #052e2b; color: #5eead4; }
+body.tema-escuro .rh-kg { color: #f3f4f6; }
+body.tema-escuro .rh-tipo { background: #0f3d38; color: #5eead4; }
+body.tema-escuro .rh-data { color: #9ca3af; }
+body.tema-escuro .rh-btn { background: #111827; border-color: #374151; }
+body.tema-escuro .rh-btn.edit svg { stroke: #34d399; }
