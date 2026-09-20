@@ -3395,6 +3395,21 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   }, 50);
 }
 
+// Soma a ração por SEMANA de cultivo (S1 = dias 1-7, S2 = 8-14…) para o gráfico
+// de colunas. Depende da data de povoamento; sem ela, não há semana de cultivo.
+function _racaoPorSemana(viveiro) {
+  const povo = viveiro && viveiro.dataPovoamento;
+  if (!povo) return [];
+  const acc = new Map();
+  for (const r of (viveiro.racoes || [])) {
+    const dia = calcularDiasCultivo(povo, r.data); // inclui o dia do povoamento (=1)
+    if (!dia || dia < 1) continue;
+    const semana = Math.ceil(dia / 7);
+    acc.set(semana, (acc.get(semana) || 0) + (Number(r.racao) || 0));
+  }
+  return [...acc.entries()].sort((a, b) => a[0] - b[0]).map(([semana, kg]) => ({ semana, kg }));
+}
+
 function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao = "") {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
@@ -3416,29 +3431,47 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     ? `<button class="botao-nav-viveiro" onclick="renderizarHistoricoRacao(${index},'${elementoId}',${direto},${pagina + 1},'proximo')">Próxima</button>`
     : `<span class="botao-nav-viveiro" style="visibility:hidden">Próxima</span>`;
 
+  const nLanc = racoes.length;
+  const media = nLanc > 0 ? totalRacao / nLanc : 0;
+  const maiorDia = racoes.reduce((m, r) => Math.max(m, Number(r.racao) || 0), 0);
+  const semanas = _racaoPorSemana(viveiro);
+
   resultado.innerHTML = `
     <h3 class="titulo-secao">Ração - ${abreviarViveiro(viveiro.nome)}</h3>
 
-    <div class="tabela-historico">
-      <div class="linha-historico-racao cabecalho">
-        <span>DIA</span>
-        <span class="col-centro">DATA</span>
-        <span class="col-centro">RAÇÃO</span>
-        <span></span>
-      </div>
+    ${racoes.length === 0 ? "" : `
+    <div class="rh-resumo">
+      <div class="rh-rcard"><small>Média/dia</small><strong>${formatarNumeroBR(media, 1)}<span> kg</span></strong></div>
+      <div class="rh-rcard"><small>Maior dia</small><strong>${formatarNumeroBR(maiorDia, 1)}<span> kg</span></strong></div>
+      <div class="rh-rcard"><small>Dias</small><strong>${nLanc}</strong></div>
+    </div>`}
+
+    ${semanas.length ? `
+    <div class="rh-grafico-wrap">
+      <div class="rh-grafico-tit">Consumo por semana</div>
+      <div class="rh-grafico-canvas"><canvas id="canvas-racao-semana"></canvas></div>
+    </div>` : ""}
+
+    <div class="rh-lista">
       ${racoes.length === 0
         ? `<p class="sobrevivencia-texto">Nenhuma ração lançada.</p>`
         : racoesPagina.map((item) => {
             const iOriginal = viveiro.racoes.findIndex(r => r.id === item.id);
+            const dia = calcularDiasCultivo(viveiro.dataPovoamento, item.data);
             return `
-              <div class="linha-historico-racao" id="racao-row-${index}-${iOriginal}">
-                <span>${calcularDiasCultivo(viveiro.dataPovoamento, item.data)}</span>
-                <span class="col-centro">${formatarData(item.data)}</span>
-                <span class="col-centro">${formatarNumeroBR(item.racao, 1)} kg${item.nomeRacao ? `<br><small style="font-size:10px;opacity:0.7">${_esc(item.nomeRacao)}</small>` : ""}</span>
-                <span class="col-acoes">
-                  <button class="botao-editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">✏️</button>
-                  <button class="botao-editar botao-excluir" onclick="confirmarExcluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})">🗑️</button>
-                </span>
+              <div class="rh-row" id="racao-row-${index}-${iOriginal}">
+                <div class="rh-dia"><b>${dia}</b><small>dia</small></div>
+                <div class="rh-mid">
+                  <div class="rh-mid-top">
+                    <span class="rh-kg">${formatarNumeroBR(item.racao, 1)} kg</span>
+                    ${item.nomeRacao ? `<span class="rh-tipo">${_esc(item.nomeRacao)}</span>` : ""}
+                  </div>
+                  <div class="rh-data">${formatarData(item.data)}</div>
+                </div>
+                <div class="rh-acoes">
+                  <button class="rh-btn edit" aria-label="Editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="rh-btn del" aria-label="Excluir" onclick="confirmarExcluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                </div>
               </div>`;
           }).join("")
       }
@@ -3460,9 +3493,43 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">Voltar</button>
   `;
 
+  // Gráfico de colunas: consumo de ração por semana de cultivo.
+  if (semanas.length) {
+    setTimeout(() => {
+      const cv = document.getElementById("canvas-racao-semana");
+      if (!cv || typeof Chart === "undefined") return;
+      _prepararCanvasGrafico(cv);
+      new Chart(cv.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: semanas.map(s => "S" + s.semana),
+          datasets: [{
+            data: semanas.map(s => Number(s.kg.toFixed(1))),
+            backgroundColor: "rgba(6,107,99,0.85)",
+            hoverBackgroundColor: "rgb(6,107,99)",
+            borderRadius: 6,
+            maxBarThickness: 44,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => " " + formatarNumeroBR(c.parsed.y, 1) + " kg" } },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: "#6b7280", font: { size: 11, weight: "600" } } },
+            y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" }, ticks: { color: "#9ca3af", font: { size: 10 }, maxTicksLimit: 5 } },
+          },
+        },
+      });
+    }, 50);
+  }
+
   // Animação de slide ao trocar página
   if (direcao) {
-    const tabela = resultado.querySelector(".tabela-historico");
+    const tabela = resultado.querySelector(".rh-lista");
     if (tabela) tabela.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
   }
 

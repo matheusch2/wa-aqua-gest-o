@@ -190,6 +190,30 @@ test("_numeroCicloEncerrado: ciclo legado sem id ainda e numerado (por identidad
   assert.equal(app._numeroCicloEncerrado(viveiro, legado), 1);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Consumo de racao por semana de cultivo (grafico de colunas do historico)
+// ─────────────────────────────────────────────────────────────────────────────
+test("_racaoPorSemana: soma por semana (S1 = dias 1-7, S2 = 8-14…)", () => {
+  const v = {
+    dataPovoamento: "2026-01-01",
+    racoes: [
+      { data: "2026-01-01", racao: 2 }, // dia 1  -> S1
+      { data: "2026-01-07", racao: 3 }, // dia 7  -> S1
+      { data: "2026-01-08", racao: 4 }, // dia 8  -> S2
+      { data: "2026-01-14", racao: 5 }, // dia 14 -> S2
+    ],
+  };
+  const r = Array.from(app._racaoPorSemana(v));
+  assert.equal(r.length, 2);
+  assert.deepEqual({ semana: r[0].semana, kg: r[0].kg }, { semana: 1, kg: 5 });
+  assert.deepEqual({ semana: r[1].semana, kg: r[1].kg }, { semana: 2, kg: 9 });
+});
+
+test("_racaoPorSemana: sem povoamento devolve vazio (nao ha semana de cultivo)", () => {
+  assert.equal(app._racaoPorSemana({ racoes: [{ data: "2026-01-01", racao: 2 }] }).length, 0);
+  assert.equal(app._racaoPorSemana({ dataPovoamento: "2026-01-01", racoes: [] }).length, 0);
+});
+
 test("datas locais: ida e volta nao cai para o dia anterior (fuso)", () => {
   // O bug classico do toISOString(): 15/mar viraria 14/mar a noite.
   assert.equal(app._dataLocalISO(new Date(2026, 2, 15)), "2026-03-15");

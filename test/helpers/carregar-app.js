@@ -82,6 +82,7 @@ const NOMES = [
   "_custosCicloAtivo", "_custosManuaisDoCiclo",
   "_pesoMedioAmostra", "_custoRacaoEstimado", "_ratearIgual", "_checarDataCiclo",
   "_ciclosEncerradosOrdenados", "_numeroCicloEncerrado", "_numeroCicloAtual",
+  "_racaoPorSemana",
 ];
 const epilogo = "\n;globalThis.__TESTE__ = {" +
   NOMES.map((n) => `${n}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(",") +
