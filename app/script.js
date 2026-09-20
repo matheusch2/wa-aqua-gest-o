@@ -1290,6 +1290,12 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   const viveiro = viveirosOrdenados[posicao];
   const indexOriginal = viveiros.indexOf(viveiro);
 
+  // Card da lista: mostra o que interessa no dia a dia — dias de cultivo e o
+  // último peso — no lugar de data de povoamento e laboratório.
+  const _diasCultivoVv = viveiro.dataPovoamento ? calcularDiasCultivo(viveiro.dataPovoamento) + " dias" : "--";
+  const _biosVv = [...(viveiro.biometrias || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  const _ultBioVv = _biosVv.length ? fmtG(_biosVv[_biosVv.length - 1].gramatura) + " g" : "--";
+
   // Sempre renderiza 3 elementos para o contador ficar sempre centrado
   const navAnterior = posicao > 0
     ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao - 1}, 'anterior')">Anterior</button>`
@@ -1343,17 +1349,17 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
 
       <div class="vc-info-lista">
         <div class="vc-info-item">
-          <div class="vc-info-icone verde">🗓️</div>
+          <div class="vc-info-icone verde">⏱️</div>
           <div>
-            <strong>Povoamento</strong>
-            <p>${formatarData(viveiro.dataPovoamento) || "--"}</p>
+            <strong>Dias de cultivo</strong>
+            <p>${_diasCultivoVv}</p>
           </div>
         </div>
         <div class="vc-info-item">
-          <div class="vc-info-icone azul">🧪</div>
+          <div class="vc-info-icone azul">⚖️</div>
           <div>
-            <strong>Laboratório</strong>
-            <p>${_esc(viveiro.laboratorio || "--")}</p>
+            <strong>Última biometria</strong>
+            <p>${_ultBioVv}</p>
           </div>
         </div>
         <div class="vc-info-item">
