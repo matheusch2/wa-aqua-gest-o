@@ -605,3 +605,9 @@ body.tema-escuro .bt-hist-txt { color: #d1d5db; }
 .cfg-wrap .bt-abas { padding: 0; margin-bottom: 14px; }
 .cfg-wrap .bt-lista { margin-bottom: 4px; }
 .cfg-wrap .bt-empty { padding: 24px 8px; text-align: center; color: #9ca3af; font-size: 13px; }
+
+/* ─── "Outro custo" — lista de viveiros para ratear (checkboxes) ──────────────── */
+.oc-viv-lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+.oc-viv-item { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border: 1.5px solid #d7e3e0; border-radius: 12px; font-size: 15px; font-weight: 600; color: #111827; cursor: pointer; background: #fff; }
+.oc-viv-item input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #066b63; }
+body.tema-escuro .oc-viv-item { border-color: #374151; color: #f3f4f6; background: #1f2937; }

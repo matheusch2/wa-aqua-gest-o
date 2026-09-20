@@ -40,6 +40,7 @@ let assinatura = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
 let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalhado"
+let _outroCustoModo = "um"; // "Outro custo" pelo menu: "um" viveiro ou "ratear" entre vários
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
 let _finOrdenacao = "data";
@@ -5148,18 +5149,16 @@ function abrirCustosFixos() {
   `;
 }
 
-function abrirFormCustoFixo(index, modo) {
+function abrirFormCustoFixo(index) {
   esconderMenu();
   const editando = index !== undefined && index !== null;
-  const avulso = !editando && modo === "avulso";
   const c = editando ? custosFixos[index] : null;
   const area = document.getElementById("area-gestao");
-  // Para um custo MENSAL novo, o padrão de "válido a partir de" é o início do
-  // cultivo ativo mais antigo (cobre os cultivos em andamento). Para o AVULSO, é
-  // hoje (a despesa aconteceu agora).
+  // Para um custo novo, o padrão de "válido a partir de" é o início do cultivo
+  // ativo mais antigo (cobre os cultivos em andamento).
   const _iniAtivos = viveiros.map(v => v.dataPreparacao || v.dataPovoamento).filter(Boolean).sort();
   const _hojeYmd = _hojeLocal();
-  const _defaultInicio = avulso ? _hojeYmd : (_iniAtivos.length ? _iniAtivos[0] : _hojeYmd);
+  const _defaultInicio = _iniAtivos.length ? _iniAtivos[0] : _hojeYmd;
   const cats = [
     ["mao_de_obra", "Mão de obra"],
     ["energia", "Energia"],
@@ -5168,43 +5167,31 @@ function abrirFormCustoFixo(index, modo) {
     ["manutencao", "Manutenção"],
     ["outro", "Outro"],
   ];
-  // Botão de um lado do segmento (Mensal / Uma vez). Cores que funcionam no
-  // tema claro e escuro: ativo = verde cheio; inativo = borda neutra + cor do texto.
-  const seg = (rotulo, alvoAvulso, ativoAgora) => `<button type="button" onclick="abrirFormCustoFixo(null, '${alvoAvulso ? "avulso" : "mensal"}')" style="flex:1;padding:11px 8px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;border:1.5px solid ${ativoAgora ? "#0b6b63" : "rgba(128,128,128,.35)"};background:${ativoAgora ? "#0b6b63" : "transparent"};color:${ativoAgora ? "#fff" : "inherit"}">${rotulo}</button>`;
   area.innerHTML = `
-    <h3 class="titulo-secao">${editando ? "Editar custo fixo" : "Novo custo"}</h3>
+    <h3 class="titulo-secao">${editando ? "Editar custo fixo" : "Novo custo fixo"}</h3>
     <div class="cfg-wrap">
-      ${!editando ? `
-      <div style="display:flex;gap:8px;margin-bottom:6px">
-        ${seg("Mensal", false, !avulso)}
-        ${seg("Uma vez", true, avulso)}
-      </div>
-      <p class="rc-print-dica" style="margin:2px 0 12px">${avulso
-        ? "Custo de uma vez só (ex: diarista, reparo). Será dividido igualmente entre os viveiros ativos na data."
-        : "Custo que se repete todo mês (ex: energia, funcionário)."}</p>
-      ` : ""}
+      ${editando ? "" : `<p class="rc-print-dica" style="margin:2px 0 12px">Custo que se repete todo mês (ex: energia, funcionário). É rateado por dia entre os viveiros ativos.</p>`}
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><label>Nome</label></div>
-        <input type="text" id="cfNome" placeholder="${avulso ? "Ex: Diarista, Reparo na bomba…" : "Ex: Funcionário, Conta de luz…"}" value="${editando ? (c.nome || "").replace(/"/g, "&quot;") : ""}">
+        <input type="text" id="cfNome" placeholder="Ex: Funcionário, Conta de luz…" value="${editando ? (c.nome || "").replace(/"/g, "&quot;") : ""}">
       </div>
-      ${avulso ? "" : `
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg><label>Categoria</label></div>
         <select id="cfCategoria">
           ${cats.map(([v, l]) => `<option value="${v}" ${editando && c.categoria === v ? "selected" : ""}>${l}</option>`).join("")}
         </select>
-      </div>`}
+      </div>
       <div class="campo-form">
-        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>${avulso ? "Valor (R$)" : "Valor mensal (R$)"}</label></div>
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Valor mensal (R$)</label></div>
         <input type="text" inputmode="decimal" id="cfValor" placeholder="Ex: 1.500,00" value="${editando && c.valorMensal ? formatarNumeroBR(c.valorMensal, 2) : ""}" onblur="formatarMoedaBlur(this)">
       </div>
       <div class="campo-form">
-        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>${avulso ? "Data" : "Válido a partir de"}</label></div>
+        <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><label>Válido a partir de</label></div>
         <input type="date" id="cfDataInicio" value="${editando ? (c.dataInicio || "") : _defaultInicio}">
       </div>
-      ${avulso ? "" : `<p class="rc-print-dica" style="margin:2px 0 10px">O custo é rateado a partir dessa data. Já vem com o início do cultivo mais antigo para cobrir os viveiros em andamento — ajuste se quiser.</p>`}
+      <p class="rc-print-dica" style="margin:2px 0 10px">O custo é rateado a partir dessa data. Já vem com o início do cultivo mais antigo para cobrir os viveiros em andamento — ajuste se quiser.</p>
       <div id="msg-cf-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-      <button class="botao-salvar" onclick="${avulso ? "salvarCustoAvulso()" : `salvarCustoFixo(${editando ? index : "null"})`}">
+      <button class="botao-salvar" onclick="salvarCustoFixo(${editando ? index : "null"})">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Salvar
       </button>
@@ -5336,70 +5323,6 @@ async function salvarCustoFixo(index) {
 // Funcao pura -> tem teste.
 function _ratearIgual(valorTotal, n) {
   return (valorTotal > 0 && n > 0) ? valorTotal / n : null;
-}
-
-// Viveiros com ciclo ATIVO que cobre a data (para ratear um custo avulso).
-// Devolve {index, id, cicloId, nome} de cada um.
-function _viveirosAtivosNaDataLista(ymd) {
-  const hoje = _hojeLocal();
-  const lista = [];
-  viveiros.forEach((v, i) => {
-    const ini = v.dataPreparacao || v.dataPovoamento;
-    if (ini && ini <= ymd && ymd <= hoje) {
-      lista.push({ index: i, id: v.id, cicloId: v.cicloId || null, nome: v.nome });
-    }
-  });
-  return lista;
-}
-
-// Custo AVULSO rateado: uma despesa de uma vez so (ex: diarista, reparo) que
-// serve a fazenda toda. Em vez de um custo fixo mensal, cria um "outro custo"
-// em cada viveiro ativo na data, com o valor dividido igualmente. Reaproveita
-// o fluxo de custo manual (ja testado) — nao mexe no motor de rateio nem no banco.
-async function salvarCustoAvulso() {
-  if (_bloqueioEdicao()) return;
-  const botao = document.querySelector(".botao-salvar");
-  if (botao?.disabled) return; // trava contra duplo toque
-  const nome = (document.getElementById("cfNome").value || "").trim();
-  const valorTotal = parseMoedaBR(document.getElementById("cfValor").value || "0");
-  const data = document.getElementById("cfDataInicio").value || null;
-  const erro = document.getElementById("msg-cf-erro");
-  const mostrarErro = (m) => { if (erro) { erro.textContent = m; erro.style.display = "block"; } };
-  if (erro) erro.style.display = "none";
-
-  if (!nome) { mostrarErro("Informe o nome do custo."); return; }
-  // "Ração" e nome reservado (o custo de racao e derivado dos lancamentos).
-  if (_normNomeCusto(nome) === "racao") {
-    mostrarErro('Para custo de ração use "Lançar ração" — esse nome é reservado.'); return;
-  }
-  if (!valorTotal || valorTotal <= 0) { mostrarErro("Informe um valor válido."); return; }
-  if (!data) { mostrarErro("Informe a data."); return; }
-
-  const ativos = _viveirosAtivosNaDataLista(data);
-  if (ativos.length === 0) { mostrarErro("Nenhum viveiro estava ativo nessa data para ratear o custo."); return; }
-  const valorCada = _ratearIgual(valorTotal, ativos.length);
-
-  const restaurar = _travarBotao(botao, "Salvando...");
-  const usuario = await pegarUsuarioLogado();
-  if (!usuario) { restaurar(); return; }
-
-  const linhas = ativos.map(a => ({
-    user_id: usuario.id, viveiro_id: a.id, tipo: "outro",
-    nome_produto: nome, valor: valorCada, categoria: nome, data,
-    ciclo_id: a.cicloId, observacao: "Rateio da fazenda",
-  }));
-  const { data: salvo, error } = await supabaseClient.from("custos").insert(linhas).select();
-  if (error) { console.log(error); mostrarErro("Erro ao salvar: " + error.message); restaurar(); return; }
-
-  (salvo || []).forEach(row => {
-    const v = viveiros.find(x => x.id === row.viveiro_id);
-    if (!v) return;
-    if (!v.custos) v.custos = [];
-    v.custos.push({ id: row.id, tipo: "outro", produtoId: null, nomeProduto: nome, quantidadeG: null, valor: valorCada, categoria: nome, data, observacao: "Rateio da fazenda", cicloId: row.ciclo_id });
-  });
-  restaurar();
-  _toastSucesso(`R$ ${formatarNumeroBR(valorTotal, 2)} rateado em ${ativos.length} viveiro(s) — R$ ${formatarNumeroBR(valorCada, 2)} cada.`);
-  abrirCustosFixos();
 }
 
 async function toggleCustoFixo(index, botao) {
@@ -9307,6 +9230,7 @@ function abrirLancarOutroCusto(index = "") {
   const area = document.getElementById("area-gestao");
   const hoje = _hojeLocal();
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(x => x.v.dataPovoamento || x.v.dataPreparacao);
+  if (!dentro) _outroCustoModo = "um"; // sempre abre em "só um viveiro"
 
   if (!dentro && ativos.length === 0) {
     area.innerHTML = `
@@ -9336,7 +9260,11 @@ function abrirLancarOutroCusto(index = "") {
       </div>
       <div class="form-corpo">
         ${dentro ? "" : `
-        <div class="campo-form">
+        <div class="fin-modo-toggle" style="margin-bottom:12px">
+          <button type="button" class="fin-modo-btn ativo" data-modo="um" onclick="_outroCustoSetModo('um')">Só um viveiro</button>
+          <button type="button" class="fin-modo-btn" data-modo="ratear" onclick="_outroCustoSetModo('ratear')">Ratear entre viveiros</button>
+        </div>
+        <div class="campo-form" id="oc-sel-um">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
             <label>Viveiro</label>
@@ -9344,6 +9272,16 @@ function abrirLancarOutroCusto(index = "") {
           <select id="viveiroOutroCusto">
             ${ativos.map(x => `<option value="${x.i}">${_esc(x.v.nome)}</option>`).join("")}
           </select>
+        </div>
+        <div id="oc-sel-ratear" style="display:none">
+          <div class="campo-label" style="margin-bottom:6px">
+            <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+            <label>Viveiros (dividir entre)</label>
+          </div>
+          <div class="oc-viv-lista">
+            ${ativos.map(x => `<label class="oc-viv-item"><input type="checkbox" class="oc-viv-check" value="${x.i}" checked><span>${_esc(x.v.nome)}</span></label>`).join("")}
+          </div>
+          <p class="rc-print-dica" style="margin:2px 0 8px">O valor será dividido igualmente entre os viveiros marcados.</p>
         </div>`}
         <div class="campo-form">
           <div class="campo-label">
@@ -9370,7 +9308,7 @@ function abrirLancarOutroCusto(index = "") {
           </div>
         </div>
         <div id="msg-outro-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarOutroCusto(${dentro ? index : ""})">
+        <button class="botao-salvar" onclick="${dentro ? `salvarOutroCusto(${index})` : "salvarOutroCustoDispatch()"}">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
         </button>
@@ -9435,6 +9373,73 @@ async function salvarOutroCusto(index = "") {
   reabilitar();
 
   _toastSucesso(`Custo lançado: ${descricao} — R$ ${formatarNumeroBR(valor, 2)}`);
+}
+
+// Alterna, na tela "Outro custo", entre lançar para UM viveiro ou RATEAR entre
+// vários — sem re-renderizar (preserva o que já foi digitado em data/nome/valor).
+function _outroCustoSetModo(modo) {
+  _outroCustoModo = modo;
+  const um = document.getElementById("oc-sel-um");
+  const rat = document.getElementById("oc-sel-ratear");
+  if (um) um.style.display = modo === "um" ? "" : "none";
+  if (rat) rat.style.display = modo === "ratear" ? "" : "none";
+  document.querySelectorAll(".fin-modo-btn").forEach(b => b.classList.toggle("ativo", b.dataset.modo === modo));
+}
+
+// O botão Salvar (aberto pelo menu) decide qual caminho seguir.
+function salvarOutroCustoDispatch() {
+  if (_outroCustoModo === "ratear") return salvarOutroCustoRateado();
+  return salvarOutroCusto("");
+}
+
+// Rateio de um custo avulso entre os viveiros MARCADOS: divide o valor
+// igualmente e cria um "outro custo" em cada um (mesmo fluxo do custo manual).
+async function salvarOutroCustoRateado() {
+  if (_bloqueioEdicao()) return;
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+
+  const data = document.getElementById("dataOutroCusto").value;
+  const descricao = (document.getElementById("nomeOutroCusto").value || "").trim();
+  const valorTotal = parseMoedaBR(document.getElementById("valorOutroCusto").value || "0");
+  const erroOutro = document.getElementById("msg-outro-custo-erro");
+  const _erro = (m) => { if (erroOutro) { erroOutro.textContent = m; erroOutro.style.display = "block"; } };
+  if (erroOutro) erroOutro.style.display = "none";
+
+  if (!descricao) { _erro("Digite o nome do custo."); return; }
+  if (_normNomeCusto(descricao) === "racao") {
+    _erro('Para custo de ração use "Lançar ração" — esse nome é reservado.'); return;
+  }
+  if (!data) { _erro("Informe a data."); return; }
+  if (!valorTotal || valorTotal <= 0) { _erro("Informe um valor válido."); return; }
+
+  const marcados = [...document.querySelectorAll(".oc-viv-check:checked")]
+    .map(c => Number(c.value)).filter(i => viveiros[i]);
+  if (marcados.length === 0) { _erro("Marque pelo menos um viveiro."); return; }
+
+  const valorCada = _ratearIgual(valorTotal, marcados.length);
+
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
+  const linhas = marcados.map(i => ({
+    user_id: usuario.id, viveiro_id: viveiros[i].id, tipo: "outro",
+    nome_produto: descricao, valor: valorCada, categoria: descricao, data,
+    ciclo_id: viveiros[i].cicloId || null, observacao: "Rateio entre viveiros",
+  }));
+  const { data: salvo, error } = await supabaseClient.from("custos").insert(linhas).select();
+  if (error) { console.log(error); _erro("Erro ao salvar: " + error.message); restaurar(); return; }
+
+  (salvo || []).forEach(row => {
+    const v = viveiros.find(x => x.id === row.viveiro_id);
+    if (!v) return;
+    if (!v.custos) v.custos = [];
+    v.custos.push({ id: row.id, tipo: "outro", produtoId: null, nomeProduto: descricao, quantidadeG: null, valor: valorCada, categoria: descricao, data, observacao: "Rateio entre viveiros", cicloId: row.ciclo_id });
+  });
+  restaurar();
+  _toastSucesso(`R$ ${formatarNumeroBR(valorTotal, 2)} rateado em ${marcados.length} viveiro(s) — R$ ${formatarNumeroBR(valorCada, 2)} cada.`);
+  abrirMenuCusto();
 }
 
 function abrirHistoricoCustosDireto(index) {
