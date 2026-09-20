@@ -7898,6 +7898,36 @@ function _custoFixoRateado(iniYmd, fimYmd) {
   return total;
 }
 
+// Igual ao _custoFixoRateado, mas SEPARADO por item (funcionário, energia,
+// limpeza…): acumula a parcela diária de CADA custo fixo no seu próprio balde.
+// Como cada parcela é valorMensal/dias/ativos, a soma dos itens bate exatamente
+// com o total do _custoFixoRateado. Devolve [{ nome, categoria, valor }] ordenado
+// do maior para o menor.
+function _custoFixoRateadoPorItem(iniYmd, fimYmd) {
+  if (!iniYmd || !fimYmd || iniYmd > fimYmd) return [];
+  if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return [];
+  const hoje = _hojeLocal();
+  const acc = new Map(); // chave do custo fixo -> { nome, categoria, valor }
+  let cur = iniYmd, guard = 0;
+  while (cur <= fimYmd && guard < 5000) {
+    const nAtivos = _viveirosAtivosNaData(cur, hoje);
+    if (nAtivos > 0) {
+      for (const cf of custosFixos) {
+        if (!_custoFixoValeNaData(cf, cur)) continue;
+        const parcela = _rateioFixoDia(cf.valorMensal, cur, nAtivos);
+        if (parcela <= 0) continue;
+        const chave = cf.id || cf.nome;
+        const at = acc.get(chave) || { nome: cf.nome || _custoFixoCatLabel(cf.categoria), categoria: _custoFixoCatLabel(cf.categoria), valor: 0 };
+        at.valor += parcela;
+        acc.set(chave, at);
+      }
+    }
+    cur = _maAddDias(cur, 1);
+    guard++;
+  }
+  return [...acc.values()].filter(x => x.valor > 0.005).sort((a, b) => b.valor - a.valor);
+}
+
 // Rótulo amigável da categoria
 function _custoFixoCatLabel(cat) {
   return ({ mao_de_obra: "Mão de obra", energia: "Energia", aluguel: "Aluguel", agua: "Água", manutencao: "Manutenção", outro: "Outro" })[cat] || "Outro";
@@ -9430,9 +9460,13 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   const resultado = document.getElementById(elementoId);
   const pares = _custosDoEscopoPares(viveiro);
   const custos = pares.map(p => p.c);
-  // Rateio dos custos fixos (funcionário/energia) do ciclo atual — só de leitura,
-  // para o total desta tela bater com o "Custo parcial" do viveiro.
-  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, _hojeLocal());
+  // Rateio dos custos fixos (funcionário/energia/limpeza) do ciclo atual — só de
+  // leitura, para o total desta tela bater com o "Custo parcial" do viveiro.
+  // rateioItens: o mesmo rateio SEPARADO por item, para listar um card por custo
+  // (funcionário, energia, limpeza…) em vez de um monte só. A soma bate.
+  const _iniCustos = viveiro.dataPreparacao || viveiro.dataPovoamento;
+  const rateioFixo = _custoFixoRateado(_iniCustos, _hojeLocal());
+  const rateioItens = _custoFixoRateadoPorItem(_iniCustos, _hojeLocal());
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome — soma quantidade e valor (sem datas)
@@ -9502,17 +9536,18 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
         </div>`;
       });
       if (rateioFixo > 0) {
-        html += `<div class="cd-data-header">Custos fixos</div>
+        html += `<div class="cd-data-header">Custos fixos</div>`;
+        html += rateioItens.map(it => `
           <div class="cd-card cd-card-auto">
             <div class="cd-l1">
-              <span class="cd-nome">Mão de obra e custos fixos</span>
-              <span class="cd-valor">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
+              <span class="cd-nome">${_esc(it.nome)}</span>
+              <span class="cd-valor">R$ ${formatarNumeroBR(it.valor, 2)}</span>
             </div>
             <div class="cd-l2">
-              <span class="cd-cat">Rateio automático</span>
+              <span class="cd-cat">${_esc(it.categoria)} · rateio automático</span>
               <span class="cd-badge">Automático</span>
             </div>
-          </div>`;
+          </div>`).join("");
       }
       corpo = html;
     }
@@ -9538,14 +9573,14 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
         }).join("");
   }
 
-  const rateioCard = rateioFixo > 0 ? `<div class="custo-card custo-card-rateio">
+  const rateioCard = rateioItens.map(it => `<div class="custo-card custo-card-rateio">
         <div class="custo-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
         <div class="custo-card-info">
-          <span class="custo-card-nome">Mão de obra e custos fixos</span>
-          <span class="custo-card-qtd">Rateio automático</span>
+          <span class="custo-card-nome">${_esc(it.nome)}</span>
+          <span class="custo-card-qtd">${_esc(it.categoria)} · rateio automático</span>
         </div>
-        <span class="custo-card-valor">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
-      </div>` : "";
+        <span class="custo-card-valor">R$ ${formatarNumeroBR(it.valor, 2)}</span>
+      </div>`).join("");
 
   resultado.innerHTML = `
     <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
@@ -9867,7 +9902,9 @@ async function salvarEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
 function imprimirCustos(viveiroIndex) {
   const viveiro = viveiros[viveiroIndex];
   const custos = _custosDoEscopo(viveiro);
-  const rateioFixo = _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, _hojeLocal());
+  const _iniImp = viveiro.dataPreparacao || viveiro.dataPovoamento;
+  const rateioFixo = _custoFixoRateado(_iniImp, _hojeLocal());
+  const rateioItens = _custoFixoRateadoPorItem(_iniImp, _hojeLocal());
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome (igual à tela): uma linha por item
@@ -9905,7 +9942,7 @@ function imprimirCustos(viveiroIndex) {
     <thead><tr><th>Descrição</th><th style="text-align:center">Quantidade</th><th>Valor</th></tr></thead>
     <tbody>
       ${linhas}
-      ${rateioFixo > 0 ? `<tr><td>Mão de obra e custos fixos</td><td>rateio</td><td>R$ ${formatarNumeroBR(rateioFixo, 2)}</td></tr>` : ""}
+      ${rateioItens.map(it => `<tr><td>${_esc(it.nome)}</td><td>rateio</td><td>R$ ${formatarNumeroBR(it.valor, 2)}</td></tr>`).join("")}
       <tr class="total-row"><td colspan="2">TOTAL</td><td>R$ ${formatarNumeroBR(total, 2)}</td></tr>
     </tbody>
   </table>
