@@ -1349,7 +1349,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
 
       <div class="vc-info-lista">
         <div class="vc-info-item">
-          <div class="vc-info-icone verde">⏱️</div>
+          <div class="vc-info-icone verde">🗓️</div>
           <div>
             <strong>Dias de cultivo</strong>
             <p>${_diasCultivoVv}</p>
