@@ -1853,7 +1853,7 @@ function abrirRacoesInsumos() {
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         </div>
-        <h2 class="form-titulo">Rações / Insumos</h2>
+        <h2 class="form-titulo">Lançar ração e insumos</h2>
       </div>
       <div class="form-corpo">
         <div class="historico-opcoes-grid">
@@ -4513,7 +4513,7 @@ function abrirMenuCusto() {
         <div class="historico-opcoes-grid">
           <button class="botao-historico-opcao" onclick="abrirLancarCustoProduto()">
             <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            Produto cadastrado
+            Lançar insumos
           </button>
           <button class="botao-historico-opcao" onclick="abrirCustosFixos()">
             <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
