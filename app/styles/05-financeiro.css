@@ -31,10 +31,13 @@
 
 .cf-lista { display: flex; flex-direction: column; gap: 10px; }
 .cf-card {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    display: flex; flex-direction: column; gap: 10px;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
     padding: 12px 14px;
 }
+/* Linha de cima: ícone + nome/data + valor. O texto ocupa a largura toda
+   (os botões saíram para a linha de baixo), então nunca mais espreme/quebra. */
+.cf-card-top { display: flex; align-items: center; gap: 12px; }
 .cf-card-off { opacity: 0.55; }
 .cf-card-ico {
     width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
@@ -46,7 +49,8 @@
 .cf-card-cat { font-size: 11.5px; color: #9ca3af; }
 .cf-card-valor { font-size: 15px; font-weight: 700; color: #059669; white-space: nowrap; }
 .cf-card-valor small { font-size: 10.5px; font-weight: 500; color: #9ca3af; }
-.cf-card-acoes { display: flex; gap: 6px; }
+/* Botões numa segunda linha, alinhados à direita. */
+.cf-card-acoes { display: flex; gap: 6px; justify-content: flex-end; }
 /* Diálogo: o novo valor vale a partir de hoje ou desde o início? */
 .cf-vig-fundo {
     position: fixed; inset: 0; z-index: 9998; background: rgba(15,23,42,0.45);

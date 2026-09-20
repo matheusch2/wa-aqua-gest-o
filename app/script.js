@@ -5016,14 +5016,24 @@ function abrirCustosFixos() {
 
   const cards = custosFixos.length === 0
     ? `<p class="sobrevivencia-texto" style="margin:18px 0">Nenhum custo fixo cadastrado ainda.<br><small>Cadastre mão de obra, energia e outros custos mensais para rateá-los automaticamente entre os viveiros.</small></p>`
-    : custosFixos.map((c, i) => `
+    : custosFixos.map((c, i) => {
+        // Só a data no subtítulo (o nome já diz o que é; a categoria fica na
+        // edição). Antes vinha "Mão de obra · desde… até…" e, espremido entre o
+        // valor e os botões, quebrava palavra por palavra.
+        const meta = [
+          c.dataInicio ? "desde " + formatarData(c.dataInicio) : "",
+          c.dataFim ? "até " + formatarData(c.dataFim) : (c.ativo ? "" : "inativo"),
+        ].filter(Boolean).join(" · ");
+        return `
         <div class="cf-card${c.ativo ? "" : " cf-card-off"}">
-          <div class="cf-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="cf-card-info">
-            <span class="cf-card-nome">${_esc(c.nome)}</span>
-            <span class="cf-card-cat">${_custoFixoCatLabel(c.categoria)}${c.dataInicio ? " · desde " + formatarData(c.dataInicio) : ""}${c.dataFim ? " até " + formatarData(c.dataFim) : (c.ativo ? "" : " · inativo")}</span>
+          <div class="cf-card-top">
+            <div class="cf-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div class="cf-card-info">
+              <span class="cf-card-nome">${_esc(c.nome)}</span>
+              ${meta ? `<span class="cf-card-cat">${meta}</span>` : ""}
+            </div>
+            <div class="cf-card-valor">R$ ${formatarNumeroBR(c.valorMensal, 2)}<small>/mês</small></div>
           </div>
-          <div class="cf-card-valor">R$ ${formatarNumeroBR(c.valorMensal, 2)}<small>/mês</small></div>
           <div class="cf-card-acoes">
             <button class="cf-btn-acao" title="${c.ativo ? "Desativar" : "Ativar"}" onclick="toggleCustoFixo(${i}, this)">
               ${c.ativo
@@ -5038,7 +5048,8 @@ function abrirCustosFixos() {
             <button class="confirmar-boleto-btn-cancelar" onclick="document.getElementById('cf-conf-${i}').style.display='none'">Cancelar</button>
             <button class="confirmar-boleto-btn-excluir" onclick="excluirCustoFixo(${i}, this)">Excluir</button>
           </div>
-        </div>`).join("");
+        </div>`;
+      }).join("");
 
   area.innerHTML = `
     <div class="fin-topo-acoes">
