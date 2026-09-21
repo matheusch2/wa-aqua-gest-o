@@ -5545,6 +5545,42 @@ function _energiaSetValor(i, txt) {
   _energiaAtualizarTotal();
 }
 
+// Ao terminar de editar (ou zerar) UM viveiro, o que falta para fechar a conta
+// escorre automaticamente para os OUTROS — assim o total continua batendo. Com
+// 2 viveiros, mexer num ajusta o outro na hora. Com 3+, o restante é dividido
+// entre os demais na proporção do que já tinham (ou pelos dias, se estavam zerados).
+function _energiaRebalancear(iEditado) {
+  if (!_energiaSegs[iEditado] || _energiaSegs.length < 2) return;
+  const conta = parseMoedaBR(document.getElementById("enValor").value) || 0;
+  const fixo = Number(_energiaSegs[iEditado].valor) || 0;
+  const outros = _energiaSegs.map((s, i) => ({ s, i })).filter(x => x.i !== iEditado);
+
+  // Editou um valor >= a conta inteira: os outros zeram (o "Distribuído" avisa
+  // se passou). Deixamos honesto em vez de forçar.
+  if (fixo >= conta) { outros.forEach(x => { x.s.valor = 0; }); _energiaRenderRateio(); return; }
+
+  const restante = Math.round((conta - fixo) * 100) / 100;
+  const somaOutros = outros.reduce((a, x) => a + (Number(x.s.valor) || 0), 0);
+  const totalDiasOutros = outros.reduce((a, x) => a + (x.s.dias || 0), 0);
+  outros.forEach(x => {
+    let frac;
+    if (somaOutros > 0) frac = (Number(x.s.valor) || 0) / somaOutros;
+    else if (totalDiasOutros > 0) frac = (x.s.dias || 0) / totalDiasOutros;
+    else frac = 1 / outros.length;
+    x.s.valor = Math.round(restante * frac * 100) / 100;
+  });
+
+  // Centavos do arredondamento vão para o maior dos OUTROS, pra somar exato
+  // (o viveiro que você acabou de editar fica com o valor que você digitou).
+  const somaFinal = _energiaSegs.reduce((a, s) => a + (Number(s.valor) || 0), 0);
+  const resto = Math.round((conta - somaFinal) * 100) / 100;
+  if (resto !== 0) {
+    const maior = outros.reduce((a, b) => (b.s.valor > a.s.valor ? b : a), outros[0]);
+    maior.s.valor = Math.round((maior.s.valor + resto) * 100) / 100;
+  }
+  _energiaRenderRateio();
+}
+
 function _energiaAtualizarTotal() {
   const el = document.getElementById("en-total");
   if (!el) return;
@@ -5576,7 +5612,7 @@ function _energiaRenderRateio() {
 
   box.innerHTML = `
     <div class="en-sec-tit">Rateio entre os viveiros</div>
-    <p class="en-dica">Sugestão pelos dias que cada um rodou no período. <b>Ajuste na mão</b> conforme o gasto real — aeradores, bombas, tamanho do viveiro.</p>
+    <p class="en-dica">Sugestão pelos dias que cada um rodou no período. <b>Ajuste na mão</b> conforme o gasto real — aeradores, bombas, tamanho do viveiro. Ao mexer (ou zerar) um viveiro, os outros se ajustam sozinhos para fechar a conta.</p>
     <div class="en-atalhos">
       <button class="en-atalho" onclick="_energiaDistribuir('dias')">Sugerir por dias</button>
       <button class="en-atalho" onclick="_energiaDistribuir('igual')">Dividir igual</button>
@@ -5592,7 +5628,7 @@ function _energiaRenderRateio() {
           <div class="en-item-val">
             <span class="en-item-rs">R$</span>
             <input type="text" inputmode="decimal" id="en-v-${i}" value="${formatarNumeroBR(s.valor, 2)}"
-                   oninput="_energiaSetValor(${i}, this.value)" onblur="formatarMoedaBlur(this); _energiaSetValor(${i}, this.value)">
+                   oninput="_energiaSetValor(${i}, this.value)" onblur="formatarMoedaBlur(this); _energiaSetValor(${i}, this.value); _energiaRebalancear(${i})">
           </div>
         </div>`).join("")}
     </div>
