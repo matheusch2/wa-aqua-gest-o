@@ -1775,15 +1775,15 @@ function abrirViveiro(index) {
 
       <div class="vv-secao-lbl">Ações de manejo</div>
       <div class="vv-manejo-grid">
-        <button class="vv-manejo-btn" onclick="mostrarLancamentoRacao(${index})">
+        <button class="vv-manejo-btn" onclick="salvarScroll(); mostrarLancamentoRacao(${index})">
           <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
           <span>Lançar ração</span>
         </button>
-        <button class="vv-manejo-btn" onclick="abrirBiometria(${index})">
+        <button class="vv-manejo-btn" onclick="salvarScroll(); abrirBiometria(${index})">
           <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="1"/><line x1="6" y1="7" x2="6" y2="17"/><line x1="10" y1="7" x2="10" y2="12"/><line x1="14" y1="7" x2="14" y2="12"/><line x1="18" y1="7" x2="18" y2="17"/></svg>
           <span>Lançar biometria</span>
         </button>
-        <button class="vv-manejo-btn" onclick="abrirDespesca(${index})">
+        <button class="vv-manejo-btn" onclick="salvarScroll(); abrirDespesca(${index})">
           <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           <!-- "parcial" no rótulo não é detalhe: o salvarDespesca grava
                tipo "Parcial" fixo, não existe caminho aqui para a despesca
@@ -1793,7 +1793,7 @@ function abrirViveiro(index) {
                "Encerrar ciclo". -->
           <span>Lançar despesca parcial</span>
         </button>
-        <button class="vv-manejo-btn" onclick="abrirLancarCusto(${index})">
+        <button class="vv-manejo-btn" onclick="salvarScroll(); abrirLancarCusto(${index})">
           <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <span>Lançar custo</span>
         </button>
@@ -2330,7 +2330,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           Salvar lançamento
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="${dentroDoViveiro ? `abrirViveiro(${indexSelecionado})` : "voltarMenuGestao()"}">
+        <button class="botao-voltar-form" onclick="${dentroDoViveiro ? `abrirViveiro(${indexSelecionado}); restaurarScroll()` : "voltarMenuGestao()"}">
           Voltar
         </button>
       </div>
@@ -2547,7 +2547,7 @@ function abrirBiometria(index) {
           Salvar biometria
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index}); restaurarScroll()">
           Voltar
         </button>
       </div>
@@ -2719,7 +2719,7 @@ function abrirDespesca(index) {
           Salvar despesca
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index}); restaurarScroll()">
           Voltar
         </button>
       </div>
@@ -8965,7 +8965,7 @@ function abrirLancarCusto(index) {
           </button>
         </div>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="abrirViveiro(${index})">Voltar</button>
+        <button class="botao-voltar-form" onclick="abrirViveiro(${index}); restaurarScroll()">Voltar</button>
       </div>
     </div>
   `;
