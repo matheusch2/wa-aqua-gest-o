@@ -7543,6 +7543,52 @@ function gerarRelatorioImpressao() {
     return p.join(" ");
   })();
 
+  // ── Semáforo de indicadores (mesmos limites do painel do ciclo) ──
+  const _corSobre = ciclo.sobrevivencia > 0 ? (ciclo.sobrevivencia >= 70 ? "#16a34a" : ciclo.sobrevivencia >= 50 ? "#d97706" : "#dc2626") : "inherit";
+  const _corFca = ciclo.fca > 0 ? (ciclo.fca <= 1.5 ? "#16a34a" : ciclo.fca <= 2.0 ? "#d97706" : "#dc2626") : "inherit";
+  const _corLucro = temPreco ? (lucroLiquido >= 0 ? "#16a34a" : "#dc2626") : "inherit";
+
+  // ── Histórico de biometria: tabela + torre do peso + crescimento semanal ──
+  const _sBio = _seriesCiclo(ciclo);
+  const _bioLinhas = _sBio.bios.map((b, i) =>
+    `<tr><td>${_sBio.datas[i]}</td><td>${_sBio.dias[i]}</td><td><b>${fmt(_sBio.peso[i], 1)}</b></td><td>${_sBio.obs[i] === "—" ? "—" : _sBio.obs[i] + " g"}</td></tr>`
+  ).join("");
+  // Crescimento médio semanal: ganho de peso entre a 1ª e a última biometria,
+  // trazido para base de 7 dias (mede a engorda real, sem chutar o peso da PL).
+  const _cresSemanal = (() => {
+    const n = _sBio.peso.length;
+    if (n < 2) return null;
+    const dDias = _sBio.dias[n - 1] - _sBio.dias[0];
+    if (dDias <= 0) return null;
+    return (_sBio.peso[n - 1] - _sBio.peso[0]) / dDias * 7;
+  })();
+  // Torre do peso médio: uma coluna por biometria, verde escurecendo conforme o
+  // peso sobe (progressão), com o peso em cima e o dia de cultivo embaixo.
+  const _gBio = (() => {
+    const n = _sBio.peso.length;
+    if (n < 1) return `<p style="color:#999;font-size:11px;margin-top:6px">Sem biometrias registradas neste ciclo.</p>`;
+    const W = 300, H = 130, padB = 20, padT = 16;
+    const max = Math.max(..._sBio.peso, 1);
+    const bw = Math.min(40, (W - 10) / n - 8);
+    const gap = ((W - 10) - bw * n) / (n + 1);
+    const verde = (t) => {
+      const a = [159, 213, 205], b = [11, 107, 99]; // #9fd5cd → #0b6b63
+      const c = a.map((v, k) => Math.round(v + (b[k] - v) * t));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    };
+    const bars = _sBio.peso.map((p, i) => {
+      const h = Math.max(1, (p / max) * (H - padB - padT));
+      const x = 5 + gap + i * (bw + gap);
+      const y = (H - padB) - h;
+      const cor = n > 1 ? verde(i / (n - 1)) : "#0b6b63";
+      const cx = (x + bw / 2).toFixed(1);
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${cor}"/>` +
+        `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="8" fill="#555" text-anchor="middle">${fmt(p, 1)}</text>` +
+        `<text x="${cx}" y="${(H - padB + 11).toFixed(1)}" font-size="8" fill="#999" text-anchor="middle">D${_sBio.dias[i]}</text>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${W} ${H}"><line x1="5" y1="${H - padB}" x2="${W - 5}" y2="${H - padB}" stroke="#ddd"/>${bars}</svg>`;
+  })();
+
   const htmlEnxuto = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>Relatório de Ciclo — ${_esc(ciclo.nomeViveiro || "")}</title>
 <style>
@@ -7572,6 +7618,14 @@ function gerarRelatorioImpressao() {
   .fill { height: 100%; background: #0b6b63; border-radius: 2px; }
   .custos td.pct { text-align: right; color: #555; width: 13%; }
   .concl { font-size: 11.5px; line-height: 1.6; color: #333; text-align: justify; margin-top: 4px; }
+  .bio-tab td, .bio-tab th { font-size: 11px; }
+  .bio-tab th { color: #555; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; text-align: right; padding: 5px 4px; border-bottom: 1px solid #d8dcdb; }
+  .bio-tab th:first-child { text-align: left; }
+  .bio-tab td { padding: 4px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+  .bio-tab td:first-child { text-align: left; color: #555; }
+  .bio-cresc { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 7px 2px 0; border-top: 1px solid #d8dcdb; }
+  .bio-cresc span { font-size: 10.5px; color: #0b6b63; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  .bio-cresc b { font-size: 16px; color: #0b6b63; font-weight: 800; }
   .rodape { margin-top: 22px; padding-top: 8px; border-top: 1px solid #d8dcdb; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
 </style></head><body>
   <div class="cab">
@@ -7605,8 +7659,8 @@ function gerarRelatorioImpressao() {
   <div class="ind">
     <div><small>Produtividade</small><b>${fmt(ciclo.produtividade, 0)}</b></div>
     <div><small>Peso final</small><b>${fmt(ciclo.pesoFinal, 1)} g</b></div>
-    <div><small>Sobrevivência</small><b>${fmt(ciclo.sobrevivencia, 1)}%</b></div>
-    <div><small>FCA</small><b>${fmt(ciclo.fca, 2)}</b></div>
+    <div><small>Sobrevivência</small><b style="color:${_corSobre}">${fmt(ciclo.sobrevivencia, 1)}%</b></div>
+    <div><small>FCA</small><b style="color:${_corFca}">${fmt(ciclo.fca, 2)}</b></div>
   </div>
   <div class="cols" style="margin-top:4px">
     <div>
@@ -7616,7 +7670,7 @@ function gerarRelatorioImpressao() {
         <tr><td class="lbl">Custo total</td><td class="val">R$ ${fmt(custoTotal, 2)}</td></tr>
         <tr><td class="lbl">Preço médio de venda</td><td class="val">${temPreco ? "R$ " + fmt(precoGeral, 2) + "/kg" : "—"}</td></tr>
         <tr><td class="lbl">Custo por kg</td><td class="val">R$ ${fmt(custoPorKg, 2)}</td></tr>
-        <tr><td class="lbl">Lucro líquido</td><td class="val">${rs(lucroLiquido)}</td></tr>
+        <tr><td class="lbl">Lucro líquido</td><td class="val" style="color:${_corLucro}">${rs(lucroLiquido)}</td></tr>
       </table>
       <h2>Resumo técnico</h2>
       <p class="concl">${_resumoTec}</p>
@@ -7625,6 +7679,20 @@ function gerarRelatorioImpressao() {
       <h2>Custos do ciclo</h2>
       ${_gCustos}
       <div style="margin-top:8px">${_legCustos}<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#0b6b63;padding-top:5px;margin-top:2px;border-top:1px solid #d8dcdb"><span>Custo total</span><span>R$ ${fmt(custoTotal, 2)}</span></div></div>
+    </div>
+  </div>
+  <div class="cols" style="margin-top:4px">
+    <div>
+      <h2>Histórico de biometria</h2>
+      <table class="bio-tab">
+        <thead><tr><th>Data</th><th>Dia</th><th>Peso (g)</th><th>Ganho/dia</th></tr></thead>
+        <tbody>${_bioLinhas || `<tr><td colspan="4" style="text-align:center;color:#999">Sem biometrias registradas.</td></tr>`}</tbody>
+      </table>
+      ${_cresSemanal != null ? `<div class="bio-cresc"><span>Crescimento médio semanal</span><b>${fmt(_cresSemanal, 1)} g/sem</b></div>` : ""}
+    </div>
+    <div>
+      <h2>Evolução do peso médio (g)</h2>
+      ${_gBio}
     </div>
   </div>
   <div class="rodape">
