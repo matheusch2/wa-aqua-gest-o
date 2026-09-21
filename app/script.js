@@ -7336,10 +7336,10 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>` : ""}
 
       <div class="rc2-acoes">
-        <button class="botao-voltar-form" style="margin:0;flex:1" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">Voltar</button>
-        <button class="botao-salvar" style="margin:0;flex:1" onclick="gerarRelatorioImpressao()">
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Imprimir relatório
+        <button class="botao-voltar-form" style="margin:0;flex:1;padding:11px 10px;font-size:14px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">Voltar</button>
+        <button class="botao-salvar" style="margin:0;flex:1;padding:11px 10px;font-size:14px;gap:6px" onclick="gerarRelatorioImpressao()">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir
         </button>
       </div>
 
