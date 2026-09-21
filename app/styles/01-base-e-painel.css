@@ -795,16 +795,23 @@ body.tema-escuro .botao-voltar-form.botao-perigo-outline:active {
     margin: 0;
 }
 
+/* Ícone do campo num "chip" verde-claro — mesmo motivo dos cards e botões: todo
+   ícone do app mora num quadradinho. Vale para TODO formulário (classe única). */
 .campo-icone {
-    width: 22px;
-    height: 22px;
+    width: 17px;
+    height: 17px;
+    padding: 6px;
+    background: #ecfdf5;
+    border-radius: 8px;
+    box-sizing: content-box;
     stroke: rgb(6, 107, 99);
     fill: none;
-    stroke-width: 1.8;
+    stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
     flex-shrink: 0;
 }
+body.tema-escuro .campo-icone { background: #052e2b; stroke: #34d399; }
 
 .botao-salvar {
     width: 100%;
