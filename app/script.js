@@ -1839,6 +1839,13 @@ function abrirViveiro(index) {
       <button class="botao-voltar-form" onclick="mostrarListaViveiros(posicaoNaLista(${index}))">Voltar</button>
     </div>
   `;
+
+  // Marca os cards SEM dado (valor "--") para apagá-los visualmente — o painel
+  // fica mais calmo até a biometria/estimativas existirem.
+  area.querySelectorAll(".painel-info .info-box").forEach(box => {
+    const v = (box.querySelector("strong")?.textContent || "").trim();
+    if (v === "--" || v.startsWith("-- ")) box.classList.add("info-box-vazio");
+  });
 }
 
 // ═══ CATÁLOGO DE RAÇÕES ════════════════════════════════════════════════════════
