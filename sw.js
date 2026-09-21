@@ -26,7 +26,7 @@
 // app/index.html (script.js?v=...). Ao publicar, bumpe os dois juntos: assim o
 // service worker muda, reinstala, apaga o cache antigo e re-guarda os arquivos
 // da versao nova — e a abertura offline nunca serve JavaScript velho.
-const CACHE = "waaqua-20260921p";
+const CACHE = "waaqua-20260921q";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
