@@ -5805,7 +5805,7 @@ function abrirBoletos(filtro) {
     <div class="fin-topo-acoes">
       <h3 class="titulo-secao" style="margin:0">Boletos</h3>
       <div class="bt-topo-btns">
-        <button class="fin-novo-btn fin-novo-btn-sec" onclick="imprimirBoletos()">🖨️ Imprimir</button>
+        <button class="fin-novo-btn fin-novo-btn-sec" onclick="imprimirBoletos()"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:5px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
         <button class="fin-novo-btn" onclick="abrirFormBoleto()">+ Novo boleto</button>
       </div>
     </div>
@@ -6338,7 +6338,7 @@ function abrirFinanceiro() {
   area.innerHTML = `
     <div class="fin-topo-acoes">
       <h3 class="titulo-secao" style="margin:0">Relatório financeiro</h3>
-      <button class="fin-novo-btn" onclick="imprimirRelatorioFinanceiro()">🖨️ Imprimir</button>
+      <button class="fin-novo-btn" onclick="imprimirRelatorioFinanceiro()"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:5px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
     </div>
     <div class="cfg-wrap">
       <div class="campo-form">
