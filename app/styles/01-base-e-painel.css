@@ -253,27 +253,37 @@ button {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    background: rgb(6, 107, 99);
+    gap: 10px;
+    background: linear-gradient(160deg, #0a7d72, #066b63);
     color: white;
     border: none;
-    border-radius: 14px;
-    padding: 18px 10px;
+    border-radius: 16px;
+    padding: 20px 10px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     width: 100%;
     text-align: center;
-    min-height: 80px;
+    min-height: 84px;
+    box-shadow: 0 4px 14px rgba(6,107,99,0.18);
+    transition: transform 0.12s, box-shadow 0.12s;
 }
 
 .botao-gestao:active {
     background: rgb(4, 85, 79);
+    transform: translateY(1px);
+    box-shadow: 0 2px 7px rgba(6,107,99,0.18);
 }
 
+/* Ícone dentro de um "chip" translúcido — mesmo motivo dos cards e dos botões
+   do viveiro: todo ícone do app "mora" num quadradinho. */
 .btn-svg {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
+    padding: 9px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 13px;
+    box-sizing: content-box;
     flex-shrink: 0;
     stroke: white;
     fill: none;
