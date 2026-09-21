@@ -119,23 +119,24 @@
 
 .botao-entrar {
     width: 100%;
-    padding: 14px;
-    background: rgb(6, 107, 99);
+    padding: 15px;
+    background: linear-gradient(180deg, #0d7a70 0%, #086b63 100%);
     color: white;
     border: none;
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 13px;
+    font-size: 15.5px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-top: 6px;
+    gap: 9px;
+    margin-top: 16px;
+    box-shadow: 0 8px 20px rgba(8,107,99,0.28);
 }
 
 .botao-entrar:hover {
-    background: rgb(4, 85, 79);
+    background: linear-gradient(180deg, #0b6b63 0%, #05554f 100%);
 }
 
 .link-esqueci {
@@ -181,18 +182,18 @@
 
 .botao-criar-conta {
     width: 100%;
-    padding: 12px;
-    background: transparent;
+    padding: 13px;
+    background: #fff;
     color: rgb(6, 107, 99);
-    border: 2px solid rgb(6, 107, 99);
-    border-radius: 12px;
-    font-size: 14px;
+    border: 1.5px solid #cfe6e1;
+    border-radius: 13px;
+    font-size: 14.5px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 9px;
 }
 
 .botao-criar-conta:hover {
