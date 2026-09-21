@@ -471,30 +471,32 @@ body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
 }
 
 .info-box {
-    background: #f8fafc;
-    border-radius: 14px;
-    padding: 12px 10px;
+    background: #fff;
+    border: 1px solid #eef1f0;
+    border-radius: 15px;
+    padding: 14px 11px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 4px;
+    box-shadow: 0 1px 3px rgba(6,107,99,0.04);
 }
 
 .info-box-icone {
-    width: 32px;
-    height: 32px;
-    background: rgba(6,107,99,0.10);
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    background: #ecfdf5;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
 }
 
 .info-box-icone svg {
-    width: 17px;
-    height: 17px;
+    width: 18px;
+    height: 18px;
     stroke: rgb(6,107,99);
     fill: none;
     stroke-width: 2;
@@ -508,14 +510,22 @@ body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
+    line-height: 1.25;
 }
 
 .info-box strong {
-    color: #1f2937;
-    font-size: 15px;
-    font-weight: 700;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 800;
 }
+
+/* Card sem dado ainda (ex.: biometria não lançada): valor e ícone apagados,
+   em vez de um "--" preto que puxava a atenção como se fosse importante. */
+.info-box-vazio { background: #fafbfb; }
+.info-box-vazio strong { color: #cbd5e1; font-weight: 700; }
+.info-box-vazio .info-box-icone { background: #f1f5f4; }
+.info-box-vazio .info-box-icone svg { stroke: #cbd5e1; }
 
 .tabela-historico {
     margin-top: 15px;
