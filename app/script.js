@@ -7550,6 +7550,9 @@ function gerarRelatorioImpressao() {
 
   // ── Histórico de biometria: tabela + torre do peso + crescimento semanal ──
   const _sBio = _seriesCiclo(ciclo);
+  // Ciclo longo (ex.: 130 dias, pesagem semanal) chega a ~13-14 biometrias: a
+  // tabela entra em modo compacto pra não estourar a página de impressão.
+  const _bioMuitas = _sBio.bios.length > 8;
   const _bioLinhas = _sBio.bios.map((b, i) =>
     `<tr><td>${_sBio.datas[i]}</td><td>${_sBio.dias[i]}</td><td><b>${fmt(_sBio.peso[i], 1)}</b></td><td>${_sBio.obs[i] === "—" ? "—" : _sBio.obs[i] + " g"}</td></tr>`
   ).join("");
@@ -7576,6 +7579,10 @@ function gerarRelatorioImpressao() {
       const c = a.map((v, k) => Math.round(v + (b[k] - v) * t));
       return `rgb(${c[0]},${c[1]},${c[2]})`;
     };
+    // Muita biometria: o peso em cima de cada barra embolaria, então some (o
+    // número exato está na tabela ao lado) e o dia aparece de 2 em 2.
+    const mostraPeso = n <= 8;
+    const mostraDia = (i) => n <= 10 || i % 2 === 0 || i === n - 1;
     const bars = _sBio.peso.map((p, i) => {
       const h = Math.max(1, (p / max) * (H - padB - padT));
       const x = 5 + gap + i * (bw + gap);
@@ -7583,8 +7590,8 @@ function gerarRelatorioImpressao() {
       const cor = n > 1 ? verde(i / (n - 1)) : "#0b6b63";
       const cx = (x + bw / 2).toFixed(1);
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${cor}"/>` +
-        `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="8" fill="#555" text-anchor="middle">${fmt(p, 1)}</text>` +
-        `<text x="${cx}" y="${(H - padB + 11).toFixed(1)}" font-size="8" fill="#999" text-anchor="middle">D${_sBio.dias[i]}</text>`;
+        (mostraPeso ? `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="8" fill="#555" text-anchor="middle">${fmt(p, 1)}</text>` : "") +
+        (mostraDia(i) ? `<text x="${cx}" y="${(H - padB + 11).toFixed(1)}" font-size="8" fill="#999" text-anchor="middle">D${_sBio.dias[i]}</text>` : "");
     }).join("");
     return `<svg viewBox="0 0 ${W} ${H}"><line x1="5" y1="${H - padB}" x2="${W - 5}" y2="${H - padB}" stroke="#ddd"/>${bars}</svg>`;
   })();
@@ -7623,6 +7630,7 @@ function gerarRelatorioImpressao() {
   .bio-tab th:first-child { text-align: left; }
   .bio-tab td { padding: 4px; text-align: right; border-bottom: 1px solid #f0f0f0; }
   .bio-tab td:first-child { text-align: left; color: #555; }
+  .bio-compacta td, .bio-compacta th { font-size: 9.5px; padding: 2.5px 4px; }
   .bio-cresc { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 7px 2px 0; border-top: 1px solid #d8dcdb; }
   .bio-cresc span { font-size: 10.5px; color: #0b6b63; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
   .bio-cresc b { font-size: 16px; color: #0b6b63; font-weight: 800; }
@@ -7684,7 +7692,7 @@ function gerarRelatorioImpressao() {
   <div class="cols" style="margin-top:4px">
     <div>
       <h2>Histórico de biometria</h2>
-      <table class="bio-tab">
+      <table class="bio-tab${_bioMuitas ? " bio-compacta" : ""}">
         <thead><tr><th>Data</th><th>Dia</th><th>Peso (g)</th><th>Ganho/dia</th></tr></thead>
         <tbody>${_bioLinhas || `<tr><td colspan="4" style="text-align:center;color:#999">Sem biometrias registradas.</td></tr>`}</tbody>
       </table>
