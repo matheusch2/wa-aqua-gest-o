@@ -7303,8 +7303,8 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc2-band">
         <div><b>${formatarNumeroBR(ciclo.produtividade, 0)}</b><small>kg/ha</small><span>Produtividade</span></div>
         <div><b>${formatarNumeroBR(ciclo.pesoFinal, 1)} g</b><span>Peso final</span></div>
-        <div><b>${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</b><span>Sobrevivência</span></div>
-        <div><b>${formatarNumeroBR(ciclo.fca, 2)}</b><span>FCA</span></div>
+        <div><b style="color:${ciclo.sobrevivencia > 0 ? (ciclo.sobrevivencia >= 70 ? "#16a34a" : ciclo.sobrevivencia >= 50 ? "#d97706" : "#dc2626") : "inherit"}">${formatarNumeroBR(ciclo.sobrevivencia, 1)}%</b><span>Sobrevivência</span></div>
+        <div><b style="color:${ciclo.fca > 0 ? (ciclo.fca <= 1.5 ? "#16a34a" : ciclo.fca <= 2.0 ? "#d97706" : "#dc2626") : "inherit"}">${formatarNumeroBR(ciclo.fca, 2)}</b><span>FCA</span></div>
       </div>
 
       <div class="rc2-sec-tit">Resumo operacional</div>
