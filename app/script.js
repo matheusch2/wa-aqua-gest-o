@@ -7883,6 +7883,16 @@ function gerarRelatorioImpressao() {
   const _numCiclo = viveiros[index] ? _numeroCicloEncerrado(viveiros[index], ciclo) : null;
   const _tituloViv = `${_esc(ciclo.nomeViveiro || "")}${_numCiclo ? ` &middot; Ciclo ${_numCiclo}` : ""}`;
 
+  // Resumo técnico ENXUTO (2-3 frases) — preenche o espaço ao lado do gráfico.
+  const _resumoTec = (() => {
+    const p = [];
+    p.push(`Ciclo de ${ciclo.diasCultivo} dias, sobrevivência de ${fmt(ciclo.sobrevivencia, 1)}% e FCA de ${fmt(ciclo.fca, 2)}.`);
+    p.push(`Produção de ${fmt(producaoTotal, 1)} kg (${fmt(ciclo.produtividade, 0)} kg/ha), a um custo de R$ ${fmt(custoPorKg, 2)}/kg.`);
+    if (temPreco) p.push(lucroLiquido >= 0 ? `Resultado positivo, lucro de ${rs(lucroLiquido)}.` : `Resultado negativo, prejuízo de R$ ${fmt(Math.abs(lucroLiquido), 2)}.`);
+    else p.push(`Preço de venda não informado — sem cálculo de resultado.`);
+    return p.join(" ");
+  })();
+
   const htmlEnxuto = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>Relatório de Ciclo — ${_esc(ciclo.nomeViveiro || "")}</title>
 <style>
@@ -7958,6 +7968,8 @@ function gerarRelatorioImpressao() {
         <tr><td class="lbl">Custo por kg</td><td class="val">R$ ${fmt(custoPorKg, 2)}</td></tr>
         <tr><td class="lbl">Lucro líquido</td><td class="val">${rs(lucroLiquido)}</td></tr>
       </table>
+      <h2>Resumo técnico</h2>
+      <p class="concl">${_resumoTec}</p>
     </div>
     <div>
       <h2>Custos do ciclo</h2>
