@@ -430,7 +430,7 @@ body.tema-escuro .form-nota svg { stroke: #fbbf24; }
     margin-bottom: 0;
     outline: none;
     font-family: Arial, sans-serif;
-    transition: border-color 0.2s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .campo-form input[type="date"] {
@@ -445,6 +445,7 @@ body.tema-escuro .form-nota svg { stroke: #fbbf24; }
 .campo-form input:focus,
 .campo-form select:focus {
     border-color: rgb(6,107,99);
+    box-shadow: 0 0 0 3px rgba(6,107,99,0.13);
 }
 
 .campo-input-unidade {
