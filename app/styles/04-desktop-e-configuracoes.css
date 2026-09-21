@@ -88,7 +88,6 @@
     min-height: unset !important;
     border-radius: 9px !important;
     background: transparent !important;
-    box-shadow: none !important;
     color: rgba(255,255,255,0.82) !important;
     text-align: left !important;
     width: 100% !important;
@@ -110,9 +109,6 @@
     height: 17px !important;
     stroke: rgba(255,255,255,0.72) !important;
     flex-shrink: 0 !important;
-    background: transparent !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
   }
 
   #menuGestao .botao-gestao:hover .btn-svg {
