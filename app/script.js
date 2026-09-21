@@ -6013,7 +6013,7 @@ function _boletoAcoesPagamentoHtml(index, b) {
   const rest = _boletoRestante(b);
   return `
     ${temTotal ? `
-    <button class="botao-salvar" style="margin-top:14px;background:#066b63" onclick="abrirPagamentoParcial(${index})">💵 Registrar pagamento</button>
+    <button class="botao-salvar" style="margin-top:14px;background:#066b63" onclick="abrirPagamentoParcial(${index})"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:7px"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/></svg>Registrar pagamento</button>
     <div id="bt-pagform-${index}" class="bt-pagform" style="display:none">
       <label>Valor do pagamento (R$)</label>
       <input type="text" inputmode="decimal" id="bt-pagvalor-${index}" placeholder="Ex: 200,00" onblur="formatarMoedaBlur(this)">
@@ -6023,7 +6023,7 @@ function _boletoAcoesPagamentoHtml(index, b) {
         <button class="bt-pag-ok" onclick="salvarPagamentoParcial(${index}, this)">Confirmar</button>
       </div>
     </div>` : ""}
-    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true, this)">✓ ${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
+    <button class="botao-salvar" style="margin-top:${temTotal ? 10 : 14}px;background:#16a34a" onclick="marcarBoletoPago(${index}, true, this)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:7px"><polyline points="20 6 9 17 4 12"/></svg>${jaPagouAlgo ? "Quitar o restante" : "Marcar como pago"}</button>
     ${!temTotal ? `<p class="rc-print-dica" style="margin-top:8px">Para pagar em partes, edite o boleto e informe o <b>valor total</b>.</p>` : ""}`;
 }
 
@@ -6116,8 +6116,8 @@ function verDetalhesBoleto(index) {
       ${_boletoProgressoHtml(b)}
       ${_boletoAcoesPagamentoHtml(index, b)}
       <div style="display:flex;gap:10px;margin-top:10px">
-        <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})">✏️ Editar</button>
-        <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'">🗑️ Excluir</button>
+        <button class="botao-salvar" style="flex:1" onclick="abrirFormBoleto(${index})"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:6px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
+        <button class="botao-salvar" style="flex:1;background:#ef4444" onclick="document.getElementById('confirmar-excluir-det').style.display='block'"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:6px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button>
       </div>
       <div id="confirmar-excluir-det" class="painel-confirmar-boleto" style="display:none;margin-top:10px">
         <p class="confirmar-boleto-pergunta">Excluir este boleto?</p>
