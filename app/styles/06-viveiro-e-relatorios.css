@@ -96,19 +96,25 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 7px;
-    background: rgb(6,107,99);
+    gap: 8px;
+    background: linear-gradient(160deg, #0a7d72, #066b63);
     border: none;
-    border-radius: 13px;
-    padding: 14px 4px;
+    border-radius: 15px;
+    padding: 15px 5px;
     cursor: pointer;
     color: white;
-    transition: background 0.15s;
+    box-shadow: 0 4px 12px rgba(6,107,99,0.18);
+    transition: transform 0.12s, box-shadow 0.12s;
 }
-.vv-manejo-btn:active { background: rgb(4,85,79); }
+.vv-manejo-btn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(6,107,99,0.18); }
+/* Ícone dentro de um "chip" translúcido — ecoa o quadradinho dos cards de cima. */
 .vv-manejo-btn svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    padding: 8px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    box-sizing: content-box;
     stroke: white;
     fill: none;
     stroke-width: 2;
@@ -130,18 +136,23 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     gap: 10px;
     width: 100%;
     background: white;
-    border: 1.5px solid #d1d5db;
-    border-radius: 13px;
-    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+    padding: 12px 14px;
     font-size: 15px;
     font-weight: 700;
     color: rgb(6,107,99);
     cursor: pointer;
+    box-shadow: 0 1px 3px rgba(6,107,99,0.05);
 }
 .vv-consulta-btn:active { background: #f3f4f6; }
 .vv-consulta-btn svg {
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
+    padding: 7px;
+    background: #ecfdf5;
+    border-radius: 10px;
+    box-sizing: content-box;
     stroke: rgb(6,107,99);
     fill: none;
     stroke-width: 2;
@@ -159,16 +170,23 @@ body.tema-escuro .vv-alerta-inconsistencia span { color: #fcd34d; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     border: none;
-    border-radius: 13px;
-    padding: 14px 4px;
+    border-radius: 15px;
+    padding: 15px 5px;
     cursor: pointer;
     color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+    transition: transform 0.12s;
 }
+.vv-admin-btn:active { transform: translateY(1px); }
 .vv-admin-btn svg {
-    width: 21px;
-    height: 21px;
+    width: 20px;
+    height: 20px;
+    padding: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    box-sizing: content-box;
     stroke: white;
     fill: none;
     stroke-width: 2;
@@ -196,7 +214,7 @@ body.tema-escuro .vv-titulo { color: #34d399; }
 body.tema-escuro .vv-pls { background: #052e2b; color: #34d399; }
 
 body.tema-escuro .vv-consulta-btn { background: #1f2937; border-color: #4b5563; color: #34d399; }
-body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; }
+body.tema-escuro .vv-consulta-btn svg { stroke: #34d399; background: #052e2b; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    RELATÓRIO DE CICLO — versão do app
