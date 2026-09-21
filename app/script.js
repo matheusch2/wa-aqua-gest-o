@@ -7859,24 +7859,26 @@ function gerarRelatorioImpressao() {
   //  em SVG (imprime igual em qualquer lugar) e sem o endereço do site no rodapé.)
   void html;
 
-  // Gráfico do peso em SVG inline (sem Chart.js): imprime perfeito no iframe.
-  const _gPeso = (() => {
-    if (!serieDias || serieDias.length < 2) return `<p style="color:#999;font-size:11px;margin-top:6px">Biometrias insuficientes para o gráfico.</p>`;
-    const W = 320, H = 118, padL = 18, padB = 15, padT = 8, padR = 6;
-    const xMin = serieDias[0], xMax = serieDias[serieDias.length - 1];
-    const dx = (xMax - xMin) || 1;
-    const yMax = (Math.max.apply(null, seriePeso) * 1.12) || 1;
-    const px = (x) => padL + ((x - xMin) / dx) * (W - padL - padR);
-    const py = (y) => (H - padB) - (y / yMax) * (H - padB - padT);
-    const pts = serieDias.map((d, i) => `${px(d).toFixed(1)},${py(seriePeso[i]).toFixed(1)}`).join(" ");
-    const dots = serieDias.map((d, i) => `<circle cx="${px(d).toFixed(1)}" cy="${py(seriePeso[i]).toFixed(1)}" r="2.6"/>`).join("");
-    return `<svg viewBox="0 0 ${W} ${H}"><line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="#ddd"/><line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="#ddd"/><text x="0" y="${padT + 6}" font-size="7.5" fill="#999">${fmt(yMax, 0)}</text><text x="2" y="${(py(yMax / 2) + 3).toFixed(0)}" font-size="7.5" fill="#999">${fmt(yMax / 2, 0)}</text><polyline points="${pts}" fill="none" stroke="#0b6b63" stroke-width="2"/><g fill="#0b6b63">${dots}</g><text x="${padL}" y="${H - 3}" font-size="7.5" fill="#999">D${xMin}</text><text x="${(W - padR - 16).toFixed(0)}" y="${H - 3}" font-size="7.5" fill="#999">D${xMax}</text></svg>`;
+  // Gráfico de COLUNAS (torre) colorido dos custos, em SVG inline (sem Chart.js).
+  const _coresCusto = ["#0b6b63", "#2563eb", "#f59e0b", "#10b981", "#a16207", "#9ca3af", "#ec4899", "#84cc16"];
+  const _itensCusto = distLista.slice(0, 6);
+  const _gCustos = (() => {
+    if (!_itensCusto.length) return `<p style="color:#999;font-size:11px;margin-top:6px">Nenhum custo lançado neste ciclo.</p>`;
+    const W = 300, H = 120, padB = 16, padT = 14;
+    const max = _itensCusto[0].total || 1;
+    const n = _itensCusto.length;
+    const bw = Math.min(40, (W - 10) / n - 8);
+    const gap = ((W - 10) - bw * n) / (n + 1);
+    const bars = _itensCusto.map((d, i) => {
+      const h = Math.max(1, (d.total / max) * (H - padB - padT));
+      const x = 5 + gap + i * (bw + gap);
+      const y = (H - padB) - h;
+      const pct = custoTotal > 0 ? Math.round(d.total / custoTotal * 100) : 0;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${_coresCusto[i % _coresCusto.length]}"/><text x="${(x + bw / 2).toFixed(1)}" y="${(y - 3).toFixed(1)}" font-size="8" fill="#555" text-anchor="middle">${pct}%</text>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${W} ${H}"><line x1="5" y1="${H - padB}" x2="${W - 5}" y2="${H - padB}" stroke="#ddd"/>${bars}</svg>`;
   })();
-
-  const _maxC = distLista.length ? distLista[0].total : 1;
-  const _custoRows = distLista.length
-    ? distLista.map(d => `<tr><td>${_esc(d.nome)}</td><td class="bar"><div class="trilho"><div class="fill" style="width:${(d.total / (_maxC || 1) * 100).toFixed(0)}%"></div></div></td><td class="val">R$ ${fmt(d.total, 2)}</td><td class="pct">${custoTotal > 0 ? fmt(d.total / custoTotal * 100, 1) : "0"}%</td></tr>`).join("")
-    : `<tr><td colspan="4" style="color:#999">Nenhum custo lançado.</td></tr>`;
+  const _legCustos = _itensCusto.map((d, i) => `<div style="display:flex;align-items:center;gap:7px;font-size:10.5px;padding:2px 0;border-bottom:1px solid #f0f0f0"><span style="width:9px;height:9px;border-radius:2px;background:${_coresCusto[i % _coresCusto.length]};flex-shrink:0"></span><span style="flex:1;color:#333">${_esc(d.nome)}</span><b>R$ ${fmt(d.total, 2)}</b></div>`).join("");
 
   const _numCiclo = viveiros[index] ? _numeroCicloEncerrado(viveiros[index], ciclo) : null;
   const _tituloViv = `${_esc(ciclo.nomeViveiro || "")}${_numCiclo ? ` &middot; Ciclo ${_numCiclo}` : ""}`;
@@ -7887,11 +7889,11 @@ function gerarRelatorioImpressao() {
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
   body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 26px 30px; font-size: 12px; }
-  .cab { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #0b6b63; padding-bottom: 9px; }
-  .cab .marca { font-size: 12px; font-weight: 800; color: #0b6b63; letter-spacing: .02em; }
-  .cab h1 { font-size: 16px; font-weight: 700; margin: 4px 0 0; }
-  .cab .dir { text-align: right; font-size: 11.5px; color: #555; line-height: 1.5; }
-  .cab .dir b { color: #1a1a1a; }
+  .cab { text-align: center; border-bottom: 2px solid #0b6b63; padding-bottom: 11px; }
+  .cab .marca { font-size: 11px; font-weight: 800; color: #0b6b63; letter-spacing: .1em; }
+  .cab h1 { font-size: 18px; font-weight: 700; margin: 5px 0 3px; }
+  .cab .sub { font-size: 11.5px; color: #555; }
+  .cab .sub b { color: #1a1a1a; }
   h2 { font-size: 11px; font-weight: 700; color: #0b6b63; text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 7px; padding-bottom: 3px; border-bottom: 1px solid #d8dcdb; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   td { padding: 5px 4px; border-bottom: 1px solid #eee; }
@@ -7913,8 +7915,9 @@ function gerarRelatorioImpressao() {
   .rodape { margin-top: 22px; padding-top: 8px; border-top: 1px solid #d8dcdb; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
 </style></head><body>
   <div class="cab">
-    <div><div class="marca">WA AQUA GESTÃO</div><h1>Relatório de Ciclo — ${_tituloViv}</h1></div>
-    <div class="dir">Período: <b>${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)}</b><br><b>${ciclo.diasCultivo} dias</b> de cultivo</div>
+    <div class="marca">WA AQUA GESTÃO</div>
+    <h1>Relatório de Ciclo — ${_tituloViv}</h1>
+    <div class="sub">${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)} &middot; <b>${ciclo.diasCultivo} dias de cultivo</b></div>
   </div>
   <div class="cols">
     <div>
@@ -7957,17 +7960,11 @@ function gerarRelatorioImpressao() {
       </table>
     </div>
     <div>
-      <h2>Evolução do peso médio (g)</h2>
-      ${_gPeso}
+      <h2>Custos do ciclo</h2>
+      ${_gCustos}
+      <div style="margin-top:8px">${_legCustos}<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#0b6b63;padding-top:5px;margin-top:2px;border-top:1px solid #d8dcdb"><span>Custo total</span><span>R$ ${fmt(custoTotal, 2)}</span></div></div>
     </div>
   </div>
-  <h2>Distribuição dos custos</h2>
-  <table class="custos">
-    ${_custoRows}
-    <tr style="font-weight:800;color:#0b6b63"><td>Custo total</td><td></td><td class="val">R$ ${fmt(custoTotal, 2)}</td><td class="pct">100%</td></tr>
-  </table>
-  <h2>Conclusão</h2>
-  <p class="concl">${conclusaoTecnica}</p>
   <div class="rodape">
     <span>WA Aqua Gestão — Tecnologia para aquicultura</span>
     <span>Emitido em ${dataEmissao}</span>
