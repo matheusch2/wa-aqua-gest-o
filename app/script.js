@@ -7514,7 +7514,7 @@ function gerarRelatorioImpressao() {
   const _itensCusto = distLista.slice(0, 6);
   const _gCustos = (() => {
     if (!_itensCusto.length) return `<p style="color:#999;font-size:11px;margin-top:6px">Nenhum custo lançado neste ciclo.</p>`;
-    const W = 300, H = 120, padB = 16, padT = 14;
+    const W = 300, H = 100, padB = 16, padT = 14;
     const max = _itensCusto[0].total || 1;
     const n = _itensCusto.length;
     const bw = Math.min(40, (W - 10) / n - 8);
@@ -7570,7 +7570,7 @@ function gerarRelatorioImpressao() {
   const _gBio = (() => {
     const n = _sBio.peso.length;
     if (n < 1) return `<p style="color:#999;font-size:11px;margin-top:6px">Sem biometrias registradas neste ciclo.</p>`;
-    const W = 300, H = 130, padB = 20, padT = 16;
+    const W = 300, H = 110, padB = 18, padT = 13;
     const max = Math.max(..._sBio.peso, 1);
     const bw = Math.min(40, (W - 10) / n - 8);
     const gap = ((W - 10) - bw * n) / (n + 1);
@@ -7601,21 +7601,21 @@ function gerarRelatorioImpressao() {
 <style>
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
-  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 26px 30px; font-size: 12px; }
-  .cab { text-align: center; border-bottom: 2px solid #0b6b63; padding-bottom: 11px; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 16px 30px; font-size: 12px; }
+  .cab { text-align: center; border-bottom: 2px solid #0b6b63; padding-bottom: 9px; }
   .cab .marca { font-size: 11px; font-weight: 800; color: #0b6b63; letter-spacing: .1em; }
-  .cab h1 { font-size: 18px; font-weight: 700; margin: 5px 0 3px; }
+  .cab h1 { font-size: 18px; font-weight: 700; margin: 4px 0 2px; }
   .cab .sub { font-size: 11.5px; color: #555; }
   .cab .sub b { color: #1a1a1a; }
-  h2 { font-size: 11px; font-weight: 700; color: #0b6b63; text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 7px; padding-bottom: 3px; border-bottom: 1px solid #d8dcdb; }
+  h2 { font-size: 11px; font-weight: 700; color: #0b6b63; text-transform: uppercase; letter-spacing: .05em; margin: 11px 0 5px; padding-bottom: 3px; border-bottom: 1px solid #d8dcdb; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  td { padding: 5px 4px; border-bottom: 1px solid #eee; }
+  td { padding: 3px 4px; border-bottom: 1px solid #eee; }
   td.lbl { color: #555; width: 52%; }
   td.val { text-align: right; font-weight: 700; }
   .cols { display: flex; gap: 30px; }
   .cols > div { flex: 1; }
   .ind { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #d8dcdb; }
-  .ind > div { padding: 9px 6px; text-align: center; border-right: 1px solid #d8dcdb; }
+  .ind > div { padding: 7px 6px; text-align: center; border-right: 1px solid #d8dcdb; }
   .ind > div:last-child { border-right: none; }
   .ind small { display: block; font-size: 9px; color: #555; text-transform: uppercase; }
   .ind b { display: block; font-size: 16px; font-weight: 800; margin-top: 3px; }
@@ -7626,15 +7626,15 @@ function gerarRelatorioImpressao() {
   .custos td.pct { text-align: right; color: #555; width: 13%; }
   .concl { font-size: 11.5px; line-height: 1.6; color: #333; text-align: justify; margin-top: 4px; }
   .bio-tab td, .bio-tab th { font-size: 11px; }
-  .bio-tab th { color: #555; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; text-align: right; padding: 5px 4px; border-bottom: 1px solid #d8dcdb; }
+  .bio-tab th { color: #555; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; text-align: right; padding: 4px; border-bottom: 1px solid #d8dcdb; }
   .bio-tab th:first-child { text-align: left; }
-  .bio-tab td { padding: 4px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+  .bio-tab td { padding: 3px 4px; text-align: right; border-bottom: 1px solid #f0f0f0; }
   .bio-tab td:first-child { text-align: left; color: #555; }
   .bio-compacta td, .bio-compacta th { font-size: 9.5px; padding: 2.5px 4px; }
-  .bio-cresc { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 7px 2px 0; border-top: 1px solid #d8dcdb; }
+  .bio-cresc { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 6px 2px 0; border-top: 1px solid #d8dcdb; }
   .bio-cresc span { font-size: 10.5px; color: #0b6b63; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
   .bio-cresc b { font-size: 16px; color: #0b6b63; font-weight: 800; }
-  .rodape { margin-top: 22px; padding-top: 8px; border-top: 1px solid #d8dcdb; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
+  .rodape { margin-top: 12px; padding-top: 7px; border-top: 1px solid #d8dcdb; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
 </style></head><body>
   <div class="cab">
     <div class="marca">WA AQUA GESTÃO</div>
