@@ -5901,18 +5901,10 @@ function _setBoletoFornecedor(f) {
 // fechando o app). Aqui a impressão roda num iframe OCULTO dentro do próprio
 // app: abre o diálogo de impressão/salvar-PDF e, ao fechar, a pessoa continua
 // exatamente onde estava.
-// ajustarAltura: faz a folha ter a ALTURA do conteúdo (largura A4), sem sobra
-// de papel em branco quando há pouca coisa — usado no relatório de ciclo, que é
-// de página única. Documentos que podem ter várias páginas (boletos, financeiro)
-// não passam essa opção e seguem em A4 normal.
-function _imprimirDoc(html, ajustarAltura) {
+function _imprimirDoc(html) {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
-  // Para medir a altura certa, o quadro precisa ter a LARGURA de uma A4 (794px
-  // ≈ 210mm a 96dpi); com largura 0 o texto quebraria torto e a conta erraria.
-  const larg = ajustarAltura ? "794px" : "0";
-  const alt = ajustarAltura ? "1123px" : "0";
-  iframe.style.cssText = `position:fixed;right:0;bottom:0;width:${larg};height:${alt};border:0;opacity:0;pointer-events:none;z-index:-1`;
+  iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0";
   document.body.appendChild(iframe);
   const doc = iframe.contentWindow.document;
   doc.open();
@@ -5920,18 +5912,8 @@ function _imprimirDoc(html, ajustarAltura) {
   doc.close();
   // Espera o conteúdo montar antes de chamar a impressão.
   setTimeout(() => {
-    try {
-      if (ajustarAltura) {
-        // Mede a altura real e define o @page com essa altura (largura A4). O +2mm
-        // é folga pra um resto de pixel não escorregar pra uma 2ª página vazia.
-        const alturaMm = Math.ceil((doc.body.scrollHeight * 25.4 / 96)) + 2;
-        const est = doc.createElement("style");
-        est.textContent = `@page { size: 210mm ${alturaMm}mm; margin: 0; }`;
-        doc.head.appendChild(est);
-      }
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    } catch (e) { console.log("Impressão:", e); }
+    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+    catch (e) { console.log("Impressão:", e); }
   }, 350);
   // Some sozinho bem depois, sem atrapalhar o diálogo de impressão.
   setTimeout(() => { try { iframe.remove(); } catch (e) {} }, 60000);
@@ -7727,7 +7709,7 @@ function gerarRelatorioImpressao() {
   </div>
 </body></html>`;
 
-  _imprimirDoc(htmlEnxuto, true);
+  _imprimirDoc(htmlEnxuto);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
