@@ -7854,17 +7854,127 @@ function gerarRelatorioImpressao() {
 <\/script>
 </body></html>`;
 
-  // Numera as seções só agora, na ordem em que aparecem no documento. Numerar
-  // no código não funcionava: a comparação com ciclos anteriores só existe com
-  // 2+ ciclos, e alguns blocos são montados antes de entrarem no documento —
-  // o resultado era pular de "9." para "11.".
-  let _nSec = 0;
-  const htmlNumerado = html.replace(/(<h2 class="sec"[^>]*>)§\./g, (_m, abre) => `${abre}${++_nSec}.`);
+  // (A montagem "html" acima é o relatório antigo, longo, mantido por ora. Abaixo,
+  //  a versão ENXUTA/técnica que realmente vai para impressão — 1 página, gráfico
+  //  em SVG (imprime igual em qualquer lugar) e sem o endereço do site no rodapé.)
+  void html;
 
-  const win = window.open("", "_blank");
-  if (!win) { _toastErro("Permita pop-ups para gerar o relatório."); return; }
-  win.document.write(htmlNumerado);
-  win.document.close();
+  // Gráfico do peso em SVG inline (sem Chart.js): imprime perfeito no iframe.
+  const _gPeso = (() => {
+    if (!serieDias || serieDias.length < 2) return `<p style="color:#999;font-size:11px;margin-top:6px">Biometrias insuficientes para o gráfico.</p>`;
+    const W = 320, H = 118, padL = 18, padB = 15, padT = 8, padR = 6;
+    const xMin = serieDias[0], xMax = serieDias[serieDias.length - 1];
+    const dx = (xMax - xMin) || 1;
+    const yMax = (Math.max.apply(null, seriePeso) * 1.12) || 1;
+    const px = (x) => padL + ((x - xMin) / dx) * (W - padL - padR);
+    const py = (y) => (H - padB) - (y / yMax) * (H - padB - padT);
+    const pts = serieDias.map((d, i) => `${px(d).toFixed(1)},${py(seriePeso[i]).toFixed(1)}`).join(" ");
+    const dots = serieDias.map((d, i) => `<circle cx="${px(d).toFixed(1)}" cy="${py(seriePeso[i]).toFixed(1)}" r="2.6"/>`).join("");
+    return `<svg viewBox="0 0 ${W} ${H}"><line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="#ddd"/><line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="#ddd"/><text x="0" y="${padT + 6}" font-size="7.5" fill="#999">${fmt(yMax, 0)}</text><text x="2" y="${(py(yMax / 2) + 3).toFixed(0)}" font-size="7.5" fill="#999">${fmt(yMax / 2, 0)}</text><polyline points="${pts}" fill="none" stroke="#0b6b63" stroke-width="2"/><g fill="#0b6b63">${dots}</g><text x="${padL}" y="${H - 3}" font-size="7.5" fill="#999">D${xMin}</text><text x="${(W - padR - 16).toFixed(0)}" y="${H - 3}" font-size="7.5" fill="#999">D${xMax}</text></svg>`;
+  })();
+
+  const _maxC = distLista.length ? distLista[0].total : 1;
+  const _custoRows = distLista.length
+    ? distLista.map(d => `<tr><td>${_esc(d.nome)}</td><td class="bar"><div class="trilho"><div class="fill" style="width:${(d.total / (_maxC || 1) * 100).toFixed(0)}%"></div></div></td><td class="val">R$ ${fmt(d.total, 2)}</td><td class="pct">${custoTotal > 0 ? fmt(d.total / custoTotal * 100, 1) : "0"}%</td></tr>`).join("")
+    : `<tr><td colspan="4" style="color:#999">Nenhum custo lançado.</td></tr>`;
+
+  const _numCiclo = viveiros[index] ? _numeroCicloEncerrado(viveiros[index], ciclo) : null;
+  const _tituloViv = `${_esc(ciclo.nomeViveiro || "")}${_numCiclo ? ` &middot; Ciclo ${_numCiclo}` : ""}`;
+
+  const htmlEnxuto = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>Relatório de Ciclo — ${_esc(ciclo.nomeViveiro || "")}</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 26px 30px; font-size: 12px; }
+  .cab { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #0b6b63; padding-bottom: 9px; }
+  .cab .marca { font-size: 12px; font-weight: 800; color: #0b6b63; letter-spacing: .02em; }
+  .cab h1 { font-size: 16px; font-weight: 700; margin: 4px 0 0; }
+  .cab .dir { text-align: right; font-size: 11.5px; color: #555; line-height: 1.5; }
+  .cab .dir b { color: #1a1a1a; }
+  h2 { font-size: 11px; font-weight: 700; color: #0b6b63; text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 7px; padding-bottom: 3px; border-bottom: 1px solid #d8dcdb; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  td { padding: 5px 4px; border-bottom: 1px solid #eee; }
+  td.lbl { color: #555; width: 52%; }
+  td.val { text-align: right; font-weight: 700; }
+  .cols { display: flex; gap: 30px; }
+  .cols > div { flex: 1; }
+  .ind { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #d8dcdb; }
+  .ind > div { padding: 9px 6px; text-align: center; border-right: 1px solid #d8dcdb; }
+  .ind > div:last-child { border-right: none; }
+  .ind small { display: block; font-size: 9px; color: #555; text-transform: uppercase; }
+  .ind b { display: block; font-size: 16px; font-weight: 800; margin-top: 3px; }
+  svg { width: 100%; height: auto; display: block; }
+  .custos td.bar { width: 32%; }
+  .trilho { height: 6px; background: #eee; border-radius: 2px; overflow: hidden; }
+  .fill { height: 100%; background: #0b6b63; border-radius: 2px; }
+  .custos td.pct { text-align: right; color: #555; width: 13%; }
+  .concl { font-size: 11.5px; line-height: 1.6; color: #333; text-align: justify; margin-top: 4px; }
+  .rodape { margin-top: 22px; padding-top: 8px; border-top: 1px solid #d8dcdb; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
+</style></head><body>
+  <div class="cab">
+    <div><div class="marca">WA AQUA GESTÃO</div><h1>Relatório de Ciclo — ${_tituloViv}</h1></div>
+    <div class="dir">Período: <b>${formatarData(ciclo.dataPovoamento)} a ${formatarData(ciclo.dataEncerramento)}</b><br><b>${ciclo.diasCultivo} dias</b> de cultivo</div>
+  </div>
+  <div class="cols">
+    <div>
+      <h2>Dados do ciclo</h2>
+      <table>
+        <tr><td class="lbl">Povoamento</td><td class="val">${formatarData(ciclo.dataPovoamento)}</td></tr>
+        <tr><td class="lbl">Encerramento</td><td class="val">${formatarData(ciclo.dataEncerramento)}</td></tr>
+        <tr><td class="lbl">PLs povoadas</td><td class="val">${Number(String(ciclo.totalPovoado || "").replace(/\./g, "") || 0).toLocaleString("pt-BR")}</td></tr>
+        <tr><td class="lbl">Laboratório</td><td class="val">${_esc(ciclo.laboratorio || "-")}</td></tr>
+        <tr><td class="lbl">Área</td><td class="val">${fmt(tamanhoNum, 1)} ha</td></tr>
+      </table>
+    </div>
+    <div>
+      <h2>Produção</h2>
+      <table>
+        <tr><td class="lbl">Produção total</td><td class="val">${fmt(producaoTotal, 1)} kg</td></tr>
+        <tr><td class="lbl">Peso médio final</td><td class="val">${fmt(ciclo.pesoFinal, 1)} g</td></tr>
+        <tr><td class="lbl">Produtividade</td><td class="val">${fmt(ciclo.produtividade, 0)} kg/ha</td></tr>
+        <tr><td class="lbl">Ração consumida</td><td class="val">${fmt(ciclo.racaoConsumida, 1)} kg</td></tr>
+        <tr><td class="lbl">Sobrevivência</td><td class="val">${fmt(ciclo.sobrevivencia, 1)} %</td></tr>
+      </table>
+    </div>
+  </div>
+  <h2>Indicadores finais</h2>
+  <div class="ind">
+    <div><small>Produtividade</small><b>${fmt(ciclo.produtividade, 0)}</b></div>
+    <div><small>Peso final</small><b>${fmt(ciclo.pesoFinal, 1)} g</b></div>
+    <div><small>Sobrevivência</small><b>${fmt(ciclo.sobrevivencia, 1)}%</b></div>
+    <div><small>FCA</small><b>${fmt(ciclo.fca, 2)}</b></div>
+  </div>
+  <div class="cols" style="margin-top:4px">
+    <div>
+      <h2>Resultado financeiro</h2>
+      <table>
+        <tr><td class="lbl">Receita bruta</td><td class="val">${rs(receitaBruta)}</td></tr>
+        <tr><td class="lbl">Custo total</td><td class="val">R$ ${fmt(custoTotal, 2)}</td></tr>
+        <tr><td class="lbl">Preço médio de venda</td><td class="val">${temPreco ? "R$ " + fmt(precoGeral, 2) + "/kg" : "—"}</td></tr>
+        <tr><td class="lbl">Custo por kg</td><td class="val">R$ ${fmt(custoPorKg, 2)}</td></tr>
+        <tr><td class="lbl">Lucro líquido</td><td class="val">${rs(lucroLiquido)}</td></tr>
+      </table>
+    </div>
+    <div>
+      <h2>Evolução do peso médio (g)</h2>
+      ${_gPeso}
+    </div>
+  </div>
+  <h2>Distribuição dos custos</h2>
+  <table class="custos">
+    ${_custoRows}
+    <tr style="font-weight:800;color:#0b6b63"><td>Custo total</td><td></td><td class="val">R$ ${fmt(custoTotal, 2)}</td><td class="pct">100%</td></tr>
+  </table>
+  <h2>Conclusão</h2>
+  <p class="concl">${conclusaoTecnica}</p>
+  <div class="rodape">
+    <span>WA Aqua Gestão — Tecnologia para aquicultura</span>
+    <span>Emitido em ${dataEmissao}</span>
+  </div>
+</body></html>`;
+
+  _imprimirDoc(htmlEnxuto);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
