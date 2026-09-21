@@ -7579,9 +7579,9 @@ function gerarRelatorioImpressao() {
       const c = a.map((v, k) => Math.round(v + (b[k] - v) * t));
       return `rgb(${c[0]},${c[1]},${c[2]})`;
     };
-    // Muita biometria: o peso em cima de cada barra embolaria, então some (o
-    // número exato está na tabela ao lado) e o dia aparece de 2 em 2.
-    const mostraPeso = n <= 8;
+    // O peso aparece em cima de TODA barra; com muita biometria ele só encolhe
+    // pra não embolar. O dia embaixo aparece de 2 em 2 quando há muitas colunas.
+    const fsPeso = n > 10 ? 6 : n > 8 ? 7 : 8;
     const mostraDia = (i) => n <= 10 || i % 2 === 0 || i === n - 1;
     const bars = _sBio.peso.map((p, i) => {
       const h = Math.max(1, (p / max) * (H - padB - padT));
@@ -7590,7 +7590,7 @@ function gerarRelatorioImpressao() {
       const cor = n > 1 ? verde(i / (n - 1)) : "#0b6b63";
       const cx = (x + bw / 2).toFixed(1);
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${cor}"/>` +
-        (mostraPeso ? `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="8" fill="#555" text-anchor="middle">${fmt(p, 1)}</text>` : "") +
+        `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="${fsPeso}" fill="#555" text-anchor="middle">${fmt(p, 1)}</text>` +
         (mostraDia(i) ? `<text x="${cx}" y="${(H - padB + 11).toFixed(1)}" font-size="8" fill="#999" text-anchor="middle">D${_sBio.dias[i]}</text>` : "");
     }).join("");
     return `<svg viewBox="0 0 ${W} ${H}"><line x1="5" y1="${H - padB}" x2="${W - 5}" y2="${H - padB}" stroke="#ddd"/>${bars}</svg>`;
