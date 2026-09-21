@@ -5901,6 +5901,29 @@ function _setBoletoFornecedor(f) {
   abrirBoletos();
 }
 
+// Impressão SEM abrir janela nova. No app instalado (PWA), window.open abre uma
+// tela sem barra de navegação e PRENDE o usuário (não tem como voltar, só
+// fechando o app). Aqui a impressão roda num iframe OCULTO dentro do próprio
+// app: abre o diálogo de impressão/salvar-PDF e, ao fechar, a pessoa continua
+// exatamente onde estava.
+function _imprimirDoc(html) {
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0";
+  document.body.appendChild(iframe);
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+  // Espera o conteúdo montar antes de chamar a impressão.
+  setTimeout(() => {
+    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+    catch (e) { console.log("Impressão:", e); }
+  }, 350);
+  // Some sozinho bem depois, sem atrapalhar o diálogo de impressão.
+  setTimeout(() => { try { iframe.remove(); } catch (e) {} }, 60000);
+}
+
 function imprimirBoletos() {
   const todos = boletos.map((b, i) => ({ b, i, st: _statusBoleto(b.dataCompra, b.prazoDias) }));
   const naoPagos = todos.filter(x => !x.b.pago);
@@ -5964,11 +5987,7 @@ function imprimirBoletos() {
   </table>
   </body></html>`;
 
-  const janela = window.open("", "_blank");
-  if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
-  janela.document.write(html);
-  janela.document.close();
-  janela.onload = () => { janela.print(); };
+  _imprimirDoc(html);
 }
 
 function _fecharMenusBoleto() {
@@ -6844,11 +6863,7 @@ function imprimirRelatorioFinanceiro() {
     <body><h1>Relatório financeiro</h1><p class="sub">${subtitulo}</p><p>Período: ${periodoTxt}</p>
     <table><thead>${cabecalho}</thead>
     <tbody>${linhas}</tbody></table></body></html>`;
-  const janela = window.open("", "_blank");
-  if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
-  janela.document.write(html);
-  janela.document.close();
-  janela.onload = () => janela.print();
+  _imprimirDoc(html);
 }
 
 
@@ -10080,11 +10095,7 @@ function imprimirCustos(viveiroIndex) {
   </table>
   </body></html>`;
 
-  const janela = window.open("", "_blank");
-  if (!janela) { _toastErro("Permita pop-ups para imprimir."); return; }
-  janela.document.write(html);
-  janela.document.close();
-  janela.onload = () => { janela.print(); };
+  _imprimirDoc(html);
 }
 
 function confirmarExcluirCusto(viveiroIndex, custoIndex, elementoId, direto) {
