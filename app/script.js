@@ -2327,6 +2327,10 @@ function _continuarDoUltimo(index) {
   if (!dt) return;
   const el = document.getElementById("dataRacao");
   if (el) el.value = _maAddDias(dt, 1); // dia seguinte ao último lançado
+  // Cumpriu o papel (levou você pra onde parou): some enquanto você lança. Só
+  // reaparece se sair e voltar ao formulário (ele é remontado na abertura).
+  const box = document.getElementById("racao-ultimo-chip");
+  if (box) box.innerHTML = "";
   _calcCustoRacao();
 }
 
@@ -2553,6 +2557,9 @@ async function salvarLancamentoRacao(indexDireto = "") {
   // A quantidade PERMANECE após salvar (não limpa): lançando rações atrasadas, a
   // data avança sozinha e a mesma quantidade fica pronta pra repetir no próximo
   // dia. É só um campo na tela — fechar e reabrir o app zera naturalmente.
+  // A etiqueta "último lançamento" some assim que você começa a lançar (só volta
+  // se sair e reabrir o formulário).
+  const _chipUltEl = document.getElementById("racao-ultimo-chip"); if (_chipUltEl) _chipUltEl.innerHTML = "";
   restaurar();
 
   const msgSucesso = document.getElementById("msg-racao-sucesso");
