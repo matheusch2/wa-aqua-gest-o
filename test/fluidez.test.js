@@ -67,6 +67,13 @@ test("ração: data do último lançamento e dias desde então",()=>{
   assert.equal(a.run(`_diasDesde('2026-09-20','2026-09-20')`),0);
   assert.equal(a.run('_diasDesde(null)'),null);
 });
+test("ração: tocar 'continuar' pula pro dia seguinte e some a etiqueta",()=>{
+  const a=load();seed(a);
+  a.get('racao-ultimo-chip').innerHTML='<button>etiqueta</button>';
+  a.run('_continuarDoUltimo(0)');
+  assert.equal(a.get('dataRacao').value,'2026-09-21');       // 20/09 + 1 dia
+  assert.equal(a.get('racao-ultimo-chip').innerHTML,'');      // some ao tocar
+});
 test("ração: troca de viveiro atualiza sugestão e custo, não quantidade/data",()=>{
   const a=load();seed(a);a.get('consumoRacao').value='10';a.get('dataRacao').value='2026-09-21';
   a.run('_sugerirUltimaRacao(0)');assert.equal(a.get('tipoRacaoSelect').value,'1');
@@ -113,7 +120,7 @@ test("feedback: restauração antiga não libera uma nova operação",()=>{
 test("salvamento real de ração: sucesso só depois do retorno do banco simulado",async()=>{
   const a=load();seed(a);
   a.get('dataRacao').value='2026-09-21';a.get('consumoRacao').value='10';a.get('tipoRacaoSelect').value='0';
-  a.get('msg-racao-sucesso').style.display='none';
+  a.get('msg-racao-sucesso').style.display='none';a.get('racao-ultimo-chip').innerHTML='<button>etiqueta</button>';
   a.run(`pegarUsuarioLogado=async()=>({id:'usuario-teste'});
     supabaseClient.from=()=>({insert:()=>({select:()=>new Promise(r=>globalThis.__gravar=r)})});`);
   const pending=a.run('_executarSalvamento(__button,()=>salvarLancamentoRacao(0))');
@@ -124,6 +131,7 @@ test("salvamento real de ração: sucesso só depois do retorno do banco simulad
   assert.equal(a.button.disabled,false);assert.equal(a.get('msg-racao-sucesso').style.display,'flex');
   // A quantidade PERMANECE após salvar (pra repetir no dia seguinte); a data avança.
   assert.equal(a.get('consumoRacao').value,'10');assert.equal(a.get('dataRacao').value,'2026-09-22');
+  assert.equal(a.get('racao-ultimo-chip').innerHTML,''); // etiqueta some ao lançar
   assert.equal(a.errors.length,0);
 });
 test("salvamento real de ração: rejeição de rede não apaga o formulário",async()=>{
