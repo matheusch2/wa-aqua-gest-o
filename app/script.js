@@ -2285,15 +2285,6 @@ function _ultimaRacaoIndex(viveiro, catalogo = tiposRacao) {
   return ultima?.tipoRacaoId ? catalogo.findIndex(t => t.id === ultima.tipoRacaoId) : -1;
 }
 
-// Quantidade (kg) da última ração lançada num viveiro — pela data, não pela
-// ordem da consulta. Serve pra sugerir os kg ao ABRIR o formulário ("lancei 10
-// kg ontem; hoje já vem 10 kg pra confirmar"). Devolve null se não houver.
-function _ultimaRacaoKg(viveiro) {
-  const ultima = (viveiro?.racoes || []).reduce((atual, r) =>
-    r.data && (!atual || r.data > atual.data) ? r : atual, null);
-  return ultima && Number(ultima.racao) > 0 ? Number(ultima.racao) : null;
-}
-
 function _sugerirUltimaRacao(index) {
   const select = document.getElementById("tipoRacaoSelect");
   if (!select) return;
@@ -2415,14 +2406,6 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
     </div>
   `;
   _sugerirUltimaRacao(dentroDoViveiro ? indexSelecionado : document.getElementById("viveiroRacao")?.value);
-  // Sugere também a QUANTIDADE da última ração — SÓ na abertura do formulário.
-  // (Trocar de viveiro mantém o que você digitou, e salvar limpa o campo: essas
-  // duas foram decisões da fluidez e têm teste; aqui só facilito o primeiro
-  // lançamento.) A pessoa confirma ou ajusta os kg à vontade.
-  const _vKg = dentroDoViveiro ? indexSelecionado : Number(document.getElementById("viveiroRacao")?.value);
-  const _kgUlt = _ultimaRacaoKg(viveiros[_vKg]);
-  const _consEl = document.getElementById("consumoRacao");
-  if (_consEl && _kgUlt != null) { _consEl.value = String(_kgUlt).replace(".", ","); _calcCustoRacao(); }
 }
 
 async function salvarLancamentoRacao(indexDireto = "") {
@@ -2520,7 +2503,9 @@ async function salvarLancamentoRacao(indexDireto = "") {
   // Guarda contra a tela ter mudado durante o await: sem isto, um getElementById
   // nulo estouraria antes do restaurar() e o botão ficaria preso em "Salvando...".
   const _dataRacaoEl = document.getElementById("dataRacao"); if (_dataRacaoEl) _dataRacaoEl.value = proxStr;
-  const _consumoRacaoEl = document.getElementById("consumoRacao"); if (_consumoRacaoEl) _consumoRacaoEl.value = "";
+  // A quantidade PERMANECE após salvar (não limpa): lançando rações atrasadas, a
+  // data avança sozinha e a mesma quantidade fica pronta pra repetir no próximo
+  // dia. É só um campo na tela — fechar e reabrir o app zera naturalmente.
   restaurar();
 
   const msgSucesso = document.getElementById("msg-racao-sucesso");
