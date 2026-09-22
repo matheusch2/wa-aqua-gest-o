@@ -2293,6 +2293,50 @@ function _sugerirUltimaRacao(index) {
   _calcCustoRacao();
 }
 
+// Data (AAAA-MM-DD) do último lançamento de ração de um viveiro, pela data.
+function _ultimaRacaoData(viveiro) {
+  const ultima = (viveiro?.racoes || []).reduce((atual, r) =>
+    r.data && (!atual || r.data > atual.data) ? r : atual, null);
+  return ultima?.data || null;
+}
+
+// Dias corridos entre uma data (AAAA-MM-DD) e hoje. Funcao pura -> tem teste.
+function _diasDesde(ymd, hojeYmd = _hojeLocal()) {
+  if (!ymd) return null;
+  return Math.round((_parseDataLocal(hojeYmd) - _parseDataLocal(ymd)) / 86400000);
+}
+
+// Etiqueta "Último lançamento" embaixo do campo de data: mostra o último dia
+// lançado naquele viveiro e há quantos dias foi. Tocar joga a data para o DIA
+// SEGUINTE (o primeiro em aberto), pra continuar sem cair em data duplicada.
+function _atualizarChipUltimoRacao(index) {
+  const box = document.getElementById("racao-ultimo-chip");
+  if (!box) return;
+  const dt = _ultimaRacaoData(viveiros[index]);
+  if (!dt) { box.innerHTML = ""; return; }
+  const dias = _diasDesde(dt);
+  const quando = dias <= 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
+  box.innerHTML = `<button type="button" onclick="_continuarDoUltimo(${index})" style="width:100%;margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;justify-content:center;text-align:center;line-height:1.35;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer">
+    <span style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Último: <b>${formatarData(dt)}</b> (${quando})</span>
+    <span style="opacity:.85">· toque para continuar</span>
+  </button>`;
+}
+
+function _continuarDoUltimo(index) {
+  const dt = _ultimaRacaoData(viveiros[index]);
+  if (!dt) return;
+  const el = document.getElementById("dataRacao");
+  if (el) el.value = _maAddDias(dt, 1); // dia seguinte ao último lançado
+  _calcCustoRacao();
+}
+
+// Troca de viveiro na tela geral: atualiza a ração sugerida E a etiqueta do
+// último lançamento daquele viveiro.
+function _racaoTrocarViveiro(v) {
+  _sugerirUltimaRacao(v);
+  _atualizarChipUltimoRacao(Number(v));
+}
+
 function mostrarLancamentoRacao(indexSelecionado = "") {
   if (indexSelecionado === "") esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -2346,7 +2390,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
               <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
               <label>Viveiro</label>
             </div>
-            <select id="viveiroRacao" onchange="_sugerirUltimaRacao(this.value)">
+            <select id="viveiroRacao" onchange="_racaoTrocarViveiro(this.value)">
               ${viveiros.map((v, i) => v.dataPovoamento ? `<option value="${i}">${_esc(v.nome)}</option>` : "").join("")}
             </select>
           </div>
@@ -2358,6 +2402,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             <label>Data</label>
           </div>
           <input type="date" id="dataRacao" value="${hoje}">
+          <div id="racao-ultimo-chip"></div>
         </div>
 
         ${tiposRacao.length > 0 ? `
@@ -2405,7 +2450,9 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
       </div>
     </div>
   `;
+  const _idxRac = dentroDoViveiro ? indexSelecionado : Number(document.getElementById("viveiroRacao")?.value);
   _sugerirUltimaRacao(dentroDoViveiro ? indexSelecionado : document.getElementById("viveiroRacao")?.value);
+  _atualizarChipUltimoRacao(_idxRac);
 }
 
 async function salvarLancamentoRacao(indexDireto = "") {

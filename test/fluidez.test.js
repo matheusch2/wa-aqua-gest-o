@@ -59,6 +59,14 @@ test("ração: sem histórico, tipo removido ou não especificado fica vazio",()
   for(const p of ["{}","{racoes:[]}","{racoes:[{data:'2026-09-21',tipoRacaoId:'removido'}]}","{racoes:[{data:'2026-09-21'},{data:'2026-09-20',tipoRacaoId:'a'}]}"])
     assert.equal(a.run(`_ultimaRacaoIndex(${p})`),-1);
 });
+test("ração: data do último lançamento e dias desde então",()=>{
+  const a=load();seed(a);
+  assert.equal(a.run('_ultimaRacaoData(viveiros[0])'),'2026-09-20');
+  assert.equal(a.run('_ultimaRacaoData({racoes:[]})'),null);
+  assert.equal(a.run(`_diasDesde('2026-09-13','2026-09-20')`),7);
+  assert.equal(a.run(`_diasDesde('2026-09-20','2026-09-20')`),0);
+  assert.equal(a.run('_diasDesde(null)'),null);
+});
 test("ração: troca de viveiro atualiza sugestão e custo, não quantidade/data",()=>{
   const a=load();seed(a);a.get('consumoRacao').value='10';a.get('dataRacao').value='2026-09-21';
   a.run('_sugerirUltimaRacao(0)');assert.equal(a.get('tipoRacaoSelect').value,'1');
