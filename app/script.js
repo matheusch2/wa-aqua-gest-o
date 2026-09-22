@@ -6093,19 +6093,43 @@ async function salvarPagamentoParcial(index, botao) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
   const hoje = _hojeLocal();
+  const _fmtRs = (n) => Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+
+  // Pagamento ATÔMICO no banco: pagar_boleto trava a linha do boleto e SOMA o
+  // pagamento lá dentro, então dois aparelhos pagando ao mesmo tempo não se
+  // sobrescrevem (auditoria #6). O banco é a fonte da verdade — espelhamos a
+  // resposta dele. Se a função ainda não existir (ou o cache do PostgREST não a
+  // conhecer ainda), cai no jeito antigo — funciona, só sem a trava de corrida.
+  const { data: res, error } = await supabaseClient.rpc("pagar_boleto", {
+    p_boleto: b.id, p_valor: valor, p_data: hoje,
+  });
+  const _funcaoAusente = !!error && (error.code === "PGRST202" ||
+    /could not find the function|pagar_boleto.*does not exist/i.test(error.message || ""));
+
+  if (!error) {
+    restaurar();
+    b.valorPago = Number(res.valor_pago);
+    if (Array.isArray(res.pagamentos)) b.pagamentos = res.pagamentos;
+    if (res.pago) { b.pago = true; b.dataPagamento = hoje; }
+    const pagou = Number(res.valor_pagou);
+    _toastSucesso(res.pago ? "Boleto quitado! ✓" : "Pagamento de R$ " + _fmtRs(pagou > 0 ? pagou : valor) + " registrado.");
+    verDetalhesBoleto(index);
+    return;
+  }
+  if (!_funcaoAusente) { restaurar(); _toastErro("Erro ao registrar pagamento: " + error.message); return; }
+
+  // Fallback (função não instalada): caminho antigo, sem proteção de corrida.
   const novosPagamentos = [...(b.pagamentos || []), { data: hoje, valor }];
   const novoValorPago = Math.round(((b.valorPago || 0) + valor) * 100) / 100;
   const quitou = b.valor && novoValorPago >= b.valor - 0.005;
-
   const patch = { valor_pago: novoValorPago, pagamentos: novosPagamentos };
   if (quitou) { patch.pago = true; patch.data_pagamento = hoje; }
-
-  const { error } = await supabaseClient.from("boletos").update(patch).eq("id", b.id).eq("user_id", usuario.id);
+  const { error: e2 } = await supabaseClient.from("boletos").update(patch).eq("id", b.id).eq("user_id", usuario.id);
   restaurar();
-  if (error) { _toastErro("Erro ao registrar pagamento: " + error.message); return; }
+  if (e2) { _toastErro("Erro ao registrar pagamento: " + e2.message); return; }
   b.valorPago = novoValorPago; b.pagamentos = novosPagamentos;
   if (quitou) { b.pago = true; b.dataPagamento = hoje; }
-  _toastSucesso(quitou ? "Boleto quitado! ✓" : "Pagamento de R$ " + valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " registrado.");
+  _toastSucesso(quitou ? "Boleto quitado! ✓" : "Pagamento de R$ " + _fmtRs(valor) + " registrado.");
   verDetalhesBoleto(index);
 }
 
