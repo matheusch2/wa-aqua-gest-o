@@ -4240,6 +4240,11 @@ async function salvarNovoCiclo(index, modo = "reiniciar") {
   viveiros[index].totalPovoado = novoTotal;
   viveiros[index].laboratorio = novoLaboratorio;
   viveiros[index].cicloId = novoCicloId;
+  // Espelha o que a RPC faz: reiniciar (ciclo novo) zera a data de preparação
+  // pra o rateio começar no povoamento, não na preparação do ciclo anterior;
+  // povoar (mesmo ciclo) mantém a preparação. Sem isto, o estado local ficaria
+  // com a data antiga até um recarregar.
+  if (!povoar) viveiros[index].dataPreparacao = null;
   viveiros[index].racoes = [];
   viveiros[index].biometrias = [];
   viveiros[index].despescas = [];

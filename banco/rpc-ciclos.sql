@@ -63,7 +63,14 @@ begin
      set data_povoamento = p_povoamento,
          total_povoado   = p_total,
          laboratorio     = p_laboratorio,
-         ciclo_id        = p_ciclo_id
+         ciclo_id        = p_ciclo_id,
+         -- Quando o ciclo_id MUDA, é um REINÍCIO (ciclo novo): a data de
+         -- preparação do ciclo anterior tem de sair, senão o ciclo novo passa a
+         -- somar custos desde a preparação antiga (auditoria). Quando o ciclo_id
+         -- CONTINUA o mesmo, é um POVOAMENTO da preparação em curso: mantém a
+         -- data de preparação (os custos de preparo pertencem a este ciclo).
+         data_preparacao = case when p_ciclo_id is distinct from ciclo_id
+                                then null else data_preparacao end
    where id = p_viveiro and user_id = v_uid;
 end;
 $$;
