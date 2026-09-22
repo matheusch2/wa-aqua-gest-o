@@ -2420,8 +2420,11 @@ async function salvarLancamentoRacao(indexDireto = "") {
 
   // Protocolos automáticos atrelados à ração (ex.: potássio por kg)
   // Protegido: nunca pode quebrar o lançamento de ração nem o feedback.
-  let _protAplicados = [];
-  try { _protAplicados = (await _aplicarProtocolosRacao(index, racao, data)) || []; } catch (e) { console.log("Protocolo ração:", e); }
+  let _protAplicados = [], _protFalhas = [];
+  try {
+    const _pr = await _aplicarProtocolosRacao(index, racao, data);
+    _protAplicados = _pr.aplicados || []; _protFalhas = _pr.falhas || [];
+  } catch (e) { console.log("Protocolo ração:", e); _protFalhas = ["protocolo automático"]; }
 
   // Mostra mensagem de sucesso e avança a data para o dia seguinte (sequência)
   const [ay, am, ad] = data.split("-").map(Number);
@@ -2447,6 +2450,11 @@ async function salvarLancamentoRacao(indexDireto = "") {
   if (_protAplicados.length) {
     const txt = _protAplicados.map(a => `${_esc(a.nome)} (${_fmtQtdCusto(a.quantidadeG)})`).join(", ");
     setTimeout(() => _toastSucesso("Protocolo aplicado: " + txt), 500);
+  }
+  // Não deixa o custo automático falhar calado: a ração entrou, mas o insumo do
+  // protocolo não — avisa pra pessoa relançar quando a internet voltar.
+  if (_protFalhas.length) {
+    setTimeout(() => _toastErro("Ração salva, mas o custo automático de " + _protFalhas.join(", ") + " não entrou. Confira a conexão e relance o protocolo."), 900);
   }
 }
 
@@ -3690,6 +3698,11 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
 
   if (!novaData || !(novaQtd > 0)) { _toastErro("Preencha a data e uma gramatura maior que zero."); return; }
 
+  // Mesma validação de data do cadastro: não pode ser no futuro nem antes do
+  // início do ciclo (a edição pulava essa checagem e deixava passar).
+  const _eDataEditBio = _erroDataCiclo(viveiros[viveiroIndex], novaData);
+  if (_eDataEditBio) { _toastErro(_eDataEditBio); return; }
+
   // Impede duas biometrias na mesma data (ignora a própria que está sendo editada)
   const dataDuplicada = (viveiros[viveiroIndex].biometrias || [])
     .some((b, idx) => idx !== bioIndex && b.data === novaData);
@@ -3933,6 +3946,15 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     return;
   }
 
+  // Mesmas validações do cadastro (a edição pulava as duas): a data não pode
+  // ser futura nem anterior ao início do ciclo, e não pode haver dois
+  // lançamentos de ração no mesmo dia (ignora o próprio, que está sendo editado).
+  const _eDataEditR = _erroDataCiclo(viveiros[viveiroIndex], novaData);
+  if (_eDataEditR) { _toastErro(_eDataEditR); return; }
+  const _dupEditR = (viveiros[viveiroIndex].racoes || [])
+    .some((r, idx) => idx !== racaoIndex && r.data.substring(0, 10) === novaData);
+  if (_dupEditR) { _toastErro(`Já existe um lançamento em ${formatarData(novaData)}. Edite o existente.`); return; }
+
   const restaurar = _travarBotao(botao, "Salvando...");
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
   const usuario = await pegarUsuarioLogado();
@@ -3968,11 +3990,18 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   // Os protocolos atrelados à ração dosam por kg lançado: ao corrigir o
   // lançamento, o custo automático precisa ser refeito, senão continua cobrando
   // pela quantidade antiga. Limpa a data antiga (e a nova, se mudou) e reaplica.
+  let _protFalhasEd = [];
   try {
     await _removerCustosAutoRacao(viveiroIndex, dataAntiga);
     if (novaData !== dataAntiga) await _removerCustosAutoRacao(viveiroIndex, novaData);
-    if (novaQtd > 0) await _aplicarProtocolosRacao(viveiroIndex, novaQtd, novaData);
-  } catch (e) { console.log("Protocolo ração (edição):", e); }
+    if (novaQtd > 0) {
+      const _pr = await _aplicarProtocolosRacao(viveiroIndex, novaQtd, novaData);
+      _protFalhasEd = _pr.falhas || [];
+    }
+  } catch (e) { console.log("Protocolo ração (edição):", e); _protFalhasEd = ["protocolo automático"]; }
+  if (_protFalhasEd.length) {
+    setTimeout(() => _toastErro("Ração atualizada, mas o custo automático de " + _protFalhasEd.join(", ") + " não entrou. Confira a conexão e relance o protocolo."), 900);
+  }
 
   // Custo de ração derivado dos lançamentos — recalcula em memória
   _montarCustoRacaoVirtual();
@@ -5216,7 +5245,7 @@ function _perguntarVigenciaCustoFixo(c, valorNovo) {
     fundo.innerHTML = `
       <div class="cf-vig-caixa">
         <h4>A partir de quando vale?</h4>
-        <p class="cf-vig-sub">${_attr(c.nome)}: de <b>${rs(c.valorMensal)}</b> para <b>${rs(valorNovo)}</b></p>
+        <p class="cf-vig-sub">${_esc(c.nome)}: de <b>${rs(c.valorMensal)}</b> para <b>${rs(valorNovo)}</b></p>
         <input type="date" id="cfVigData" class="cf-vig-data" value="${hoje}">
         <div class="cf-vig-atalhos">
           <button type="button" class="cf-vig-chip" data-data="${hoje}">Hoje</button>
@@ -6843,7 +6872,7 @@ function imprimirRelatorioFinanceiro() {
     subtitulo = custos[0].viveiroNome || "";
     const ordenados = [...custos].sort((a, b) => b.data.localeCompare(a.data));
     cabecalho = `<tr><th>Data</th><th>Viveiro</th><th>Descrição</th><th>Valor</th></tr>`;
-    linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${c.viveiroNome || ""}</td><td>${_esc(c.nomeProduto || "")}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("")
+    linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${_esc(c.viveiroNome || "")}</td><td>${_esc(c.nomeProduto || "")}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("")
       + `<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
   } else {
     // Todos os viveiros: consolidado por categoria
@@ -6855,7 +6884,7 @@ function imprimirRelatorioFinanceiro() {
   }
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório financeiro</title>
     <style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}h1{color:rgb(6,107,99);font-size:20px;margin-bottom:2px}.sub{color:#6b7280;font-size:13px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:left}th{background:#f0fdf4}.total-row td{font-weight:700;border-top:2px solid rgb(6,107,99)}</style></head>
-    <body><h1>Relatório financeiro</h1><p class="sub">${subtitulo}</p><p>Período: ${periodoTxt}</p>
+    <body><h1>Relatório financeiro</h1><p class="sub">${_esc(subtitulo)}</p><p>Período: ${periodoTxt}</p>
     <table><thead>${cabecalho}</thead>
     <tbody>${linhas}</tbody></table></body></html>`;
   _imprimirDoc(html);
@@ -7956,6 +7985,7 @@ async function _aplicarProtocolosRacao(index, racaoKg, data) {
   const prots = (viveiros[index].protocolos || []).filter(p => p.ativo && p.tipo === "racao");
   const wd = _maParse(data).getDay();
   const aplicados = [];
+  const falhas = [];
   for (const p of prots) {
     if (p.inicio && data < p.inicio) continue;
     if (Array.isArray(p.dias) && p.dias.length > 0 && !p.dias.includes(wd)) continue;
@@ -7964,8 +7994,9 @@ async function _aplicarProtocolosRacao(index, racaoKg, data) {
     const quantidadeG = (Number(p.dosePorKgG) || 0) * racaoKg;
     const r = await _lancarCustoAuto(index, produto, quantidadeG, data, "Automático (ração)");
     if (r === "ok") aplicados.push({ nome: produto.nome, quantidadeG, valor: (produto.custoPorGrama || 0) * quantidadeG });
+    else if (r === "erro") falhas.push(produto.nome); // "pulado" = já existia, não é falha
   }
-  return aplicados;
+  return { aplicados, falhas };
 }
 
 // Aplica um protocolo de ração aos lançamentos de ração já existentes.
