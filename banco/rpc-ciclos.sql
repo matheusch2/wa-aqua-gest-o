@@ -140,7 +140,11 @@ begin
     return jsonb_build_object(
       'ciclo_id_row', v_ciclo_row,
       'custo_id', null,
-      'reaproveitado', true
+      'reaproveitado', true,
+      -- Id de preparação que REALMENTE ficou no banco na 1ª tentativa. Numa
+      -- repetição (resposta perdida), o app adota este em vez do id novo que
+      -- ele gerou — senão os dois divergem e custos caem no ciclo errado (#3).
+      'novo_ciclo_id_atual', v_atual_ciclo
     );
   end if;
 
@@ -250,7 +254,9 @@ begin
   return jsonb_build_object(
     'ciclo_id_row', v_ciclo_row,
     'custo_id', v_custo_id,
-    'reaproveitado', v_reaproveit
+    'reaproveitado', v_reaproveit,
+    -- Id de preparação que passou a valer para o viveiro (o mesmo gravado agora).
+    'novo_ciclo_id_atual', p_novo_ciclo_id
   );
 end;
 $$;

@@ -7217,7 +7217,12 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.totalPovoado = null;
   viveiro.laboratorio = null;
   viveiro.dataPreparacao = dataEncerramento;
-  viveiro.cicloId = novoCicloIdPrep;
+  // Adota o id de preparação que a RPC confirma ter gravado. Numa repetição
+  // após resposta perdida, o banco pode ter guardado o id da PRIMEIRA tentativa;
+  // usar o id local (gerado de novo agora) desalinharia o viveiro e faria custos
+  // caírem no ciclo errado (#3). Fallback pro id gerado se a RPC antiga não
+  // devolver o campo — aí segue o comportamento anterior, sem quebrar.
+  viveiro.cicloId = rpc.novo_ciclo_id_atual || novoCicloIdPrep;
   _montarCustoRacaoVirtual(); // ciclo novo começa sem custo de ração derivado
 
   if (!viveiro.ciclosFinalizados) {
