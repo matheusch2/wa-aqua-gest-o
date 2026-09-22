@@ -105,6 +105,9 @@ declare
   v_ciclo_row   bigint;
   v_custo_id    uuid;
   v_reaproveit  boolean := false;
+  v_bio_json    jsonb;
+  v_rac_json    jsonb;
+  v_desp_json   jsonb;
 begin
   if v_uid is null then
     raise exception 'Não autenticado';
@@ -143,6 +146,32 @@ begin
 
   -- CASO 2 — encerramento normal (ou conclusão de um estado antigo pela metade).
   if v_ciclo_row is null then
+    -- Monta a "foto" do histórico A PARTIR DAS LINHAS ATUAIS DO BANCO, e não da
+    -- que o celular enviou. Assim, se outro aparelho lançou uma ração/biometria/
+    -- despesca depois deste celular carregar, ela ENTRA no histórico do ciclo em
+    -- vez de ser apagada logo abaixo sem deixar rastro (auditoria #1). O formato
+    -- de cada objeto espelha exatamente o que o app lê de volta.
+    select coalesce(jsonb_agg(jsonb_build_object(
+             'data', b.data, 'gramatura', b.gramatura) order by b.data), '[]'::jsonb)
+      into v_bio_json
+      from public.biometrias b
+     where b.viveiro_id = p_viveiro and b.user_id = v_uid;
+
+    select coalesce(jsonb_agg(jsonb_build_object(
+             'data', r.data, 'racao', r.racao,
+             'nomeRacao', r.nome_racao, 'tipoRacaoId', r.tipo_racao_id) order by r.data), '[]'::jsonb)
+      into v_rac_json
+      from public.racoes r
+     where r.viveiro_id = p_viveiro and r.user_id = v_uid;
+
+    select coalesce(jsonb_agg(jsonb_build_object(
+             'data', d.data, 'tipo', 'Parcial',
+             'quantidadeKg', d.quantidade_kg, 'pesoMedio', d.peso_medio,
+             'precoKg', d.preco_kg) order by d.data), '[]'::jsonb)
+      into v_desp_json
+      from public.despescas d
+     where d.viveiro_id = p_viveiro and d.user_id = v_uid;
+
     insert into public.ciclos (
       viveiro_id, user_id, nome_viveiro, laboratorio, tamanho, total_povoado,
       data_povoamento, data_encerramento, dias_cultivo, producao_final,
@@ -171,9 +200,9 @@ begin
       nullif(p_ciclo->>'preco_venda','')::numeric,
       nullif(p_ciclo->>'data_preparacao','')::date,
       p_ciclo_id,
-      coalesce(p_ciclo->'biometrias_json','[]'::jsonb),
-      coalesce(p_ciclo->'racoes_json','[]'::jsonb),
-      coalesce(p_ciclo->'despescas_json','[]'::jsonb)
+      v_bio_json,
+      v_rac_json,
+      v_desp_json
     ) returning id into v_ciclo_row;
   end if;
 
