@@ -46,10 +46,13 @@ let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalh
 let _outroCustoModo = "um"; // "Outro custo" pelo menu: "um" viveiro ou "ratear" entre vários
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
+let _boletosBusca = "";
+let _finViveiroId = null;
 let _finOrdenacao = "data";
 let _finPagina = 0;
 let _finPeriodoIni = "";
 let _finPeriodoFim = "";
+let _finPeriodoInicializado = false;
 // Seletor de ciclo do relatório financeiro (só vale com UM viveiro escolhido):
 // "" = por período (datas); "atual" = ciclo em andamento; senão = ciclo_id de um
 // ciclo já encerrado. _finCicloWin guarda a janela ini/fim do ciclo escolhido,
@@ -57,8 +60,22 @@ let _finPeriodoFim = "";
 let _finCicloSel = "";
 let _finCicloWin = null;
 let _scrollSalvo = 0;
-function salvarScroll() { _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0; }
-function restaurarScroll() { setTimeout(() => window.scrollTo(0, _scrollSalvo), 40); }
+let _scrollPainelSalvo = 0;
+function salvarScroll() {
+  _scrollSalvo = window.scrollY || document.documentElement.scrollTop || 0;
+  _scrollPainelSalvo = document.getElementById("area-gestao")?.scrollTop || 0;
+}
+function restaurarScroll() {
+  const y = _scrollSalvo, painelY = _scrollPainelSalvo;
+  const painel = document.getElementById("area-gestao");
+  const tela = painel?.firstElementChild;
+  setTimeout(() => {
+    // Não puxar a rolagem se a pessoa já navegou para outra tela.
+    if (painel && painel.firstElementChild !== tela) return;
+    if (painel) painel.scrollTop = painelY;
+    window.scrollTo({ top: y, left: 0, behavior: "instant" });
+  }, 60);
+}
 
 // ── Tabela de taxas de alimentação WA Aqua ──────────────────────────────────
 // Curva contínua e suave (v2), calibrada pela referência comercial (Jory 1995) —
@@ -129,13 +146,46 @@ function _toastSucesso(msg) {
 // Trava um botão de ação durante uma operação de rede: mostra spinner + texto,
 // bloqueia duplo toque e devolve uma função para restaurar o estado original.
 // Use no topo da função: if (botao?.disabled) return;  (antes de qualquer await)
+const _acoesPendentes = new WeakMap();
 function _travarBotao(botao, texto = "Salvando...") {
   if (!botao) return () => {};
+  if (_acoesPendentes.has(botao)) return _acoesPendentes.get(botao);
   const htmlOriginal = botao.innerHTML;
+  const busyOriginal = botao.getAttribute("aria-busy");
   botao.disabled = true;
+  botao.setAttribute("aria-busy", "true");
   botao.classList.add("btn-carregando");
-  botao.innerHTML = `<span class="btn-spinner"></span>${texto}`;
-  return () => { botao.disabled = false; botao.classList.remove("btn-carregando"); botao.innerHTML = htmlOriginal; };
+  botao.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span role="status">${_esc(texto)}</span>`;
+  const restaurar = () => {
+    if (_acoesPendentes.get(botao) !== restaurar) return;
+    _acoesPendentes.delete(botao);
+    botao.disabled = false;
+    if (busyOriginal === null) botao.removeAttribute("aria-busy");
+    else botao.setAttribute("aria-busy", busyOriginal);
+    botao.classList.remove("btn-carregando");
+    botao.innerHTML = htmlOriginal;
+  };
+  _acoesPendentes.set(botao, restaurar);
+  return restaurar;
+}
+
+// Os validadores e a confirmação de sucesso continuam nas funções de salvar.
+// Esta borda captura exceções inesperadas sem limpar os campos nem deixar o
+// botão preso. Não repete uma gravação cujo resultado possa ser incerto.
+async function _executarSalvamento(botao, acao) {
+  if (botao?.disabled) return;
+  let restaurar;
+  try {
+    const operacao = acao();
+    restaurar = _acoesPendentes.get(botao);
+    await operacao;
+  } catch (erro) {
+    console.log("Falha ao concluir ação:", erro);
+    _toastErro("Não foi possível confirmar a operação. Confira o histórico antes de tentar novamente.");
+  } finally {
+    if (restaurar) restaurar();
+    else _acoesPendentes.get(botao)?.();
+  }
 }
 
 // O Chart.js guarda cada gráfico numa lista interna, com um observador de
@@ -2227,6 +2277,22 @@ function _calcCustoRacao() {
   }
 }
 
+// Usa a data do lançamento, não a ordem em que a consulta devolveu as linhas.
+// Se a última ração saiu do catálogo (ou não foi especificada), não adivinha.
+function _ultimaRacaoIndex(viveiro, catalogo = tiposRacao) {
+  const ultima = (viveiro?.racoes || []).reduce((atual, r) =>
+    r.data && (!atual || r.data > atual.data) ? r : atual, null);
+  return ultima?.tipoRacaoId ? catalogo.findIndex(t => t.id === ultima.tipoRacaoId) : -1;
+}
+
+function _sugerirUltimaRacao(index) {
+  const select = document.getElementById("tipoRacaoSelect");
+  if (!select) return;
+  const tipo = _ultimaRacaoIndex(viveiros[index]);
+  select.value = tipo >= 0 ? String(tipo) : "";
+  _calcCustoRacao();
+}
+
 function mostrarLancamentoRacao(indexSelecionado = "") {
   if (indexSelecionado === "") esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -2280,7 +2346,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
               <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
               <label>Viveiro</label>
             </div>
-            <select id="viveiroRacao">
+            <select id="viveiroRacao" onchange="_sugerirUltimaRacao(this.value)">
               ${viveiros.map((v, i) => v.dataPovoamento ? `<option value="${i}">${_esc(v.nome)}</option>` : "").join("")}
             </select>
           </div>
@@ -2328,7 +2394,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           <span class="msg-texto">Ração lançada com sucesso!</span>
         </div>
 
-        <button class="botao-salvar" onclick="salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
         </button>
@@ -2339,6 +2405,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
       </div>
     </div>
   `;
+  _sugerirUltimaRacao(dentroDoViveiro ? indexSelecionado : document.getElementById("viveiroRacao")?.value);
 }
 
 async function salvarLancamentoRacao(indexDireto = "") {
@@ -2553,7 +2620,7 @@ function abrirBiometria(index) {
           <span class="msg-texto">Biometria lançada!</span>
         </div>
 
-        <button class="botao-salvar" onclick="salvarBiometria(${index})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarBiometria(${index}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar biometria
         </button>
@@ -2725,7 +2792,7 @@ function abrirDespesca(index) {
           <span class="msg-texto">Despesca lançada com sucesso!</span>
         </div>
 
-        <button class="botao-salvar" onclick="salvarDespesca(${index})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarDespesca(${index}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar despesca
         </button>
@@ -3626,7 +3693,7 @@ function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAt
             <span class="campo-unidade">kg</span>
           </div>
         </div>
-        <button class="botao-salvar" onclick="salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto}, ${paginaAtual})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarEdicaoRacao(${viveiroIndex}, ${racaoIndex}, '${elementoId}', ${direto}, ${paginaAtual}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
@@ -3649,8 +3716,8 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
     : document.getElementById(elementoId);
 
   const acaoVoltar = direto
-    ? `mostrarHistoricoDoViveiroDireto(${viveiroIndex}); abrirHistoricoBiometriaDireto(${viveiroIndex})`
-    : `renderizarHistoricoBiometria(${viveiroIndex}, '${elementoId}', ${direto})`;
+    ? `mostrarHistoricoDoViveiroDireto(${viveiroIndex}); abrirHistoricoBiometriaDireto(${viveiroIndex}); restaurarScroll()`
+    : `renderizarHistoricoBiometria(${viveiroIndex}, '${elementoId}', ${direto}); restaurarScroll()`;
 
   alvo.innerHTML = `
     <div class="form-lancamento">
@@ -3679,7 +3746,7 @@ function abrirEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto) {
             <span class="campo-unidade">g</span>
           </div>
         </div>
-        <button class="botao-salvar" onclick="salvarEdicaoBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarEdicaoBiometria(${viveiroIndex}, ${bioIndex}, '${elementoId}', ${direto}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
@@ -3789,8 +3856,8 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
     : document.getElementById(elementoId);
 
   const acaoVoltar = direto
-    ? `mostrarHistoricoDoViveiroDireto(${viveiroIndex}); abrirHistoricoDespescaDireto(${viveiroIndex})`
-    : `renderizarHistoricoDespesca(${viveiroIndex}, '${elementoId}', ${direto})`;
+    ? `mostrarHistoricoDoViveiroDireto(${viveiroIndex}); abrirHistoricoDespescaDireto(${viveiroIndex}); restaurarScroll()`
+    : `renderizarHistoricoDespesca(${viveiroIndex}, '${elementoId}', ${direto}); restaurarScroll()`;
 
   alvo.innerHTML = `
     <div class="form-lancamento">
@@ -3839,7 +3906,7 @@ function abrirEdicaoDespesca(viveiroIndex, despIndex, elementoId, direto) {
             <span class="campo-unidade">R$</span>
           </div>
         </div>
-        <button class="botao-salvar" onclick="salvarEdicaoDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarEdicaoDespesca(${viveiroIndex}, ${despIndex}, '${elementoId}', ${direto}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
@@ -5889,7 +5956,7 @@ function abrirBoletos(filtro) {
       </div>
       <div class="bt-busca">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Buscar por nome ou fornecedor..." oninput="_filtrarBoletosBusca(this.value)">
+        <input type="text" value="${_attr(_boletosBusca)}" placeholder="Buscar por nome ou fornecedor..." oninput="_filtrarBoletosBusca(this.value)">
       </div>
       <div class="bt-abas">
         <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">A pagar</button>
@@ -5921,10 +5988,12 @@ function abrirBoletos(filtro) {
   `;
 
   // Fecha menus ao clicar fora
+  _filtrarBoletosBusca(_boletosBusca);
   document.addEventListener("click", _fecharMenusBoleto, { once: true });
 }
 
 function _filtrarBoletosBusca(termo) {
+  _boletosBusca = termo || "";
   const t = (termo || "").trim().toLowerCase();
   let vis = 0, total = 0;
   const ehPagos = _boletosFiltro === "pagos";
@@ -6295,7 +6364,7 @@ function abrirFormBoleto(index) {
       <p class="fin-venc-dica">Calculado automaticamente pela data da compra + prazo.</p>
 
       <div id="msg-boleto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center"></div>
-      <button class="botao-salvar" onclick="salvarBoleto(${editando ? index : "null"})">${editando ? "Salvar boleto" : "Salvar boleto"}</button>
+      <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarBoleto(${editando ? index : "null"}))">${editando ? "Salvar boleto" : "Salvar boleto"}</button>
       <div class="separador-ou"><span>ou</span></div>
       <button class="botao-voltar-form" onclick="abrirBoletos()">Voltar</button>
     </div>
@@ -6436,11 +6505,14 @@ async function desmarcarBoletoPago(index, voltarDetalhe, botao) {
 
 function abrirFinanceiro() {
   esconderMenu();
-  // O seletor de viveiro sempre abre em "Todos os viveiros", então o modo-ciclo
-  // (que só vale com um viveiro escolhido) começa desligado.
-  _finCicloSel = ""; _finCicloWin = null;
+  // Guarda o ID, não o índice: renomear/remover um viveiro pode reordenar a lista.
+  const escolhido = viveiros.findIndex(v => v.id === _finViveiroId);
+  if (escolhido < 0) { _finViveiroId = null; _finCicloSel = ""; }
+  else if (_finCicloSel && !_finInfoCicloSel(viveiros[escolhido])) _finCicloSel = "";
+  _finCicloWin = null;
   // Período padrão: mês atual
-  if (!_finPeriodoIni && !_finPeriodoFim) {
+  if (!_finPeriodoInicializado) {
+    _finPeriodoInicializado = true;
     const now = new Date();
     const ini = new Date(now.getFullYear(), now.getMonth(), 1);
     const fim = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -6461,7 +6533,7 @@ function abrirFinanceiro() {
         </div>
         <select id="viveiroFinanceiro" onchange="_finTrocarViveiro()">
           <option value="">Todos os viveiros</option>
-          ${viveiros.map((v, i) => `<option value="${i}">${_esc(v.nome)}</option>`).join("")}
+          ${viveiros.map((v, i) => `<option value="${i}"${i === escolhido ? " selected" : ""}>${_esc(v.nome)}</option>`).join("")}
         </select>
       </div>
       <div id="fin-ciclo-wrap"></div>
@@ -6498,6 +6570,7 @@ function _finSetPeriodo() {
 }
 
 function _finLimparFiltros() {
+  _finViveiroId = null;
   _finPeriodoIni = ""; _finPeriodoFim = ""; _finPagina = 0;
   _finCicloSel = ""; _finCicloWin = null;
   const a = document.getElementById("finPeriodoIni"); if (a) a.value = "";
@@ -6539,6 +6612,8 @@ function _finRenderCicloSel() {
 
 // Trocou o viveiro: volta para o modo período e remonta o seletor de ciclo.
 function _finTrocarViveiro() {
+  const idx = document.getElementById("viveiroFinanceiro")?.value;
+  _finViveiroId = idx !== "" ? (viveiros[idx]?.id || null) : null;
   _finCicloSel = ""; _finCicloWin = null; _finPagina = 0;
   _finRenderCicloSel();
   _finAtualizarPeriodoVisivel();
@@ -9079,7 +9154,7 @@ function abrirLancarCustoProduto(index = "") {
           <span id="previa-custo-equiv" class="previa-equiv" style="display:none"></span>
         </div>
         <div id="msg-custo-produto-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarCustoProduto(${dentro ? index : ""})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarCustoProduto(${dentro ? index : ""}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
         </button>
@@ -9767,6 +9842,7 @@ function verCustosPreparacao(index) {
 }
 
 function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
+  salvarScroll();
   const chave = decodeURIComponent(chaveEnc);
   const v = viveiros[index];
   const grupo = _custosDoEscopo(v).filter(c => _chaveCusto(c) === chave);
@@ -9813,8 +9889,8 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
         ${prod ? `<p class="rc-print-dica">Recalculado pela quantidade (R$ ${formatarNumeroBR(prod.custoPorGrama * 1000, 2)}/kg). Você ainda pode ajustar o valor na mão.</p>` : ""}
       </div>
       <div id="msg-edit-custo" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
-      <button class="botao-salvar" onclick="salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${_dArg(direto)})">Salvar alterações</button>
-      <button class="botao-voltar-form" style="margin-top:10px" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Voltar</button>
+      <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${_dArg(direto)}))">Salvar alterações</button>
+      <button class="botao-voltar-form" style="margin-top:10px" onclick="renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)}); restaurarScroll()">Voltar</button>
     </div>
   `;
 }
@@ -9904,6 +9980,7 @@ async function salvarEdicaoGrupoCusto(index, chaveEnc, elementoId, direto) {
   });
   _toastSucesso("Custo atualizado!");
   renderizarHistoricoCustos(index, elementoId, direto);
+  restaurarScroll();
 }
 
 function confirmarExcluirGrupoCusto(index, gi, chaveEnc, elementoId, direto) {
@@ -9983,7 +10060,7 @@ function abrirEdicaoCusto(viveiroIndex, custoIndex, elementoId, direto) {
             onblur="formatarMoedaBlur(this)">
         </div>
         <div id="msg-edit-custo-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <button class="botao-salvar" onclick="salvarEdicaoCusto(${viveiroIndex},${custoIndex},'${elementoId}',${_dArg(direto)})">
+        <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarEdicaoCusto(${viveiroIndex},${custoIndex},'${elementoId}',${_dArg(direto)}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
