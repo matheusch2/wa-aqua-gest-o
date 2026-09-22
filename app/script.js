@@ -5321,19 +5321,35 @@ async function salvarCustoFixo(index) {
 
     if (dividir) {
       const vespera = _maAddDias(desde, -1);
-      const { error: e1 } = await supabaseClient.from("custos_fixos")
-        .update({ data_fim: vespera }).eq("id", c.id).eq("user_id", usuario.id);
-      if (e1) { console.log(e1); mostrarErro("Erro ao salvar: " + e1.message); restaurar(); return; }
-      const { data: novoReg, error: e2 } = await supabaseClient.from("custos_fixos")
-        .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: desde, ativo: true }])
-        .select();
-      if (e2 || !novoReg || !novoReg.length) { console.log(e2); mostrarErro("Erro ao salvar: " + (e2?.message || "tente novamente.")); restaurar(); return; }
-      c.dataFim = vespera;
-      custosFixos.push({
-        id: novoReg[0].id, nome, categoria, valorMensal,
-        dataInicio: desde, dataFim: null, ativo: true,
+      // Reajuste ATÔMICO: fechar o segmento antigo (data_fim = véspera) e abrir o
+      // novo acontecem na MESMA transação. Antes eram dois passos soltos: se o
+      // segundo falhava, o antigo ficava fechado e o novo não entrava — o custo
+      // sumia do rateio (auditoria). Fallback pro jeito antigo se a função ainda
+      // não existir no banco.
+      const { data: novoId, error: eRpc } = await supabaseClient.rpc("reajustar_custo_fixo", {
+        p_id_antigo: c.id, p_data_fim: vespera,
+        p_nome: nome, p_categoria: categoria, p_valor: valorMensal, p_data_inicio: desde,
       });
-      _toastSucesso(`Novo valor vale a partir de ${formatarData(desde)}.`);
+      const _ausente = !!eRpc && (eRpc.code === "PGRST202" ||
+        /reajustar_custo_fixo|could not find the function/i.test(eRpc.message || ""));
+      if (!eRpc) {
+        c.dataFim = vespera;
+        custosFixos.push({ id: novoId, nome, categoria, valorMensal, dataInicio: desde, dataFim: null, ativo: true });
+        _toastSucesso(`Novo valor vale a partir de ${formatarData(desde)}.`);
+      } else if (!_ausente) {
+        console.log(eRpc); mostrarErro("Erro ao salvar: " + eRpc.message); restaurar(); return;
+      } else {
+        const { error: e1 } = await supabaseClient.from("custos_fixos")
+          .update({ data_fim: vespera }).eq("id", c.id).eq("user_id", usuario.id);
+        if (e1) { console.log(e1); mostrarErro("Erro ao salvar: " + e1.message); restaurar(); return; }
+        const { data: novoReg, error: e2 } = await supabaseClient.from("custos_fixos")
+          .insert([{ user_id: usuario.id, nome, categoria, valor_mensal: valorMensal, data_inicio: desde, ativo: true }])
+          .select();
+        if (e2 || !novoReg || !novoReg.length) { console.log(e2); mostrarErro("Erro ao salvar: " + (e2?.message || "tente novamente.")); restaurar(); return; }
+        c.dataFim = vespera;
+        custosFixos.push({ id: novoReg[0].id, nome, categoria, valorMensal, dataInicio: desde, dataFim: null, ativo: true });
+        _toastSucesso(`Novo valor vale a partir de ${formatarData(desde)}.`);
+      }
     } else {
       const { error } = await supabaseClient.from("custos_fixos")
         .update({ nome, categoria, valor_mensal: valorMensal, data_inicio: dataInicio })
@@ -5370,18 +5386,28 @@ async function toggleCustoFixo(index, botao) {
   if (!usuario) { restaurar(); return; }
   const hoje = _hojeLocal();
   const ativando = !c.ativo;
-  // Desativar encerra HOJE em vez de apagar o passado: os meses já trabalhados
-  // continuam no custo do cultivo. Reativar reabre a vigência a partir de hoje.
-  const patch = ativando
-    ? { ativo: true, data_fim: null, data_inicio: hoje }
-    : { ativo: false, data_fim: hoje };
-  const { error } = await supabaseClient.from("custos_fixos")
-    .update(patch).eq("id", c.id).eq("user_id", usuario.id);
-  if (error) { console.log(error); restaurar(); _toastErro("Erro ao atualizar."); return; }
-  c.ativo = ativando;
-  c.dataFim = ativando ? null : hoje;
-  if (ativando) c.dataInicio = hoje;
-  _toastSucesso(ativando ? `Ativado a partir de ${formatarData(hoje)}.` : `Encerrado em ${formatarData(hoje)} — os meses anteriores continuam contando.`);
+
+  if (ativando) {
+    // Reativar ABRE UM NOVO SEGMENTO a partir de hoje e mantém o período
+    // anterior fechado no histórico. Antes, reativar sobrescrevia data_inicio
+    // com hoje na MESMA linha — e os dias em que o custo esteve ativo antes de
+    // ser desativado sumiam do rateio (auditoria). É um único INSERT (atômico):
+    // se falhar, nada muda e o segmento antigo continua como estava.
+    const { data: novo, error } = await supabaseClient.from("custos_fixos")
+      .insert([{ user_id: usuario.id, nome: c.nome, categoria: c.categoria, valor_mensal: c.valorMensal, data_inicio: hoje, ativo: true }])
+      .select();
+    if (error || !novo || !novo.length) { console.log(error); restaurar(); _toastErro("Erro ao reativar."); return; }
+    custosFixos.push({ id: novo[0].id, nome: c.nome, categoria: c.categoria, valorMensal: c.valorMensal, dataInicio: hoje, dataFim: null, ativo: true });
+    _toastSucesso(`Reaberto a partir de ${formatarData(hoje)} — o período anterior fica no histórico.`);
+  } else {
+    // Desativar encerra HOJE em vez de apagar o passado: os meses já trabalhados
+    // continuam contando no rateio, dentro da janela [início..hoje].
+    const { error } = await supabaseClient.from("custos_fixos")
+      .update({ ativo: false, data_fim: hoje }).eq("id", c.id).eq("user_id", usuario.id);
+    if (error) { console.log(error); restaurar(); _toastErro("Erro ao desativar."); return; }
+    c.ativo = false; c.dataFim = hoje;
+    _toastSucesso(`Encerrado em ${formatarData(hoje)} — os meses anteriores continuam contando.`);
+  }
   abrirCustosFixos();
 }
 
