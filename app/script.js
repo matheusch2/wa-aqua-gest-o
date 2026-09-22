@@ -36,6 +36,9 @@ let produtos = []; let tiposRacao = [];
 let boletos = [];
 let contato = null;   // nome e telefone do dono da conta (tabela contatos)
 let custosFixos = [];
+// false quando a consulta de custos fixos FALHOU (não é o mesmo que "não tem
+// custo fixo"). Impede o congelamento de rateio gravar 0 permanente por engano.
+let _custosFixosOk = true;
 let assinatura = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
@@ -6289,11 +6292,23 @@ async function salvarBoleto(index) {
   const editando = index !== null && index !== undefined && index !== "null";
 
   if (editando) {
+    const b = boletos[index];
+    // "pago" tem de acompanhar o novo valor: se o total sobe acima do que já foi
+    // pago, o boleto deixa de estar quitado (antes continuava "pago" com saldo em
+    // aberto — auditoria). Só recalcula quando há valor (>0); boleto sem valor
+    // tem baixa manual e essa não é mexida aqui.
+    const jaPago = Number(b.valorPago) || 0;
+    let pago = b.pago, dataPagamento = b.dataPagamento || null;
+    if (valor != null && valor > 0) {
+      pago = jaPago >= valor - 0.005;
+      if (!pago) dataPagamento = null;
+    }
     const { error } = await supabaseClient.from("boletos").update({
       nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
-    }).eq("id", boletos[index].id).eq("user_id", usuario.id);
+      pago, data_pagamento: dataPagamento,
+    }).eq("id", b.id).eq("user_id", usuario.id);
     if (error) { restaurar(); return mostrarErroBoleto("Erro ao salvar. Tente novamente."); }
-    boletos[index] = { ...boletos[index], nome, fornecedor, valor, dataCompra, prazoDias };
+    boletos[index] = { ...b, nome, fornecedor, valor, dataCompra, prazoDias, pago, dataPagamento };
   } else {
     const { data, error } = await supabaseClient.from("boletos").insert({
       user_id: usuario.id, nome, fornecedor, valor, data_compra: dataCompra, prazo_dias: prazoDias,
@@ -7155,6 +7170,10 @@ async function salvarEncerramentoCiclo(index) {
     precoVenda: precoVenda || 0,
     dataPreparacao: viveiro.dataPreparacao || null,
     cicloId: viveiro.cicloId || null,
+    // Rateio de custo fixo CONGELADO — o mesmo valor gravado no banco. Sem ele, o
+    // relatório recém-encerrado recalculava ao vivo e mudava se o custo mensal
+    // fosse alterado na mesma sessão, antes de recarregar (auditoria).
+    custoFixoRateado: cicloBanco.custo_fixo_rateado,
     biometrias: [...biometrias],
     racoes: [...racoes],
     despescas: [...despescas],
@@ -10129,6 +10148,10 @@ async function carregarViveiros(usuarioConhecido) {
     valorPago: b.valor_pago ? Number(b.valor_pago) : 0,
     pagamentos: Array.isArray(b.pagamentos) ? b.pagamentos : [],
   }));
+  // Guarda se a consulta REALMENTE trouxe os custos fixos. Se falhou (rede,
+  // permissão), custosFixos fica vazio — e não podemos deixar o congelamento
+  // gravar rateio 0 nos ciclos antigos com base nesse vazio falso (auditoria #2).
+  _custosFixosOk = !rCustosFixos.error;
   custosFixos = (rCustosFixos.data || []).map(c => ({
     id: c.id,
     nome: c.nome,
@@ -10269,6 +10292,10 @@ async function carregarViveiros(usuarioConhecido) {
 // porque interrompe a variação; quanto mais cedo roda, mais fiel fica.
 // Idempotente: só grava onde ainda está vazio, e só se o UPDATE realmente pegar.
 async function _congelarRateioCiclosAntigos() {
+  // Se os custos fixos não carregaram (erro de rede/permissão), custosFixos está
+  // vazio por FALHA, não porque não existem. Congelar agora gravaria rateio 0
+  // para sempre nesses ciclos e a rotina nunca mais os recalcularia. Aborta.
+  if (!_custosFixosOk) return;
   const pendentes = [];
   for (const v of viveiros) {
     for (const c of (v.ciclosFinalizados || [])) {
