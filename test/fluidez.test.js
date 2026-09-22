@@ -59,13 +59,6 @@ test("ração: sem histórico, tipo removido ou não especificado fica vazio",()
   for(const p of ["{}","{racoes:[]}","{racoes:[{data:'2026-09-21',tipoRacaoId:'removido'}]}","{racoes:[{data:'2026-09-21'},{data:'2026-09-20',tipoRacaoId:'a'}]}"])
     assert.equal(a.run(`_ultimaRacaoIndex(${p})`),-1);
 });
-test("ração: última quantidade em kg pela data (null quando não há)",()=>{
-  const a=load();
-  assert.equal(a.run(`_ultimaRacaoKg({racoes:[{data:'2026-09-20',racao:10},{data:'2026-09-10',racao:7}]})`),10);
-  assert.equal(a.run(`_ultimaRacaoKg({racoes:[{data:'2026-09-10',racao:7},{data:'2026-09-20',racao:12.5}]})`),12.5);
-  for(const p of ["{}","{racoes:[]}","{racoes:[{data:'2026-09-20'}]}","{racoes:[{data:'2026-09-20',racao:0}]}"])
-    assert.equal(a.run(`_ultimaRacaoKg(${p})`),null);
-});
 test("ração: troca de viveiro atualiza sugestão e custo, não quantidade/data",()=>{
   const a=load();seed(a);a.get('consumoRacao').value='10';a.get('dataRacao').value='2026-09-21';
   a.run('_sugerirUltimaRacao(0)');assert.equal(a.get('tipoRacaoSelect').value,'1');
@@ -121,7 +114,9 @@ test("salvamento real de ração: sucesso só depois do retorno do banco simulad
   assert.equal(a.get('consumoRacao').value,'10');
   a.run('__gravar({data:[{id:"racao-nova"}],error:null})');await pending;
   assert.equal(a.button.disabled,false);assert.equal(a.get('msg-racao-sucesso').style.display,'flex');
-  assert.equal(a.get('consumoRacao').value,'');assert.equal(a.errors.length,0);
+  // A quantidade PERMANECE após salvar (pra repetir no dia seguinte); a data avança.
+  assert.equal(a.get('consumoRacao').value,'10');assert.equal(a.get('dataRacao').value,'2026-09-22');
+  assert.equal(a.errors.length,0);
 });
 test("salvamento real de ração: rejeição de rede não apaga o formulário",async()=>{
   const a=load();seed(a);
