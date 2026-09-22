@@ -7995,15 +7995,19 @@ async function _lancarCustoAutoSerial(index, produto, quantidadeG, data, obs) {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return "erro";
   const valor = (produto.custoPorGrama || 0) * quantidadeG;
+  // Marca o ciclo ativo. Sem isto, o custo automático sem ciclo caía na janela
+  // de datas e, quando um ciclo encerrava e outro começava no MESMO dia, era
+  // contado nos dois (auditoria). Custo manual já leva ciclo_id — agora igual.
+  const cicloId = viveiros[index].cicloId || null;
   const { data: salvo, error } = await supabaseClient.from("custos").insert([{
     user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "produto",
     produto_id: produto.id, nome_produto: produto.nome, quantidade_g: quantidadeG,
-    valor, categoria: produto.categoria, data, observacao,
+    valor, categoria: produto.categoria, data, observacao, ciclo_id: cicloId,
   }]).select();
   if (error) { console.log(error); return "erro"; }
   if (!salvo || !salvo.length) return "erro"; // RLS pode barrar sem devolver erro
   if (!viveiros[index].custos) viveiros[index].custos = [];
-  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: produto.id, nomeProduto: produto.nome, quantidadeG, valor, categoria: produto.categoria, data, observacao });
+  viveiros[index].custos.push({ id: salvo[0].id, tipo: "produto", produtoId: produto.id, nomeProduto: produto.nome, quantidadeG, valor, categoria: produto.categoria, data, observacao, cicloId });
   return "ok";
 }
 

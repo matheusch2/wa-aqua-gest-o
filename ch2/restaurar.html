@@ -78,11 +78,14 @@
 <script>
 const PK = {
   perfis: ["user_id"], assinaturas: ["user_id"],
+  contatos: ["user_id"], acessos: ["user_id"],
   viveiros: ["id"], racoes: ["id"], biometrias: ["id"], despescas: ["id"],
   custos: ["id"], ciclos: ["id"], boletos: ["id"], custos_fixos: ["id"],
   produtos: ["id"], tipos_racao: ["id"], admin_historico: ["id"],
 };
-const ORDEM = ["perfis","assinaturas","produtos","tipos_racao","custos_fixos",
+// contatos e acessos (uma linha por usuário, conflito por user_id — igual ao
+// upsert que o app faz) entravam no backup mas a restauração os ignorava.
+const ORDEM = ["perfis","assinaturas","contatos","acessos","produtos","tipos_racao","custos_fixos",
   "viveiros","ciclos","racoes","biometrias","despescas","custos","boletos","admin_historico"];
 const CHUNK = 200;
 
