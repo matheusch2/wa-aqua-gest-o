@@ -6519,21 +6519,20 @@ function _finItensRateioFixo(alvos) {
   const hoje = _hojeLocal();
   const pIni = _finPeriodoIni || null, pFim = _finPeriodoFim || null;
   const itens = [];
-  for (const v of alvos) {
-    const vIni = v.dataPreparacao || v.dataPovoamento; // ciclo ativo: prep ou cultivo
-    if (!vIni) continue;
+  // Acumula o rateio dos custos fixos de UM viveiro numa janela [janIni, janFim]
+  // (cortada pelo período do filtro) e empurra um item por custo fixo.
+  const acumularJanela = (v, janIni, janFim) => {
+    if (!janIni || !janFim) return;
     for (const cf of custosFixos) {
       // Legado desativado sem data de fim nunca vale em data nenhuma — pula.
       // Os demais (ativos, ou desativados COM data de fim) contam nos dias em
-      // que valiam, exatamente como o rateio por ciclo. Antes, um custo
-      // desativado era descartado inteiro aqui, e o relatório financeiro
-      // subestimava o total e divergia do "Custo parcial" do viveiro.
+      // que valiam, exatamente como o rateio por ciclo.
       if (!cf.dataFim && cf.ativo === false) continue;
-      // Janela = max(data_inicio do custo, início do viveiro) .. hoje,
+      // Janela = max(data_inicio do custo, início da janela) .. fim da janela,
       // interceptada com o período do filtro financeiro.
-      let ini = vIni;
+      let ini = janIni;
       if (cf.dataInicio && cf.dataInicio > ini) ini = cf.dataInicio;
-      let fim = hoje;
+      let fim = janFim;
       if (pIni && pIni > ini) ini = pIni;
       if (pFim && pFim < fim) fim = pFim;
       if (ini > fim) continue;
@@ -6557,8 +6556,43 @@ function _finItensRateioFixo(alvos) {
         });
       }
     }
+  };
+  for (const v of alvos) {
+    // Ciclo ATIVO (preparação/cultivo em andamento): conta até hoje.
+    const vIni = v.dataPreparacao || v.dataPovoamento;
+    if (vIni) acumularJanela(v, vIni, hoje);
+    // Ciclos JÁ ENCERRADOS: sem isto, o rateio de custos fixos deles sumia do
+    // filtro por datas (aparecia só na visão por ciclo). Cada um conta na sua
+    // própria janela [preparação/povoamento .. encerramento].
+    for (const cicloF of (v.ciclosFinalizados || [])) {
+      const ci = cicloF.dataPreparacao || cicloF.dataPovoamento;
+      if (ci && cicloF.dataEncerramento) acumularJanela(v, ci, cicloF.dataEncerramento);
+    }
   }
   return itens;
+}
+
+// Ração do ciclo ATIVO expandida em um item por lançamento, com a data real de
+// cada um. O registro derivado único fica datado no PRIMEIRO lançamento e
+// distorce o filtro por período (toda a ração cai no primeiro dia). Usa a mesma
+// precificação de _racaoDerivada (preço do catálogo × kg), então o total bate.
+function _racaoLancamentosAtivo(v) {
+  return (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0).map(r => {
+    const t = tiposRacao.find(x => x.id === r.tipoRacaoId);
+    return {
+      tipo: "produto", produtoId: null, nomeProduto: "Ração", categoria: "Ração",
+      quantidadeG: r.racao * 1000, valor: r.racao * (t ? (t.custoPorKg || 0) : 0),
+      data: r.data, derivado: true, cicloId: v.cicloId || null,
+    };
+  });
+}
+
+// Custos de um viveiro para o filtro por PERÍODO: troca o registro derivado
+// único de Ração pelos lançamentos por data (auditoria #4). Custos gravados
+// (inclusive a ração de ciclos encerrados) seguem como estão.
+function _finCustosDoViveiro(v) {
+  const semDerivado = (v.custos || []).filter(c => !c.derivado);
+  return semDerivado.concat(_racaoLancamentosAtivo(v)).map(c => ({ ...c, viveiroNome: v.nome }));
 }
 
 function _finColetarCustos() {
@@ -6594,10 +6628,9 @@ function _finColetarCustos() {
   const alvos = porViveiro ? [viveiros[viveiroIndex]] : viveiros;
   let custos;
   if (porViveiro) {
-    const v = viveiros[viveiroIndex];
-    custos = (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome }));
+    custos = _finCustosDoViveiro(viveiros[viveiroIndex]);
   } else {
-    custos = viveiros.flatMap(v => (v.custos || []).map(c => ({ ...c, viveiroNome: v.nome })));
+    custos = viveiros.flatMap(_finCustosDoViveiro);
   }
   if (_finPeriodoIni) custos = custos.filter(c => c.data >= _finPeriodoIni);
   if (_finPeriodoFim) custos = custos.filter(c => c.data <= _finPeriodoFim);
