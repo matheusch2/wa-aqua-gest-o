@@ -7005,24 +7005,12 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
   const mediaDia = total / dias;
   const maior = custos.reduce((m, c) => Number(c.valor) > Number(m.valor) ? c : m, custos[0]);
 
-  // ordenação
-  const ord = _finOrdenacao;
-  const ordenados = [...custos].sort((a, b) => {
-    if (ord === "valor") return Number(b.valor) - Number(a.valor);
-    if (ord === "descricao") return (a.nomeProduto || "").localeCompare(b.nomeProduto || "", "pt-BR");
-    return b.data.localeCompare(a.data);
-  });
-
-  // paginação
-  const PP = 8;
-  const totalPag = Math.max(1, Math.ceil(ordenados.length / PP));
-  if (_finPagina > totalPag - 1) _finPagina = totalPag - 1;
-  if (_finPagina < 0) _finPagina = 0;
-  const pagina = ordenados.slice(_finPagina * PP, _finPagina * PP + PP);
-
-  // Consolidação por categoria (visão "Todos os viveiros")
-  const grupos = !porViveiro ? _finGruposCategoria(custos) : null;
-  const maiorCat = grupos && grupos.length ? grupos[0] : null;
+  // Consolidação por produto/categoria — agora TAMBÉM na visão de um viveiro.
+  // A lista deixou de ser lançamento a lançamento (esse detalhe fica no
+  // Histórico de custos) e passa a somar tudo o que foi gasto com cada produto,
+  // igual à impressão. Assim um ciclo longo não vira uma lista sem fim na tela.
+  const grupos = _finGruposCategoria(custos);
+  const maiorCat = grupos.length ? grupos[0] : null;
 
   // 4º card: por viveiro mostra o maior lançamento; consolidado, a maior categoria
   const cardMaiorHtml = porViveiro
@@ -7041,29 +7029,17 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
   // consolidado = um valor por categoria, somando todos os viveiros.
   const listaBlocoHtml = porViveiro
     ? `<div class="fin-lista-head">
-        <span>Lançamentos de custos</span>
-        <select class="fin-ordenar" onchange="_finOrdenacao=this.value;_finPagina=0;mostrarCustosFinanceiro()">
-          <option value="data" ${ord === "data" ? "selected" : ""}>Data</option>
-          <option value="valor" ${ord === "valor" ? "selected" : ""}>Valor</option>
-          <option value="descricao" ${ord === "descricao" ? "selected" : ""}>Descrição</option>
-        </select>
+        <span>Custos por produto</span>
+        <small class="fin-lista-hint">Somados no período</small>
       </div>
       <div class="fin-lista">
-        ${pagina.map(c => `
-          <div class="fin-linha${c.virtual ? " fin-linha-virtual" : ""}">
-            <span class="fin-linha-data">${formatarData(c.data)}</span>
-            <span class="fin-linha-viveiro">${abreviarViveiro(c.viveiroNome || "")}</span>
-            <span class="fin-linha-desc">${_esc(c.nomeProduto || "—")}<small>${c.virtual ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim) : _finTipoLabel(c)}</small></span>
-            <span class="fin-linha-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
+        ${grupos.map(g => `
+          <div class="fin-linha fin-linha-cat">
+            <span class="fin-linha-desc">${_esc(g.nome)}<small>${g.qtd} lançamento${g.qtd > 1 ? "s" : ""}</small></span>
+            <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
           </div>
         `).join("")}
-      </div>
-      ${totalPag > 1 ? `
-        <div class="fin-paginacao">
-          <button ${_finPagina <= 0 ? "disabled" : ""} onclick="_finPagina--;mostrarCustosFinanceiro()">Anterior</button>
-          <span>Pág. ${_finPagina + 1} / ${totalPag}</span>
-          <button ${_finPagina >= totalPag - 1 ? "disabled" : ""} onclick="_finPagina++;mostrarCustosFinanceiro()">Próxima</button>
-        </div>` : ""}`
+      </div>`
     : `<div class="fin-lista-head">
         <span>Custos por categoria</span>
         <small class="fin-lista-hint">Todos os viveiros somados</small>
