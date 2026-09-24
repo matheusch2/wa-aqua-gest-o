@@ -6987,9 +6987,13 @@ function _finGrupoLinhaHtml(g, idx, mostrarViveiro) {
     : `${g.qtd} lançamento${g.qtd > 1 ? "s" : ""}`;
   const itens = [...(g.itens || [])].sort((a, b) => (b.data || "").localeCompare(a.data || ""));
   const detalhe = itens.map(c => {
+    // Mostra o NOME do produto lançado (ex.: o nome do probiótico), não o rótulo
+    // genérico "Produto". Quando o nome é igual ao do grupo (ração, custos
+    // avulsos), cai na observação ou no tipo, pra não repetir a mesma palavra.
+    const nome = (c.nomeProduto || "").trim();
     const rotulo = c.virtual
       ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim)
-      : (c.observacao || _finTipoLabel(c) || "");
+      : (nome && nome !== g.nome ? nome : (c.observacao || _finTipoLabel(c) || ""));
     return `<div class="fin-subitem">
       <span class="fin-subitem-data">${formatarData(c.data)}</span>
       <span class="fin-subitem-desc">${mostrarViveiro ? _esc(abreviarViveiro(c.viveiroNome || "")) + (rotulo ? " · " : "") : ""}${_esc(rotulo)}</span>
