@@ -238,7 +238,7 @@
         const _rs0 = v => "R$ " + Math.round(v).toLocaleString("pt-BR");
         const FILTROS = [
             { key: "todos",    nome: "Todos" },
-            { key: "ativos",   nome: "Ativos (7d)" },
+            { key: "ativos",   nome: "Ativos (5d)" },
             { key: "pagantes", nome: "Pagantes" },
             { key: "pendentes",nome: "Pendentes" },
             { key: "vencidos", nome: "Vencidos" },
@@ -281,7 +281,7 @@
         function dotAtividade(dateStr) {
             const dd = _dias(dateStr);
             if (dd == null) return "dot-off";
-            if (dd <= 7) return "dot-on";
+            if (dd <= 5) return "dot-on";
             if (dd <= 30) return "dot-mid";
             return "dot-off";
         }
@@ -489,9 +489,8 @@
             const pagantes = clientes.filter(ehPagante).length;
             const pend = clientes.filter(c => c.assinatura && c.assinatura.status === "pendente").length;
             const vencidos = clientes.filter(c => { const v = infoVencimento(c.assinatura); return v && v.venc; }).length;
-            const ativos7 = clientes.filter(c => { const d = _dias(c.ultimo_acesso); return d != null && d <= 7; }).length;
+            const ativos5 = clientes.filter(c => { const d = _dias(c.ultimo_acesso); return d != null && d <= 5; }).length;
             const viveiros = clientes.reduce((s, c) => s + (c.viveiros || 0), 0);
-            const lancamentos = clientes.reduce((s, c) => s + (c.lancamentos || 0), 0);
             const mrr = clientes.reduce((s, c) => s + _mrrCliente(c), 0);
             const ticket = pagantes > 0 ? mrr / pagantes : 0;
 
@@ -500,16 +499,14 @@
             document.getElementById("adm-stats").innerHTML =
                 tile("👥", "i-azul", total, "", "Clientes") +
                 tile("📱", "i-verde", clientes.filter(c => c.telefone).length, `/${total}`, "Com telefone") +
-                tile("🟢", "i-verde", ativos7, "", "Ativos (7 dias)") +
+                tile("🟢", "i-verde", ativos5, "", "Ativos (5 dias)") +
                 tile("💳", "i-verde", pagantes, "", "Pagantes") +
                 tile("💰", "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
                 tile("📅", "i-azul", _rs0(mrr * 12), "", "Receita/ano (ARR)") +
                 tile("🎯", "i-roxo", _rs0(ticket), "", "Ticket médio") +
                 tile("⏳", "i-ambar", pend, "", "Pendentes") +
                 tile("⚠️", "i-verm", vencidos, "", "Vencidos") +
-                tile("🦐", "i-roxo", viveiros, "", "Viveiros") +
-                tile("📈", "i-cinza", lancamentos, "", "Lançamentos") +
-                tile("📊", "i-cinza", total ? Math.round((pagantes / total) * 100) : 0, "%", "Conversão");
+                tile("🦐", "i-roxo", viveiros, "", "Viveiros");
 
             // Gráfico 1 — novos usuários nos últimos 6 meses
             const meses = [], labels = [];
@@ -558,7 +555,7 @@
         function passaFiltro(c) {
             const a = c.assinatura, d = _dias(c.ultimo_acesso);
             switch (_filtro) {
-                case "ativos":   return d != null && d <= 7;
+                case "ativos":   return d != null && d <= 5;
                 case "inativos": return d == null || d > 30;
                 case "pagantes": return ehPagante(c);
                 case "pendentes":return a && a.status === "pendente";
