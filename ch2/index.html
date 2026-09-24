@@ -30,14 +30,14 @@
         .adm-wrap { max-width: 820px; margin: 0 auto; padding: 16px 16px 60px; }
 
         /* ── Login ── */
-        .adm-login { max-width: 380px; margin: 8vh auto 0; background: #fff; border-radius: 20px; padding: 30px 24px; box-shadow: 0 8px 34px rgba(2,44,40,.12); }
-        .adm-login-logo { width: 58px; height: 58px; border-radius: 16px; background: var(--verde-cl); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 14px; }
-        .adm-login h2 { font-size: 19px; color: var(--verde); margin-bottom: 4px; text-align: center; }
+        .adm-login { max-width: 380px; margin: 8vh auto 0; background: #fff; border-radius: 16px; padding: 30px 24px; box-shadow: 0 4px 18px rgba(2,44,40,.08); }
+        .adm-login-logo { width: 54px; height: 54px; border-radius: 13px; background: var(--verde-cl); display: flex; align-items: center; justify-content: center; font-size: 27px; margin: 0 auto 14px; }
+        .adm-login h2 { font-size: 18px; color: var(--verde); margin-bottom: 4px; text-align: center; }
         .adm-login p { font-size: 13px; color: var(--cinza); text-align: center; margin-bottom: 18px; }
         .adm-login label { display: block; font-size: 12.5px; font-weight: 700; color: #45565f; margin: 12px 0 5px; }
-        .adm-login input { width: 100%; border: 1.5px solid #dde5e3; border-radius: 12px; padding: 13px; font-size: 15px; outline: none; }
+        .adm-login input { width: 100%; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 13px; font-size: 15px; outline: none; }
         .adm-login input:focus { border-color: var(--verde); }
-        .adm-entrar { width: 100%; margin-top: 18px; background: var(--verde); color: #fff; border: none; border-radius: 13px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .adm-entrar { width: 100%; margin-top: 18px; background: var(--verde); color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
         .adm-entrar:disabled { opacity: .7; }
         .adm-msg { display: none; margin-top: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #dc2626; }
 
@@ -47,18 +47,21 @@
 
         /* ── Stat tiles ── */
         .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
-        .stat { background: #fff; border: 1px solid var(--linha); border-radius: 15px; padding: 13px 12px; display: flex; flex-direction: column; gap: 3px; }
-        .stat-ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 3px; }
+        .stat { background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 13px 12px; display: flex; flex-direction: column; gap: 3px; }
+        .stat-ico { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; }
+        .stat-ico svg { width: 15px; height: 15px; }
         .stat-num { font-size: 21px; font-weight: 800; line-height: 1; color: var(--tinta); }
         .stat-num small { font-size: 12px; font-weight: 700; color: var(--cinza); }
         .stat-lbl { font-size: 11px; color: var(--cinza); font-weight: 600; }
-        .i-verde { background: #d1fae5; } .i-azul { background: #dbeafe; } .i-ambar { background: #fef3c7; }
-        .i-verm { background: #fee2e2; } .i-roxo { background: #ede9fe; } .i-cinza { background: #eef2f4; }
+        .i-verde { background: #e3f2ef; color: var(--verde-esc); }
+        .i-ambar { background: #fdf3e2; color: #a8620a; }
+        .i-verm { background: #fbe9e9; color: #a4241c; }
+        .i-cinza { background: #eef2f4; color: #56666e; }
 
         /* ── Cartão de gráfico ── */
         .grafs { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
         @media (max-width: 620px) { .grafs { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); } }
-        .graf-card { background: #fff; border: 1px solid var(--linha); border-radius: 16px; padding: 15px 15px 10px; }
+        .graf-card { background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 15px 15px 10px; }
         .graf-card h3 { font-size: 13px; font-weight: 800; color: var(--tinta); margin-bottom: 12px; }
         .graf-box { position: relative; height: 168px; }
         .graf-legenda { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; }
@@ -69,22 +72,24 @@
         .adm-busca { width: 100%; border: 1.5px solid #dde5e3; border-radius: 13px; padding: 12px 14px; font-size: 15px; outline: none; margin-bottom: 10px; background: #fff; }
         .adm-busca:focus { border-color: var(--verde); }
         .filtros { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
-        .filtro-chip { flex-shrink: 0; background: #fff; border: 1.5px solid var(--linha); color: #56666e; border-radius: 20px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .filtro-chip { flex-shrink: 0; background: #fff; border: 1.5px solid var(--linha); color: #56666e; border-radius: 9px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
         .filtro-chip.ativo { background: var(--verde); border-color: var(--verde); color: #fff; }
-        .adm-emails-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
+        .adm-emails-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff; border: 1px solid var(--linha); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; }
         .adm-emails-bar span { font-size: 12.5px; color: var(--cinza); font-weight: 600; }
         .adm-emails-bar b { color: var(--tinta); }
-        .adm-emails-btn { background: var(--verde-cl); color: var(--verde); border: none; border-radius: 9px; padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+        .adm-emails-btn { background: var(--verde-cl); color: var(--verde); border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .adm-emails-btn svg { width: 13px; height: 13px; }
         .adm-emails-btn:active { background: #cdeae3; }
-        .backup-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border: 1px solid var(--linha); border-radius: 14px; padding: 14px; }
+        .backup-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 14px; }
         .backup-txt b { display: block; font-size: 13.5px; color: var(--tinta); }
         .backup-txt span { font-size: 11.5px; color: var(--cinza); }
-        .backup-btn { flex-shrink: 0; background: var(--verde); color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .backup-btn { flex-shrink: 0; background: var(--verde); color: #fff; border: none; border-radius: 9px; padding: 11px 16px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+        .backup-btn svg { width: 14px; height: 14px; }
         .backup-btn:disabled { opacity: .6; }
 
         /* ── Cliente ── */
-        .cli-card { background: #fff; border: 1px solid var(--linha); border-radius: 15px; margin-bottom: 10px; overflow: hidden; transition: box-shadow .15s; }
-        .cli-card.aberto { box-shadow: 0 6px 22px rgba(2,44,40,.10); }
+        .cli-card { background: #fff; border: 1px solid var(--linha); border-radius: 12px; margin-bottom: 10px; overflow: hidden; transition: box-shadow .15s; }
+        .cli-card.aberto { box-shadow: 0 4px 16px rgba(2,44,40,.07); }
         .cli-cab { display: flex; align-items: center; gap: 11px; padding: 13px 14px; cursor: pointer; }
         .cli-avatar { position: relative; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--verde-cl); color: var(--verde); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
         .cli-dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; }
@@ -101,7 +106,7 @@
         .b-venc-ok { background: #f1f5f9; color: #475569; }
         .b-venc-perto { background: #fef3c7; color: #92400e; }
         .b-vencido { background: #fee2e2; color: #991b1b; }
-        .b-viv { background: #ede9fe; color: #5b21b6; }
+        .b-viv { background: #f1f5f9; color: #475569; }
         .cli-meta { display: flex; gap: 14px; margin-top: 7px; flex-wrap: wrap; }
         /* Linha do contato: o telefone é o que o Matheus vem buscar aqui, então
            ganha destaque. Quem não deu fica cinza, com a contagem de recusas —
@@ -119,12 +124,13 @@
         .cli-linha { display: flex; gap: 8px; margin-bottom: 10px; }
         .cli-corpo select { flex: 1; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 10px; font-size: 14px; background: #fff; outline: none; }
         .cli-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .acao-btn { border: none; border-radius: 11px; padding: 11px 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .acao-btn { border: none; border-radius: 9px; padding: 11px 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .acao-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
         .acao-btn:disabled { opacity: .6; }
         .a-liberar { background: var(--verde); color: #fff; grid-column: 1 / -1; }
-        .a-trocar { background: #ede9fe; color: #5b21b6; }
-        .a-bloquear { background: #fee2e2; color: #991b1b; }
-        .a-reativar { background: #d1fae5; color: #065f46; }
+        .a-trocar { background: #f1f5f9; color: #334155; }
+        .a-bloquear { background: #fbe9e9; color: #a4241c; }
+        .a-reativar { background: #e3f2ef; color: var(--verde-esc); }
         .a-hist { background: #f1f5f9; color: #334155; }
 
         /* Zona de perigo — excluir conta (discreto até confirmar) */
@@ -195,7 +201,7 @@
                         <b>Backup dos dados</b>
                         <span>Baixe uma cópia de tudo (clientes, viveiros, financeiro). Guarde 1×/semana.</span>
                     </div>
-                    <button class="backup-btn" id="btn-backup" onclick="baixarBackup(this)">💾 Baixar backup</button>
+                    <button class="backup-btn" id="btn-backup" onclick="baixarBackup(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar backup</button>
                 </div>
             </div>
             <div class="sec-tit">Clientes</div>
@@ -203,7 +209,7 @@
             <div class="filtros" id="adm-filtros"></div>
             <div class="adm-emails-bar" id="adm-emails-bar" style="display:none">
                 <span><b id="adm-emails-qtd">0</b> na seleção</span>
-                <button class="adm-emails-btn" onclick="copiarEmails()">📋 Copiar e-mails</button>
+                <button class="adm-emails-btn" onclick="copiarEmails()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar e-mails</button>
             </div>
             <div id="adm-lista"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
         </div>
@@ -213,6 +219,27 @@
         const SUPABASE_URL = "https://bzlzjjodzyxvkakfmmxw.supabase.co";
         const SUPABASE_KEY = "sb_publishable_Avq19q531p8NrIRaHf5VvQ_DoWzOoaW";
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Ícones de linha (mesmo padrão em todo o painel — sem emoji)
+        const _svgAttrs = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+        const ICO = {
+            users:    `<svg ${_svgAttrs}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+            phone:    `<svg ${_svgAttrs}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+            activity: `<svg ${_svgAttrs}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+            card:     `<svg ${_svgAttrs}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+            dollar:   `<svg ${_svgAttrs}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+            calendar: `<svg ${_svgAttrs}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+            target:   `<svg ${_svgAttrs}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+            clock:    `<svg ${_svgAttrs}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+            alert:    `<svg ${_svgAttrs}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+            box:      `<svg ${_svgAttrs}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+            copy:     `<svg ${_svgAttrs}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+            download: `<svg ${_svgAttrs}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+            check:    `<svg ${_svgAttrs}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+            swap:     `<svg ${_svgAttrs}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+            history:  `<svg ${_svgAttrs}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>`,
+            block:    `<svg ${_svgAttrs}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
+        };
 
         const PLANOS = [
             { key: "gratis",        nome: "Grátis (1 viveiro)" },
@@ -497,16 +524,16 @@
             const tile = (ico, cls, num, sub, lbl) =>
                 `<div class="stat"><div class="stat-ico ${cls}">${ico}</div><div class="stat-num">${num}${sub ? `<small>${sub}</small>` : ""}</div><div class="stat-lbl">${lbl}</div></div>`;
             document.getElementById("adm-stats").innerHTML =
-                tile("👥", "i-azul", total, "", "Clientes") +
-                tile("📱", "i-verde", clientes.filter(c => c.telefone).length, `/${total}`, "Com telefone") +
-                tile("🟢", "i-verde", ativos5, "", "Ativos (5 dias)") +
-                tile("💳", "i-verde", pagantes, "", "Pagantes") +
-                tile("💰", "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
-                tile("📅", "i-azul", _rs0(mrr * 12), "", "Receita/ano (ARR)") +
-                tile("🎯", "i-roxo", _rs0(ticket), "", "Ticket médio") +
-                tile("⏳", "i-ambar", pend, "", "Pendentes") +
-                tile("⚠️", "i-verm", vencidos, "", "Vencidos") +
-                tile("🦐", "i-roxo", viveiros, "", "Viveiros");
+                tile(ICO.users, "i-cinza", total, "", "Clientes") +
+                tile(ICO.phone, "i-cinza", clientes.filter(c => c.telefone).length, `/${total}`, "Com telefone") +
+                tile(ICO.activity, "i-verde", ativos5, "", "Ativos (5 dias)") +
+                tile(ICO.card, "i-verde", pagantes, "", "Pagantes") +
+                tile(ICO.dollar, "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
+                tile(ICO.calendar, "i-verde", _rs0(mrr * 12), "", "Receita/ano (ARR)") +
+                tile(ICO.target, "i-cinza", _rs0(ticket), "", "Ticket médio") +
+                tile(ICO.clock, "i-ambar", pend, "", "Pendentes") +
+                tile(ICO.alert, "i-verm", vencidos, "", "Vencidos") +
+                tile(ICO.box, "i-cinza", viveiros, "", "Viveiros");
 
             // Gráfico 1 — novos usuários nos últimos 6 meses
             const meses = [], labels = [];
@@ -641,11 +668,11 @@
                             </select>
                         </div>
                         <div class="cli-acoes">
-                            <button class="acao-btn a-liberar" onclick="acao(this,'liberar','${esc(c.id)}')">💰 Registrar pagamento / Liberar</button>
-                            <button class="acao-btn a-trocar" onclick="acao(this,'trocar','${esc(c.id)}')">Trocar plano</button>
-                            <button class="acao-btn a-hist" onclick="verHistorico(this,'${esc(c.id)}')">Histórico</button>
-                            <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">Reativar</button>
-                            <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">Bloquear</button>
+                            <button class="acao-btn a-liberar" onclick="acao(this,'liberar','${esc(c.id)}')">${ICO.check} Registrar pagamento / Liberar</button>
+                            <button class="acao-btn a-trocar" onclick="acao(this,'trocar','${esc(c.id)}')">${ICO.swap} Trocar plano</button>
+                            <button class="acao-btn a-hist" onclick="verHistorico(this,'${esc(c.id)}')">${ICO.history} Histórico</button>
+                            <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">${ICO.check} Reativar</button>
+                            <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
                         </div>
                         <div class="hist-lista" id="hist-${esc(c.id)}" style="display:none"></div>
                         <div class="cli-perigo">
