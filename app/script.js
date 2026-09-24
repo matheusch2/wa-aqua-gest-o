@@ -129,6 +129,22 @@ function _esc(v) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+// Escapa um valor para uso como STRING JS entre aspas simples DENTRO de um
+// atributo HTML entre aspas duplas — ex.: onclick="fn('${_jsAttr(id)}')".
+// Escapar só HTML não basta: o parser decodifica &#39; de volta para ' ANTES do
+// JS rodar, então uma aspa no dado escaparia da string e injetaria código. Aqui
+// escapamos a aspa para o JS (\'), a barra, e < > \r \n; e escapamos & e " para
+// o HTML (a " fecharia o atributo). O resultado é seguro nos dois contextos.
+function _jsAttr(v) {
+  return String(v == null ? "" : v)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "\\u003C").replace(/>/g, "\\u003E")
+    .replace(/\r/g, "\\r").replace(/\n/g, "\\n");
+}
+
 function _toastErro(msg) {
   const el = document.createElement("div");
   el.style.cssText = "position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:#dc2626;z-index:9999;max-width:90vw;text-align:center;pointer-events:none";
@@ -242,7 +258,18 @@ async function sairUsuario(botao) {
   if (botao?.disabled) return; // evita duplo toque
   _travarBotao(botao, "Saindo...");
   fecharMenuUsuario();
-  try { await supabaseClient.auth.signOut(); } catch (e) { console.log(e); }
+  // Logout global (revoga no servidor + limpa a sessão local). Se falhar (rede
+  // caiu, erro do serviço), força a saída LOCAL — senão a sessão poderia
+  // continuar no aparelho e a tela de login reabriria já autenticado.
+  let saiu = false;
+  try {
+    const { error } = await supabaseClient.auth.signOut();
+    saiu = !error;
+    if (error) console.log("signOut:", error);
+  } catch (e) { console.log(e); }
+  if (!saiu) {
+    try { await supabaseClient.auth.signOut({ scope: "local" }); } catch (e) { console.log(e); }
+  }
   viveiros = [];
   // replace(): Voltar/Avançar não devem reabrir o app autenticado após o logout
   window.location.replace("login.html");
@@ -1316,7 +1343,7 @@ async function salvarViveiro() {
 
   // Mostra a lista já posicionada no viveiro recém-criado
   const pos = viveiros.findIndex(v => v.id === it.id);
-  mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${nome.trim()} cadastrado com sucesso!`);
+  mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${_esc(nome.trim())} cadastrado com sucesso!`);
 }
 
 // Rótulo curto para a tira de seleção. Quase todo mundo nomeia como
@@ -6100,7 +6127,7 @@ function abrirBoletos(filtro) {
       <div class="bt-lista">
         ${filtrados.length ? rows : `<div class="bt-empty">${
           _boletosFiltro !== "todos" ? "Nenhum boleto nessa categoria."
-          : (_boletosFornecedor ? `Nenhum boleto em aberto de ${_boletosFornecedor}.`
+          : (_boletosFornecedor ? `Nenhum boleto em aberto de ${_esc(_boletosFornecedor)}.`
             : (boletos.length ? "Nenhum boleto em aberto — está tudo pago." : "Nenhum boleto cadastrado."))
         }</div>`}
         <p id="bt-busca-vazio" class="bt-empty" style="display:none">Nenhum boleto encontrado.</p>
@@ -6209,7 +6236,7 @@ function imprimirBoletos() {
   // Aplica também o filtro de fornecedor selecionado
   if (_boletosFornecedor) {
     filtrados = filtrados.filter(x => (x.b.fornecedor || "").trim() === _boletosFornecedor);
-    titulo += ` — ${_boletosFornecedor}`;
+    titulo += ` — ${_esc(_boletosFornecedor)}`;
   }
 
   if (!filtrados.length) { _toastErro("Nenhum boleto para imprimir nessa seleção."); return; }
@@ -8494,9 +8521,9 @@ function abrirManejoAutomatico(index) {
                 : `${p.tipo === "racao" ? "Atrelado à ração" : "Programado semanal"} · ${_maResumoProtocolo(p)}`}</span>
             </div>
             <div class="ma-item-acoes">
-              ${orfao ? "" : `<button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${p.id}', this)" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>`}
-              <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${p.id}')">✏️</button>
-              <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${p.id}', this)">🗑️</button>
+              ${orfao ? "" : `<button class="ma-toggle ${p.ativo ? "on" : ""}" onclick="toggleProtocolo(${index},'${_jsAttr(p.id)}', this)" title="${p.ativo ? "Pausar" : "Ativar"}"><span></span></button>`}
+              <button class="ma-btn-ic" onclick="abrirFormProtocolo(${index},'${_jsAttr(p.id)}')">✏️</button>
+              <button class="ma-btn-ic" onclick="excluirProtocolo(${index},'${_jsAttr(p.id)}', this)">🗑️</button>
             </div>
           </div>`;
         }).join("")}
