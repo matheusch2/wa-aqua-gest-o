@@ -48,6 +48,7 @@ let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
 let _boletosBusca = "";
 let _boletosMesPago = ""; // filtro por mês de pagamento (só na aba "Pagos"); "" = todos
+let _produtosBusca = ""; // busca por nome na tela de produtos cadastrados
 let _finViveiroId = null;
 let _finOrdenacao = "data";
 let _finPagina = 0;
@@ -8998,8 +8999,47 @@ async function salvarProduto() {
   if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
 }
 
+// Cor da pastilha de categoria do produto (só visual; agrupa por família).
+function _prodCatClasse(cat) {
+  const c = (cat || "").toLowerCase();
+  if (c.includes("probi")) return "verde";
+  if (c.includes("calc")) return "azul";
+  if (c.includes("raç") || c.includes("rac")) return "ambar";
+  return "roxo";
+}
+
 function abrirVerProdutos() {
   const area = document.getElementById("area-gestao");
+  const ordenados = produtos.map((p, i) => ({ p, i }))
+    .sort((a, b) => a.p.nome.localeCompare(b.p.nome, "pt-BR", { sensitivity: "base" }));
+
+  const cardsHtml = ordenados.map(({ p, i }) => {
+    const custoKg = p.pesoKg ? p.valorPago / p.pesoKg : 0;
+    const catCls = _prodCatClasse(p.categoria);
+    return `
+      <div class="produto-card" id="produto-item-${i}" data-nome="${_attr((p.nome || "").toLowerCase())}">
+        <div class="produto-card-corpo">
+          <div class="produto-card-head">
+            <span class="produto-nome">${_esc(p.nome)}</span>
+            <span class="prod-cat prod-cat-${catCls}">${_esc(p.categoria || "—")}</span>
+          </div>
+          <div class="produto-stats">
+            <div class="produto-stat"><small>Peso</small><b>${formatarNumeroBR(p.pesoKg, 0)} kg</b></div>
+            <div class="produto-stat"><small>Valor pago</small><b>R$ ${formatarNumeroBR(p.valorPago, 2)}</b></div>
+            <div class="produto-stat produto-stat-destaque"><small>Custo por kg</small><b>R$ ${formatarNumeroBR(custoKg, 2)}</b></div>
+          </div>
+        </div>
+        <div class="produto-acoes">
+          <button class="prod-acao" onclick="abrirEdicaoProduto(${i})" aria-label="Editar">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
+          <button class="prod-acao prod-acao-del" onclick="confirmarExcluirProduto(${i})" aria-label="Excluir">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>`;
+  }).join("");
+
   area.innerHTML = `
     <div class="form-lancamento">
       <div class="form-topo">
@@ -9011,26 +9051,37 @@ function abrirVerProdutos() {
       <div class="form-corpo">
         ${produtos.length === 0
           ? `<p class="sobrevivencia-texto">Nenhum produto cadastrado.</p>`
-          : `<div class="lista-produtos">
-              ${produtos.map((p, i) => ({ p, i })).sort((a, b) => a.p.nome.localeCompare(b.p.nome, "pt-BR", { sensitivity: "base" })).map(({ p, i }) => `
-                <div class="produto-item" id="produto-item-${i}">
-                  <div class="produto-info">
-                    <span class="produto-nome">${_esc(p.nome)}</span>
-                    <span class="produto-detalhe">${_esc(p.categoria)} · ${formatarNumeroBR(p.pesoKg, 0)} kg · R$ ${formatarNumeroBR(p.valorPago, 2)} · R$ ${formatarNumeroBR(p.valorPago / p.pesoKg, 2)}/kg</span>
-                  </div>
-                  <span class="col-acoes">
-                    <button class="botao-editar" onclick="abrirEdicaoProduto(${i})">✏️</button>
-                    <button class="botao-editar botao-excluir" onclick="confirmarExcluirProduto(${i})">🗑️</button>
-                  </span>
-                </div>
-              `).join("")}
-            </div>`
+          : `<div class="prod-busca">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="prod-busca-input" value="${_attr(_produtosBusca)}" placeholder="Buscar produto pelo nome..." oninput="_filtrarProdutos(this.value)">
+            </div>
+            <div class="prod-contagem" id="prod-contagem">${ordenados.length} produto${ordenados.length === 1 ? "" : "s"}</div>
+            <div class="lista-produtos" id="lista-produtos">${cardsHtml}</div>
+            <p id="prod-busca-vazio" class="sobrevivencia-texto" style="display:none">Nenhum produto encontrado.</p>`
         }
         <div class="separador-ou"><span>ou</span></div>
         <button class="botao-voltar-form" onclick="abrirCustosInsumos()">Voltar</button>
       </div>
     </div>
   `;
+  if (produtos.length) _filtrarProdutos(_produtosBusca);
+}
+
+// Filtra os cards de produto pelo nome, ao vivo. Atualiza a contagem e mostra
+// um aviso quando nada bate — sem redesenhar a lista (só troca display).
+function _filtrarProdutos(termo) {
+  _produtosBusca = termo || "";
+  const t = (termo || "").trim().toLowerCase();
+  let vis = 0;
+  document.querySelectorAll("#lista-produtos .produto-card").forEach(el => {
+    const ok = !t || (el.dataset.nome || "").includes(t);
+    el.style.display = ok ? "" : "none";
+    if (ok) vis++;
+  });
+  const cont = document.getElementById("prod-contagem");
+  if (cont) cont.textContent = `${vis} produto${vis === 1 ? "" : "s"}${t ? " encontrado" + (vis === 1 ? "" : "s") : ""}`;
+  const vazio = document.getElementById("prod-busca-vazio");
+  if (vazio) vazio.style.display = vis === 0 ? "block" : "none";
 }
 
 function confirmarExcluirProduto(i) {
