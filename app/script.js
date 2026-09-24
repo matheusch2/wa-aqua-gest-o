@@ -47,6 +47,7 @@ let _outroCustoModo = "um"; // "Outro custo" pelo menu: "um" viveiro ou "ratear"
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
 let _boletosBusca = "";
+let _boletosMesPago = ""; // filtro por mês de pagamento (só na aba "Pagos"); "" = todos
 let _finViveiroId = null;
 let _finOrdenacao = "data";
 let _finPagina = 0;
@@ -917,11 +918,13 @@ function _attachFormatacao(input) {
     mutations.forEach(m => {
       m.addedNodes.forEach(node => {
         if (node.nodeType !== 1) return;
-        const inputs = node.querySelectorAll
-          ? node.querySelectorAll('input[type="text"][inputmode="decimal"]')
-          : [];
+        // Campos com .sem-mascara ficam de FORA da máscara de dinheiro: são
+        // decimais pequenos (ex.: tamanho em ha) onde o ponto é decimal, não
+        // separador de milhar. Sem isto, "0.1" perdia o ponto e virava 1.
+        const seletor = 'input[type="text"][inputmode="decimal"]:not(.sem-mascara)';
+        const inputs = node.querySelectorAll ? node.querySelectorAll(seletor) : [];
         inputs.forEach(_attachFormatacao);
-        if (node.matches && node.matches('input[type="text"][inputmode="decimal"]')) _attachFormatacao(node);
+        if (node.matches && node.matches(seletor)) _attachFormatacao(node);
       });
     });
   });
@@ -1173,7 +1176,7 @@ function mostrarCadastroViveiro() {
             <label>Tamanho do viveiro</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="tamanhoViveiro" placeholder="Ex: 0.5">
+            <input type="text" inputmode="decimal" class="sem-mascara" id="tamanhoViveiro" placeholder="Ex: 0,5">
             <span class="campo-unidade">ha</span>
           </div>
         </div>
@@ -1517,7 +1520,7 @@ function editarNomeViveiro(index) {
             <label>Tamanho do viveiro</label>
           </div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" step="any" id="editTamanhoViveiro" value="${v.tamanho || ""}" placeholder="Ex: 0.5">
+            <input type="text" inputmode="decimal" step="any" class="sem-mascara" id="editTamanhoViveiro" value="${v.tamanho || ""}" placeholder="Ex: 0,5">
             <span class="campo-unidade">ha</span>
           </div>
         </div>
@@ -5971,6 +5974,16 @@ function abrirBoletos(filtro) {
   // Filtro por fornecedor (opcional)
   if (_boletosFornecedor) filtrados = filtrados.filter(x => (x.b.fornecedor || "").trim() === _boletosFornecedor);
 
+  // Filtro por MÊS DE PAGAMENTO — só na aba "Pagos". Sem isto, com o tempo a
+  // lista de pagos vira uma coluna infinita. Os meses vêm dos próprios boletos
+  // pagos (data de quitação), do mais recente ao mais antigo.
+  let mesesPagos = [];
+  if (_boletosFiltro === "pagos") {
+    mesesPagos = [...new Set(todos.filter(x => x.b.pago && x.b.dataPagamento).map(x => x.b.dataPagamento.slice(0, 7)))].sort().reverse();
+    if (_boletosMesPago && !mesesPagos.includes(_boletosMesPago)) _boletosMesPago = "";
+    if (_boletosMesPago) filtrados = filtrados.filter(x => (x.b.dataPagamento || "").slice(0, 7) === _boletosMesPago);
+  }
+
   const qtdPagos = todos.filter(x => x.b.pago).length;
   // Nos boletos pagos, mostra o total pago; nos demais, o que ainda falta pagar
   const totalFiltrado = _boletosFiltro === "pagos"
@@ -6076,6 +6089,13 @@ function abrirBoletos(filtro) {
           ${fornecedores.map(f => `<option value="${_attr(f)}"${_boletosFornecedor === f ? " selected" : ""}>${_esc(f)}</option>`).join("")}
         </select>
       </div>` : ""}
+      ${_boletosFiltro === "pagos" && mesesPagos.length ? `<div class="bt-forn-filtro">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select onchange="_setBoletoMesPago(this.value)">
+          <option value="">Todos os meses</option>
+          ${mesesPagos.map(m => `<option value="${m}"${_boletosMesPago === m ? " selected" : ""}>${_rotuloMes(m)}</option>`).join("")}
+        </select>
+      </div>` : ""}
       <div class="bt-lista">
         ${filtrados.length ? rows : `<div class="bt-empty">${
           _boletosFiltro !== "todos" ? "Nenhum boleto nessa categoria."
@@ -6133,6 +6153,18 @@ function _setBoletoFornecedor(f) {
   abrirBoletos();
 }
 
+// "2026-09" -> "Setembro/2026" (rótulo do mês de pagamento no filtro de pagos).
+function _rotuloMes(ym) {
+  const [a, m] = String(ym).split("-").map(Number);
+  const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  return `${meses[m - 1] || "?"}/${a}`;
+}
+
+function _setBoletoMesPago(v) {
+  _boletosMesPago = v || "";
+  abrirBoletos();
+}
+
 // Impressão SEM abrir janela nova. No app instalado (PWA), window.open abre uma
 // tela sem barra de navegação e PRENDE o usuário (não tem como voltar, só
 // fechando o app). Aqui a impressão roda num iframe OCULTO dentro do próprio
@@ -6163,8 +6195,15 @@ function imprimirBoletos() {
   let filtrados, titulo;
   if (_boletosFiltro === "vencendo") { filtrados = naoPagos.filter(x => x.st.tipo === "proximo" || x.st.tipo === "hoje"); titulo = "Boletos a vencer"; }
   else if (_boletosFiltro === "vencidos") { filtrados = naoPagos.filter(x => x.st.tipo === "vencido"); titulo = "Boletos vencidos"; }
-  else if (_boletosFiltro === "pagos") { filtrados = todos.filter(x => x.b.pago); titulo = "Boletos pagos"; }
-  else { filtrados = [...todos].sort((x, y) => (!!x.b.pago !== !!y.b.pago ? (x.b.pago ? 1 : -1) : x.st.diff - y.st.diff)); titulo = "Todos os boletos"; }
+  else if (_boletosFiltro === "pagos") {
+    // Só os pagos — e, se houver mês selecionado, só os quitados naquele mês.
+    filtrados = todos.filter(x => x.b.pago);
+    if (_boletosMesPago) filtrados = filtrados.filter(x => (x.b.dataPagamento || "").slice(0, 7) === _boletosMesPago);
+    titulo = "Boletos pagos" + (_boletosMesPago ? " — " + _rotuloMes(_boletosMesPago) : "");
+  }
+  // Aba "A pagar": imprime SÓ o que falta pagar (igual à tela). Antes trazia
+  // também os pagos, misturando quitados com pendentes no mesmo relatório.
+  else { filtrados = [...naoPagos].sort((x, y) => x.st.diff - y.st.diff); titulo = "Boletos a pagar"; }
 
   // Aplica também o filtro de fornecedor selecionado
   if (_boletosFornecedor) {
