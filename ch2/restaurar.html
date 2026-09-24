@@ -105,7 +105,11 @@ function sqlVal(v){
 function gerarSQL(dump){
   const tabelas = dump.tabelas || {};
   const out = [];
-  out.push("-- Restauração WA Aqua — gerado a partir do backup de " + (dump.gerado_em || "?"));
+  // Sanitiza gerado_em antes de concatenar no comentário SQL: uma quebra de
+  // linha encerraria o "--" e o resto viraria comando executável. Remove
+  // quebras/controles e limita o tamanho — o comentário é só informativo.
+  const geradoEm = String(dump.gerado_em || "?").replace(/[\r\n\t]+/g, " ").replace(/[^\x20-\x7EÀ-ſ]/g, "").slice(0, 40) || "?";
+  out.push("-- Restauração WA Aqua — gerado a partir do backup de " + geradoEm);
   out.push("-- Cole tudo no SQL Editor do Supabase e clique em RUN.");
   out.push("-- Idempotente: pode rodar de novo sem duplicar (atualiza pela chave).");
   out.push("-- NÃO recria os logins (auth.users).");
