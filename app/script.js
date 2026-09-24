@@ -7190,12 +7190,16 @@ function imprimirRelatorioFinanceiro() {
     : "Todo o período";
   let cabecalho, linhas, subtitulo;
   if (porViveiro) {
-    // Um viveiro: detalhe lançamento a lançamento
+    // Um viveiro: CONSOLIDADO por produto/categoria (não lançamento a lançamento).
+    // O detalhe linha-a-linha fica no Histórico de custos; aqui juntamos tudo o
+    // que foi gasto com cada item (ex.: "Ração: R$ X", "Pós-larva: R$ Y") para
+    // caber em poucas páginas mesmo num ciclo inteiro — antes um cultivo longo
+    // saía com 20+ páginas de lançamentos.
     subtitulo = custos[0].viveiroNome || "";
-    const ordenados = [...custos].sort((a, b) => b.data.localeCompare(a.data));
-    cabecalho = `<tr><th>Data</th><th>Viveiro</th><th>Descrição</th><th>Valor</th></tr>`;
-    linhas = ordenados.map(c => `<tr><td>${formatarData(c.data)}</td><td>${_esc(c.viveiroNome || "")}</td><td>${_esc(c.nomeProduto || "")}</td><td style="text-align:right">R$ ${formatarNumeroBR(Number(c.valor), 2)}</td></tr>`).join("")
-      + `<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
+    const grupos = _finGruposCategoria(custos);
+    cabecalho = `<tr><th>Produto / categoria</th><th style="text-align:center">Lançamentos</th><th>Valor</th></tr>`;
+    linhas = grupos.map(g => `<tr><td>${_esc(g.nome)}</td><td style="text-align:center">${g.qtd}</td><td style="text-align:right">R$ ${formatarNumeroBR(g.total, 2)}</td></tr>`).join("")
+      + `<tr class="total-row"><td colspan="2">TOTAL</td><td style="text-align:right">R$ ${formatarNumeroBR(total, 2)}</td></tr>`;
   } else {
     // Todos os viveiros: consolidado por categoria
     subtitulo = "Todos os viveiros";
@@ -7208,7 +7212,8 @@ function imprimirRelatorioFinanceiro() {
     <style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}h1{color:rgb(6,107,99);font-size:20px;margin-bottom:2px}.sub{color:#6b7280;font-size:13px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:left}th{background:#f0fdf4}.total-row td{font-weight:700;border-top:2px solid rgb(6,107,99)}</style></head>
     <body><h1>Relatório financeiro</h1><p class="sub">${_esc(subtitulo)}</p><p>Período: ${periodoTxt}</p>
     <table><thead>${cabecalho}</thead>
-    <tbody>${linhas}</tbody></table></body></html>`;
+    <tbody>${linhas}</tbody></table>
+    <p class="sub" style="margin-top:14px">Valores consolidados por produto. O detalhamento lançamento a lançamento está no Histórico de custos.</p></body></html>`;
   _imprimirDoc(html);
 }
 
