@@ -6968,12 +6968,49 @@ function _finGruposCategoria(custos) {
     const chave = c.tipo === "fixo" ? (c.categoria || "Custos fixos")
       : (c.tipo === "outro" ? (c.categoria || c.nomeProduto || "Outro custo")
         : (c.categoria || "Outros"));
-    if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0, viveiros: new Set() };
+    if (!grupos[chave]) grupos[chave] = { nome: chave, total: 0, qtd: 0, viveiros: new Set(), itens: [] };
     grupos[chave].total += Number(c.valor);
     grupos[chave].qtd += 1;
+    grupos[chave].itens.push(c);
     if (c.viveiroNome) grupos[chave].viveiros.add(c.viveiroNome);
   });
   return Object.values(grupos).sort((a, b) => b.total - a.total);
+}
+
+// Uma linha de grupo (produto/categoria) que ABRE ao toque, revelando os
+// lançamentos que estão somados nela — ex.: clicar em "Probiótico · 43
+// lançamentos" mostra os 43, com data e valor. O detalhe fica escondido até o
+// toque (só troca o display, sem redesenhar a tela toda).
+function _finGrupoLinhaHtml(g, idx, mostrarViveiro) {
+  const subInfo = mostrarViveiro
+    ? `${g.qtd} lançamento${g.qtd > 1 ? "s" : ""} · ${g.viveiros.size} viveiro${g.viveiros.size > 1 ? "s" : ""}`
+    : `${g.qtd} lançamento${g.qtd > 1 ? "s" : ""}`;
+  const itens = [...(g.itens || [])].sort((a, b) => (b.data || "").localeCompare(a.data || ""));
+  const detalhe = itens.map(c => {
+    const rotulo = c.virtual
+      ? "Rateio · " + formatarData(c.periodoIni) + "–" + formatarData(c.periodoFim)
+      : (c.observacao || _finTipoLabel(c) || "");
+    return `<div class="fin-subitem">
+      <span class="fin-subitem-data">${formatarData(c.data)}</span>
+      <span class="fin-subitem-desc">${mostrarViveiro ? _esc(abreviarViveiro(c.viveiroNome || "")) + (rotulo ? " · " : "") : ""}${_esc(rotulo)}</span>
+      <span class="fin-subitem-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
+    </div>`;
+  }).join("");
+  return `<button type="button" class="fin-linha fin-linha-cat fin-grupo" id="fin-grupo-btn-${idx}" onclick="_finToggleGrupo(${idx})">
+      <span class="fin-linha-desc">${_esc(g.nome)}<small>${subInfo}</small></span>
+      <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
+      <svg class="fin-grupo-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="fin-grupo-det" id="fin-grupo-det-${idx}" style="display:none">${detalhe}</div>`;
+}
+
+function _finToggleGrupo(idx) {
+  const det = document.getElementById("fin-grupo-det-" + idx);
+  const btn = document.getElementById("fin-grupo-btn-" + idx);
+  if (!det) return;
+  const aberto = det.style.display !== "none";
+  det.style.display = aberto ? "none" : "block";
+  if (btn) btn.classList.toggle("aberto", !aberto);
 }
 
 function _finRenderDetalhado(resultado, custos, total, porViveiro) {
@@ -7030,27 +7067,17 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
   const listaBlocoHtml = porViveiro
     ? `<div class="fin-lista-head">
         <span>Custos por produto</span>
-        <small class="fin-lista-hint">Somados no período</small>
+        <small class="fin-lista-hint">Toque para ver os lançamentos</small>
       </div>
       <div class="fin-lista">
-        ${grupos.map(g => `
-          <div class="fin-linha fin-linha-cat">
-            <span class="fin-linha-desc">${_esc(g.nome)}<small>${g.qtd} lançamento${g.qtd > 1 ? "s" : ""}</small></span>
-            <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
-          </div>
-        `).join("")}
+        ${grupos.map((g, idx) => _finGrupoLinhaHtml(g, idx, false)).join("")}
       </div>`
     : `<div class="fin-lista-head">
         <span>Custos por categoria</span>
-        <small class="fin-lista-hint">Todos os viveiros somados</small>
+        <small class="fin-lista-hint">Toque para ver os lançamentos</small>
       </div>
       <div class="fin-lista">
-        ${grupos.map(g => `
-          <div class="fin-linha fin-linha-cat">
-            <span class="fin-linha-desc">${_esc(g.nome)}<small>${g.qtd} lançamento${g.qtd > 1 ? "s" : ""} · ${g.viveiros.size} viveiro${g.viveiros.size > 1 ? "s" : ""}</small></span>
-            <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
-          </div>
-        `).join("")}
+        ${grupos.map((g, idx) => _finGrupoLinhaHtml(g, idx, true)).join("")}
       </div>`;
 
   resultado.innerHTML = `

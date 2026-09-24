@@ -327,6 +327,65 @@ body.tema-escuro .fin-linha-virtual { background: #052e2b; border-color: #0f4d47
 .fin-lista-hint { font-size: 11px; color: #9ca3af; font-weight: 600; }
 body.tema-escuro .fin-lista-hint { color: #9ca3af; }
 
+/* Grupo clicável: a linha da categoria/produto vira botão que abre os
+   lançamentos somados nela. */
+.fin-grupo {
+    grid-template-columns: 1fr auto auto;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    transition: background .15s, border-color .15s;
+}
+.fin-grupo:active { background: #f0fdf4; }
+.fin-grupo-chevron {
+    width: 18px;
+    height: 18px;
+    color: #9ca3af;
+    justify-self: end;
+    transition: transform .2s ease;
+}
+.fin-grupo.aberto .fin-grupo-chevron { transform: rotate(180deg); color: rgb(6,107,99); }
+.fin-grupo.aberto { border-color: rgb(6,107,99); background: #f6fefb; }
+body.tema-escuro .fin-grupo:active { background: #052e2b; }
+body.tema-escuro .fin-grupo.aberto { background: #052e2b; border-color: #34d399; }
+body.tema-escuro .fin-grupo.aberto .fin-grupo-chevron { color: #34d399; }
+
+/* Lista de lançamentos que aparece ao abrir o grupo */
+.fin-grupo-det {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: -2px 0 4px;
+    padding: 6px 6px 6px 10px;
+    border-left: 2px solid #e6f4f1;
+}
+.fin-subitem {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    background: #fbfcfd;
+    border: 1px solid #eef0f2;
+    border-radius: 7px;
+    font-size: 12px;
+}
+.fin-subitem-data { color: #6b7280; font-weight: 600; white-space: nowrap; }
+.fin-subitem-desc {
+    color: #4b5563;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fin-subitem-valor { font-weight: 700; color: #1f2937; justify-self: end; white-space: nowrap; }
+body.tema-escuro .fin-grupo-det { border-left-color: #0f4d47; }
+body.tema-escuro .fin-subitem { background: #2d3748; border-color: #4b5563; }
+body.tema-escuro .fin-subitem-data { color: #9ca3af; }
+body.tema-escuro .fin-subitem-desc { color: #d1d5db; }
+body.tema-escuro .fin-subitem-valor { color: #f3f4f6; }
+
 /* Paginação */
 .fin-paginacao {
     display: flex;
