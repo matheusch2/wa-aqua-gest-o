@@ -4286,7 +4286,15 @@ function mostrarFormularioReinicio(index, modo = "reiniciar") {
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <label>Novo total povoado</label>
           </div>
-          <input type="text" id="novoTotal" placeholder="Ex: 50.000" oninput="formatarPopulacao(this)">
+          <input type="text" id="novoTotal" placeholder="Ex: 50.000" oninput="formatarPopulacao(this);_previewCustoPL()">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <label>Valor do milheiro <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
+          </div>
+          <input type="text" inputmode="decimal" id="novoValorMilheiro" placeholder="Ex: 14,00" oninput="_previewCustoPL()">
+          <div id="preview-custo-pl" style="display:none;margin-top:7px;padding:8px 11px;background:#ecfdf5;border-radius:9px;font-size:12.5px;color:rgb(6,107,99);font-weight:600;line-height:1.4"></div>
         </div>
         <div class="campo-form">
           <div class="campo-label">
@@ -4306,6 +4314,25 @@ function mostrarFormularioReinicio(index, modo = "reiniciar") {
       </div>
     </div>
   `;
+}
+
+// Mostra ao vivo o custo da pós-larva enquanto o usuário digita o total e o
+// valor do milheiro: custo = (total ÷ 1000) × valor do milheiro. Fica só na
+// tela; o lançamento de verdade acontece no salvarNovoCiclo.
+function _previewCustoPL() {
+  const box = document.getElementById("preview-custo-pl");
+  if (!box) return;
+  const totalEl = document.getElementById("novoTotal");
+  const milEl = document.getElementById("novoValorMilheiro");
+  const total = Number((totalEl?.value || "").replace(/\D/g, ""));
+  const valMil = parseMoedaBR(milEl?.value || "");
+  if (!(total > 0) || !(valMil > 0)) { box.style.display = "none"; return; }
+  const milheiros = total / 1000;
+  const custo = Math.round(milheiros * valMil * 100) / 100;
+  const milTxt = formatarNumeroBR(milheiros, milheiros % 1 === 0 ? 0 : 2);
+  box.innerHTML = `Custo da pós-larva: <b>R$ ${formatarNumeroBR(custo, 2)}</b><br>` +
+    `<span style="font-weight:400;color:#4b8a85">${milTxt} milheiros × R$ ${formatarNumeroBR(valMil, 2)} — será lançado como custo automaticamente.</span>`;
+  box.style.display = "block";
 }
 
 // CORREÇÃO: salvarNovoCiclo agora salva no banco de dados
@@ -4372,6 +4399,28 @@ async function salvarNovoCiclo(index, modo = "reiniciar") {
   viveiros[index].biometrias = [];
   viveiros[index].despescas = [];
   _montarCustoRacaoVirtual(); // zera o custo de ração derivado do ciclo novo
+
+  // Pós-larva: se o usuário informou o valor do milheiro, lança o custo da
+  // compra das PLs automaticamente — (total ÷ 1000) × valor do milheiro.
+  // Best-effort: o ciclo já foi criado; se o custo falhar, avisa mas não desfaz.
+  const valorMilheiro = parseMoedaBR(document.getElementById("novoValorMilheiro")?.value || "");
+  if (valorMilheiro > 0 && Number(novoTotal) > 0) {
+    const milheiros = Number(novoTotal) / 1000;
+    const custoPL = Math.round(milheiros * valorMilheiro * 100) / 100;
+    const milTxt = formatarNumeroBR(milheiros, milheiros % 1 === 0 ? 0 : 2);
+    const obs = `${milTxt} milheiros × R$ ${formatarNumeroBR(valorMilheiro, 2)}`;
+    const { data: cpl, error: eCpl } = await supabaseClient
+      .from("custos")
+      .insert([{ user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "outro", nome_produto: "Pós-larva", valor: custoPL, categoria: "Pós-larva", data: novoPovoamento, ciclo_id: novoCicloId, observacao: obs }])
+      .select();
+    if (eCpl) {
+      _toastErro("Ciclo criado, mas o custo da pós-larva não foi lançado. Lance em 'Outro custo'.");
+    } else if (cpl && cpl[0]) {
+      if (!viveiros[index].custos) viveiros[index].custos = [];
+      viveiros[index].custos.push({ id: cpl[0].id, tipo: "outro", produtoId: null, nomeProduto: "Pós-larva", quantidadeG: null, valor: custoPL, categoria: "Pós-larva", data: novoPovoamento, observacao: obs, cicloId: novoCicloId });
+      _toastSucesso(`Pós-larva lançada como custo: R$ ${formatarNumeroBR(custoPL, 2)}`);
+    }
+  }
 
   abrirViveiro(index);
 }
