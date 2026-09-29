@@ -3232,8 +3232,11 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const dataPovoamento = viveiro.dataPovoamento ? _parseDataLocal(viveiro.dataPovoamento) : null;
   const alvo = (pesoAlvo === undefined || pesoAlvo === null || isNaN(Number(pesoAlvo))) ? 20 : Number(pesoAlvo);
 
+  // Dia de cultivo INCLUSIVO (dia do povoamento = D1), igual ao card do viveiro
+  // e ao relatório (calcularDiasCultivo). Antes aqui era base-zero (D0), o que
+  // deixava a projeção 1 dia atrás das outras telas.
   const diaDeCultivo = (dataStr) => dataPovoamento
-    ? Math.round((_parseDataLocal(dataStr) - dataPovoamento) / 86400000)
+    ? Math.round((_parseDataLocal(dataStr) - dataPovoamento) / 86400000) + 1
     : null;
 
   const dias = biometrias.map(b => diaDeCultivo(b.data));
@@ -3320,7 +3323,9 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
     projData.push(alvo);
     despescaIndex = chartLabels.length - 1;
 
-    const dataAlvoObj = new Date(dataPovoamento.getTime() + diaAlvo * 86400000);
+    // diaAlvo agora é inclusivo (D1 = povoamento), então a data real do alvo é
+    // povoamento + (diaAlvo - 1) dias.
+    const dataAlvoObj = new Date(dataPovoamento.getTime() + (diaAlvo - 1) * 86400000);
     const dataAlvoStr = `${dataAlvoObj.getFullYear()}-${String(dataAlvoObj.getMonth() + 1).padStart(2, "0")}-${String(dataAlvoObj.getDate()).padStart(2, "0")}`;
     progresso = Math.min(100, Math.round((pesoAtual / alvo) * 100));
 
