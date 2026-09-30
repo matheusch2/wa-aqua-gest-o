@@ -357,6 +357,7 @@
                     </div>
                 </div>
             `;
+            _verificarLockLogin();
         }
 
         function mostrarCadastro() {
@@ -432,14 +433,80 @@
             return () => { botao.disabled = false; botao.style.opacity = ""; botao.innerHTML = html; };
         }
 
+        // ── Trava VISUAL de 3 tentativas de login (camada de EXPERIÊNCIA) ──
+        // A proteção REAL contra força bruta é o rate limit do Supabase, no
+        // servidor (não dá pra burlar). Isto aqui só evita o martelar acidental
+        // e avisa o usuário com um contador. Guardado no aparelho (localStorage).
+        const _LOCK_KEY = "wa_login_lock";
+        const _MAX_TENT = 3;
+        let _lockTimer = null;
+
+        function _lockState() {
+            try { return JSON.parse(localStorage.getItem(_LOCK_KEY)) || { fails: 0, until: 0 }; }
+            catch (e) { return { fails: 0, until: 0 }; }
+        }
+        function _lockSave(s) { try { localStorage.setItem(_LOCK_KEY, JSON.stringify(s)); } catch (e) {} }
+        function _lockClear() { try { localStorage.removeItem(_LOCK_KEY); } catch (e) {} }
+        // A cada bloco de 3 erros a espera cresce: 30s, 60s, 120s... (máx 5 min).
+        function _cooldownMs(fails) {
+            const nivel = Math.floor(fails / _MAX_TENT);
+            return Math.min(30 * Math.pow(2, Math.max(0, nivel - 1)), 300) * 1000;
+        }
+
+        // Se houver bloqueio ativo, desabilita "Entrar" e mostra o contador.
+        // Retorna true se está bloqueado agora.
+        function _verificarLockLogin() {
+            const s = _lockState();
+            const btn = document.querySelector(".botao-entrar");
+            if (s.until - Date.now() <= 0) {
+                if (_lockTimer) { clearInterval(_lockTimer); _lockTimer = null; }
+                return false;
+            }
+            if (!btn) return true;
+            if (!btn.dataset.htmlOrig) btn.dataset.htmlOrig = btn.innerHTML;
+            btn.disabled = true; btn.style.opacity = "0.7";
+            if (_lockTimer) clearInterval(_lockTimer);
+            const tick = () => {
+                const b = document.querySelector(".botao-entrar");
+                const seg = Math.ceil((s.until - Date.now()) / 1000);
+                if (seg <= 0) {
+                    clearInterval(_lockTimer); _lockTimer = null;
+                    if (b) { b.disabled = false; b.style.opacity = ""; b.innerHTML = b.dataset.htmlOrig || "Entrar"; }
+                    msgLogin("Pode tentar novamente.", "ok");
+                    return;
+                }
+                if (b) b.innerHTML = `Aguarde ${seg}s`;
+                msgLogin(`Muitas tentativas. Aguarde ${seg}s para tentar de novo.`);
+            };
+            tick();
+            _lockTimer = setInterval(tick, 1000);
+            return true;
+        }
+
         async function entrarUsuario(botao) {
             if (botao?.disabled) return;
+            if (_verificarLockLogin()) return; // bloqueado: mostra o contador e nem tenta
             const email = document.getElementById("emailLogin").value;
             const senha = document.getElementById("senhaLogin").value;
             if (!email || !senha) { msgLogin("Preencha e-mail e senha."); return; }
             const restaurar = _travarBtnLogin(botao, "Entrando...");
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-            if (error) { restaurar(); msgLogin("E-mail ou senha incorretos."); return; }
+            if (error) {
+                restaurar();
+                const s = _lockState();
+                s.fails = (s.fails || 0) + 1;
+                if (s.fails % _MAX_TENT === 0) {
+                    s.until = Date.now() + _cooldownMs(s.fails);
+                    _lockSave(s);
+                    _verificarLockLogin(); // dispara o contador
+                } else {
+                    _lockSave(s);
+                    const restam = _MAX_TENT - (s.fails % _MAX_TENT);
+                    msgLogin(`E-mail ou senha incorretos. (${restam} tentativa${restam > 1 ? "s" : ""} restante${restam > 1 ? "s" : ""})`);
+                }
+                return;
+            }
+            _lockClear();
             // replace() evita que o botão "Voltar" reabra a tela de login "Entrando..."
             _irPorPerfil();
         }
