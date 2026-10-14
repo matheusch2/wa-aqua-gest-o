@@ -1131,6 +1131,7 @@ function voltarMenuGestao() {
   document.getElementById("menuGestao").style.display = "grid";
   limparAreaGestao();
   verificarBoletosVencendo();
+  verificarVencimentoPlano();
   _mostrarBannerLeitura();
   _toggleVoltarTopo(false);
 }
@@ -4816,6 +4817,54 @@ function verificarBoletosVencendo() {
   area.insertBefore(div, area.firstChild);
 }
 
+// ── AVISO DE VENCIMENTO DO PLANO ────────────────────────────────────────────
+// Banner no topo do painel quando o plano PAGO está perto de vencer (até 3 dias
+// antes) ou já venceu mas ainda dentro da carência. Toca → abre "Minha conta".
+function verificarVencimentoPlano() {
+  const a = assinatura;
+  if (!a || !a.plano || a.plano === "gratis") return;   // só plano pago
+  const venc = _parseVenc(a.proximo_vencimento);
+  if (!venc) return;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const diff = Math.round((venc - hoje) / 86400000);     // dias até vencer (negativo = já venceu)
+  const AVISAR_ANTES = 3;
+  if (diff > AVISAR_ANTES) return;                       // ainda longe, não avisa
+  if (diff < -_DIAS_CARENCIA) return;                    // já passou da carência (outra trava cuida)
+
+  let titulo, sub;
+  if (diff > 0) {
+    titulo = `Seu plano vence em ${diff} dia${diff > 1 ? "s" : ""}`;
+    sub = "Realize o pagamento para continuar sem interrupção.";
+  } else if (diff === 0) {
+    titulo = "Seu plano vence hoje";
+    sub = "Realize o pagamento para não bloquear o acesso.";
+  } else {
+    const restam = _DIAS_CARENCIA + diff;                // dias restantes antes do bloqueio
+    titulo = `Seu plano venceu há ${Math.abs(diff)} dia${Math.abs(diff) > 1 ? "s" : ""}`;
+    sub = restam > 0
+      ? `Pague em até ${restam} dia${restam > 1 ? "s" : ""} para não bloquear o acesso.`
+      : "Regularize o pagamento para reativar o acesso.";
+  }
+
+  const area = document.getElementById("area-gestao");
+  if (!area) return;
+  const ex = document.getElementById("banner-plano-vence");
+  if (ex) ex.remove();
+  const div = document.createElement("div");
+  div.id = "banner-plano-vence";
+  div.innerHTML = `
+    <div class="boleto-banner" onclick="abrirMinhaConta()">
+      <div class="boleto-banner-icone">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+      <div class="boleto-banner-texto">
+        <strong>${titulo}</strong>
+        <span>${sub}</span>
+      </div>
+      <span class="boleto-banner-seta">›</span>
+    </div>`;
+  area.insertBefore(div, area.firstChild);
+}
 // Menu "Lançar custo" (antigo botao Insumos). Reune Energia e Custos fixos
 // (que sairam do Financeiro). Produto cadastrado / Outro custo entram na 3b.
 function abrirMenuCusto() {
@@ -10808,6 +10857,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }, 0);
 
       verificarBoletosVencendo();
+      verificarVencimentoPlano();
       _armarVerificacaoDeVersao();
       _registrarAcesso(session.user);
       if (window.innerWidth >= 900) {
