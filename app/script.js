@@ -4895,10 +4895,11 @@ function _linkWhatsAppPlano(nomePlano, ciclo) {
 }
 
 const _PLANOS_APP = [
-  { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros", mensal: 50,  anual: 500 },
-  { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros", mensal: 100, anual: 1000 },
-  { key: "avancado",      nome: "Avançado",      viveiros: "até 20 viveiros", mensal: 300, anual: 3000 },
-  { key: "pro",           nome: "Pro",           viveiros: "viveiros ilimitados", mensal: 500, anual: 5000 },
+  { key: "gratis1",       nome: "1 viveiro",     viveiros: "1 viveiro",           mensal: 50,  anual: 500,  liberado: true },
+  { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros",      mensal: 100, anual: 1000 },
+  { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros",     mensal: 200, anual: 2000 },
+  { key: "avancado",      nome: "Avançado",      viveiros: "até 20 viveiros",     mensal: 400, anual: 4000 },
+  { key: "pro",           nome: "Pro",           viveiros: "viveiros ilimitados", mensal: 600, anual: 6000 },
 ];
 
 function _planoLabel(key) {
@@ -5050,7 +5051,7 @@ function abrirAssinatura() {
   const cards = _PLANOS_APP.map(p => {
     // "Plano atual" só no ciclo que a pessoa realmente assinou (mensal OU anual).
     // Se a assinatura antiga não tiver ciclo gravado, mantém o comportamento antigo.
-    const atual = a.plano === p.key && a.status === "ativo" && (!a.ciclo || a.ciclo === ciclo);
+    const atual = p.liberado ? ehGratis : (a.plano === p.key && a.status === "ativo" && (!a.ciclo || a.ciclo === ciclo));
     let precoBloco;
     if (ciclo === "anual") {
       const equiv = p.anual / 12;
@@ -5062,9 +5063,11 @@ function abrirAssinatura() {
     } else {
       precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(p.mensal, 0)}<small>por mês</small></div>`;
     }
-    const rodape = atual
-      ? `<div class="plano-atual-tag">✓ Plano atual</div>`
-      : `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`;
+    const rodape = p.liberado
+      ? `<div class="plano-atual-tag">${ehGratis ? "✓ Seu plano · liberado" : "Liberado no momento"}</div>`
+      : (atual
+        ? `<div class="plano-atual-tag">✓ Plano atual</div>`
+        : `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`);
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
         <div class="plano-card-corpo">
