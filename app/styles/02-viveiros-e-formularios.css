@@ -719,13 +719,34 @@ body.tema-escuro .rh-btn.edit svg { stroke: #34d399; }
 /* ── Lançar 2ª ração (transição inicial → engorda) ── */
 .racao-add-segunda { width: 100%; margin-top: 4px; padding: 11px; background: #f0fdf4; color: rgb(6,107,99); border: 1.5px dashed #9ad9cd; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .racao-add-segunda svg { width: 17px; height: 17px; stroke: rgb(6,107,99); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.racao-2bloco { margin-top: 12px; padding: 12px 12px 2px; border: 1px solid #cdeee7; border-left: 3px solid rgb(6,107,99); border-radius: 12px; background: #f6fefb; }
-.racao-2topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.racao-2topo b { font-size: 13px; color: rgb(6,107,99); font-weight: 800; }
+.racao-2bloco { margin-top: 12px; padding: 13px 13px 3px; border: 1px solid #cdeee7; border-left: 3px solid rgb(6,107,99); border-radius: 12px; background: #f6fefb; }
+.racao-2topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.racao-2tag { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 800; color: rgb(6,107,99); letter-spacing: .01em; }
+.racao-2tag i { width: 19px; height: 19px; border-radius: 50%; background: rgb(6,107,99); color: #fff; font-style: normal; font-size: 11px; font-weight: 800; display: grid; place-items: center; flex-shrink: 0; }
 .racao-2remover { background: none; border: none; color: #dc2626; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 4px 6px; width: auto; }
-.racao-total { margin-top: 10px; font-size: 12.5px; color: #4b8a85; text-align: center; font-weight: 600; }
+
+/* Custo estimado — linha limpa com ícone */
+.racao-custo-box { display: flex; align-items: center; gap: 10px; background: #f0fdf4; border: 1px solid #c8ead9; border-radius: 12px; padding: 11px 13px; margin-bottom: 14px; }
+.racao-custo-box svg { width: 17px; height: 17px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.racao-custo-box span { flex: 1; font-size: 13px; font-weight: 600; color: #4b8a85; }
+.racao-custo-box b { font-size: 15px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; }
+
+/* Total do dia — destaque das duas rações somadas */
+.racao-total-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #ecfdf5; border: 1.5px solid #9ad9cd; border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+.racao-total-box .lbl { display: block; font-size: 11.5px; font-weight: 800; color: #4b8a85; text-transform: uppercase; letter-spacing: .05em; }
+.racao-total-box .sub { display: block; font-size: 12px; font-weight: 600; color: #6aa39b; margin-top: 2px; }
+.racao-total-box .val { font-size: 19px; font-weight: 800; color: rgb(6,107,99); white-space: nowrap; }
+
 body.tema-escuro .racao-add-segunda { background: #052e2b; border-color: #0f4d47; color: #34d399; }
 body.tema-escuro .racao-add-segunda svg { stroke: #34d399; }
 body.tema-escuro .racao-2bloco { background: #0b1f1c; border-color: #0f4d47; border-left-color: #34d399; }
-body.tema-escuro .racao-2topo b { color: #34d399; }
-body.tema-escuro .racao-total { color: #9ad9cd; }
+body.tema-escuro .racao-2tag { color: #34d399; }
+body.tema-escuro .racao-2tag i { background: #34d399; color: #04211d; }
+body.tema-escuro .racao-custo-box { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .racao-custo-box svg { stroke: #34d399; }
+body.tema-escuro .racao-custo-box span { color: #9ad9cd; }
+body.tema-escuro .racao-custo-box b { color: #34d399; }
+body.tema-escuro .racao-total-box { background: #052e2b; border-color: #0f4d47; }
+body.tema-escuro .racao-total-box .lbl { color: #9ad9cd; }
+body.tema-escuro .racao-total-box .sub { color: #6aa39b; }
+body.tema-escuro .racao-total-box .val { color: #34d399; }

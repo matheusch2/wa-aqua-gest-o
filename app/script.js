@@ -2331,6 +2331,9 @@ function _racaoToggleSegunda(mostrar) {
   if (!bloco) return;
   bloco.style.display = mostrar ? "block" : "none";
   if (btn) btn.style.display = mostrar ? "none" : "flex";
+  // Com duas rações, o primeiro campo vira "1ª ração" pra ficar claro o par.
+  const lbl1 = document.getElementById("lbl-tipo-racao1");
+  if (lbl1) lbl1.textContent = mostrar ? "1ª ração" : "Tipo de ração";
   if (!mostrar) {
     const c2 = document.getElementById("consumoRacao2"); if (c2) c2.value = "";
     const t2 = document.getElementById("tipoRacaoSelect2"); if (t2) t2.value = "";
@@ -2349,9 +2352,14 @@ function _calcTotalRacao() {
   if (!aberto || isNaN(c2)) { tot.style.display = "none"; return; }
   const v1 = isNaN(c1) ? 0 : c1, v2 = c2;
   const soma = v1 + v2;
-  const casas = soma % 1 === 0 ? 0 : 2;
-  tot.innerHTML = `Total do dia: <b>${formatarNumeroBR(soma, casas)} kg</b> (${formatarNumeroBR(v1, v1 % 1 === 0 ? 0 : 2)} + ${formatarNumeroBR(v2, v2 % 1 === 0 ? 0 : 2)})`;
-  tot.style.display = "block";
+  const _n = (x) => formatarNumeroBR(x, x % 1 === 0 ? 0 : 2);
+  tot.innerHTML = `
+    <div class="racao-total-txt">
+      <span class="lbl">Total do dia</span>
+      <span class="sub">${_n(v1)} + ${_n(v2)} kg</span>
+    </div>
+    <span class="val">${_n(soma)} kg</span>`;
+  tot.style.display = "flex";
 }
 
 // Usa a data do lançamento, não a ordem em que a consulta devolveu as linhas.
@@ -2490,7 +2498,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <label>Tipo de ração</label>
+            <label id="lbl-tipo-racao1">Tipo de ração</label>
           </div>
           <select id="tipoRacaoSelect" onchange="_calcCustoRacao()">
             <option value="">— Não especificado —</option>
@@ -2500,7 +2508,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         ` : ""}
         <div class="campo-form">
           <div class="campo-label">
-            <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
             <label>Consumo de ração</label>
           </div>
           <div class="campo-input-unidade">
@@ -2509,8 +2517,10 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           </div>
         </div>
 
-        <div id="previa-custo-racao" class="custo-por-grama-preview" style="display:none">
-          Custo estimado: <strong id="previa-custo-racao-valor">—</strong>
+        <div id="previa-custo-racao" class="racao-custo-box" style="display:none">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Custo estimado</span>
+          <b id="previa-custo-racao-valor">—</b>
         </div>
 
         <div id="racao-2-area">
@@ -2519,18 +2529,21 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             Lançar uma 2ª ração (transição)
           </button>
           <div id="racao-2-bloco" class="racao-2bloco" style="display:none">
-            <div class="racao-2topo"><b>2ª ração (transição)</b><button type="button" class="racao-2remover" onclick="_racaoToggleSegunda(false)">✕ remover</button></div>
+            <div class="racao-2topo">
+              <span class="racao-2tag"><i>2</i> 2ª ração · transição</span>
+              <button type="button" class="racao-2remover" onclick="_racaoToggleSegunda(false)">✕ remover</button>
+            </div>
             ${tiposRacao.length > 0 ? `
             <div class="campo-form">
               <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><label>Tipo de ração</label></div>
               <select id="tipoRacaoSelect2"><option value="">— Selecione —</option>${tiposRacao.map((t, i) => `<option value="${i}">${_esc(t.nome)}</option>`).join("")}</select>
             </div>` : ""}
             <div class="campo-form">
-              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><label>Consumo</label></div>
+              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg><label>Consumo</label></div>
               <div class="campo-input-unidade"><input type="text" inputmode="decimal" id="consumoRacao2" placeholder="Ex: 20" oninput="_calcTotalRacao()"><span class="campo-unidade">kg</span></div>
             </div>
           </div>
-          <div id="racao-total-dia" class="racao-total" style="display:none"></div>
+          <div id="racao-total-dia" class="racao-total-box" style="display:none"></div>
         </div>
 
         <div id="msg-racao-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
