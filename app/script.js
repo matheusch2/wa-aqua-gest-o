@@ -8158,7 +8158,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc-graficos">
         <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
         <div class="rc-graf-box"><h5>Consumo acumulado de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
-        <div class="rc-graf-box"><h5>Biomassa × Ração consumida (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBioRacao"></canvas></div></div>
+        <div class="rc-graf-box rc-graf-box-largo"><h5>Biomassa × Ração consumida (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBioRacao"></canvas></div></div>
       </div>
       ` : ""}
 
@@ -8316,8 +8316,8 @@ function _renderGraficosCiclo(serie) {
       data: {
         labels: serie.dias,
         datasets: [
-          { label: "Biomassa", data: serie.biomassaEst, borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,.08)", fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: "#16a34a", borderWidth: 2 },
-          { label: "Ração consumida", data: serie.racaoAcum, borderColor: "rgb(6,107,99)", backgroundColor: "transparent", fill: false, tension: 0.3, pointRadius: 3, pointBackgroundColor: "rgb(6,107,99)", borderWidth: 2, borderDash: [5, 4] },
+          { label: "Biomassa", data: serie.biomassaEst, borderColor: "#16a34a", backgroundColor: "transparent", fill: false, tension: 0.3, pointRadius: 3, pointBackgroundColor: "#16a34a", borderWidth: 2 },
+          { label: "Ração consumida", data: serie.racaoAcum, borderColor: "#dc2626", backgroundColor: "transparent", fill: false, tension: 0.3, pointRadius: 3, pointBackgroundColor: "#dc2626", borderWidth: 2, borderDash: [5, 4] },
         ],
       },
       options: opBR,
