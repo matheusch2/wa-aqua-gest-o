@@ -8158,6 +8158,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       <div class="rc-graficos">
         <div class="rc-graf-box"><h5>Peso médio (g)</h5><div class="rc-graf-canvas"><canvas id="rcPeso"></canvas></div></div>
         <div class="rc-graf-box"><h5>Consumo acumulado de ração (kg)</h5><div class="rc-graf-canvas"><canvas id="rcRacao"></canvas></div></div>
+        <div class="rc-graf-box"><h5>Biomassa × Ração consumida (kg)</h5><div class="rc-graf-canvas"><canvas id="rcBioRacao"></canvas></div></div>
       </div>
       ` : ""}
 
@@ -8238,6 +8239,16 @@ function _seriesCiclo(ciclo) {
   // O último ponto usa a despesca final (dado real), e nele o FCA acumulado
   // cai exatamente sobre o FCA do relatório.
   const sobrFinal = (Number(ciclo.sobrevivencia) || 0) / 100;
+
+  // Biomassa estimada em cada biometria, pela MESMA base do FCA acima
+  // (sobrevivência final aplicada como constante): vivos × peso médio.
+  // Alimenta o gráfico "Biomassa × Ração consumida".
+  const biomassaEst = bios.map(b => {
+    if (!(sobrFinal > 0) || !(popNum > 0)) return null;
+    const vivos = Math.max(0, popNum * sobrFinal - qtdDespescadaAte(b.data));
+    return Number((vivos * (Number(b.gramatura) || 0) / 1000).toFixed(1));
+  });
+
   const fcaDias = [], fcaAcum = [], fcaPeriodo = [];
   if (sobrFinal > 0 && popNum > 0) {
     const pontos = bios.map((b, i) => ({ data: b.data, dia: diasArr[i], peso: Number(b.gramatura) }));
@@ -8265,7 +8276,7 @@ function _seriesCiclo(ciclo) {
     }
   }
 
-  return { bios, dias, peso, cresc, biomassa, fca, racaoAcum, obs, datas, popNum, producaoTotal,
+  return { bios, dias, peso, cresc, biomassa, biomassaEst, fca, racaoAcum, obs, datas, popNum, producaoTotal,
            fcaDias, fcaAcum, fcaPeriodo };
 }
 
@@ -8287,6 +8298,31 @@ function _renderGraficosCiclo(serie) {
   const elR = document.getElementById("rcRacao");
   if (elR) _prepararCanvasGrafico(elR);
   if (elR) new Chart(elR.getContext("2d"), { type: "bar", data: { labels: serie.dias, datasets: [{ data: serie.racaoAcum, backgroundColor: "rgb(6,107,99)" }] }, options: op() });
+
+  // Biomassa × Ração: duas curvas no mesmo eixo (ambas em kg e em ordem de
+  // grandeza parecida). Mostra se a ração está acompanhando o crescimento da
+  // biomassa — a distância entre as linhas é o FCA acontecendo. A biomassa usa
+  // a sobrevivência final como constante (ver nota em _seriesCiclo).
+  const elBR = document.getElementById("rcBioRacao");
+  if (elBR && (serie.biomassaEst || []).some(v => v !== null)) {
+    _prepararCanvasGrafico(elBR);
+    const opBR = op();
+    opBR.plugins.legend = {
+      display: true, position: "bottom",
+      labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "circle", font: { size: 10 }, color: "#6b7280", padding: 10 },
+    };
+    new Chart(elBR.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: serie.dias,
+        datasets: [
+          { label: "Biomassa", data: serie.biomassaEst, borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,.08)", fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: "#16a34a", borderWidth: 2 },
+          { label: "Ração consumida", data: serie.racaoAcum, borderColor: "rgb(6,107,99)", backgroundColor: "transparent", fill: false, tension: 0.3, pointRadius: 3, pointBackgroundColor: "rgb(6,107,99)", borderWidth: 2, borderDash: [5, 4] },
+        ],
+      },
+      options: opBR,
+    });
+  }
 }
 
 function gerarRelatorioImpressao() {
