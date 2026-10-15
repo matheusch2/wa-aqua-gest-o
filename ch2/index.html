@@ -132,6 +132,9 @@
         .a-bloquear { background: #fbe9e9; color: #a4241c; }
         .a-reativar { background: #e3f2ef; color: var(--verde-esc); }
         .a-hist { background: #f1f5f9; color: #334155; }
+        .a-venc { background: #eef6ff; color: #1e40af; white-space: nowrap; }
+        .cli-linha-venc { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+        .cli-linha-venc input[type=date] { flex: 1; min-width: 0; padding: 10px; border: 1px solid #e2e8e6; border-radius: 9px; font-size: 13px; color: #334155; }
 
         /* Zona de perigo — excluir conta (discreto até confirmar) */
         .cli-perigo { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef3f2; }
@@ -667,6 +670,10 @@
                                 <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
                             </select>
                         </div>
+                        <div class="cli-linha-venc">
+                            <input type="date" id="venc-${esc(c.id)}" value="${a && a.proximo_vencimento ? esc(String(a.proximo_vencimento).slice(0, 10)) : ""}">
+                            <button class="acao-btn a-venc" onclick="ajustarVencimento(this,'${esc(c.id)}')">${ICO.calendar} Ajustar vencimento</button>
+                        </div>
                         <div class="cli-acoes">
                             <button class="acao-btn a-liberar" onclick="acao(this,'liberar','${esc(c.id)}')">${ICO.check} Registrar pagamento / Liberar</button>
                             <button class="acao-btn a-trocar" onclick="acao(this,'trocar','${esc(c.id)}')">${ICO.swap} Trocar plano</button>
@@ -696,6 +703,30 @@
             if (!card) return;
             if (abertos.has(id)) { abertos.delete(id); card.classList.remove("aberto"); }
             else { abertos.add(id); card.classList.add("aberto"); }
+        }
+
+        // Ajusta a DATA de vencimento (e o ciclo) direto, via RPC admin_ajustar_vencimento.
+        // Útil para liberar manual com a data que o admin quiser (ex.: mensal vencendo tal dia).
+        async function ajustarVencimento(btn, alvo) {
+            if (btn.disabled) return;
+            const data = document.getElementById("venc-" + alvo).value;
+            const ciclo = document.getElementById("ciclo-" + alvo).value;
+            if (!data) { toast("Escolha a data de vencimento.", "erro"); return; }
+            const txt = btn.textContent;
+            btn.disabled = true; btn.textContent = "Aguarde…";
+            try {
+                const { error } = await sb.rpc("admin_ajustar_vencimento", { p_user: alvo, p_vencimento: data, p_ciclo: ciclo });
+                if (error) throw error;
+            } catch (e) {
+                const m = String(e.message || e);
+                toast(m.includes("NAO_AUTORIZADO") ? "Sem permissão." :
+                      m.includes("NAO_ENCONTRADO") ? "Esse cliente não tem assinatura — use 'Registrar pagamento / Liberar' primeiro." :
+                      "Erro: " + m, "erro");
+                btn.disabled = false; btn.textContent = txt;
+                return;
+            }
+            toast("Vencimento ajustado! ✅");
+            try { await carregarClientes(); } catch (e) { toast("Ajustado. Recarregue a lista.", "ok"); }
         }
 
         async function acao(btn, tipo, alvo) {
