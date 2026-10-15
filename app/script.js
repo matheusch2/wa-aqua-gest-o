@@ -4476,9 +4476,18 @@ function abrirEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina =
   const viveiro = viveiros[viveiroIndex];
   const itens = _racoesDoDia(viveiroIndex, dataYmd);
   if (!itens.length) return;
-  const area = document.getElementById("area-gestao");
-  if (!area) return;
+  // Mesmo alvo da edição de uma ração: na tela "direto" ocupa a área toda; no
+  // histórico normal desenha DENTRO do container (senão o Voltar/Salvar perdem
+  // o elemento para onde voltar).
+  const alvo = direto
+    ? document.getElementById("area-gestao")
+    : document.getElementById(elementoId);
+  if (!alvo) return;
   salvarScroll();
+
+  const acaoVoltar = direto
+    ? `voltarParaHistoricoRacaoDireto(${viveiroIndex},${pagina})`
+    : `renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${pagina}); restaurarScroll()`;
 
   const blocos = itens.map((x, i) => {
     const idxTipo = tiposRacao.findIndex(t => t.id === x.r.tipoRacaoId);
@@ -4499,7 +4508,7 @@ function abrirEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina =
       </div>`;
   }).join("");
 
-  area.innerHTML = `
+  alvo.innerHTML = `
     <div class="form-lancamento">
       <div class="form-topo">
         <div class="form-icone-circulo"><svg viewBox="0 0 24 24">${_SVG_SACO}</svg></div>
@@ -4520,7 +4529,7 @@ function abrirEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina =
           Salvar as ${itens.length} rações
         </button>
         <div class="separador-ou"><span>ou</span></div>
-        <button class="botao-voltar-form" onclick="renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${pagina}); restaurarScroll()">Voltar</button>
+        <button class="botao-voltar-form" onclick="${acaoVoltar}">Voltar</button>
       </div>
     </div>`;
 }
@@ -4594,8 +4603,15 @@ async function salvarEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, p
   _montarCustoRacaoVirtual();
   restaurar();
   _toastSucesso("Dia atualizado!");
-  renderizarHistoricoRacao(viveiroIndex, elementoId, direto, pagina);
-  restaurarScroll();
+  // Volta pelo mesmo caminho da edição de uma ração: reconstrói a tela do
+  // histórico antes de desenhar a lista (o container pode ter sido substituído).
+  if (direto) {
+    voltarParaHistoricoRacaoDireto(viveiroIndex, pagina);
+  } else {
+    mostrarHistoricoCultivo(viveiroIndex);
+    abrirHistoricoRacao(pagina);
+    restaurarScroll();
+  }
 }
 
 function confirmarExcluirDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina, grupoId) {
