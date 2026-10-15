@@ -8133,6 +8133,9 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
         <div class="rc2-cell"><small>Laboratório</small><b>${_esc(ciclo.laboratorio || "—")}</b></div>
         <div class="rc2-cell"><small>Área</small><b>${_fmtHa(ciclo.tamanho)} ha</b></div>
         ${ciclo.dataPreparacao && ciclo.dataPovoamento ? `<div class="rc2-cell"><small>Preparação</small><b>${calcularDiasCultivo(ciclo.dataPreparacao, ciclo.dataPovoamento)} dias</b></div>` : ""}
+        <!-- Fecha a última linha da grade e repete, em tamanho legível, a
+             duração do ciclo que no topo aparece bem pequena. -->
+        <div class="rc2-cell"><small>Dias de cultivo</small><b>${ciclo.diasCultivo || "—"} dias</b></div>
       </div>
 
       <div class="rc2-sec-tit">Indicadores produtivos</div>
