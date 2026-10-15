@@ -428,6 +428,10 @@ body.tema-escuro .custo-total-val { color: #34d399; }
 .rc-graf-box { background: white; border: 1px solid #eef0f2; border-radius: 12px; padding: 10px 8px 8px; }
 .rc-graf-box h5 { margin: 0 0 6px; font-size: 11px; font-weight: 700; color: #374151; text-align: center; }
 .rc-graf-canvas { position: relative; height: 120px; }
+/* Gráfico de relação (Biomassa × Ração): ocupa a linha inteira e é mais alto,
+   porque tem duas curvas + legenda e é o que se olha com mais atenção. */
+.rc-graf-box-largo { grid-column: 1 / -1; }
+.rc-graf-box-largo .rc-graf-canvas { height: 215px; }
 
 /* ═══ Relatório de ciclo — redesign limpo/compacto ═══ */
 .rc2-report { background: #fff; padding: 14px 12px 18px; }
