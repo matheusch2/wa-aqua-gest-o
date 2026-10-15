@@ -114,6 +114,20 @@ function _calcularBiomassa(populacao, consumoKg, pesoG) {
   const quantidade = biomassa / (pesoG / 1000);
   return { biomassa, quantidade: Math.round(quantidade), sobrevivencia: (quantidade / populacao) * 100 };
 }
+
+// Soma a ração (kg) do ÚLTIMO dia que teve ração > 0. Com 2 rações no mesmo dia
+// (transição inicial→engorda), o consumo diário é a SOMA das duas — a estimativa
+// de biomassa usa esse total, não um único lançamento. Devolve null se não há ração.
+function _consumoUltimoDia(racoes) {
+  const comRacao = (racoes || []).filter(r => Number(r.racao) > 0);
+  if (!comRacao.length) return null;
+  let ultima = String(comRacao[0].data).substring(0, 10);
+  for (const r of comRacao) { const d = String(r.data).substring(0, 10); if (d > ultima) ultima = d; }
+  const total = comRacao
+    .filter(r => String(r.data).substring(0, 10) === ultima)
+    .reduce((s, r) => s + Number(r.racao), 0);
+  return { data: ultima, total };
+}
 let _swipeViveirosAbort = null;
 let _swipeRacaoAbort = null;
 
@@ -1711,7 +1725,7 @@ function abrirViveiro(index) {
   let custoKgProduzidoStr = "--";
   const PESO_ALVO_DESPESCA = 20; // g — meta padrão de despesca
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
-    const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
+    const res = _calcularBiomassa(populacaoNum, _consumoUltimoDia(racoesSorted).total, pesoUltimaBio);
     if (res && res.biomassa > 0) {
       // res.biomassa = biomassa atual no viveiro, estimada pela ração que os
       // camarões remanescentes estão comendo AGORA (já é pós-despesca).
@@ -2307,6 +2321,37 @@ function _calcCustoRacao() {
   } else {
     div.style.display = "none";
   }
+  _calcTotalRacao();
+}
+
+// Abre/fecha o bloco da 2ª ração (transição). Ao fechar, limpa os campos dela.
+function _racaoToggleSegunda(mostrar) {
+  const bloco = document.getElementById("racao-2-bloco");
+  const btn = document.getElementById("racao-btn-add2");
+  if (!bloco) return;
+  bloco.style.display = mostrar ? "block" : "none";
+  if (btn) btn.style.display = mostrar ? "none" : "flex";
+  if (!mostrar) {
+    const c2 = document.getElementById("consumoRacao2"); if (c2) c2.value = "";
+    const t2 = document.getElementById("tipoRacaoSelect2"); if (t2) t2.value = "";
+  }
+  _calcTotalRacao();
+}
+
+// Mostra o total do dia (1ª + 2ª) quando o bloco da 2ª está aberto.
+function _calcTotalRacao() {
+  const tot = document.getElementById("racao-total-dia");
+  if (!tot) return;
+  const bloco = document.getElementById("racao-2-bloco");
+  const aberto = bloco && bloco.style.display === "block";
+  const c1 = parseDecimalBR(document.getElementById("consumoRacao")?.value);
+  const c2 = parseDecimalBR(document.getElementById("consumoRacao2")?.value);
+  if (!aberto || isNaN(c2)) { tot.style.display = "none"; return; }
+  const v1 = isNaN(c1) ? 0 : c1, v2 = c2;
+  const soma = v1 + v2;
+  const casas = soma % 1 === 0 ? 0 : 2;
+  tot.innerHTML = `Total do dia: <b>${formatarNumeroBR(soma, casas)} kg</b> (${formatarNumeroBR(v1, v1 % 1 === 0 ? 0 : 2)} + ${formatarNumeroBR(v2, v2 % 1 === 0 ? 0 : 2)})`;
+  tot.style.display = "block";
 }
 
 // Usa a data do lançamento, não a ordem em que a consulta devolveu as linhas.
@@ -2464,6 +2509,26 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           </div>
         </div>
 
+        <div id="racao-2-area">
+          <button type="button" class="racao-add-segunda" id="racao-btn-add2" onclick="_racaoToggleSegunda(true)">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Lançar uma 2ª ração (transição)
+          </button>
+          <div id="racao-2-bloco" class="racao-2bloco" style="display:none">
+            <div class="racao-2topo"><b>2ª ração (transição)</b><button type="button" class="racao-2remover" onclick="_racaoToggleSegunda(false)">✕ remover</button></div>
+            ${tiposRacao.length > 0 ? `
+            <div class="campo-form">
+              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><label>Tipo de ração</label></div>
+              <select id="tipoRacaoSelect2"><option value="">— Selecione —</option>${tiposRacao.map((t, i) => `<option value="${i}">${_esc(t.nome)}</option>`).join("")}</select>
+            </div>` : ""}
+            <div class="campo-form">
+              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><label>Consumo</label></div>
+              <div class="campo-input-unidade"><input type="text" inputmode="decimal" id="consumoRacao2" placeholder="Ex: 20" oninput="_calcTotalRacao()"><span class="campo-unidade">kg</span></div>
+            </div>
+          </div>
+          <div id="racao-total-dia" class="racao-total" style="display:none"></div>
+        </div>
+
         <div id="previa-custo-racao" class="custo-por-grama-preview" style="display:none">
           Custo estimado: <strong id="previa-custo-racao-valor">—</strong>
         </div>
@@ -2515,11 +2580,35 @@ async function salvarLancamentoRacao(indexDireto = "") {
   const _eDataR = _erroDataCiclo(viveiros[index], data);
   if (_eDataR) { mostrarErroRacao(_eDataR); return; }
 
-  // Verifica se já existe lançamento nessa data (normaliza formato)
-  const jaExiste = (viveiros[index].racoes || []).some(r => r.data.substring(0, 10) === data);
-  if (jaExiste) {
-    mostrarErroRacao(`Já existe um lançamento em ${formatarData(data)}. Edite o lançamento existente.`);
-    return;
+  // ── Monta a 1ª e, se o bloco estiver aberto, a 2ª ração (transição) ──
+  const _tipoSel = (selId) => {
+    const el = document.getElementById(selId);
+    const v = el ? el.value : "";
+    const t = (v !== "" && v !== undefined && v !== null) ? tiposRacao[v] : null;
+    return { nome: t ? t.nome : null, id: t ? t.id : null };
+  };
+  const _t1 = _tipoSel("tipoRacaoSelect");
+  const lancamentos = [{ racao, nome: _t1.nome, tipoId: _t1.id }];
+
+  const _bloco2 = document.getElementById("racao-2-bloco");
+  if (_bloco2 && _bloco2.style.display === "block") {
+    const racao2 = parseDecimalBR(document.getElementById("consumoRacao2")?.value);
+    const _t2 = _tipoSel("tipoRacaoSelect2");
+    if (isNaN(racao2) || racao2 < 0) { mostrarErroRacao("Preencha a quantidade da 2ª ração (ou remova-a)."); return; }
+    if (!_t1.id || !_t2.id) { mostrarErroRacao("Com 2 rações, escolha o tipo de cada uma."); return; }
+    if (_t1.id === _t2.id) { mostrarErroRacao("As duas rações têm o mesmo tipo. Escolha tipos diferentes."); return; }
+    lancamentos.push({ racao: racao2, nome: _t2.nome, tipoId: _t2.id });
+  }
+
+  // Não duplicar: bloqueia se já existe ração do MESMO tipo nessa data (agora
+  // permite 2 rações no mesmo dia, desde que sejam de tipos diferentes).
+  for (const l of lancamentos) {
+    const dup = (viveiros[index].racoes || []).some(r =>
+      String(r.data).substring(0, 10) === data && (r.tipoRacaoId || null) === (l.tipoId || null));
+    if (dup) {
+      mostrarErroRacao(`Já existe ${l.nome ? `a ração "${l.nome}"` : "um lançamento"} em ${formatarData(data)}. Edite o existente.`);
+      return;
+    }
   }
 
   // Feedback imediato + trava do botão (antes de qualquer await)
@@ -2528,28 +2617,20 @@ async function salvarLancamentoRacao(indexDireto = "") {
   const usuario = await pegarUsuarioLogado();
   if (!usuario) { restaurar(); return; }
 
-  if (!viveiros[index].racoes) {
-    viveiros[index].racoes = [];
-  }
+  if (!viveiros[index].racoes) viveiros[index].racoes = [];
 
-  const tipoRacaoIdx = document.getElementById("tipoRacaoSelect")?.value;
-  const tipoRacao = (tipoRacaoIdx !== "" && tipoRacaoIdx !== undefined && tipoRacaoIdx !== null)
-    ? tiposRacao[tipoRacaoIdx] : null;
-  const nomeRacao = tipoRacao ? tipoRacao.nome : null;
-  const tipoRacaoId = tipoRacao ? tipoRacao.id : null;
-
-  const novaRacao = {
+  const _linhas = lancamentos.map(l => ({
     viveiro_id: viveiros[index].id,
     data: data,
-    racao: racao,
+    racao: l.racao,
     user_id: usuario.id,
-    nome_racao: nomeRacao,
-    tipo_racao_id: tipoRacaoId,
-  };
+    nome_racao: l.nome,
+    tipo_racao_id: l.tipoId,
+  }));
 
   const { data: racaoSalva, error } = await supabaseClient
     .from("racoes")
-    .insert([novaRacao])
+    .insert(_linhas)
     .select();
 
   if (error) {
@@ -2559,13 +2640,20 @@ async function salvarLancamentoRacao(indexDireto = "") {
     return;
   }
 
-  viveiros[index].racoes.push({
-    id: racaoSalva[0].id,
-    data: data,
-    racao: racao,
-    nomeRacao: nomeRacao,
-    tipoRacaoId: tipoRacaoId,
+  // Casa cada id salvo com o lançamento pelo TIPO (único por dia), para não
+  // trocar id↔ração caso o banco devolva as linhas fora de ordem.
+  lancamentos.forEach(l => {
+    const row = (racaoSalva || []).find(r => (r.tipo_racao_id || null) === (l.tipoId || null));
+    viveiros[index].racoes.push({
+      id: row ? row.id : undefined,
+      data: data,
+      racao: l.racao,
+      nomeRacao: l.nome,
+      tipoRacaoId: l.tipoId,
+    });
   });
+
+  const racaoTotal = lancamentos.reduce((s, l) => s + Number(l.racao), 0);
 
   // Custo de ração é DERIVADO: preço do catálogo × kg lançados no ciclo.
   // Nada é gravado na tabela de custos — só recalcula o registro em memória.
@@ -2575,7 +2663,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
   // Protegido: nunca pode quebrar o lançamento de ração nem o feedback.
   let _protAplicados = [], _protFalhas = [];
   try {
-    const _pr = await _aplicarProtocolosRacao(index, racao, data);
+    const _pr = await _aplicarProtocolosRacao(index, racaoTotal, data);
     _protAplicados = _pr.aplicados || []; _protFalhas = _pr.falhas || [];
   } catch (e) { console.log("Protocolo ração:", e); _protFalhas = ["protocolo automático"]; }
 
@@ -3271,7 +3359,7 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   const _despCurva = viveiro.despescas || [];
   const _despKg = _despCurva.reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
   if (populacaoNum && ultimaRacaoNaoZero && pesoAtual > 0) {
-    const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoAtual);
+    const res = _calcularBiomassa(populacaoNum, _consumoUltimoDia(racoesSorted).total, pesoAtual);
     if (res && res.quantidade > 0) {
       // A ração atual já reflete só os camarões remanescentes (pós-despesca),
       // então res.quantidade JÁ é a população que ficou — não se desconta a despesca.
@@ -5175,7 +5263,7 @@ function _simularDadosViveiro(viveiro) {
   // entra depois pelo seu preço real, não é revalorizada pelo preço simulado.
   let biomassaAtual = null;
   if (populacaoNum && ultimaRacaoNaoZero && pesoUltimaBio) {
-    const res = _calcularBiomassa(populacaoNum, ultimaRacaoNaoZero.racao, pesoUltimaBio);
+    const res = _calcularBiomassa(populacaoNum, _consumoUltimoDia(racoesSorted).total, pesoUltimaBio);
     if (res && res.biomassa > 0) biomassaAtual = res.biomassa;
   }
   const dias = calcularDiasCultivo(viveiro.dataPovoamento) || 0;
