@@ -3789,9 +3789,13 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
             }
 
             // Dia de TRANSIÇÃO (2+ rações): um card azul com o total, que abre.
+            // Editar/Excluir valem para o DIA INTEIRO — mexer numa ração só
+            // deixaria o dia pela metade (e a conta do dia errada).
             const idDet = `rh-det-${index}-${pagina}-${gi}`;
+            const idGrp = `rh-grupo-${index}-${pagina}-${gi}`;
+            const _args = `${index},'${g.data}','${elementoId}',${direto},${pagina}`;
             return `
-              <div class="rh-grupo">
+              <div class="rh-grupo" id="${idGrp}">
                 <div class="rh-row rh-row-multi" onclick="_rhToggleDia('${idDet}')">
                   <div class="rh-dia"><b>${dia}</b><small>dia</small></div>
                   <div class="rh-mid">
@@ -3801,6 +3805,10 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
                     </div>
                     <div class="rh-data">${formatarData(g.data)}</div>
                   </div>
+                  <div class="rh-acoes">
+                    <button class="rh-btn edit" aria-label="Editar o dia" onclick="event.stopPropagation();abrirEdicaoDiaRacao(${_args})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button class="rh-btn del" aria-label="Excluir o dia" onclick="event.stopPropagation();confirmarExcluirDiaRacao(${_args},'${idGrp}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                  </div>
                   <span class="rh-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                 </div>
                 <div class="rh-det" id="${idDet}" style="display:none">
@@ -3808,7 +3816,6 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
                     <div class="rh-det-item">
                       <span class="rh-det-kg">${formatarNumeroBR(it.racao, 1)} kg</span>
                       <span class="rh-tipo">${it.nomeRacao ? _esc(it.nomeRacao) : "sem tipo"}</span>
-                      ${_btns(it)}
                     </div>`).join("")}
                 </div>
               </div>`;
@@ -4270,13 +4277,19 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   }
 
   // Mesmas validações do cadastro (a edição pulava as duas): a data não pode
-  // ser futura nem anterior ao início do ciclo, e não pode haver dois
-  // lançamentos de ração no mesmo dia (ignora o próprio, que está sendo editado).
+  // ser futura nem anterior ao início do ciclo, e não pode haver duas rações do
+  // MESMO TIPO no mesmo dia (ignora a própria, que está sendo editada). Desde
+  // a transição, dois lançamentos no mesmo dia são válidos — só não do mesmo tipo.
   const _eDataEditR = _erroDataCiclo(viveiros[viveiroIndex], novaData);
   if (_eDataEditR) { _toastErro(_eDataEditR); return; }
+  const _tipoIdxDup = document.getElementById("tipoRacaoEdicaoSelect")?.value;
+  const _tipoDup = (_tipoIdxDup !== "" && _tipoIdxDup !== undefined) ? tiposRacao[_tipoIdxDup] : null;
+  const _tipoIdDup = _tipoDup ? _tipoDup.id : null;
   const _dupEditR = (viveiros[viveiroIndex].racoes || [])
-    .some((r, idx) => idx !== racaoIndex && r.data.substring(0, 10) === novaData);
-  if (_dupEditR) { _toastErro(`Já existe um lançamento em ${formatarData(novaData)}. Edite o existente.`); return; }
+    .some((r, idx) => idx !== racaoIndex
+      && String(r.data).substring(0, 10) === novaData
+      && (r.tipoRacaoId || null) === _tipoIdDup);
+  if (_dupEditR) { _toastErro(`Já existe essa ração em ${formatarData(novaData)}.`); return; }
 
   const restaurar = _travarBotao(botao, "Salvando...");
   const racao = viveiros[viveiroIndex].racoes[racaoIndex];
@@ -4439,6 +4452,196 @@ async function excluirRacao(viveiroIndex, racaoIndex, elementoId, direto, pagina
   _montarCustoRacaoVirtual();
 
   const paginaAjustada = Math.min(pagina, Math.max(0, Math.ceil((viveiros[viveiroIndex].racoes.length) / 30) - 1));
+  renderizarHistoricoRacao(viveiroIndex, elementoId, direto, paginaAjustada);
+  restaurarScroll();
+}
+
+// ═══ DIA DE TRANSIÇÃO: EDITAR / EXCLUIR O DIA INTEIRO ═════════════════════════
+// Num dia com 2 rações, mexer em uma só deixaria o dia pela metade (e o total
+// do dia errado). Então o produtor edita as duas de uma vez — numa tela igual à
+// de lançar — ou apaga o dia inteiro.
+
+// Lançamentos de ração de um dia, com o índice original no array do viveiro.
+function _racoesDoDia(viveiroIndex, dataYmd) {
+  return (viveiros[viveiroIndex].racoes || [])
+    .map((r, idx) => ({ r, idx }))
+    .filter(x => String(x.r.data).substring(0, 10) === dataYmd);
+}
+
+const _SVG_SACO = `<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>`;
+const _SVG_BALANCA = `<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>`;
+
+function abrirEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina = 0) {
+  if (_bloqueioViveiro(viveiroIndex)) return;
+  const viveiro = viveiros[viveiroIndex];
+  const itens = _racoesDoDia(viveiroIndex, dataYmd);
+  if (!itens.length) return;
+  const area = document.getElementById("area-gestao");
+  if (!area) return;
+  salvarScroll();
+
+  const blocos = itens.map((x, i) => {
+    const idxTipo = tiposRacao.findIndex(t => t.id === x.r.tipoRacaoId);
+    return `
+      <div class="racao-2bloco" style="margin-top:${i === 0 ? "4px" : "12px"}">
+        <div class="racao-2topo"><span class="racao-2tag"><i>${i + 1}</i> ${i + 1}ª ração</span></div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24">${_SVG_SACO}</svg><label>Tipo de ração</label></div>
+          <select id="edDiaTipo${i}">
+            <option value="">— Não especificado —</option>
+            ${tiposRacao.map((t, k) => `<option value="${k}"${k === idxTipo ? " selected" : ""}>${_esc(t.nome)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24">${_SVG_BALANCA}</svg><label>Consumo</label></div>
+          <div class="campo-input-unidade"><input type="text" inputmode="decimal" id="edDiaQtd${i}" value="${formatarNumeroBR(x.r.racao, 2)}"><span class="campo-unidade">kg</span></div>
+        </div>
+      </div>`;
+  }).join("");
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="form-topo">
+        <div class="form-icone-circulo"><svg viewBox="0 0 24 24">${_SVG_SACO}</svg></div>
+        <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+        <h2 class="form-titulo">Editar o dia</h2>
+      </div>
+      <div class="form-corpo">
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Data</label>
+          </div>
+          <input type="date" id="edDiaData" value="${dataYmd}">
+        </div>
+        ${blocos}
+        <button class="botao-salvar" style="margin-top:14px" onclick="salvarEdicaoDiaRacao(${viveiroIndex},'${dataYmd}','${elementoId}',${direto},${pagina})">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar as ${itens.length} rações
+        </button>
+        <div class="separador-ou"><span>ou</span></div>
+        <button class="botao-voltar-form" onclick="renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${pagina}); restaurarScroll()">Voltar</button>
+      </div>
+    </div>`;
+}
+
+async function salvarEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina = 0) {
+  if (_bloqueioViveiro(viveiroIndex)) return;
+  const botao = document.querySelector(".botao-salvar");
+  if (botao?.disabled) return; // trava contra duplo toque
+  const itens = _racoesDoDia(viveiroIndex, dataYmd);
+  if (!itens.length) return;
+
+  const novaData = document.getElementById("edDiaData")?.value;
+  if (!novaData) { _toastErro("Informe a data."); return; }
+  const eData = _erroDataCiclo(viveiros[viveiroIndex], novaData);
+  if (eData) { _toastErro(eData); return; }
+
+  const novos = [];
+  for (let i = 0; i < itens.length; i++) {
+    const qtd = parseDecimalBR(document.getElementById("edDiaQtd" + i)?.value);
+    if (isNaN(qtd) || qtd < 0) { _toastErro(`Preencha a quantidade da ${i + 1}ª ração.`); return; }
+    const tIdx = document.getElementById("edDiaTipo" + i)?.value;
+    const t = (tIdx !== "" && tIdx !== undefined) ? tiposRacao[tIdx] : null;
+    novos.push({ idx: itens[i].idx, id: itens[i].r.id, qtd, tipo: t });
+  }
+
+  // As rações do dia têm que ser de tipos DIFERENTES entre si.
+  const tiposIds = novos.map(n => (n.tipo ? n.tipo.id : null));
+  if (new Set(tiposIds).size !== tiposIds.length) {
+    _toastErro("As rações do dia precisam ser de tipos diferentes."); return;
+  }
+  // Mudou de data? Não pode colidir com uma ração do mesmo tipo já existente lá.
+  if (novaData !== dataYmd) {
+    const idsDoDia = new Set(itens.map(x => x.r.id));
+    const conflito = (viveiros[viveiroIndex].racoes || []).some(r =>
+      !idsDoDia.has(r.id)
+      && String(r.data).substring(0, 10) === novaData
+      && tiposIds.includes(r.tipoRacaoId || null));
+    if (conflito) { _toastErro(`Já existe ração desse tipo em ${formatarData(novaData)}.`); return; }
+  }
+
+  const restaurar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
+  for (const n of novos) {
+    const { error } = await supabaseClient
+      .from("racoes")
+      .update({
+        data: novaData, racao: n.qtd,
+        nome_racao: n.tipo ? n.tipo.nome : null,
+        tipo_racao_id: n.tipo ? n.tipo.id : null,
+      })
+      .eq("id", n.id)
+      .eq("user_id", usuario.id);
+    if (error) { restaurar(); _toastErro("Erro ao salvar: " + error.message); return; }
+    viveiros[viveiroIndex].racoes[n.idx] = {
+      id: n.id, data: novaData, racao: n.qtd,
+      nomeRacao: n.tipo ? n.tipo.nome : null,
+      tipoRacaoId: n.tipo ? n.tipo.id : null,
+    };
+  }
+
+  // Protocolos dosam por kg do dia: refaz o custo automático com o novo total.
+  try {
+    await _removerCustosAutoRacao(viveiroIndex, dataYmd);
+    if (novaData !== dataYmd) await _removerCustosAutoRacao(viveiroIndex, novaData);
+    const totalDia = novos.reduce((s, n) => s + n.qtd, 0);
+    if (totalDia > 0) await _aplicarProtocolosRacao(viveiroIndex, totalDia, novaData);
+  } catch (e) { console.log("Protocolo ração (edição do dia):", e); }
+
+  _montarCustoRacaoVirtual();
+  restaurar();
+  _toastSucesso("Dia atualizado!");
+  renderizarHistoricoRacao(viveiroIndex, elementoId, direto, pagina);
+  restaurarScroll();
+}
+
+function confirmarExcluirDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina, grupoId) {
+  const box = document.getElementById(grupoId);
+  if (!box) return;
+  const n = _racoesDoDia(viveiroIndex, dataYmd).length;
+  box.innerHTML = `
+    <div class="confirmar-exclusao-custo">
+      <span>Excluir as <b>${n} rações</b> de ${formatarData(dataYmd)}?</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirDiaRacao(${viveiroIndex},'${dataYmd}','${elementoId}',${direto},${pagina},this)">Sim, excluir o dia</button>
+        <button class="ciclo-btn-relatorio" style="flex:1" onclick="renderizarHistoricoRacao(${viveiroIndex},'${elementoId}',${direto},${pagina})">Cancelar</button>
+      </div>
+    </div>`;
+}
+
+async function excluirDiaRacao(viveiroIndex, dataYmd, elementoId, direto, pagina, botao) {
+  if (_bloqueioViveiro(viveiroIndex)) return;
+  if (botao?.disabled) return;
+  const itens = _racoesDoDia(viveiroIndex, dataYmd);
+  const ids = itens.map(x => x.r.id).filter(Boolean);
+  if (!ids.length) { _toastErro("Erro: lançamentos sem ID."); return; }
+
+  const restaurar = _travarBotao(botao, "Excluindo...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
+  const { data: deletado, error } = await supabaseClient
+    .from("racoes").delete().in("id", ids).eq("user_id", usuario.id).select();
+
+  if (error) { console.log(error); restaurar(); _toastErro("Erro ao excluir o dia."); return; }
+  if (!deletado || deletado.length === 0) {
+    restaurar(); _toastErro("Não foi possível excluir. Verifique sua conexão ou permissão."); return;
+  }
+
+  // Remove do estado local de trás pra frente, para os índices não escorregarem.
+  itens.map(x => x.idx).sort((a, b) => b - a)
+    .forEach(i => viveiros[viveiroIndex].racoes.splice(i, 1));
+
+  try { await _removerCustosAutoRacao(viveiroIndex, dataYmd); }
+  catch (e) { console.log("Protocolo ração (exclusão do dia):", e); }
+
+  _montarCustoRacaoVirtual();
+  restaurar();
+  _toastSucesso("Dia excluído.");
+  const paginaAjustada = Math.min(pagina, Math.max(0, Math.ceil(viveiros[viveiroIndex].racoes.length / 30) - 1));
   renderizarHistoricoRacao(viveiroIndex, elementoId, direto, paginaAjustada);
   restaurarScroll();
 }
