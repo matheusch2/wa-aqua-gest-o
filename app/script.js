@@ -2509,6 +2509,10 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           </div>
         </div>
 
+        <div id="previa-custo-racao" class="custo-por-grama-preview" style="display:none">
+          Custo estimado: <strong id="previa-custo-racao-valor">—</strong>
+        </div>
+
         <div id="racao-2-area">
           <button type="button" class="racao-add-segunda" id="racao-btn-add2" onclick="_racaoToggleSegunda(true)">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2527,10 +2531,6 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             </div>
           </div>
           <div id="racao-total-dia" class="racao-total" style="display:none"></div>
-        </div>
-
-        <div id="previa-custo-racao" class="custo-por-grama-preview" style="display:none">
-          Custo estimado: <strong id="previa-custo-racao-valor">—</strong>
         </div>
 
         <div id="msg-racao-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
