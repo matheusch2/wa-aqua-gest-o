@@ -702,6 +702,34 @@ button,
 /* Quando o "confirmar exclusão" substitui o conteúdo da linha, ele ocupa a largura toda. */
 .rh-row > .confirmar-exclusao-custo { flex: 1 1 100%; }
 
+/* ── Dia de TRANSIÇÃO (2+ rações no mesmo dia): card azul que abre ── */
+.rh-grupo { display: flex; flex-direction: column; }
+.rh-row-multi { cursor: pointer; background: #eff6ff; border-color: #bfdbfe; }
+.rh-row-multi .rh-dia { background: #dbeafe; color: #1e40af; }
+.rh-row-multi .rh-kg { color: #1e3a8a; }
+.rh-multi-chip { background: #dbeafe; color: #1d4ed8; }
+.rh-chev { flex-shrink: 0; display: grid; place-items: center; width: 24px; height: 24px; transition: transform .2s ease; }
+.rh-chev svg { width: 17px; height: 17px; fill: none; stroke: #60a5fa; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.rh-row-multi.aberto { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.rh-row-multi.aberto .rh-chev { transform: rotate(180deg); }
+.rh-det {
+    border: 1px solid #bfdbfe; border-top: 0; background: #f8fbff;
+    border-radius: 0 0 14px 14px; padding: 4px 10px 8px;
+}
+.rh-det-item { display: flex; align-items: center; gap: 9px; padding: 8px 2px; border-top: 1px dashed #dbeafe; }
+.rh-det-item:first-child { border-top: 0; }
+.rh-det-kg { font-size: 14px; font-weight: 800; color: #1e3a8a; flex-shrink: 0; }
+.rh-det-item .rh-tipo { flex: 0 0 auto; }
+.rh-det-item .rh-acoes { margin-left: auto; }
+
+body.tema-escuro .rh-row-multi { background: #11223d; border-color: #1e3a5f; }
+body.tema-escuro .rh-row-multi .rh-dia { background: #1e3a5f; color: #93c5fd; }
+body.tema-escuro .rh-row-multi .rh-kg { color: #bfdbfe; }
+body.tema-escuro .rh-multi-chip { background: #1e3a5f; color: #93c5fd; }
+body.tema-escuro .rh-det { background: #0e1a2e; border-color: #1e3a5f; }
+body.tema-escuro .rh-det-item { border-top-color: #1e3a5f; }
+body.tema-escuro .rh-det-kg { color: #bfdbfe; }
+
 /* Tema escuro */
 body.tema-escuro .rh-rcard { background: #16231f; border-color: #274b43; }
 body.tema-escuro .rh-rcard small { color: #9ca3af; }

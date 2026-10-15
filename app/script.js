@@ -3690,17 +3690,40 @@ function _racaoPorSemana(viveiro) {
   return [...acc.entries()].sort((a, b) => a[0] - b[0]).map(([semana, kg]) => ({ semana, kg }));
 }
 
+// Abre/fecha o detalhamento de um dia com 2+ rações (transição).
+function _rhToggleDia(id) {
+  const det = document.getElementById(id);
+  if (!det) return;
+  const aberto = det.style.display === "block";
+  det.style.display = aberto ? "none" : "block";
+  const row = det.previousElementSibling;
+  if (row && row.classList) row.classList.toggle("aberto", !aberto);
+}
+
 function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao = "") {
   const viveiro = viveiros[index];
   const resultado = document.getElementById(elementoId);
   const racoes = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
 
+  // Agrupa por DIA: com a transição (2 rações no mesmo dia), o dia vira UM card
+  // com o total, que abre mostrando cada ração separada. Assim "Média/dia" e
+  // "Maior dia" passam a ser por dia de verdade, não por lançamento.
+  const porDia = [];
+  const _mapaDia = new Map();
+  racoes.forEach(r => {
+    const d = String(r.data).substring(0, 10);
+    let g = _mapaDia.get(d);
+    if (!g) { g = { data: d, itens: [], total: 0 }; _mapaDia.set(d, g); porDia.push(g); }
+    g.itens.push(r);
+    g.total += Number(r.racao) || 0;
+  });
+
   const ITENS_POR_PAGINA = 30;
-  const totalPaginas = Math.max(1, Math.ceil(racoes.length / ITENS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(porDia.length / ITENS_POR_PAGINA));
   pagina = Math.max(0, Math.min(pagina, totalPaginas - 1));
 
   const inicio = pagina * ITENS_POR_PAGINA;
-  const racoesPagina = racoes.slice(inicio, inicio + ITENS_POR_PAGINA);
+  const diasPagina = porDia.slice(inicio, inicio + ITENS_POR_PAGINA);
   const totalRacao = racoes.reduce((total, item) => total + item.racao, 0);
 
   const navAnterior = pagina > 0
@@ -3711,9 +3734,9 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     ? `<button class="botao-nav-viveiro" onclick="renderizarHistoricoRacao(${index},'${elementoId}',${direto},${pagina + 1},'proximo')">Próxima</button>`
     : `<span class="botao-nav-viveiro" style="visibility:hidden">Próxima</span>`;
 
-  const nLanc = racoes.length;
-  const media = nLanc > 0 ? totalRacao / nLanc : 0;
-  const maiorDia = racoes.reduce((m, r) => Math.max(m, Number(r.racao) || 0), 0);
+  const nDias = porDia.length;
+  const media = nDias > 0 ? totalRacao / nDias : 0;
+  const maiorDia = porDia.reduce((m, g) => Math.max(m, g.total), 0);
   const semanas = _racaoPorSemana(viveiro);
 
   resultado.innerHTML = `
@@ -3723,7 +3746,7 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     <div class="rh-resumo">
       <div class="rh-rcard"><small>Média/dia</small><strong>${formatarNumeroBR(media, 1)}<span> kg</span></strong></div>
       <div class="rh-rcard"><small>Maior dia</small><strong>${formatarNumeroBR(maiorDia, 1)}<span> kg</span></strong></div>
-      <div class="rh-rcard"><small>Dias</small><strong>${nLanc}</strong></div>
+      <div class="rh-rcard"><small>Dias</small><strong>${nDias}</strong></div>
     </div>`}
 
     ${semanas.length ? `
@@ -3735,22 +3758,58 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
     <div class="rh-lista">
       ${racoes.length === 0
         ? `<p class="sobrevivencia-texto">Nenhuma ração lançada.</p>`
-        : racoesPagina.map((item) => {
-            const iOriginal = viveiro.racoes.findIndex(r => r.id === item.id);
-            const dia = calcularDiasCultivo(viveiro.dataPovoamento, item.data);
-            return `
-              <div class="rh-row" id="racao-row-${index}-${iOriginal}">
+        : diasPagina.map((g, gi) => {
+            const dia = calcularDiasCultivo(viveiro.dataPovoamento, g.data);
+            // Botões de editar/excluir de UM lançamento (stopPropagation para
+            // não abrir/fechar o grupo ao tocar neles).
+            const _btns = (it) => {
+              const iO = viveiro.racoes.findIndex(r => r.id === it.id);
+              return `<div class="rh-acoes">
+                  <button class="rh-btn edit" aria-label="Editar" onclick="event.stopPropagation();abrirEdicaoRacao(${index},${iO},'${elementoId}',${direto},${pagina})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="rh-btn del" aria-label="Excluir" onclick="event.stopPropagation();confirmarExcluirRacao(${index},${iO},'${elementoId}',${direto},${pagina})"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                </div>`;
+            };
+
+            // Dia com UMA ração: card normal (verde), como sempre foi.
+            if (g.itens.length === 1) {
+              const item = g.itens[0];
+              const iO = viveiro.racoes.findIndex(r => r.id === item.id);
+              return `
+              <div class="rh-row" id="racao-row-${index}-${iO}">
                 <div class="rh-dia"><b>${dia}</b><small>dia</small></div>
                 <div class="rh-mid">
                   <div class="rh-mid-top">
                     <span class="rh-kg">${formatarNumeroBR(item.racao, 1)} kg</span>
                     ${item.nomeRacao ? `<span class="rh-tipo">${_esc(item.nomeRacao)}</span>` : ""}
                   </div>
-                  <div class="rh-data">${formatarData(item.data)}</div>
+                  <div class="rh-data">${formatarData(g.data)}</div>
                 </div>
-                <div class="rh-acoes">
-                  <button class="rh-btn edit" aria-label="Editar" onclick="abrirEdicaoRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                  <button class="rh-btn del" aria-label="Excluir" onclick="confirmarExcluirRacao(${index},${iOriginal},'${elementoId}',${direto},${pagina})"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                ${_btns(item)}
+              </div>`;
+            }
+
+            // Dia de TRANSIÇÃO (2+ rações): um card azul com o total, que abre.
+            const idDet = `rh-det-${index}-${pagina}-${gi}`;
+            return `
+              <div class="rh-grupo">
+                <div class="rh-row rh-row-multi" onclick="_rhToggleDia('${idDet}')">
+                  <div class="rh-dia"><b>${dia}</b><small>dia</small></div>
+                  <div class="rh-mid">
+                    <div class="rh-mid-top">
+                      <span class="rh-kg">${formatarNumeroBR(g.total, 1)} kg</span>
+                      <span class="rh-tipo rh-multi-chip">${g.itens.length} rações</span>
+                    </div>
+                    <div class="rh-data">${formatarData(g.data)}</div>
+                  </div>
+                  <span class="rh-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </div>
+                <div class="rh-det" id="${idDet}" style="display:none">
+                  ${g.itens.map(it => `
+                    <div class="rh-det-item">
+                      <span class="rh-det-kg">${formatarNumeroBR(it.racao, 1)} kg</span>
+                      <span class="rh-tipo">${it.nomeRacao ? _esc(it.nomeRacao) : "sem tipo"}</span>
+                      ${_btns(it)}
+                    </div>`).join("")}
                 </div>
               </div>`;
           }).join("")
