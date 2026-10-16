@@ -5244,6 +5244,10 @@ function _rgCiclosEncerrados() {
         viveiro: (c.nomeViveiro || v.nome || "Viveiro").trim(),
         lab: (c.laboratorio || "").trim() || "Sem laboratório",
         producao: Number(c.producaoTotal) || 0,
+        // Área do ciclo: é ela que torna justa a comparação entre um viveiro
+        // de 0,5 ha e um de 3 ha. Sem área, o ciclo fica fora dos rankings
+        // por hectare (não entra como zero, que o faria parecer o pior).
+        ha: _tamanhoHa(c.tamanho) || null,
         // Sem preço de venda não há lucro — null, não zero. Zero entraria na
         // média e puxaria o ranking para baixo como se o ciclo tivesse
         // empatado, quando na verdade ele só não foi precificado.
@@ -5257,15 +5261,24 @@ function _rgCiclosEncerrados() {
   return linhas;
 }
 
+// Lucro e produção viram POR HECTARE. Um viveiro de 3 ha produz mais que um
+// de 0,5 ha só por ser maior — comparar o total premiaria o tamanho, não o
+// manejo. O divisor é a soma dos hectares de cada ciclo (2 ciclos de 1,5 ha =
+// 3 ha-ciclo), então o número é "quanto cada hectare rendeu por ciclo".
 function _rgAgrupar(linhas, chave) {
   const mapa = new Map();
   linhas.forEach(l => {
     const nome = chave === "lab" ? l.lab : l.viveiro;
     let g = mapa.get(nome);
-    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, sobr: [], fca: [], cresc: [] }; mapa.set(nome, g); }
+    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, haProd: 0, prodComHa: 0, haLucro: 0, lucroComHa: 0, sobr: [], fca: [], cresc: [] }; mapa.set(nome, g); }
     g.n++;
     g.producao += l.producao;
     if (l.lucro !== null) { g.lucro += l.lucro; g.nLucro++; }
+    if (l.ha > 0) {
+      g.haProd += l.ha;
+      g.prodComHa += l.producao;
+      if (l.lucro !== null) { g.haLucro += l.ha; g.lucroComHa += l.lucro; }
+    }
     if (l.sobr !== null) g.sobr.push(l.sobr);
     if (l.fca !== null) g.fca.push(l.fca);
     if (l.cresc !== null) g.cresc.push(l.cresc);
@@ -5274,6 +5287,8 @@ function _rgAgrupar(linhas, chave) {
   return [...mapa.values()].map(g => ({
     ...g,
     lucroTotal: g.nLucro > 0 ? g.lucro : null,
+    lucroHa: g.haLucro > 0 ? g.lucroComHa / g.haLucro : null,
+    produtividade: g.haProd > 0 ? g.prodComHa / g.haProd : null,
     sobrMed: med(g.sobr), fcaMed: med(g.fca), crescMed: med(g.cresc),
   }));
 }
@@ -5281,11 +5296,11 @@ function _rgAgrupar(linhas, chave) {
 // Cada métrica diz como se ordena, como se escreve e o que vem na linha de
 // baixo. FCA é a única em que MENOR é melhor.
 const _RG_METRICAS = {
-  lucro:    { lbl: "Lucro",         campo: "lucroTotal", maior: true,  fmt: v => "R$ " + formatarNumeroBR(v, 2) },
-  producao: { lbl: "Produção",      campo: "producao",   maior: true,  fmt: v => formatarNumeroBR(v, 1) + " kg" },
-  cresc:    { lbl: "Crescimento",   campo: "crescMed",   maior: true,  fmt: v => formatarNumeroBR(v, 2) + " g/sem" },
-  sobr:     { lbl: "Sobrevivência", campo: "sobrMed",    maior: true,  fmt: v => formatarNumeroBR(v, 1) + "%" },
-  fca:      { lbl: "FCA",           campo: "fcaMed",     maior: false, fmt: v => formatarNumeroBR(v, 2) },
+  lucro:    { lbl: "Lucro/ha",      campo: "lucroHa",       maior: true,  fmt: v => "R$ " + formatarNumeroBR(v, 2) + "/ha" },
+  producao: { lbl: "Produtividade", campo: "produtividade", maior: true,  fmt: v => formatarNumeroBR(v, 0) + " kg/ha" },
+  cresc:    { lbl: "Crescimento",   campo: "crescMed",      maior: true,  fmt: v => formatarNumeroBR(v, 2) + " g/sem" },
+  sobr:     { lbl: "Sobrevivência", campo: "sobrMed",       maior: true,  fmt: v => formatarNumeroBR(v, 1) + "%" },
+  fca:      { lbl: "FCA",           campo: "fcaMed",        maior: false, fmt: v => formatarNumeroBR(v, 2), dest: "FCA" },
 };
 
 function _rgTrocarAba(aba) { _rgAba = aba; mostrarRelatorioGeral(); }
@@ -5327,13 +5342,26 @@ function mostrarRelatorioGeral() {
 
   const lider = comValor[0];
   const linhaDet = (g) => {
-    const p = [];
+    const p = [g.n + " ciclo" + (g.n > 1 ? "s" : "")];
     if (_rgMetrica !== "producao") p.push(formatarNumeroBR(g.producao, 0) + " kg");
     if (_rgMetrica !== "sobr" && g.sobrMed !== null) p.push("sobrev. " + formatarNumeroBR(g.sobrMed, 1) + "%");
     if (_rgMetrica !== "fca" && g.fcaMed !== null) p.push("FCA " + formatarNumeroBR(g.fcaMed, 2));
-    if (_rgMetrica === "cresc" || _rgMetrica === "lucro") p.unshift(g.n + " ciclo" + (g.n > 1 ? "s" : ""));
     return p.slice(0, 3).join(" · ");
   };
+
+  // Por que um ciclo pode ter ficado fora do ranking atual.
+  const _semArea = linhas.filter(l => !(l.ha > 0)).length;
+  const _semPreco = linhas.length - comLucro.length;
+  const _pl = (n) => n > 1 ? "s" : "";
+  let notaFora = "";
+  if (_rgMetrica === "lucro") {
+    const partes = [];
+    if (_semPreco) partes.push(`${_semPreco} sem preço de venda`);
+    if (_semArea) partes.push(`${_semArea} sem área cadastrada`);
+    if (partes.length) notaFora = `Ciclos fora deste ranking: ${partes.join(" e ")}.`;
+  } else if (_rgMetrica === "producao" && _semArea) {
+    notaFora = `${_semArea} ciclo${_pl(_semArea)} sem área cadastrada ficaram de fora — a produtividade é por hectare.`;
+  }
 
   area.innerHTML = topo + `
     <div class="rg-resumo">
@@ -5355,7 +5383,7 @@ function mostrarRelatorioGeral() {
     <div class="rg-destaque">
       <span class="rg-destaque-ico"><svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg></span>
       <span class="rg-destaque-txt">
-        <small>${_rgAba === "lab" ? "Laboratório" : "Viveiro"} com ${m.maior ? "melhor" : "melhor (menor)"} ${m.lbl.toLowerCase()}</small>
+        <small>${_rgAba === "lab" ? "Laboratório" : "Viveiro"} com ${m.maior ? "melhor" : "menor"} ${m.dest || m.lbl.toLowerCase()}</small>
         <b>${_esc(lider.nome)}</b>
       </span>
       <span class="rg-destaque-val">${m.fmt(lider[m.campo])}</span>
@@ -5379,9 +5407,7 @@ function mostrarRelatorioGeral() {
         </div>`).join("")}
     </div>
 
-    ${_rgMetrica === "lucro" && comLucro.length < linhas.length
-      ? `<p class="rg-nota">${linhas.length - comLucro.length} ciclo${linhas.length - comLucro.length > 1 ? "s" : ""} sem preço de venda não ${linhas.length - comLucro.length > 1 ? "entram" : "entra"} no lucro.</p>`
-      : ""}
+    ${notaFora ? `<p class="rg-nota">${notaFora}</p>` : ""}
 
     <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirRelatorios()">Voltar</button>`;
 }
