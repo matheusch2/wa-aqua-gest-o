@@ -5012,84 +5012,104 @@ function _numeroCicloAtual(viveiro) {
   return (((viveiro && viveiro.ciclosFinalizados) || []).length) + 1;
 }
 
+// Histórico em DOIS níveis: primeiro os viveiros, depois os ciclos daquele
+// viveiro. A lista plana (viveiro × ciclo) crescia sem limite — com alguns
+// viveiros e vários ciclos cada, virava uma rolagem interminável.
+const _SVG_CICLOS = `<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>`;
+
 function mostrarHistoricoCiclos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
 
-  let ciclos = [];
+  const comCiclos = viveiros
+    .map((v, i) => ({ v, i, n: ((v && v.ciclosFinalizados) || []).length }))
+    .filter(x => x.n > 0);
 
-  viveiros.forEach((viveiro, viveiroIndex) => {
-    if (viveiro.ciclosFinalizados) {
-      viveiro.ciclosFinalizados.forEach((ciclo, cicloIndex) => {
-        ciclos.push({
-          viveiro: viveiro.nome,
-          viveiroIndex,
-          cicloIndex,
-          ciclo: ciclo,
-        });
-      });
-    }
-  });
-
-  if (ciclos.length === 0) {
-    area.innerHTML = `
-      <div class="form-topo" style="margin-top:8px">
-        <div class="form-icone-circulo">
-          <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        </div>
-        <h2 class="form-titulo">Histórico de Ciclos</h2>
+  const topo = `
+    <div class="form-topo" style="margin-top:8px">
+      <div class="form-icone-circulo">
+        <svg viewBox="0 0 24 24">${_SVG_CICLOS}</svg>
       </div>
+      <h2 class="form-titulo">Histórico de Ciclos</h2>
+    </div>`;
+
+  if (comCiclos.length === 0) {
+    area.innerHTML = topo + `
       <p style="text-align:center;color:#9ca3af;padding:16px 0;font-size:14px">Nenhum ciclo encerrado ainda.</p>
-      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-    `;
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>`;
     return;
   }
+
+  area.innerHTML = topo + comCiclos.map(x => {
+    const prod = (x.v.ciclosFinalizados || []).reduce((s, c) => s + (Number(c.producaoTotal) || 0), 0);
+    return `
+      <button class="hc-viv-card" onclick="mostrarCiclosDoViveiro(${x.i})">
+        <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg></span>
+        <span class="hc-viv-txt">
+          <b>${_esc(x.v.nome)}</b>
+          <small>${x.n} ciclo${x.n > 1 ? "s" : ""} encerrado${x.n > 1 ? "s" : ""} · ${formatarNumeroBR(prod, 1)} kg no total</small>
+        </span>
+        <span class="hc-viv-seta">›</span>
+      </button>`;
+  }).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+}
+
+function mostrarCiclosDoViveiro(viveiroIndex) {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const viveiro = viveiros[viveiroIndex];
+  const lista = (viveiro && viveiro.ciclosFinalizados) || [];
+  // Sem viveiro ou sem ciclos (ex.: excluiu o último), volta para a lista.
+  if (!viveiro || lista.length === 0) { mostrarHistoricoCiclos(); return; }
 
   area.innerHTML = `
     <div class="form-topo" style="margin-top:8px">
       <div class="form-icone-circulo">
-        <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <svg viewBox="0 0 24 24">${_SVG_CICLOS}</svg>
       </div>
-      <h2 class="form-titulo">Histórico de Ciclos</h2>
+      <span class="form-caption">${abreviarViveiro(viveiro.nome)}</span>
+      <h2 class="form-titulo">Ciclos encerrados</h2>
     </div>
-  ` + ciclos.map(item => `
+  ` + lista.map((ciclo, cicloIndex) => {
+    const n = _numeroCicloEncerrado(viveiro, ciclo);
+    return `
     <div class="ciclo-card">
       <div class="ciclo-card-topo">
-        <span class="ciclo-card-nome">${item.viveiro}${(() => { const n = _numeroCicloEncerrado(viveiros[item.viveiroIndex], item.ciclo); return n ? ` · Ciclo ${n}` : ""; })()}</span>
-        <span class="ciclo-card-producao">${formatarNumeroBR(item.ciclo.producaoTotal || 0, 1)} kg</span>
+        <span class="ciclo-card-nome">${n ? `Ciclo ${n}` : "Ciclo"}</span>
+        <span class="ciclo-card-producao">${formatarNumeroBR(ciclo.producaoTotal || 0, 1)} kg</span>
       </div>
       <div class="ciclo-card-infos">
         <div class="ciclo-info-item">
           <span class="ciclo-info-label">Povoamento</span>
-          <span class="ciclo-info-valor">${formatarData(item.ciclo.dataPovoamento)}</span>
+          <span class="ciclo-info-valor">${formatarData(ciclo.dataPovoamento)}</span>
         </div>
         <div class="ciclo-info-item">
           <span class="ciclo-info-label">Encerramento</span>
-          <span class="ciclo-info-valor">${formatarData(item.ciclo.dataEncerramento)}</span>
+          <span class="ciclo-info-valor">${formatarData(ciclo.dataEncerramento)}</span>
         </div>
         <div class="ciclo-info-item">
           <span class="ciclo-info-label">Sobrevivência</span>
-          <span class="ciclo-info-valor">${formatarNumeroBR(item.ciclo.sobrevivencia || 0, 1)}%</span>
+          <span class="ciclo-info-valor">${formatarNumeroBR(ciclo.sobrevivencia || 0, 1)}%</span>
         </div>
       </div>
       <div class="ciclo-card-acoes">
-        <button class="ciclo-btn-relatorio" onclick="mostrarRelatorioCiclo(${item.viveiroIndex}, viveiros[${item.viveiroIndex}].ciclosFinalizados[${item.cicloIndex}], 'historico')">
+        <button class="ciclo-btn-relatorio" onclick="mostrarRelatorioCiclo(${viveiroIndex}, viveiros[${viveiroIndex}].ciclosFinalizados[${cicloIndex}], 'historico')">
           📋 Ver relatório
         </button>
-        <button class="ciclo-btn-excluir" onclick="confirmarExcluirCiclo(${item.viveiroIndex}, ${item.cicloIndex}, this)">
+        <button class="ciclo-btn-excluir" onclick="confirmarExcluirCiclo(${viveiroIndex}, ${cicloIndex}, this)">
           🗑️ Excluir
         </button>
       </div>
-      <div id="confirm-excluir-${item.viveiroIndex}-${item.cicloIndex}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+      <div id="confirm-excluir-${viveiroIndex}-${cicloIndex}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626">Excluir este ciclo?</p>
         <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Esta ação não pode ser desfeita.</p>
         <div style="display:flex;gap:8px">
-          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${item.viveiroIndex}, ${item.cicloIndex}, this)">Sim, excluir</button>
-          <button class="ciclo-btn-relatorio" style="flex:1" onclick="cancelarExcluirCiclo(${item.viveiroIndex}, ${item.cicloIndex})">Cancelar</button>
+          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${viveiroIndex}, ${cicloIndex}, this)">Sim, excluir</button>
+          <button class="ciclo-btn-relatorio" style="flex:1" onclick="cancelarExcluirCiclo(${viveiroIndex}, ${cicloIndex})">Cancelar</button>
         </div>
       </div>
-    </div>
-  `).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+    </div>`;
+  }).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="mostrarHistoricoCiclos()">Voltar</button>`;
 }
 
 function confirmarExcluirCiclo(viveiroIndex, cicloIndex, btn) {
@@ -5115,7 +5135,7 @@ async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
 
   if (!ciclo.id) {
     viveiro.ciclosFinalizados.splice(cicloIndex, 1);
-    mostrarHistoricoCiclos();
+    mostrarCiclosDoViveiro(viveiroIndex);
     return;
   }
 
@@ -5146,7 +5166,7 @@ async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
   }
 
   viveiro.ciclosFinalizados.splice(cicloIndex, 1);
-  mostrarHistoricoCiclos();
+  mostrarCiclosDoViveiro(viveiroIndex);
 }
 
 // ═══ BOLETOS A VENCER ══════════════════════════════════════════════════════════
@@ -8073,7 +8093,7 @@ async function mostrarRelatorioCiclo(index, ciclo, origem = "historico") {
     if (!(await _carregarHistoricoCiclo(ciclo))) {
       if (espera) espera.innerHTML = `
         <div class="rel-carregando">Não foi possível carregar o histórico deste ciclo.<br>Verifique a internet e tente de novo.
-          <button class="botao-voltar-form" style="margin-top:14px" onclick="mostrarHistoricoCiclos()">Voltar</button>
+          <button class="botao-voltar-form" style="margin-top:14px" onclick="mostrarCiclosDoViveiro(${index})">Voltar</button>
         </div>`;
       return;
     }
@@ -8176,7 +8196,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>` : ""}
 
       <div class="rc2-acoes">
-        <button class="botao-voltar-form" style="margin:0;flex:1;padding:11px 10px;font-size:14px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarHistoricoCiclos()`}">Voltar</button>
+        <button class="botao-voltar-form" style="margin:0;flex:1;padding:11px 10px;font-size:14px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarCiclosDoViveiro(${index})`}">Voltar</button>
         <button class="botao-salvar" style="margin:0;flex:1;padding:11px 10px;font-size:14px;gap:6px" onclick="gerarRelatorioImpressao()">
           <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir
