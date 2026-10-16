@@ -3325,10 +3325,45 @@ function _projAjustarAlvo(index, direto, delta) {
   const inp = document.getElementById("proj-alvo");
   const atual = parseDecimalBR(inp && inp.value ? inp.value : "");
   const base = isNaN(atual) ? 20 : atual;
-  verCurvaCrescimento(index, direto, Math.max(1, Math.round((base + delta) * 100) / 100));
+  verCurvaCrescimento(index, direto, Math.max(1, Math.round((base + delta) * 100) / 100), _projGSemAtual());
 }
 
-function verCurvaCrescimento(index, direto, pesoAlvo) {
+// Valor de crescimento que está em uso na tela (null = o medido pelas
+// biometrias). Lido do próprio campo para não guardar estado global — assim
+// mexer no peso-alvo não perde a simulação, e sair da tela zera tudo.
+function _projGSemAtual() {
+  const el = document.getElementById("proj-gsem");
+  if (!el || el.dataset.sim !== "1") return null;
+  const v = parseDecimalBR(el.value || "");
+  return v > 0 ? v : null;
+}
+
+// Botões − / + do crescimento simulado. O primeiro toque parte do valor real
+// medido; daí em diante anda de 0,1 em 0,1 g/semana.
+function _projAjustarCresc(index, direto, delta) {
+  const el = document.getElementById("proj-gsem");
+  const base = el ? (parseDecimalBR(el.value || "") || 0) : 0;
+  const novo = Math.max(0.1, Math.round((base + delta) * 100) / 100);
+  verCurvaCrescimento(index, direto, _projAlvoAtual(), novo);
+}
+
+function _projDefinirCresc(index, direto, valor) {
+  const v = parseDecimalBR(valor);
+  verCurvaCrescimento(index, direto, _projAlvoAtual(), v > 0 ? v : null);
+}
+
+// Volta a projeção para o ganho real das biometrias.
+function _projResetCresc(index, direto) {
+  verCurvaCrescimento(index, direto, _projAlvoAtual(), null);
+}
+
+function _projAlvoAtual() {
+  const inp = document.getElementById("proj-alvo");
+  const v = parseDecimalBR(inp && inp.value ? inp.value : "");
+  return isNaN(v) || v <= 0 ? 20 : v;
+}
+
+function verCurvaCrescimento(index, direto, pesoAlvo, gSemSimulado) {
   const viveiro = viveiros[index];
   const biometrias = [...(viveiro.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
   const dataPovoamento = viveiro.dataPovoamento ? _parseDataLocal(viveiro.dataPovoamento) : null;
@@ -3354,13 +3389,23 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
   // ritmo semanal entortava a previsão inteira. Com biometrias sempre
   // semanais os dois cálculos dão o mesmo número; a diferença só aparece
   // justamente quando o intervalo varia, que é quando o antigo errava.
-  let gDia = 0;
+  let gDiaReal = 0;
   if (biometrias.length >= 2) {
     const primeira = biometrias[0];
     const ultima = biometrias[biometrias.length - 1];
     const diasEntre = Math.round((_parseDataLocal(ultima.data) - _parseDataLocal(primeira.data)) / 86400000);
-    if (diasEntre > 0) gDia = (Number(ultima.gramatura) - Number(primeira.gramatura)) / diasEntre;
+    if (diasEntre > 0) gDiaReal = (Number(ultima.gramatura) - Number(primeira.gramatura)) / diasEntre;
   }
+
+  // Simulação: a pessoa pode trocar o ganho semanal para ver outros cenários
+  // (ração melhor, água melhor, inverno). O medido continua guardado em
+  // gDiaReal e aparece ao lado, para a conta real nunca se perder.
+  const gSemSim = Number(gSemSimulado) > 0 ? Number(gSemSimulado) : null;
+  const simulando = gSemSim !== null;
+  const gDia = simulando ? gSemSim / 7 : gDiaReal;
+  // Valor que o campo mostra: o simulado, o real, ou um palpite inicial quando
+  // ainda não há duas biometrias para medir.
+  const gSemCampo = simulando ? gSemSim : (gDiaReal > 0 ? gDiaReal * 7 : 1.5);
 
   // Biomassa estimada (usa última ração + sobrevivência calculada)
   const racoesSorted = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
@@ -3468,12 +3513,14 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
           <span class="proj-resumo-val">${biomasaAlvoStr}</span>
         </div>` : ""}
       </div>
-      <p class="proj-obs">Estimativa pelo ganho médio de ${formatarNumeroBR(gDia * 7, 2)} g/semana. Quanto mais biometrias, mais precisa.</p>
+      <p class="proj-obs">${simulando
+        ? `Simulação com ganho de <b>${formatarNumeroBR(gSemSim, 2)} g/semana</b>. O medido pelas biometrias é ${gDiaReal > 0 ? formatarNumeroBR(gDiaReal * 7, 2) + " g/semana" : "—"}.`
+        : `Estimativa pelo ganho médio de ${formatarNumeroBR(gDia * 7, 2)} g/semana. Quanto mais biometrias, mais precisa.`}</p>
     `;
   } else if (!dataPovoamento) {
     cardProj = `<p class="proj-obs">Defina a data de povoamento para projetar a despesca.</p>`;
   } else if (gDia <= 0) {
-    cardProj = `<p class="proj-obs">Sem ganho de peso positivo entre as biometrias — não dá para projetar.</p>`;
+    cardProj = `<p class="proj-obs">Sem ganho de peso positivo entre as biometrias — ajuste o crescimento acima para simular um cenário.</p>`;
   } else {
     progresso = 100;
     cardProj = `<p class="proj-obs">O camarão já está com ${fmtG(pesoAtual)} g, igual ou acima do alvo de ${fmtG(alvo)} g.</p>`;
@@ -3489,9 +3536,9 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         <span class="cresc-card-lbl">Peso atual</span>
         <span class="cresc-card-val">${fmtG(pesoAtual)} g</span>
       </div>
-      <div class="cresc-card">
+      <div class="cresc-card${simulando ? " cresc-card-sim" : ""}">
         <svg class="cresc-card-ico" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
-        <span class="cresc-card-lbl">Crescimento</span>
+        <span class="cresc-card-lbl">${simulando ? "Crescimento (sim.)" : "Crescimento"}</span>
         <span class="cresc-card-val">${gDia > 0 ? formatarNumeroBR(gDia * 7, 2) + " g/sem" : "--"}</span>
       </div>
       <div class="cresc-card">
@@ -3516,12 +3563,30 @@ function verCurvaCrescimento(index, direto, pesoAlvo) {
         <button class="proj-alvo-btn" onclick="_projAjustarAlvo(${index}, ${direto}, -0.5)">−</button>
         <div class="proj-alvo-val-wrap">
           <input type="text" inputmode="decimal" id="proj-alvo" value="${_projAlvoTexto(alvo)}"
-            onchange="verCurvaCrescimento(${index}, ${direto}, parseDecimalBR(this.value) || 20)">
+            onchange="verCurvaCrescimento(${index}, ${direto}, parseDecimalBR(this.value) || 20, _projGSemAtual())">
           <span>g</span>
         </div>
         <button class="proj-alvo-btn" onclick="_projAjustarAlvo(${index}, ${direto}, 0.5)">+</button>
       </div>
     </div>
+    ${pesoAtual > 0 ? `
+    <div class="proj-alvo-row${simulando ? " proj-row-sim" : ""}">
+      <span class="proj-alvo-lbl">Crescimento${simulando ? `<small class="proj-sim-tag">simulado</small>` : ""}</span>
+      <div class="proj-alvo-ctrl">
+        <button class="proj-alvo-btn" onclick="_projAjustarCresc(${index}, ${direto}, -0.1)">−</button>
+        <div class="proj-alvo-val-wrap proj-val-gsem">
+          <input type="text" inputmode="decimal" id="proj-gsem" data-sim="${simulando ? 1 : 0}" value="${formatarNumeroBR(gSemCampo, 2)}"
+            onchange="_projDefinirCresc(${index}, ${direto}, this.value)">
+          <span>g/sem</span>
+        </div>
+        <button class="proj-alvo-btn" onclick="_projAjustarCresc(${index}, ${direto}, 0.1)">+</button>
+      </div>
+    </div>
+    ${simulando && gDiaReal > 0 ? `
+    <button class="proj-reset-cresc" onclick="_projResetCresc(${index}, ${direto})">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Voltar ao medido (${formatarNumeroBR(gDiaReal * 7, 2)} g/sem)
+    </button>` : ""}` : ""}
     ${cardProj}
     <h4 class="bio-hist-titulo">Histórico de biometrias</h4>
     <div class="bio-historico">
