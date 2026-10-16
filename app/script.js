@@ -5227,6 +5227,34 @@ function abrirRelatorios() {
 let _rgAba = "viveiro";      // "viveiro" | "lab"
 let _rgMetrica = "lucro";    // lucro | producao | cresc | sobr | fca
 
+// Ganho de peso por semana de um ciclo encerrado — a MESMA conta da curva de
+// crescimento: peso da última medição menos o da primeira, dividido pelos dias
+// entre elas. Não é pesoFinal ÷ dias de cultivo: isso contaria o crescimento a
+// partir do zero, incluindo as semanas iniciais em que a PL quase não ganha
+// peso, e daria um número menor do que o que o sistema mostra em todo o resto.
+// A despesca final entra como última medição (é peso real, medido na balança),
+// então o trecho depois da última biometria não se perde.
+function _rgCrescSemanal(ciclo) {
+  const pontos = [...(ciclo.biometrias || [])]
+    .filter(b => Number(b.gramatura) > 0 && b.data)
+    .map(b => ({ data: String(b.data).substring(0, 10), g: Number(b.gramatura) }));
+
+  if (Number(ciclo.pesoFinal) > 0 && ciclo.dataEncerramento) {
+    const dEnc = String(ciclo.dataEncerramento).substring(0, 10);
+    if (!pontos.some(p => p.data === dEnc)) pontos.push({ data: dEnc, g: Number(ciclo.pesoFinal) });
+  }
+
+  pontos.sort((a, b) => a.data.localeCompare(b.data));
+  if (pontos.length < 2) return null;
+
+  const pri = pontos[0], ult = pontos[pontos.length - 1];
+  const dias = Math.round((_parseDataLocal(ult.data) - _parseDataLocal(pri.data)) / 86400000);
+  if (!(dias > 0)) return null;
+
+  const gSem = ((ult.g - pri.g) / dias) * 7;
+  return gSem > 0 ? gSem : null;
+}
+
 function _rgCiclosEncerrados() {
   const linhas = [];
   viveiros.forEach(v => {
@@ -5238,8 +5266,6 @@ function _rgCiclosEncerrados() {
         const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal;
         return s + (Number(d.quantidadeKg) || 0) * p;
       }, 0) + (Number(c.producaoFinal) || 0) * precoFinal;
-      const dias = Number(c.diasCultivo) || 0;
-      const peso = Number(c.pesoFinal) || 0;
       linhas.push({
         viveiro: (c.nomeViveiro || v.nome || "Viveiro").trim(),
         lab: (c.laboratorio || "").trim() || "Sem laboratório",
@@ -5254,7 +5280,7 @@ function _rgCiclosEncerrados() {
         lucro: receita > 0 ? receita - cc.total : null,
         sobr: Number(c.sobrevivencia) > 0 ? Number(c.sobrevivencia) : null,
         fca: Number(c.fca) > 0 ? Number(c.fca) : null,
-        cresc: (dias > 0 && peso > 0) ? (peso / dias) * 7 : null,
+        cresc: _rgCrescSemanal(c),
       });
     });
   });
@@ -5361,6 +5387,9 @@ function mostrarRelatorioGeral() {
     if (partes.length) notaFora = `Ciclos fora deste ranking: ${partes.join(" e ")}.`;
   } else if (_rgMetrica === "producao" && _semArea) {
     notaFora = `${_semArea} ciclo${_pl(_semArea)} sem área cadastrada ficaram de fora — a produtividade é por hectare.`;
+  } else if (_rgMetrica === "cresc") {
+    const semBio = linhas.filter(l => l.cresc === null).length;
+    if (semBio) notaFora = `${semBio} ciclo${_pl(semBio)} ficaram de fora: o crescimento vem das biometrias, e ${semBio > 1 ? "esses ciclos não têm" : "esse ciclo não tem"} duas medições para comparar.`;
   }
 
   area.innerHTML = topo + `
