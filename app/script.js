@@ -8310,7 +8310,6 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
     ciclo.custoFixoRateado
   );
   const custoTotal = _cc.total, custoManuais = _cc.totalManuais, rateioFixo = _cc.rateioFixo;
-  const _serieCustosRel = _serieCustosCiclo(ciclo, _cc.manuais, rateioFixo);
 
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
   const precoFinal = Number(ciclo.precoVenda) || 0; // preço da despesca final
@@ -8396,14 +8395,6 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       </div>
       ` : ""}
 
-      ${_serieCustosRel ? `
-      <div class="rc2-sec-tit">Evolução dos custos</div>
-      <div class="rc-graficos">
-        <div class="rc-graf-box rc-graf-box-largo"><h5>Custo acumulado (R$)</h5><div class="rc-graf-canvas"><canvas id="rcCustos"></canvas></div></div>
-      </div>
-      ${_serieCustosRel.temRateio ? `<p class="rc2-fin-nota" style="margin-top:6px">O rateio de custos fixos não tem data de lançamento — ele é proporcional aos dias de viveiro ocupado, e aparece distribuído dia a dia na linha tracejada.</p>` : ""}
-      ` : ""}
-
       <div class="rc2-sec-tit">Produção e desempenho financeiro</div>
       <div class="rc2-prodfinal"><span>Produção final do ciclo</span><b>${formatarNumeroBR(producaoTotal, 1)} kg</b></div>
       <div class="rc2-fin">
@@ -8436,7 +8427,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
     </div>
   `;
 
-  setTimeout(() => { _renderGraficosCiclo(_serieRel); _renderGraficoCustos(_serieCustosRel); }, 60);
+  setTimeout(() => _renderGraficosCiclo(_serieRel), 60);
 }
 
 // Séries do ciclo para os gráficos — biomassa/FCA estimados descontando as
@@ -8531,81 +8522,6 @@ function _seriesCiclo(ciclo) {
 
   return { bios, dias, peso, cresc, biomassa, biomassaEst, fca, racaoAcum, obs, datas, popNum, producaoTotal,
            fcaDias, fcaAcum, fcaPeriodo };
-}
-
-// Evolução dos custos do ciclo: quanto já tinha sido gasto em cada semana.
-// Marcos semanais do primeiro ao último dia de viveiro ocupado, mais o dia
-// final, para a última coluna bater exatamente com o custo total do relatório.
-// O rateio fixo (salários, energia) não tem data de lançamento — ele é
-// proporcional aos dias, que é exatamente como _custoFixoRateado o calcula,
-// então entra como uma segunda linha distribuída dia a dia.
-function _serieCustosCiclo(ciclo, manuais, rateioFixo) {
-  const ini = ciclo.dataPreparacao || ciclo.dataPovoamento;
-  const fim = ciclo.dataEncerramento;
-  if (!ini || !fim) return null;
-
-  const totalDias = calcularDiasCultivo(ini, fim);
-  if (!(totalDias > 0)) return null;
-
-  const lista = (manuais || []).filter(c => Number(c.valor) > 0);
-  const rateio = Number(rateioFixo) || 0;
-  if (!lista.length && rateio <= 0) return null;
-
-  const diaDe = (d) => calcularDiasCultivo(ini, d);
-  const marcos = [];
-  for (let d = 1; d < totalDias; d += 7) marcos.push(d);
-  if (marcos[marcos.length - 1] !== totalDias) marcos.push(totalDias);
-
-  const acum = marcos.map(d => lista.reduce((s, c) => diaDe(c.data) <= d ? s + Number(c.valor) : s, 0));
-  return {
-    dias: marcos.map(d => "D" + d),
-    lancados: acum.map(v => Number(v.toFixed(2))),
-    comRateio: marcos.map((d, i) => Number((acum[i] + rateio * (d / totalDias)).toFixed(2))),
-    temRateio: rateio > 0,
-  };
-}
-
-function _renderGraficoCustos(serie) {
-  if (typeof Chart === "undefined" || !serie || !serie.dias.length) return;
-  const el = document.getElementById("rcCustos");
-  if (!el) return;
-  _prepararCanvasGrafico(el);
-
-  const rs = (v) => "R$ " + formatarNumeroBR(v, 0);
-  const datasets = [{
-    label: "Custos lançados",
-    data: serie.lancados,
-    borderColor: "#dc2626", backgroundColor: "transparent", fill: false,
-    tension: 0.3, pointRadius: 3, pointBackgroundColor: "#dc2626", borderWidth: 2,
-  }];
-  if (serie.temRateio) {
-    datasets.push({
-      label: "Com rateio fixo",
-      data: serie.comRateio,
-      borderColor: "#d97706", backgroundColor: "transparent", fill: false,
-      tension: 0.3, pointRadius: 3, pointBackgroundColor: "#d97706", borderWidth: 2, borderDash: [5, 4],
-    });
-  }
-
-  new Chart(el.getContext("2d"), {
-    type: "line",
-    data: { labels: serie.dias, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: serie.temRateio
-          ? { display: true, position: "bottom", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "circle", font: { size: 10 }, color: "#6b7280", padding: 10 } }
-          : { display: false },
-        tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + rs(c.parsed.y) } },
-      },
-      scales: {
-        // Um ciclo longo dá 15+ marcos semanais; sem limitar, os rótulos viram
-        // uma parede inclinada. O eixo Y vai sem "R$" — o título já diz.
-        x: { ticks: { font: { size: 9 }, color: "#9ca3af", autoSkip: true, maxTicksLimit: 8, maxRotation: 0 }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { font: { size: 9 }, color: "#9ca3af", maxTicksLimit: 6, callback: v => formatarNumeroBR(v, 0) }, grid: { color: "rgba(0,0,0,0.05)" } },
-      },
-    },
-  });
 }
 
 function _renderGraficosCiclo(serie) {
