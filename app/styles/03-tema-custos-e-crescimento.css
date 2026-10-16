@@ -1097,6 +1097,10 @@ body.tema-escuro .proj-resumo-ico { stroke: #34d399; }
     border-radius: 10px;
     overflow: hidden;
     background: white;
+    /* Largura fixa para o controle do peso-alvo e o do crescimento ficarem do
+       mesmo tamanho — o "g/sem" é mais largo que o "g" e desalinhava os dois. */
+    flex: 0 0 auto;
+    width: 192px;
 }
 
 .proj-alvo-btn {
@@ -1121,16 +1125,19 @@ body.tema-escuro .proj-resumo-ico { stroke: #34d399; }
     display: flex;
     align-items: center;
     gap: 3px;
-    padding: 0 12px;
+    padding: 0 8px;
     border-left: 1.5px solid #e5e7eb;
     border-right: 1.5px solid #e5e7eb;
-    min-width: 78px;
+    flex: 1;
+    min-width: 0;
     justify-content: center;
     height: 40px;
 }
 
 .proj-alvo-val-wrap input {
-    width: 56px;
+    flex: 1;
+    min-width: 0;
+    width: auto;
     border: none;
     outline: none;
     font-size: 20px;
@@ -1164,8 +1171,7 @@ body.tema-escuro .proj-resumo-ico { stroke: #34d399; }
    O ganho semanal vem das biometrias, mas a pessoa pode trocá-lo para ver
    outros cenários. Tudo que está simulado fica em âmbar, para nunca se
    confundir com o número medido. */
-.proj-val-gsem { min-width: 104px; }
-.proj-val-gsem input { width: 50px; font-size: 18px; }
+.proj-val-gsem input { font-size: 18px; }
 
 .proj-sim-tag {
     display: inline-block;
