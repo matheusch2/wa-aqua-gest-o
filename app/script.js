@@ -5227,34 +5227,6 @@ function abrirRelatorios() {
 let _rgAba = "viveiro";      // "viveiro" | "lab"
 let _rgMetrica = "lucro";    // lucro | producao | cresc | sobr | fca
 
-// Ganho de peso por semana de um ciclo encerrado — a MESMA conta da curva de
-// crescimento: peso da última medição menos o da primeira, dividido pelos dias
-// entre elas. Não é pesoFinal ÷ dias de cultivo: isso contaria o crescimento a
-// partir do zero, incluindo as semanas iniciais em que a PL quase não ganha
-// peso, e daria um número menor do que o que o sistema mostra em todo o resto.
-// A despesca final entra como última medição (é peso real, medido na balança),
-// então o trecho depois da última biometria não se perde.
-function _rgCrescSemanal(ciclo) {
-  const pontos = [...(ciclo.biometrias || [])]
-    .filter(b => Number(b.gramatura) > 0 && b.data)
-    .map(b => ({ data: String(b.data).substring(0, 10), g: Number(b.gramatura) }));
-
-  if (Number(ciclo.pesoFinal) > 0 && ciclo.dataEncerramento) {
-    const dEnc = String(ciclo.dataEncerramento).substring(0, 10);
-    if (!pontos.some(p => p.data === dEnc)) pontos.push({ data: dEnc, g: Number(ciclo.pesoFinal) });
-  }
-
-  pontos.sort((a, b) => a.data.localeCompare(b.data));
-  if (pontos.length < 2) return null;
-
-  const pri = pontos[0], ult = pontos[pontos.length - 1];
-  const dias = Math.round((_parseDataLocal(ult.data) - _parseDataLocal(pri.data)) / 86400000);
-  if (!(dias > 0)) return null;
-
-  const gSem = ((ult.g - pri.g) / dias) * 7;
-  return gSem > 0 ? gSem : null;
-}
-
 function _rgCiclosEncerrados() {
   const linhas = [];
   viveiros.forEach(v => {
@@ -5280,7 +5252,7 @@ function _rgCiclosEncerrados() {
         lucro: receita > 0 ? receita - cc.total : null,
         sobr: Number(c.sobrevivencia) > 0 ? Number(c.sobrevivencia) : null,
         fca: Number(c.fca) > 0 ? Number(c.fca) : null,
-        cresc: _rgCrescSemanal(c),
+        cresc: _crescSemanalCiclo(c),
       });
     });
   });
@@ -8692,6 +8664,24 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
 
 // Séries do ciclo para os gráficos — biomassa/FCA estimados descontando as
 // despescas parciais reais (cada uma com seu peso médio) até cada data.
+// Crescimento médio semanal — FONTE ÚNICA. É o mesmo número que o relatório
+// impresso mostra em "Crescimento médio semanal": ganho de peso entre a 1ª e a
+// última biometria, trazido para base de 7 dias. Mede a engorda real, sem
+// chutar o peso da PL no povoamento.
+// Vive aqui, e não copiado dentro de cada tela, porque duas contas parecidas
+// para a mesma coisa viram dois números diferentes no primeiro ajuste.
+function _crescSemanalSerie(s) {
+  const n = ((s && s.peso) || []).length;
+  if (n < 2) return null;
+  const dDias = s.dias[n - 1] - s.dias[0];
+  if (!(dDias > 0)) return null;
+  return (s.peso[n - 1] - s.peso[0]) / dDias * 7;
+}
+
+function _crescSemanalCiclo(ciclo) {
+  return _crescSemanalSerie(_seriesCiclo(ciclo));
+}
+
 function _seriesCiclo(ciclo) {
   const bios = [...(ciclo.biometrias || [])].sort((a, b) => a.data.localeCompare(b.data));
   const racoesSorted = [...(ciclo.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
@@ -8932,15 +8922,8 @@ function gerarRelatorioImpressao() {
   const _bioLinhas = _sBio.bios.map((b, i) =>
     `<tr><td>${_sBio.datas[i]}</td><td>${_sBio.dias[i]}</td><td><b>${fmt(_sBio.peso[i], 1)}</b></td><td>${_sBio.obs[i] === "—" ? "—" : _sBio.obs[i] + " g"}</td></tr>`
   ).join("");
-  // Crescimento médio semanal: ganho de peso entre a 1ª e a última biometria,
-  // trazido para base de 7 dias (mede a engorda real, sem chutar o peso da PL).
-  const _cresSemanal = (() => {
-    const n = _sBio.peso.length;
-    if (n < 2) return null;
-    const dDias = _sBio.dias[n - 1] - _sBio.dias[0];
-    if (dDias <= 0) return null;
-    return (_sBio.peso[n - 1] - _sBio.peso[0]) / dDias * 7;
-  })();
+  // Crescimento médio semanal (mesma conta do ranking no relatório geral).
+  const _cresSemanal = _crescSemanalSerie(_sBio);
   // Torre do peso médio: uma coluna por biometria, verde escurecendo conforme o
   // peso sobe (progressão), com o peso em cima e o dia de cultivo embaixo.
   const _gBio = (() => {
