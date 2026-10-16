@@ -293,6 +293,66 @@ body.tema-escuro .hc-viv-txt small { color: #9ca3af; }
     border-radius: 20px;
 }
 
+/* Card fino: a lista mostra só Ciclo N · sobrevivência · produção. O resto
+   (datas, peso, FCA e as ações) abre ao tocar. Com vários ciclos a lista
+   antiga virava uma pilha de blocos altos. */
+.ciclo-card-fino { padding: 0; overflow: hidden; }
+
+.cc-linha {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+.cc-num {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cc-chip {
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.cc-chip.cc-ok   { color: #16a34a; background: rgba(22,163,74,0.10); }
+.cc-chip.cc-med  { color: #d97706; background: rgba(217,119,6,0.10); }
+.cc-chip.cc-ruim { color: #dc2626; background: rgba(220,38,38,0.10); }
+.cc-chip.cc-kg   { color: rgb(6,107,99); background: rgba(6,107,99,0.08); }
+
+.cc-chev {
+    display: flex;
+    flex: 0 0 auto;
+    color: #9ca3af;
+    transition: transform 0.18s;
+}
+.cc-chev svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.cc-linha.cc-aberto .cc-chev { transform: rotate(180deg); }
+
+.cc-corpo {
+    padding: 2px 14px 14px;
+    border-top: 1px solid #f3f4f6;
+}
+.cc-corpo .ciclo-card-infos { margin-top: 10px; }
+
+body.tema-escuro .cc-num { color: #f3f4f6; }
+body.tema-escuro .cc-corpo { border-top-color: #374151; }
+body.tema-escuro .cc-chev { color: #6b7280; }
+
 .ciclo-card-infos {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;

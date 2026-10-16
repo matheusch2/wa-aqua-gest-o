@@ -5171,44 +5171,76 @@ function mostrarCiclosDoViveiro(viveiroIndex) {
     </div>
   ` + lista.map((ciclo, cicloIndex) => {
     const n = _numeroCicloEncerrado(viveiro, ciclo);
+    const sobr = Number(ciclo.sobrevivencia) || 0;
+    const corSobr = sobr >= 70 ? "cc-ok" : sobr >= 50 ? "cc-med" : "cc-ruim";
+    const idCorpo = `cc-corpo-${viveiroIndex}-${cicloIndex}`;
     return `
-    <div class="ciclo-card">
-      <div class="ciclo-card-topo">
-        <span class="ciclo-card-nome">${n ? `Ciclo ${n}` : "Ciclo"}</span>
-        <span class="ciclo-card-producao">${formatarNumeroBR(ciclo.producaoTotal || 0, 1)} kg</span>
-      </div>
-      <div class="ciclo-card-infos">
-        <div class="ciclo-info-item">
-          <span class="ciclo-info-label">Povoamento</span>
-          <span class="ciclo-info-valor">${formatarData(ciclo.dataPovoamento)}</span>
+    <div class="ciclo-card ciclo-card-fino">
+      <button class="cc-linha" aria-expanded="false" onclick="_toggleCicloCard('${idCorpo}', this)">
+        <span class="cc-num">${n ? `Ciclo ${n}` : "Ciclo"}</span>
+        <span class="cc-chip ${corSobr}">${formatarNumeroBR(sobr, 1)}%</span>
+        <span class="cc-chip cc-kg">${formatarNumeroBR(ciclo.producaoTotal || 0, 1)} kg</span>
+        <span class="cc-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="cc-corpo" id="${idCorpo}" style="display:none">
+        <div class="ciclo-card-infos">
+          <div class="ciclo-info-item">
+            <span class="ciclo-info-label">Povoamento</span>
+            <span class="ciclo-info-valor">${formatarData(ciclo.dataPovoamento)}</span>
+          </div>
+          <div class="ciclo-info-item">
+            <span class="ciclo-info-label">Encerramento</span>
+            <span class="ciclo-info-valor">${formatarData(ciclo.dataEncerramento)}</span>
+          </div>
+          <div class="ciclo-info-item">
+            <span class="ciclo-info-label">Dias</span>
+            <span class="ciclo-info-valor">${ciclo.diasCultivo || "—"}</span>
+          </div>
+          <div class="ciclo-info-item">
+            <span class="ciclo-info-label">Peso final</span>
+            <span class="ciclo-info-valor">${ciclo.pesoFinal ? formatarNumeroBR(ciclo.pesoFinal, 1) + " g" : "—"}</span>
+          </div>
+          <div class="ciclo-info-item">
+            <span class="ciclo-info-label">FCA</span>
+            <span class="ciclo-info-valor">${ciclo.fca ? formatarNumeroBR(ciclo.fca, 2) : "—"}</span>
+          </div>
+          <div class="ciclo-info-item">
+            <span class="ciclo-info-label">Produtividade</span>
+            <span class="ciclo-info-valor">${ciclo.produtividade ? formatarNumeroBR(ciclo.produtividade, 0) + " kg/ha" : "—"}</span>
+          </div>
         </div>
-        <div class="ciclo-info-item">
-          <span class="ciclo-info-label">Encerramento</span>
-          <span class="ciclo-info-valor">${formatarData(ciclo.dataEncerramento)}</span>
+        <div class="ciclo-card-acoes">
+          <button class="ciclo-btn-relatorio" onclick="mostrarRelatorioCiclo(${viveiroIndex}, viveiros[${viveiroIndex}].ciclosFinalizados[${cicloIndex}], 'historico')">
+            📋 Ver relatório
+          </button>
+          <button class="ciclo-btn-excluir" onclick="confirmarExcluirCiclo(${viveiroIndex}, ${cicloIndex}, this)">
+            🗑️ Excluir
+          </button>
         </div>
-        <div class="ciclo-info-item">
-          <span class="ciclo-info-label">Sobrevivência</span>
-          <span class="ciclo-info-valor">${formatarNumeroBR(ciclo.sobrevivencia || 0, 1)}%</span>
-        </div>
-      </div>
-      <div class="ciclo-card-acoes">
-        <button class="ciclo-btn-relatorio" onclick="mostrarRelatorioCiclo(${viveiroIndex}, viveiros[${viveiroIndex}].ciclosFinalizados[${cicloIndex}], 'historico')">
-          📋 Ver relatório
-        </button>
-        <button class="ciclo-btn-excluir" onclick="confirmarExcluirCiclo(${viveiroIndex}, ${cicloIndex}, this)">
-          🗑️ Excluir
-        </button>
-      </div>
-      <div id="confirm-excluir-${viveiroIndex}-${cicloIndex}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626">Excluir este ciclo?</p>
-        <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Esta ação não pode ser desfeita.</p>
-        <div style="display:flex;gap:8px">
-          <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${viveiroIndex}, ${cicloIndex}, this)">Sim, excluir</button>
-          <button class="ciclo-btn-relatorio" style="flex:1" onclick="cancelarExcluirCiclo(${viveiroIndex}, ${cicloIndex})">Cancelar</button>
+        <div id="confirm-excluir-${viveiroIndex}-${cicloIndex}" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626">Excluir este ciclo?</p>
+          <p style="margin:0 0 10px;font-size:12px;color:#7f1d1d">Esta ação não pode ser desfeita.</p>
+          <div style="display:flex;gap:8px">
+            <button class="ciclo-btn-excluir" style="flex:1" onclick="excluirCiclo(${viveiroIndex}, ${cicloIndex}, this)">Sim, excluir</button>
+            <button class="ciclo-btn-relatorio" style="flex:1" onclick="cancelarExcluirCiclo(${viveiroIndex}, ${cicloIndex})">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>`;
   }).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="mostrarHistoricoCiclos()">Voltar</button>`;
+}
+
+// Abre/fecha os detalhes de um ciclo encerrado. A lista fica só com o número,
+// a sobrevivência e a produção; o resto aparece ao tocar no card.
+function _toggleCicloCard(idCorpo, botao) {
+  const corpo = document.getElementById(idCorpo);
+  if (!corpo) return;
+  const abrir = corpo.style.display === "none";
+  corpo.style.display = abrir ? "block" : "none";
+  if (botao) {
+    botao.setAttribute("aria-expanded", abrir ? "true" : "false");
+    botao.classList.toggle("cc-aberto", abrir);
+  }
 }
 
 function confirmarExcluirCiclo(viveiroIndex, cicloIndex, btn) {
