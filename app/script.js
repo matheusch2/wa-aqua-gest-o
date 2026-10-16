@@ -8333,6 +8333,10 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   // preparação ao encerramento, não só do povoamento. O tanque parado na
   // preparação também é tempo em que ele não pôde render outra coisa, e é
   // isso que torna dois ciclos de durações diferentes comparáveis.
+  // Área do viveiro para o lucro/ha. Passa pelo _tamanhoHa porque ciclo antigo
+  // pode ter gravado "2,5" como texto — Number("2,5") dá NaN.
+  const _haRel = _tamanhoHa(ciclo.tamanho) || 0;
+
   const _iniRend = ciclo.dataPreparacao || ciclo.dataPovoamento;
   const diasRendimento = (_iniRend && ciclo.dataEncerramento)
     ? Math.max(1, calcularDiasCultivo(_iniRend, ciclo.dataEncerramento))
@@ -8398,6 +8402,8 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
         <div><small>Receita bruta</small><b>${rs(receitaBruta)}</b></div>
         <div><small>Lucro líquido</small><b class="${temPreco ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${rs(lucro)}</b></div>
         <div><small>Custo por kg</small><b>${custoTotal > 0 ? "R$ " + formatarNumeroBR(custoPorKg, 2) : "—"}</b></div>
+        <div><small>Lucro por kg</small><b class="${temPreco && producaoTotal > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && producaoTotal > 0 ? "R$ " + formatarNumeroBR(lucro / producaoTotal, 2) : "—"}</b></div>
+        <div><small>Lucro por hectare</small><b class="${temPreco && _haRel > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && _haRel > 0 ? "R$ " + formatarNumeroBR(lucro / _haRel, 2) : "—"}</b></div>
         <div><small>Lucro por dia</small><b class="${temPreco && diasRendimento > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && diasRendimento > 0 ? "R$ " + formatarNumeroBR(lucroDia, 2) : "—"}</b></div>
         <div><small>Lucro por mês</small><b class="${temPreco && diasRendimento > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && diasRendimento > 0 ? "R$ " + formatarNumeroBR(lucroDia * 30, 2) : "—"}</b></div>
       </div>
