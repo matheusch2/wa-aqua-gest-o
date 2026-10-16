@@ -3836,6 +3836,12 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
       <span class="total-chip-valor">${formatarNumeroBR(totalRacao, 1)} kg</span>
     </div>
 
+    ${racoes.length ? `
+    <button class="botao-voltar-form" style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="imprimirHistoricoRacao(${index})">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimir histórico
+    </button>` : ""}
+
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">Voltar</button>
   `;
 
@@ -3896,6 +3902,85 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
       }
     }, { passive: true, signal: _sig });
   }
+}
+
+// Impressão do histórico de ração: uma linha por DIA (data + kg), e nos dias de
+// transição a linha abre o detalhe dos dois tipos logo abaixo. Imprime o ciclo
+// inteiro, não só a página que está na tela.
+function imprimirHistoricoRacao(index) {
+  const viveiro = viveiros[index];
+  if (!viveiro) return;
+  const racoes = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  if (!racoes.length) { _toastErro("Nenhuma ração lançada para imprimir."); return; }
+
+  // Mesmo agrupamento por dia usado na tela, para os números baterem.
+  const porDia = [];
+  const mapa = new Map();
+  racoes.forEach(r => {
+    const d = String(r.data).substring(0, 10);
+    let g = mapa.get(d);
+    if (!g) { g = { data: d, itens: [], total: 0 }; mapa.set(d, g); porDia.push(g); }
+    g.itens.push(r);
+    g.total += Number(r.racao) || 0;
+  });
+
+  const totalRacao = porDia.reduce((s, g) => s + g.total, 0);
+  const media = porDia.length ? totalRacao / porDia.length : 0;
+  const maiorDia = porDia.reduce((m, g) => Math.max(m, g.total), 0);
+  const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const linhas = porDia.map(g => {
+    const dia = calcularDiasCultivo(viveiro.dataPovoamento, g.data);
+    const umTipo = g.itens.length === 1 ? (g.itens[0].nomeRacao || "-") : "";
+    const detalhe = g.itens.length > 1
+      ? `<tr class="det-row"><td></td><td colspan="3">${g.itens.map(it =>
+          `<span class="det-item">${_esc(it.nomeRacao || "sem tipo")}: <b>${formatarNumeroBR(it.racao, 1)} kg</b></span>`
+        ).join("")}</td></tr>`
+      : "";
+    return `<tr${g.itens.length > 1 ? ' class="dia-multi"' : ""}>
+      <td style="text-align:center">${dia}</td>
+      <td>${formatarData(g.data)}</td>
+      <td>${g.itens.length > 1 ? `${g.itens.length} rações (transição)` : _esc(umTipo)}</td>
+      <td style="text-align:right;font-weight:600">${formatarNumeroBR(g.total, 1)} kg</td>
+    </tr>${detalhe}`;
+  }).join("");
+
+  const titulo = "Histórico de ração consumida";
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:24px;color:#222;max-width:760px;margin:0 auto}
+    h1{font-size:20px;color:#066b63;margin:0 0 4px;text-align:center}
+    .sub{text-align:center;color:#666;font-size:12px;margin:0 0 16px}
+    .resumo{display:flex;gap:10px;margin:0 0 16px}
+    .rbox{flex:1;border:1px solid #d6e6e4;border-radius:8px;padding:8px 10px;text-align:center}
+    .rbox small{display:block;color:#777;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+    .rbox b{font-size:14px;color:#066b63}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    th{background:#066b63;color:#fff;padding:9px 10px;text-align:left}
+    td{padding:7px 10px;border-bottom:1px solid #e5e7eb}
+    tr.dia-multi td{background:#eef5ff}
+    .det-row td{background:#f8fbff;border-bottom:1px solid #e5e7eb;color:#555;font-size:11.5px;padding:4px 10px 6px}
+    .det-item{display:inline-block;margin-right:14px}
+    .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63;background:#fff}
+    @media print{body{padding:0}}
+  </style></head><body>
+  <h1>${titulo}</h1>
+  <p class="sub">${_esc(viveiro.nome || "Viveiro")} · emitido em ${hoje} · ${porDia.length} dia${porDia.length > 1 ? "s" : ""} com oferta</p>
+  <div class="resumo">
+    <div class="rbox"><small>Média/dia</small><b>${formatarNumeroBR(media, 1)} kg</b></div>
+    <div class="rbox"><small>Maior dia</small><b>${formatarNumeroBR(maiorDia, 1)} kg</b></div>
+    <div class="rbox"><small>Dias</small><b>${porDia.length}</b></div>
+  </div>
+  <table>
+    <thead><tr><th style="text-align:center;width:46px">Dia</th><th style="width:110px">Data</th><th>Ração</th><th style="text-align:right;width:110px">Consumo</th></tr></thead>
+    <tbody>
+      ${linhas}
+      <tr class="total-row"><td colspan="3">CONSUMO TOTAL</td><td style="text-align:right">${formatarNumeroBR(totalRacao, 1)} kg</td></tr>
+    </tbody>
+  </table>
+  </body></html>`;
+
+  _imprimirDoc(html);
 }
 
 function abrirEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, paginaAtual = 0) {
