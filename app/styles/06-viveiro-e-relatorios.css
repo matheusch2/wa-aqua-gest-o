@@ -703,3 +703,52 @@ body.tema-escuro .bio-acao-excluir:active { background: #51272d; }
     .bio-acao-btn svg { width: 15px; height: 15px; }
 }
 
+
+/* ─── RELATÓRIO GERAL (ranking de viveiros e laboratórios) ─────────────────── */
+
+.rg-resumo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.rg-rbox { background: #f9fafb; border: 1px solid #eef0f2; border-radius: 10px; padding: 8px 10px; text-align: center; }
+.rg-rbox small { display: block; font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; }
+.rg-rbox b { font-size: 14px; font-weight: 800; color: #111827; }
+.rg-pos-cor, .rg-pos { color: inherit; }
+.rg-rbox b.rg-pos, .rg-val.rg-pos { color: #16a34a; }
+.rg-rbox b.rg-neg, .rg-val.rg-neg { color: #dc2626; }
+
+.rg-abas { display: flex; background: #eef0f2; border-radius: 11px; padding: 3px; margin-bottom: 10px; }
+.rg-aba { flex: 1; width: auto; border: none; background: transparent; padding: 9px; border-radius: 9px; font-size: 13px; font-weight: 700; color: #6b7280; cursor: pointer; }
+.rg-aba.ativa { background: white; color: rgb(6,107,99); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+.rg-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
+.rg-chips::-webkit-scrollbar { display: none; }
+.rg-chip { flex: 0 0 auto; width: auto; border: 1px solid #e5e7eb; background: white; color: #6b7280; padding: 6px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.rg-chip.ativo { background: rgb(6,107,99); border-color: rgb(6,107,99); color: white; }
+
+.rg-destaque { display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, rgba(6,107,99,.10), rgba(6,107,99,.03)); border: 1px solid rgba(6,107,99,.22); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.rg-destaque-ico { flex: 0 0 auto; display: flex; width: 34px; height: 34px; align-items: center; justify-content: center; background: rgba(6,107,99,.12); border-radius: 50%; }
+.rg-destaque-ico svg { width: 18px; height: 18px; stroke: rgb(6,107,99); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rg-destaque-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.rg-destaque-txt small { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .4px; }
+.rg-destaque-txt b { font-size: 15px; font-weight: 800; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-destaque-val { flex: 0 0 auto; font-size: 14px; font-weight: 800; color: rgb(6,107,99); }
+
+.rg-lista { display: flex; flex-direction: column; gap: 6px; }
+.rg-linha { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid #e5e7eb; border-radius: 11px; padding: 10px 12px; }
+.rg-linha-top { border-color: rgba(6,107,99,.30); }
+.rg-linha-sem { opacity: .6; }
+.rg-pos { flex: 0 0 26px; font-size: 12.5px; font-weight: 800; color: #9ca3af; }
+.rg-linha-top .rg-pos { color: rgb(6,107,99); }
+.rg-nome { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.rg-nome b { font-size: 13.5px; font-weight: 800; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-nome small { font-size: 11px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-val { flex: 0 0 auto; font-size: 13.5px; font-weight: 800; color: #111827; }
+
+.rg-nota, .rg-vazio { font-size: 11px; color: #9ca3af; margin: 10px 2px 0; line-height: 1.4; }
+.rg-vazio { text-align: center; padding: 10px 0; }
+
+body.tema-escuro .rg-rbox { background: #1f2937; border-color: #374151; }
+body.tema-escuro .rg-rbox b, body.tema-escuro .rg-destaque-txt b, body.tema-escuro .rg-nome b, body.tema-escuro .rg-val { color: #f3f4f6; }
+body.tema-escuro .rg-abas { background: #374151; }
+body.tema-escuro .rg-aba.ativa { background: #1f2937; color: #5eead4; }
+body.tema-escuro .rg-chip { background: #1f2937; border-color: #374151; color: #d1d5db; }
+body.tema-escuro .rg-linha { background: #1f2937; border-color: #374151; }
+body.tema-escuro .rg-destaque { border-color: #374151; }
