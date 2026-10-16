@@ -8328,6 +8328,16 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   const precoMedio = producaoTotal > 0 ? receitaBruta / producaoTotal : 0;
   const lucro = receitaBruta - custoTotal;
   const custoPorKg = producaoTotal > 0 ? custoTotal / producaoTotal : 0;
+
+  // Lucro por dia e por mês: o que o viveiro rendeu por dia OCUPADO — da
+  // preparação ao encerramento, não só do povoamento. O tanque parado na
+  // preparação também é tempo em que ele não pôde render outra coisa, e é
+  // isso que torna dois ciclos de durações diferentes comparáveis.
+  const _iniRend = ciclo.dataPreparacao || ciclo.dataPovoamento;
+  const diasRendimento = (_iniRend && ciclo.dataEncerramento)
+    ? Math.max(1, calcularDiasCultivo(_iniRend, ciclo.dataEncerramento))
+    : (Number(ciclo.diasCultivo) || 0);
+  const lucroDia = diasRendimento > 0 ? lucro / diasRendimento : 0;
   const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "—";
 
   area.innerHTML = `
@@ -8388,8 +8398,12 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
         <div><small>Receita bruta</small><b>${rs(receitaBruta)}</b></div>
         <div><small>Lucro líquido</small><b class="${temPreco ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${rs(lucro)}</b></div>
         <div><small>Custo por kg</small><b>${custoTotal > 0 ? "R$ " + formatarNumeroBR(custoPorKg, 2) : "—"}</b></div>
+        <div><small>Lucro por dia</small><b class="${temPreco && diasRendimento > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && diasRendimento > 0 ? "R$ " + formatarNumeroBR(lucroDia, 2) : "—"}</b></div>
+        <div><small>Lucro por mês</small><b class="${temPreco && diasRendimento > 0 ? (lucro < 0 ? "rc2-neg" : "rc2-pos") : ""}">${temPreco && diasRendimento > 0 ? "R$ " + formatarNumeroBR(lucroDia * 30, 2) : "—"}</b></div>
       </div>
-      ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>` : ""}
+      ${!temPreco
+        ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>`
+        : (diasRendimento > 0 ? `<p class="rc2-fin-nota">Lucro por dia = lucro líquido ÷ ${diasRendimento} dias de viveiro ocupado${ciclo.dataPreparacao ? " (preparação + cultivo)" : ""}. O lucro por mês é esse valor × 30.</p>` : "")}
 
       <div class="rc2-acoes">
         <button class="botao-salvar" style="padding:11px 10px;font-size:14px;gap:6px" onclick="gerarRelatorioImpressao()">
