@@ -5181,6 +5181,211 @@ function _numeroCicloAtual(viveiro) {
 // viveiros e vários ciclos cada, virava uma rolagem interminável.
 const _SVG_CICLOS = `<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>`;
 
+// Porta de entrada dos relatórios: o de ciclo (viveiro → ciclo → relatório,
+// que já existia) e o geral, que compara todos os ciclos encerrados entre si.
+const _SVG_TROFEU = `<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/>`;
+
+function abrirRelatorios() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const nCiclos = viveiros.reduce((s, v) => s + ((v && v.ciclosFinalizados) || []).length, 0);
+
+  area.innerHTML = `
+    <div class="form-topo" style="margin-top:8px">
+      <div class="form-icone-circulo">
+        <svg viewBox="0 0 24 24">${_SVG_CICLOS}</svg>
+      </div>
+      <h2 class="form-titulo">Relatórios</h2>
+    </div>
+
+    <button class="hc-viv-card" onclick="mostrarHistoricoCiclos()">
+      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg></span>
+      <span class="hc-viv-txt">
+        <b>Relatório de ciclo</b>
+        <small>${nCiclos ? `${nCiclos} ciclo${nCiclos > 1 ? "s" : ""} encerrado${nCiclos > 1 ? "s" : ""}` : "Nenhum ciclo encerrado ainda"} · escolha o viveiro e o ciclo</small>
+      </span>
+      <span class="hc-viv-seta">›</span>
+    </button>
+
+    <button class="hc-viv-card" onclick="mostrarRelatorioGeral()">
+      <span class="hc-viv-ico"><svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg></span>
+      <span class="hc-viv-txt">
+        <b>Relatório geral</b>
+        <small>Compara viveiros e laboratórios: lucro, crescimento, sobrevivência e FCA</small>
+      </span>
+      <span class="hc-viv-seta">›</span>
+    </button>
+
+    <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+}
+
+// ═══ RELATÓRIO GERAL ═══════════════════════════════════════════════════════
+// Compara TODOS os ciclos encerrados entre si, agrupados por viveiro ou por
+// laboratório. O lucro de cada ciclo é recalculado aqui pela mesma fonte do
+// relatório individual (_custosCicloAtivo + preço das despescas), para os dois
+// nunca divergirem.
+let _rgAba = "viveiro";      // "viveiro" | "lab"
+let _rgMetrica = "lucro";    // lucro | producao | cresc | sobr | fca
+
+function _rgCiclosEncerrados() {
+  const linhas = [];
+  viveiros.forEach(v => {
+    ((v && v.ciclosFinalizados) || []).forEach(c => {
+      const ini = c.dataPreparacao || c.dataPovoamento;
+      const cc = _custosCicloAtivo(v, c.cicloId, ini, c.dataEncerramento, c.custoFixoRateado);
+      const precoFinal = Number(c.precoVenda) || 0;
+      const receita = (c.despescas || []).reduce((s, d) => {
+        const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal;
+        return s + (Number(d.quantidadeKg) || 0) * p;
+      }, 0) + (Number(c.producaoFinal) || 0) * precoFinal;
+      const dias = Number(c.diasCultivo) || 0;
+      const peso = Number(c.pesoFinal) || 0;
+      linhas.push({
+        viveiro: (c.nomeViveiro || v.nome || "Viveiro").trim(),
+        lab: (c.laboratorio || "").trim() || "Sem laboratório",
+        producao: Number(c.producaoTotal) || 0,
+        // Sem preço de venda não há lucro — null, não zero. Zero entraria na
+        // média e puxaria o ranking para baixo como se o ciclo tivesse
+        // empatado, quando na verdade ele só não foi precificado.
+        lucro: receita > 0 ? receita - cc.total : null,
+        sobr: Number(c.sobrevivencia) > 0 ? Number(c.sobrevivencia) : null,
+        fca: Number(c.fca) > 0 ? Number(c.fca) : null,
+        cresc: (dias > 0 && peso > 0) ? (peso / dias) * 7 : null,
+      });
+    });
+  });
+  return linhas;
+}
+
+function _rgAgrupar(linhas, chave) {
+  const mapa = new Map();
+  linhas.forEach(l => {
+    const nome = chave === "lab" ? l.lab : l.viveiro;
+    let g = mapa.get(nome);
+    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, sobr: [], fca: [], cresc: [] }; mapa.set(nome, g); }
+    g.n++;
+    g.producao += l.producao;
+    if (l.lucro !== null) { g.lucro += l.lucro; g.nLucro++; }
+    if (l.sobr !== null) g.sobr.push(l.sobr);
+    if (l.fca !== null) g.fca.push(l.fca);
+    if (l.cresc !== null) g.cresc.push(l.cresc);
+  });
+  const med = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+  return [...mapa.values()].map(g => ({
+    ...g,
+    lucroTotal: g.nLucro > 0 ? g.lucro : null,
+    sobrMed: med(g.sobr), fcaMed: med(g.fca), crescMed: med(g.cresc),
+  }));
+}
+
+// Cada métrica diz como se ordena, como se escreve e o que vem na linha de
+// baixo. FCA é a única em que MENOR é melhor.
+const _RG_METRICAS = {
+  lucro:    { lbl: "Lucro",         campo: "lucroTotal", maior: true,  fmt: v => "R$ " + formatarNumeroBR(v, 2) },
+  producao: { lbl: "Produção",      campo: "producao",   maior: true,  fmt: v => formatarNumeroBR(v, 1) + " kg" },
+  cresc:    { lbl: "Crescimento",   campo: "crescMed",   maior: true,  fmt: v => formatarNumeroBR(v, 2) + " g/sem" },
+  sobr:     { lbl: "Sobrevivência", campo: "sobrMed",    maior: true,  fmt: v => formatarNumeroBR(v, 1) + "%" },
+  fca:      { lbl: "FCA",           campo: "fcaMed",     maior: false, fmt: v => formatarNumeroBR(v, 2) },
+};
+
+function _rgTrocarAba(aba) { _rgAba = aba; mostrarRelatorioGeral(); }
+function _rgTrocarMetrica(m) { _rgMetrica = m; mostrarRelatorioGeral(); }
+
+function mostrarRelatorioGeral() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const linhas = _rgCiclosEncerrados();
+
+  const topo = `
+    <div class="form-topo" style="margin-top:8px">
+      <div class="form-icone-circulo">
+        <svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg>
+      </div>
+      <h2 class="form-titulo">Relatório geral</h2>
+    </div>`;
+
+  if (!linhas.length) {
+    area.innerHTML = topo + `
+      <p style="text-align:center;color:#9ca3af;padding:16px 0;font-size:14px">Nenhum ciclo encerrado ainda — o relatório geral compara ciclos já fechados.</p>
+      <button class="botao-voltar-form" onclick="abrirRelatorios()">Voltar</button>`;
+    return;
+  }
+
+  const prodTotal = linhas.reduce((s, l) => s + l.producao, 0);
+  const comLucro = linhas.filter(l => l.lucro !== null);
+  const lucroTotal = comLucro.reduce((s, l) => s + l.lucro, 0);
+
+  const grupos = _rgAgrupar(linhas, _rgAba);
+  const m = _RG_METRICAS[_rgMetrica];
+  const comValor = grupos.filter(g => g[m.campo] !== null && g[m.campo] !== undefined);
+  const semValor = grupos.filter(g => g[m.campo] === null || g[m.campo] === undefined);
+  comValor.sort((a, b) => m.maior ? b[m.campo] - a[m.campo] : a[m.campo] - b[m.campo]);
+
+  const metricas = _rgAba === "lab"
+    ? ["lucro", "cresc", "sobr", "fca", "producao"]
+    : ["lucro", "producao", "sobr", "fca", "cresc"];
+
+  const lider = comValor[0];
+  const linhaDet = (g) => {
+    const p = [];
+    if (_rgMetrica !== "producao") p.push(formatarNumeroBR(g.producao, 0) + " kg");
+    if (_rgMetrica !== "sobr" && g.sobrMed !== null) p.push("sobrev. " + formatarNumeroBR(g.sobrMed, 1) + "%");
+    if (_rgMetrica !== "fca" && g.fcaMed !== null) p.push("FCA " + formatarNumeroBR(g.fcaMed, 2));
+    if (_rgMetrica === "cresc" || _rgMetrica === "lucro") p.unshift(g.n + " ciclo" + (g.n > 1 ? "s" : ""));
+    return p.slice(0, 3).join(" · ");
+  };
+
+  area.innerHTML = topo + `
+    <div class="rg-resumo">
+      <div class="rg-rbox"><small>Ciclos</small><b>${linhas.length}</b></div>
+      <div class="rg-rbox"><small>Produção</small><b>${formatarNumeroBR(prodTotal, 0)} kg</b></div>
+      <div class="rg-rbox"><small>Lucro</small><b class="${comLucro.length ? (lucroTotal < 0 ? "rg-neg" : "rg-pos") : ""}">${comLucro.length ? "R$ " + formatarNumeroBR(lucroTotal, 0) : "—"}</b></div>
+    </div>
+
+    <div class="rg-abas">
+      <button class="rg-aba${_rgAba === "viveiro" ? " ativa" : ""}" onclick="_rgTrocarAba('viveiro')">Viveiros</button>
+      <button class="rg-aba${_rgAba === "lab" ? " ativa" : ""}" onclick="_rgTrocarAba('lab')">Laboratórios</button>
+    </div>
+
+    <div class="rg-chips">
+      ${metricas.map(k => `<button class="rg-chip${_rgMetrica === k ? " ativo" : ""}" onclick="_rgTrocarMetrica('${k}')">${_RG_METRICAS[k].lbl}</button>`).join("")}
+    </div>
+
+    ${lider ? `
+    <div class="rg-destaque">
+      <span class="rg-destaque-ico"><svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg></span>
+      <span class="rg-destaque-txt">
+        <small>${_rgAba === "lab" ? "Laboratório" : "Viveiro"} com ${m.maior ? "melhor" : "melhor (menor)"} ${m.lbl.toLowerCase()}</small>
+        <b>${_esc(lider.nome)}</b>
+      </span>
+      <span class="rg-destaque-val">${m.fmt(lider[m.campo])}</span>
+    </div>` : `<p class="rg-vazio">Nenhum ciclo tem ${m.lbl.toLowerCase()} calculado ainda.</p>`}
+
+    <div class="rg-lista">
+      ${comValor.map((g, i) => `
+        <div class="rg-linha${i === 0 ? " rg-linha-top" : ""}">
+          <span class="rg-pos">${i + 1}º</span>
+          <span class="rg-nome">
+            <b>${_esc(g.nome)}</b>
+            <small>${linhaDet(g)}</small>
+          </span>
+          <span class="rg-val${_rgMetrica === "lucro" ? (g[m.campo] < 0 ? " rg-neg" : " rg-pos") : ""}">${m.fmt(g[m.campo])}</span>
+        </div>`).join("")}
+      ${semValor.map(g => `
+        <div class="rg-linha rg-linha-sem">
+          <span class="rg-pos">—</span>
+          <span class="rg-nome"><b>${_esc(g.nome)}</b><small>${g.n} ciclo${g.n > 1 ? "s" : ""} · sem ${m.lbl.toLowerCase()}</small></span>
+          <span class="rg-val">—</span>
+        </div>`).join("")}
+    </div>
+
+    ${_rgMetrica === "lucro" && comLucro.length < linhas.length
+      ? `<p class="rg-nota">${linhas.length - comLucro.length} ciclo${linhas.length - comLucro.length > 1 ? "s" : ""} sem preço de venda não ${linhas.length - comLucro.length > 1 ? "entram" : "entra"} no lucro.</p>`
+      : ""}
+
+    <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirRelatorios()">Voltar</button>`;
+}
+
 function mostrarHistoricoCiclos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -5194,13 +5399,13 @@ function mostrarHistoricoCiclos() {
       <div class="form-icone-circulo">
         <svg viewBox="0 0 24 24">${_SVG_CICLOS}</svg>
       </div>
-      <h2 class="form-titulo">Histórico de Ciclos</h2>
+      <h2 class="form-titulo">Relatório de ciclo</h2>
     </div>`;
 
   if (comCiclos.length === 0) {
     area.innerHTML = topo + `
       <p style="text-align:center;color:#9ca3af;padding:16px 0;font-size:14px">Nenhum ciclo encerrado ainda.</p>
-      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>`;
+      <button class="botao-voltar-form" onclick="abrirRelatorios()">Voltar</button>`;
     return;
   }
 
@@ -5215,7 +5420,7 @@ function mostrarHistoricoCiclos() {
         </span>
         <span class="hc-viv-seta">›</span>
       </button>`;
-  }).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+  }).join("") + `<button class="botao-voltar-form" style="margin-top:8px" onclick="abrirRelatorios()">Voltar</button>`;
 }
 
 function mostrarCiclosDoViveiro(viveiroIndex) {
