@@ -467,7 +467,11 @@ body.tema-escuro .custo-total-val { color: #34d399; }
 .rc2-pos { color: #16a34a !important; }
 .rc2-neg { color: #dc2626 !important; }
 .rc2-fin-nota { font-size: 11px; color: #9ca3af; margin: 8px 2px 0; line-height: 1.4; }
-.rc2-acoes { display: flex; gap: 10px; margin-top: 18px; }
+/* Botões do rodapé do relatório, um embaixo do outro: imprimir relatório,
+   imprimir histórico de ração e voltar. Lado a lado ficava apertado demais
+   com três ações (o texto quebrava no celular). */
+.rc2-acoes { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.rc2-acoes > button { width: 100%; margin: 0; }
 body.tema-escuro .rc2-report { background: #111827; }
 body.tema-escuro .rc2-head { border-bottom-color: #374151; }
 body.tema-escuro .rc2-viveiro,

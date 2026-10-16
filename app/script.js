@@ -3910,8 +3910,22 @@ function renderizarHistoricoRacao(index, elementoId, direto, pagina = 0, direcao
 function imprimirHistoricoRacao(index) {
   const viveiro = viveiros[index];
   if (!viveiro) return;
-  const racoes = [...(viveiro.racoes || [])].sort((a, b) => a.data.localeCompare(b.data));
+  _imprimirRacoesDe(viveiro.nome, viveiro.dataPovoamento, viveiro.racoes);
+}
+
+// Mesma impressão, só que do ciclo já encerrado que está aberto no relatório.
+// O viveiro já foi despescado e repovoado, então as rações do ciclo ficam
+// guardadas no próprio ciclo — não dá para ler de viveiros[index].
+function imprimirHistoricoRacaoCiclo() {
+  const c = _relImpCiclo;
+  if (!c) { _toastErro("Abra o relatório do ciclo para imprimir."); return; }
+  _imprimirRacoesDe(c.nomeViveiro, c.dataPovoamento, c.racoes, c.dataEncerramento);
+}
+
+function _imprimirRacoesDe(nomeViveiro, dataPovoamento, listaRacoes, dataEncerramento) {
+  const racoes = [...(listaRacoes || [])].sort((a, b) => a.data.localeCompare(b.data));
   if (!racoes.length) { _toastErro("Nenhuma ração lançada para imprimir."); return; }
+  const viveiro = { nome: nomeViveiro, dataPovoamento };
 
   // Mesmo agrupamento por dia usado na tela, para os números baterem.
   const porDia = [];
@@ -3965,7 +3979,7 @@ function imprimirHistoricoRacao(index) {
     @media print{body{padding:0}}
   </style></head><body>
   <h1>${titulo}</h1>
-  <p class="sub">${_esc(viveiro.nome || "Viveiro")} · emitido em ${hoje} · ${porDia.length} dia${porDia.length > 1 ? "s" : ""} com oferta</p>
+  <p class="sub">${_esc(viveiro.nome || "Viveiro")}${dataEncerramento ? ` · ciclo de ${formatarData(dataPovoamento)} a ${formatarData(dataEncerramento)}` : ""} · emitido em ${hoje} · ${porDia.length} dia${porDia.length > 1 ? "s" : ""} com oferta</p>
   <div class="resumo">
     <div class="rbox"><small>Média/dia</small><b>${formatarNumeroBR(media, 1)} kg</b></div>
     <div class="rbox"><small>Maior dia</small><b>${formatarNumeroBR(maiorDia, 1)} kg</b></div>
@@ -8281,11 +8295,16 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
       ${!temPreco ? `<p class="rc2-fin-nota">Informe o preço de venda nas despescas (ou no encerramento) para calcular receita e lucro.</p>` : ""}
 
       <div class="rc2-acoes">
-        <button class="botao-voltar-form" style="margin:0;flex:1;padding:11px 10px;font-size:14px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarCiclosDoViveiro(${index})`}">Voltar</button>
-        <button class="botao-salvar" style="margin:0;flex:1;padding:11px 10px;font-size:14px;gap:6px" onclick="gerarRelatorioImpressao()">
+        <button class="botao-salvar" style="padding:11px 10px;font-size:14px;gap:6px" onclick="gerarRelatorioImpressao()">
           <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Imprimir
+          Imprimir relatório
         </button>
+        ${(ciclo.racoes || []).length ? `
+        <button class="botao-voltar-form" style="padding:11px 10px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="imprimirHistoricoRacaoCiclo()">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir histórico de ração
+        </button>` : ""}
+        <button class="botao-voltar-form" style="padding:11px 10px;font-size:14px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarCiclosDoViveiro(${index})`}">Voltar</button>
       </div>
 
     </div>
