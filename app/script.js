@@ -5349,6 +5349,7 @@ function _rgCiclosEncerrados() {
         fca: Number(c.fca) > 0 ? Number(c.fca) : null,
         cresc: _crescSemanalCiclo(c),
         fim: String(c.dataEncerramento || c.dataPovoamento || "").substring(0, 10),
+        dias: _diasOcupado(c),
       });
     });
   });
@@ -5364,12 +5365,13 @@ function _rgAgrupar(linhas, chave) {
   linhas.forEach(l => {
     const nome = chave === "lab" ? l.lab : l.viveiro;
     let g = mapa.get(nome);
-    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, haProd: 0, prodComHa: 0, haLucro: 0, lucroComHa: 0, sobr: [], fca: [], cresc: [], serie: [] }; mapa.set(nome, g); }
+    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, haProd: 0, prodComHa: 0, haLucro: 0, lucroComHa: 0, haDias: 0, lucroComDias: 0, sobr: [], fca: [], cresc: [], serie: [] }; mapa.set(nome, g); }
     // Um ponto por ciclo, para a seta de tendência comparar o último com o
     // anterior. Os nomes dos campos são os mesmos do grupo de propósito.
     g.serie.push({
       fim: l.fim,
       lucroHa: (l.ha > 0 && l.lucro !== null) ? l.lucro / l.ha : null,
+      lucroHaDia: (l.ha > 0 && l.dias > 0 && l.lucro !== null) ? l.lucro / (l.ha * l.dias) : null,
       produtividade: l.ha > 0 ? l.producao / l.ha : null,
       crescMed: l.cresc, sobrMed: l.sobr, fcaMed: l.fca,
     });
@@ -5379,7 +5381,13 @@ function _rgAgrupar(linhas, chave) {
     if (l.ha > 0) {
       g.haProd += l.ha;
       g.prodComHa += l.producao;
-      if (l.lucro !== null) { g.haLucro += l.ha; g.lucroComHa += l.lucro; }
+      if (l.lucro !== null) {
+        g.haLucro += l.ha; g.lucroComHa += l.lucro;
+        // hectare-DIA: um ciclo de 1,5 ha que durou 100 dias ocupou 150 ha-dia.
+        // É esse o divisor justo do lucro por dia — senão o viveiro grande
+        // ganha de novo só por ser grande.
+        if (l.dias > 0) { g.haDias += l.ha * l.dias; g.lucroComDias += l.lucro; }
+      }
     }
     if (l.sobr !== null) g.sobr.push(l.sobr);
     if (l.fca !== null) g.fca.push(l.fca);
@@ -5390,6 +5398,7 @@ function _rgAgrupar(linhas, chave) {
     ...g,
     lucroTotal: g.nLucro > 0 ? g.lucro : null,
     lucroHa: g.haLucro > 0 ? g.lucroComHa / g.haLucro : null,
+    lucroHaDia: g.haDias > 0 ? g.lucroComDias / g.haDias : null,
     produtividade: g.haProd > 0 ? g.prodComHa / g.haProd : null,
     sobrMed: med(g.sobr), fcaMed: med(g.fca), crescMed: med(g.cresc),
   }));
@@ -5399,6 +5408,7 @@ function _rgAgrupar(linhas, chave) {
 // baixo. FCA é a única em que MENOR é melhor.
 const _RG_METRICAS = {
   lucro:    { lbl: "Lucro/ha",      campo: "lucroHa",       maior: true,  fmt: v => "R$ " + formatarNumeroBR(v, 2) + "/ha" },
+  lucrodia: { lbl: "Lucro/dia",     campo: "lucroHaDia",    maior: true,  fmt: v => "R$ " + formatarNumeroBR(v, 2) + "/ha·dia", dest: "lucro por dia" },
   producao: { lbl: "Produtividade", campo: "produtividade", maior: true,  fmt: v => formatarNumeroBR(v, 0) + " kg/ha" },
   cresc:    { lbl: "Crescimento",   campo: "crescMed",      maior: true,  fmt: v => formatarNumeroBR(v, 2) + " g/sem" },
   sobr:     { lbl: "Sobrevivência", campo: "sobrMed",       maior: true,  fmt: v => formatarNumeroBR(v, 1) + "%" },
@@ -5480,8 +5490,8 @@ async function mostrarRelatorioGeral() {
   comValor.sort((a, b) => m.maior ? b[m.campo] - a[m.campo] : a[m.campo] - b[m.campo]);
 
   const metricas = _rgAba === "lab"
-    ? ["lucro", "cresc", "sobr", "fca", "producao"]
-    : ["lucro", "producao", "sobr", "fca", "cresc"];
+    ? ["lucro", "lucrodia", "cresc", "sobr", "fca", "producao"]
+    : ["lucro", "lucrodia", "producao", "sobr", "fca", "cresc"];
 
   const lider = comValor[0];
   const linhaDet = (g) => {
@@ -5497,7 +5507,7 @@ async function mostrarRelatorioGeral() {
   const _semPreco = linhas.length - comLucro.length;
   const _pl = (n) => n > 1 ? "s" : "";
   let notaFora = "";
-  if (_rgMetrica === "lucro") {
+  if (_rgMetrica === "lucro" || _rgMetrica === "lucrodia") {
     const partes = [];
     if (_semPreco) partes.push(`${_semPreco} sem preço de venda`);
     if (_semArea) partes.push(`${_semArea} sem área cadastrada`);
@@ -5546,7 +5556,7 @@ async function mostrarRelatorioGeral() {
             <b>${_esc(g.nome)}</b>
             <small>${linhaDet(g)}</small>
           </span>
-          <span class="rg-val${_rgMetrica === "lucro" ? (g[m.campo] < 0 ? " rg-neg" : " rg-pos") : ""}">${m.fmt(g[m.campo])}</span>
+          <span class="rg-val${(_rgMetrica === "lucro" || _rgMetrica === "lucrodia") ? (g[m.campo] < 0 ? " rg-neg" : " rg-pos") : ""}">${m.fmt(g[m.campo])}</span>
           ${_rgSetaHtml(g, m)}
         </div>`).join("")}
       ${semValor.map(g => `
@@ -8718,10 +8728,7 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   // pode ter gravado "2,5" como texto — Number("2,5") dá NaN.
   const _haRel = _tamanhoHa(ciclo.tamanho) || 0;
 
-  const _iniRend = ciclo.dataPreparacao || ciclo.dataPovoamento;
-  const diasRendimento = (_iniRend && ciclo.dataEncerramento)
-    ? Math.max(1, calcularDiasCultivo(_iniRend, ciclo.dataEncerramento))
-    : (Number(ciclo.diasCultivo) || 0);
+  const diasRendimento = _diasOcupado(ciclo);
   const lucroDia = diasRendimento > 0 ? lucro / diasRendimento : 0;
   const rs = (v) => temPreco ? "R$ " + formatarNumeroBR(v, 2) : "—";
 
@@ -8819,6 +8826,17 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
 // chutar o peso da PL no povoamento.
 // Vive aqui, e não copiado dentro de cada tela, porque duas contas parecidas
 // para a mesma coisa viram dois números diferentes no primeiro ajuste.
+// Dias de viveiro OCUPADO — da preparação ao encerramento, não só do
+// povoamento. O tanque em preparação também é tempo em que ele não pôde render
+// outra coisa; ignorá-lo inflaria o rendimento de quem prepara devagar.
+// Fonte única do lucro por dia: o relatório do ciclo e o ranking usam esta.
+function _diasOcupado(ciclo) {
+  const ini = ciclo.dataPreparacao || ciclo.dataPovoamento;
+  return (ini && ciclo.dataEncerramento)
+    ? Math.max(1, calcularDiasCultivo(ini, ciclo.dataEncerramento))
+    : (Number(ciclo.diasCultivo) || 0);
+}
+
 function _crescSemanalSerie(s) {
   const n = ((s && s.peso) || []).length;
   if (n < 2) return null;
