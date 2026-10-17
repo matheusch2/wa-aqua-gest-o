@@ -5227,6 +5227,46 @@ function abrirRelatorios() {
 let _rgAba = "viveiro";      // "viveiro" | "lab"
 let _rgMetrica = "lucro";    // lucro | producao | cresc | sobr | fca
 
+// As biometrias e as despescas de um ciclo encerrado NÃO vêm na abertura do
+// app (ver o comentário da consulta de ciclos: economiza ~1 MB em quem tem 60
+// ciclos). Sem elas, o ranking de crescimento sai vazio e o de lucro ignora a
+// receita das despescas parciais. Então o relatório geral busca o que falta,
+// de uma vez só, antes de calcular. Uma vez por ciclo: depois fica na memória.
+async function _rgCarregarHistoricos() {
+  const pendentes = [];
+  viveiros.forEach(v => ((v && v.ciclosFinalizados) || []).forEach(c => {
+    if (c && c.id && !c.historicoCarregado && !c.rgCarregado) pendentes.push(c);
+  }));
+  if (!pendentes.length) return true;
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+
+  // Só as duas colunas que o ranking usa. racoes_json é a mais pesada (uma
+  // linha por dia de cultivo) e aqui não serve para nada.
+  const { data, error } = await supabaseClient
+    .from("ciclos")
+    .select("id, biometrias_json, despescas_json")
+    .in("id", pendentes.map(c => c.id))
+    .eq("user_id", usuario.id);
+  if (error) { console.log("histórico dos ciclos:", error); return false; }
+
+  const porId = new Map((data || []).map(d => [d.id, d]));
+  pendentes.forEach(c => {
+    const d = porId.get(c.id) || {}; // ciclo antigo, sem esses campos
+    c.biometrias = Array.isArray(d.biometrias_json)
+      ? d.biometrias_json.map(b => ({ data: b.data, gramatura: Number(b.gramatura) })) : [];
+    c.despescas = Array.isArray(d.despescas_json)
+      ? d.despescas_json.map(x => ({
+          data: x.data, tipo: x.tipo || "Parcial",
+          quantidadeKg: Number(x.quantidadeKg), pesoMedio: Number(x.pesoMedio),
+          precoKg: x.precoKg != null ? Number(x.precoKg) : null,
+        })) : [];
+    c.rgCarregado = true;
+  });
+  return true;
+}
+
 function _rgCiclosEncerrados() {
   const linhas = [];
   viveiros.forEach(v => {
@@ -5304,9 +5344,20 @@ const _RG_METRICAS = {
 function _rgTrocarAba(aba) { _rgAba = aba; mostrarRelatorioGeral(); }
 function _rgTrocarMetrica(m) { _rgMetrica = m; mostrarRelatorioGeral(); }
 
-function mostrarRelatorioGeral() {
+async function mostrarRelatorioGeral() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
+
+  // Busca o que falta antes de desenhar: senão o ranking de crescimento sai
+  // vazio e o de lucro ignora as despescas parciais. Depois da primeira vez é
+  // instantâneo, então trocar de aba/métrica não pisca.
+  const temPendente = viveiros.some(v => ((v && v.ciclosFinalizados) || [])
+    .some(c => c && c.id && !c.historicoCarregado && !c.rgCarregado));
+  if (temPendente) {
+    if (area) area.innerHTML = `<p class="rel-carregando">Carregando os ciclos…</p>`;
+    await _rgCarregarHistoricos();
+  }
+
   const linhas = _rgCiclosEncerrados();
 
   const topo = `
