@@ -681,47 +681,102 @@ function setTema(modo) {
 }
 
 // ─── Minha conta ───────────────────────────────────────────────────────────
+// A tela mostrava "Plano Premium · Ativo" escrito no código e um vencimento
+// inventado (cadastro + 1 ano), ignorando a assinatura de verdade. Agora lê
+// tudo de `assinatura`, a mesma fonte do aviso de vencimento e da trava de
+// somente-leitura — assim a tela nunca diz uma coisa e o app faz outra.
+function _contaSituacao(a, diasParaVencer) {
+  if (!a || !a.plano || a.plano === "gratis") return { txt: "Ativo", cls: "ok" };
+  if (a.status === "cancelado") return { txt: "Cancelado", cls: "ruim" };
+  if (diasParaVencer !== null && diasParaVencer < 0) {
+    const restam = _DIAS_CARENCIA + diasParaVencer;
+    return restam > 0
+      ? { txt: `Vencido · ${restam} dia${restam > 1 ? "s" : ""}`, cls: "aviso" }
+      : { txt: "Vencido", cls: "ruim" };
+  }
+  if (a.status === "pendente") return { txt: "Pagamento pendente", cls: "aviso" };
+  if (diasParaVencer !== null && diasParaVencer <= 3) {
+    return { txt: diasParaVencer === 0 ? "Vence hoje" : `Vence em ${diasParaVencer} dias`, cls: "aviso" };
+  }
+  return { txt: "Ativo", cls: "ok" };
+}
+
 async function abrirMinhaConta() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
   const { data: { user } } = await supabaseClient.auth.getUser();
   const cadastroStr = _fmtDataISO(user?.created_at);
-  let vencStr = "—", proxStr = "—";
-  if (user?.created_at) {
-    const venc = new Date(user.created_at);
-    if (!isNaN(venc.getTime())) {
-      venc.setFullYear(venc.getFullYear() + 1);
-      vencStr = _fmtDataISO(_dataLocalISO(venc));
-      proxStr = vencStr;
-    }
-  }
+
+  const a = assinatura || { plano: "gratis", status: "ativo" };
+  const ehGratis = !a.plano || a.plano === "gratis";
+  const planoNome = ehGratis ? "1 viveiro" : _planoLabel(a.plano);
+  const venc = _parseVenc(a.proximo_vencimento);
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const dias = venc ? Math.round((venc - hoje) / 86400000) : null;
+  const sit = _contaSituacao(a, dias);
+
+  const plano = _PLANOS_APP.find(p => p.key === a.plano);
+  const valor = plano ? (a.ciclo === "anual" ? plano.anual : plano.mensal) : null;
+  const vencStr = venc ? _fmtDataISO(_dataLocalISO(venc)) : "—";
+
   area.innerHTML = `
     <h3 class="titulo-secao">Minha conta</h3>
     <div class="cfg-wrap">
-      <div class="conta-plano">
+      <div class="conta-plano conta-plano-${sit.cls}">
         <div class="conta-plano-ico">${_ICO.conta}</div>
-        <span class="conta-plano-nome">Plano Premium</span>
-        <span class="conta-plano-badge">Ativo</span>
+        <div class="conta-plano-txt">
+          <span class="conta-plano-nome">${_esc(planoNome)}</span>
+          <small>${ehGratis ? "Plano gratuito" : (a.ciclo === "anual" ? "Cobrança anual" : "Cobrança mensal")}${valor ? " · R$ " + formatarNumeroBR(valor, 0) : ""}</small>
+        </div>
+        <span class="conta-plano-badge conta-badge-${sit.cls}">${sit.txt}</span>
       </div>
+
       <div class="conta-info">
         <div class="conta-info-linha"><span>Data de cadastro</span><strong>${cadastroStr}</strong></div>
-        <div class="conta-info-linha"><span>Vencimento da assinatura</span><strong>${vencStr}</strong></div>
-        <div class="conta-info-linha"><span>Próxima cobrança</span><strong>${proxStr}</strong></div>
+        <div class="conta-info-linha"><span>Vencimento</span><strong>${vencStr}</strong></div>
+        ${dias !== null && dias >= 0
+          ? `<div class="conta-info-linha"><span>Faltam</span><strong>${dias} dia${dias === 1 ? "" : "s"}</strong></div>`
+          : (dias !== null
+            ? `<div class="conta-info-linha"><span>Vencido há</span><strong class="conta-val-ruim">${Math.abs(dias)} dia${Math.abs(dias) === 1 ? "" : "s"}</strong></div>`
+            : "")}
+        <div class="conta-info-linha"><span>Viveiros liberados</span><strong>${_planoLimiteEfetivo()}</strong></div>
       </div>
-      <div class="cfg-lista">
-        ${_cfgItem("renovar", "Renovar assinatura", "Estender seu plano", "renovarAssinatura()")}
-      </div>
+
+      <a class="conta-wpp" href="${_linkWhatsAppRenovar(planoNome, a, vencStr)}" target="_blank" rel="noopener">
+        <span class="conta-wpp-ico">${_ICO.whatsapp}</span>
+        <span class="conta-wpp-txt">
+          <b>Renovar assinatura</b>
+          <small>Falar comigo no WhatsApp</small>
+        </span>
+        <span class="conta-wpp-seta">›</span>
+      </a>
+
       <div class="conta-aviso">
         <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-        <span>Sua assinatura garante acesso a todos os recursos do WA Aqua Gestão.</span>
+        <span>Renovação pelo WhatsApp com pagamento via <b>Pix</b> — o plano é liberado assim que o pagamento for confirmado.</span>
       </div>
+
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">Voltar</button>
     </div>
   `;
 }
 
+// Mensagem já pronta: eu recebo quem é, qual plano tem e quando vence, sem
+// precisar perguntar nada. O nome do usuário vem do cadastro de contato.
+function _linkWhatsAppRenovar(planoNome, a, vencStr) {
+  const quem = (contato && contato.nome) ? ` Sou ${contato.nome}.` : "";
+  const ciclo = a.ciclo === "anual" ? "anual" : "mensal";
+  const venc = vencStr && vencStr !== "—" ? ` Vence em ${vencStr}.` : "";
+  const msg = `Olá! Quero renovar minha assinatura do WA Aqua Gestão. 🦐${quem} Meu plano é *${planoNome}* (${ciclo}).${venc}`;
+  return `https://wa.me/${_WHATSAPP_COMERCIAL}?text=${encodeURIComponent(msg)}`;
+}
+
 function renovarAssinatura() {
-  _toastSucesso("Em breve você poderá renovar sua assinatura por aqui.");
+  window.open(_linkWhatsAppRenovar(
+    _planoLabel(assinatura?.plano),
+    assinatura || {},
+    assinatura?.proximo_vencimento ? _fmtDataISO(assinatura.proximo_vencimento) : "—"
+  ), "_blank", "noopener");
 }
 
 // ─── Perguntas frequentes (FAQ) ────────────────────────────────────────────
