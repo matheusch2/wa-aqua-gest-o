@@ -9106,7 +9106,7 @@ function gerarRelatorioImpressao() {
         <thead><tr><th>Data</th><th>Dia</th><th>Peso (g)</th><th>Ganho/dia</th></tr></thead>
         <tbody>${_bioLinhas || `<tr><td colspan="4" style="text-align:center;color:#999">Sem biometrias registradas.</td></tr>`}</tbody>
       </table>
-      ${_cresSemanal != null ? `<div class="bio-cresc"><span>Crescimento médio semanal</span><b>${fmt(_cresSemanal, 1)} g/sem</b></div>` : ""}
+      ${_cresSemanal != null ? `<div class="bio-cresc"><span>Crescimento médio semanal</span><b>${fmt(_cresSemanal, 2)} g/sem</b></div>` : ""}
     </div>
     <div>
       <h2>Evolução do peso médio (g)</h2>
