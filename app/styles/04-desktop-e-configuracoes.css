@@ -689,21 +689,75 @@
     stroke-linejoin: round;
 }
 
-.conta-plano-nome {
+.conta-plano-txt {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.conta-plano-nome {
     font-size: 16px;
     font-weight: 800;
     color: #92400e;
+    line-height: 1.25;
+}
+
+.conta-plano-txt small {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #b45309;
 }
 
 .conta-plano-badge {
+    flex-shrink: 0;
     background: #16a34a;
     color: white;
     font-size: 11px;
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 99px;
+    white-space: nowrap;
 }
+
+/* A cor da tela segue a situação real da assinatura: âmbar é o normal (o
+   plano), laranja avisa que está perto de vencer, vermelho que venceu. Assim
+   a pessoa entende o estado antes de ler qualquer palavra. */
+.conta-plano-aviso { background: linear-gradient(135deg, #fff7ed, #ffedd5); border-color: #fdba74; }
+.conta-plano-ruim  { background: linear-gradient(135deg, #fef2f2, #fee2e2); border-color: #fecaca; }
+.conta-plano-ruim .conta-plano-nome { color: #991b1b; }
+.conta-plano-ruim .conta-plano-txt small { color: #b91c1c; }
+.conta-plano-ruim .conta-plano-ico svg { stroke: #dc2626; }
+
+.conta-badge-aviso { background: #d97706; }
+.conta-badge-ruim  { background: #dc2626; }
+.conta-val-ruim { color: #dc2626 !important; }
+
+/* Renovar pelo WhatsApp: é a ação da tela, então tem peso de botão e a cor
+   do WhatsApp, em vez de ficar escondida numa lista de itens iguais. */
+.conta-wpp {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #25d366;
+    border-radius: 14px;
+    padding: 13px 15px;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(37,211,102,.28);
+}
+.conta-wpp:active { filter: brightness(.95); }
+.conta-wpp-ico {
+    width: 34px; height: 34px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.22);
+    border-radius: 50%;
+}
+.conta-wpp-ico svg { width: 19px; height: 19px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.conta-wpp-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.conta-wpp-txt b { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.25; }
+.conta-wpp-txt small { font-size: 11.5px; color: rgba(255,255,255,.88); }
+.conta-wpp-seta { flex-shrink: 0; font-size: 22px; color: rgba(255,255,255,.8); line-height: 1; }
 
 .conta-info {
     background: white;
