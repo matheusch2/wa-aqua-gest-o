@@ -5293,6 +5293,7 @@ function _rgCiclosEncerrados() {
         sobr: Number(c.sobrevivencia) > 0 ? Number(c.sobrevivencia) : null,
         fca: Number(c.fca) > 0 ? Number(c.fca) : null,
         cresc: _crescSemanalCiclo(c),
+        fim: String(c.dataEncerramento || c.dataPovoamento || "").substring(0, 10),
       });
     });
   });
@@ -5308,7 +5309,15 @@ function _rgAgrupar(linhas, chave) {
   linhas.forEach(l => {
     const nome = chave === "lab" ? l.lab : l.viveiro;
     let g = mapa.get(nome);
-    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, haProd: 0, prodComHa: 0, haLucro: 0, lucroComHa: 0, sobr: [], fca: [], cresc: [] }; mapa.set(nome, g); }
+    if (!g) { g = { nome, n: 0, producao: 0, lucro: 0, nLucro: 0, haProd: 0, prodComHa: 0, haLucro: 0, lucroComHa: 0, sobr: [], fca: [], cresc: [], serie: [] }; mapa.set(nome, g); }
+    // Um ponto por ciclo, para a seta de tendência comparar o último com o
+    // anterior. Os nomes dos campos são os mesmos do grupo de propósito.
+    g.serie.push({
+      fim: l.fim,
+      lucroHa: (l.ha > 0 && l.lucro !== null) ? l.lucro / l.ha : null,
+      produtividade: l.ha > 0 ? l.producao / l.ha : null,
+      crescMed: l.cresc, sobrMed: l.sobr, fcaMed: l.fca,
+    });
     g.n++;
     g.producao += l.producao;
     if (l.lucro !== null) { g.lucro += l.lucro; g.nLucro++; }
@@ -5340,6 +5349,36 @@ const _RG_METRICAS = {
   sobr:     { lbl: "Sobrevivência", campo: "sobrMed",       maior: true,  fmt: v => formatarNumeroBR(v, 1) + "%" },
   fca:      { lbl: "FCA",           campo: "fcaMed",        maior: false, fmt: v => formatarNumeroBR(v, 2), dest: "FCA" },
 };
+
+// Seta de tendência: o ÚLTIMO ciclo do grupo contra o anterior, na métrica que
+// está na tela. Sobe verde quando melhorou, desce vermelha quando piorou — e em
+// FCA é ao contrário, porque menor é melhor. Com um ciclo só não há seta: não
+// existe "melhorou" sem algo anterior para comparar.
+function _rgTendencia(g, m) {
+  const vals = [...(g.serie || [])]
+    .sort((a, b) => String(a.fim).localeCompare(String(b.fim)))
+    .map(x => x[m.campo])
+    .filter(v => v !== null && v !== undefined && isFinite(v));
+  if (vals.length < 2) return null;
+
+  const ult = vals[vals.length - 1], ant = vals[vals.length - 2];
+  const delta = ult - ant;
+  if (!delta) return null;
+  return {
+    melhorou: m.maior ? delta > 0 : delta < 0,
+    pct: ant !== 0 ? Math.abs(delta / ant) * 100 : null,
+  };
+}
+
+function _rgSetaHtml(g, m) {
+  const t = _rgTendencia(g, m);
+  if (!t) return "";
+  const seta = t.melhorou
+    ? `<svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`
+    : `<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
+  const pct = t.pct !== null && t.pct < 1000 ? formatarNumeroBR(t.pct, 0) + "%" : "";
+  return `<span class="rg-tend ${t.melhorou ? "sobe" : "desce"}" title="comparado ao ciclo anterior">${seta}${pct}</span>`;
+}
 
 function _rgTrocarAba(aba) { _rgAba = aba; mostrarRelatorioGeral(); }
 function _rgTrocarMetrica(m) { _rgMetrica = m; mostrarRelatorioGeral(); }
@@ -5395,7 +5434,7 @@ async function mostrarRelatorioGeral() {
     if (_rgMetrica !== "producao") p.push(formatarNumeroBR(g.producao, 0) + " kg");
     if (_rgMetrica !== "sobr" && g.sobrMed !== null) p.push("sobrev. " + formatarNumeroBR(g.sobrMed, 1) + "%");
     if (_rgMetrica !== "fca" && g.fcaMed !== null) p.push("FCA " + formatarNumeroBR(g.fcaMed, 2));
-    return p.slice(0, 3).join(" · ");
+    return p.slice(0, 2).join(" · ");
   };
 
   // Por que um ciclo pode ter ficado fora do ranking atual.
@@ -5435,10 +5474,13 @@ async function mostrarRelatorioGeral() {
     <div class="rg-destaque">
       <span class="rg-destaque-ico"><svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg></span>
       <span class="rg-destaque-txt">
-        <small>${_rgAba === "lab" ? "Laboratório" : "Viveiro"} com ${m.maior ? "melhor" : "menor"} ${m.dest || m.lbl.toLowerCase()}</small>
+        <small>${m.maior ? "Melhor" : "Menor"} ${m.dest || m.lbl.toLowerCase()}</small>
         <b>${_esc(lider.nome)}</b>
       </span>
-      <span class="rg-destaque-val">${m.fmt(lider[m.campo])}</span>
+      <span class="rg-destaque-dir">
+        <span class="rg-destaque-val">${m.fmt(lider[m.campo])}</span>
+        ${_rgSetaHtml(lider, m)}
+      </span>
     </div>` : `<p class="rg-vazio">Nenhum ciclo tem ${m.lbl.toLowerCase()} calculado ainda.</p>`}
 
     <div class="rg-lista">
@@ -5450,6 +5492,7 @@ async function mostrarRelatorioGeral() {
             <small>${linhaDet(g)}</small>
           </span>
           <span class="rg-val${_rgMetrica === "lucro" ? (g[m.campo] < 0 ? " rg-neg" : " rg-pos") : ""}">${m.fmt(g[m.campo])}</span>
+          ${_rgSetaHtml(g, m)}
         </div>`).join("")}
       ${semValor.map(g => `
         <div class="rg-linha rg-linha-sem">
