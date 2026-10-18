@@ -5570,6 +5570,27 @@ async function mostrarRelatorioGeral() {
     ${notaFora ? `<p class="rg-nota">${notaFora}</p>` : ""}
 
     <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirRelatorios()">Voltar</button>`;
+
+  _rgCentralizarChip();
+}
+
+// A tela é redesenhada inteira a cada toque, e com isso a rolagem horizontal
+// dos chips volta para o começo: quem escolhe "Produtividade", lá na ponta
+// direita, fica vendo "Lucro/ha · Lucro/dia · ..." e não enxerga o que
+// selecionou. Aqui a barra é reposicionada no chip ativo.
+// Mexe só no scroll da própria barra (nada de scrollIntoView, que arrastaria
+// a página inteira junto) e sem animação, para não aparecer o pulo.
+function _rgCentralizarChip() {
+  const barra = document.querySelector(".rg-chips");
+  const ativo = barra && barra.querySelector(".rg-chip.ativo");
+  if (!barra || !ativo) return;
+  // Pelas posições de tela, e não por offsetLeft: offsetLeft é medido a partir
+  // do ancestral POSICIONADO, que aqui não é a barra — a conta saía deslocada
+  // e o chip continuava fora da vista.
+  const rb = barra.getBoundingClientRect();
+  const ra = ativo.getBoundingClientRect();
+  const alvo = barra.scrollLeft + (ra.left - rb.left) - (rb.width - ra.width) / 2;
+  barra.scrollLeft = Math.max(0, alvo);
 }
 
 function mostrarHistoricoCiclos() {
