@@ -1775,6 +1775,7 @@ function abrirViveiro(index) {
   let sobrevivenciaEstimada = "--";
   let sobrevInconsistente = false;
   let fciEstimado = "--";
+  let _fcaDataBio = null;   // data da biometria em que o FCA está travado
   let biomassaAtualStr = "--";
   let biomassaDespescaStr = "--";
   let custoKgProduzidoStr = "--";
@@ -1796,7 +1797,37 @@ function abrirViveiro(index) {
       // FCA = ração total ÷ biomassa PRODUZIDA (a que ficou + a que já foi despescada).
       // Sem somar a despesca, o FCA fica artificialmente alto após uma despesca parcial.
       const biomassaProduzida = res.biomassa + despKgTotal;
-      if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / biomassaProduzida, 2);
+
+      // ── FCA TRAVADO NA ÚLTIMA BIOMETRIA ──────────────────────────────────
+      // Entre uma biometria e a próxima, a ração do dia a dia ia para o
+      // numerador e a biomassa ficava parada no peso da última pesagem. O FCA
+      // subia sozinho a cada dia sem nada ter piorado, e "melhorava" de repente
+      // quando chegava a biometria nova — ruído, não sinal.
+      // Agora os dois lados da conta são da MESMA data: ração acumulada até o
+      // dia da biometria ÷ biomassa daquele dia. O número só muda quando entra
+      // uma biometria nova, que é quando se soube algo novo de verdade.
+      const _fcaTravado = (() => {
+        const dBio = biosSorted.length ? String(biosSorted[biosSorted.length - 1].data).substring(0, 10) : null;
+        if (!dBio) return null;
+        const racAte = racoesSorted.filter(r => String(r.data).substring(0, 10) <= dBio);
+        const racTotalAte = racAte.reduce((s, r) => s + (Number(r.racao) || 0), 0);
+        if (!(racTotalAte > 0)) return null;
+        // Biomassa daquele dia: pelo consumo do próprio dia da biometria, com o
+        // peso medido nela. Mesma função do painel, só que com a foto da época.
+        const resBio = _calcularBiomassa(populacaoNum, _consumoUltimoDia(racAte).total, pesoUltimaBio);
+        if (!resBio || !(resBio.biomassa > 0)) return null;
+        const despAte = _despescas
+          .filter(d => String(d.data).substring(0, 10) <= dBio)
+          .reduce((s, d) => s + (Number(d.quantidadeKg) || 0), 0);
+        const prodAte = resBio.biomassa + despAte;
+        return prodAte > 0 ? racTotalAte / prodAte : null;
+      })();
+
+      if (_fcaTravado !== null) {
+        fciEstimado = formatarNumeroBR(_fcaTravado, 2);
+        _fcaDataBio = String(biosSorted[biosSorted.length - 1].data).substring(0, 10);
+      }
+      else if (totalRacao > 0) fciEstimado = formatarNumeroBR(totalRacao / biomassaProduzida, 2);
       biomassaAtualStr = formatarNumeroBR(biomassaAtual, 0) + " kg";
       // Custo por kg PRODUZIDO usa a mesma base do FCA: biomassa atual + despescada.
       if (totalCustos > 0) custoKgProduzidoStr = "R$ " + formatarNumeroBR(totalCustos / biomassaProduzida, 2);
@@ -1903,6 +1934,7 @@ function abrirViveiro(index) {
           </div>
           <small>FCA estimado</small>
           <strong>${fciEstimado}</strong>
+          ${_fcaDataBio ? `<span class="info-box-nota">em ${formatarData(_fcaDataBio)}</span>` : ""}
         </div>
 
         <div class="info-box">

@@ -522,6 +522,19 @@ body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
     font-weight: 800;
 }
 
+/* Data da biometria em que o FCA está travado: o número é daquele dia, não de
+   hoje, e isso precisa estar escrito no próprio card. */
+.info-box-nota {
+    display: block;
+    margin-top: 1px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: none;
+    letter-spacing: 0;
+}
+body.tema-escuro .info-box-nota { color: #6b7280; }
+
 /* Card sem dado ainda (ex.: biometria não lançada): valor e ícone apagados,
    em vez de um "--" preto que puxava a atenção como se fosse importante. */
 .info-box-vazio { background: #fafbfb; }
