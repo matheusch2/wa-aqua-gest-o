@@ -6237,6 +6237,68 @@ function _simVendaCustosFuturos() {
 
 let _simSobrAberto = false;
 
+// ─── SIMULAÇÃO FUTURA (até a despesca) ─────────────────────────────────────
+// A simulação normal responde "e se eu vender hoje". Esta responde "e se eu
+// levar até X gramas": projeta o peso pelo ganho semanal, pergunta quanta
+// ração vai em cada semana que falta e devolve biomassa, FCA e lucro por faixa
+// de sobrevivência.
+let _simFutAberto = false;
+let _simFutRacao = [];        // kg planejados por semana (índice = semana)
+
+// Ganho semanal medido no ciclo EM ANDAMENTO: entre a 1ª e a última biometria.
+// Mesma régua do relatório e do ranking — não é peso ÷ dias de cultivo.
+function _simFutCrescMedido(viveiro) {
+  const bios = [...(viveiro.biometrias || [])]
+    .filter(b => Number(b.gramatura) > 0 && b.data)
+    .sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  if (bios.length < 2) return null;
+  const pri = bios[0], ult = bios[bios.length - 1];
+  const dias = Math.round((_parseDataLocal(ult.data) - _parseDataLocal(pri.data)) / 86400000);
+  if (!(dias > 0)) return null;
+  const gSem = ((Number(ult.gramatura) - Number(pri.gramatura)) / dias) * 7;
+  return gSem > 0 ? gSem : null;
+}
+
+// Consumo médio dos últimos 7 dias lançados — chute inicial de quanta ração
+// vai em cada semana que falta. A pessoa troca à vontade.
+function _simFutRacaoSemanaAtual(viveiro) {
+  const rs = [...(viveiro.racoes || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  if (!rs.length) return 0;
+  const fim = _parseDataLocal(rs[rs.length - 1].data);
+  const ini = new Date(fim.getTime() - 6 * 86400000);
+  return rs.filter(r => {
+    const d = _parseDataLocal(r.data);
+    return d >= ini && d <= fim;
+  }).reduce((s, r) => s + (Number(r.racao) || 0), 0);
+}
+
+// Projeção do peso: parte da ÚLTIMA biometria, cresce no ritmo informado e
+// chega até hoje — por isso os dias já passados desde a pesagem não são
+// cobrados de novo. Daí calcula quanto falta até o peso-alvo.
+function _simFutProjecao(viveiro, alvoG, gSem) {
+  const bios = [...(viveiro.biometrias || [])]
+    .filter(b => Number(b.gramatura) > 0 && b.data)
+    .sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  if (!bios.length || !(gSem > 0) || !(alvoG > 0)) return null;
+
+  const ultBio = bios[bios.length - 1];
+  const gDia = gSem / 7;
+  const hoje = _parseDataLocal(_hojeLocal());
+  const diasDesdeBio = Math.max(0, Math.round((hoje - _parseDataLocal(ultBio.data)) / 86400000));
+  const pesoHoje = Number(ultBio.gramatura) + gDia * diasDesdeBio;
+
+  if (pesoHoje >= alvoG) {
+    return { pesoHoje, diasFalta: 0, semanas: 0, dataAlvo: _hojeLocal(), diasDesdeBio, pesoUltBio: Number(ultBio.gramatura), dataUltBio: ultBio.data };
+  }
+  const diasFalta = Math.ceil((alvoG - pesoHoje) / gDia);
+  const dAlvo = new Date(hoje.getTime() + diasFalta * 86400000);
+  const dataAlvo = `${dAlvo.getFullYear()}-${String(dAlvo.getMonth() + 1).padStart(2, "0")}-${String(dAlvo.getDate()).padStart(2, "0")}`;
+  return {
+    pesoHoje, diasFalta, semanas: Math.ceil(diasFalta / 7), dataAlvo,
+    diasDesdeBio, pesoUltBio: Number(ultBio.gramatura), dataUltBio: ultBio.data,
+  };
+}
+
 function abrirSimularVenda() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -6443,10 +6505,212 @@ function _simVendaCalcular() {
       Simular por sobrevivência
       <span class="sim-sobr-chev">${_simSobrAberto ? "⌃" : "⌄"}</span>
     </button>
-    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos) : ""}`;
+    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos) : ""}
+
+    <button type="button" class="sim-sobr-btn${_simFutAberto ? " aberto" : ""}" onclick="_simFutToggle()">
+      <svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+      Simulação futura (até a despesca)
+      <span class="sim-sobr-chev">${_simFutAberto ? "⌃" : "⌄"}</span>
+    </button>
+    ${_simFutAberto ? _simFutPainel(viveiro, dados) : ""}`;
+
+  // O resultado só pode ser montado depois que os campos existem no DOM —
+  // ele lê o peso-alvo, o tipo de ração e os extras de lá.
+  if (_simFutAberto) _simFutCalcular();
 }
 
 function _simSobrToggle() { _simSobrAberto = !_simSobrAberto; _simVendaCalcular(); }
+
+function _simFutToggle() {
+  _simFutAberto = !_simFutAberto;
+  if (_simFutAberto) _simFutRacao = [];   // recomeça o planejamento a cada abertura
+  _simVendaCalcular();
+}
+
+// Guarda o que foi digitado numa semana SEM redesenhar os campos — redesenhar
+// a cada tecla tiraria o foco e o teclado do celular fecharia sozinho.
+function _simFutSetSemana(i, valor) {
+  const n = parseDecimalBR(valor);
+  _simFutRacao[i] = isNaN(n) || n < 0 ? 0 : n;
+  _simFutCalcular();
+}
+
+// Peso-alvo e crescimento mudam o NÚMERO de semanas, então aí o painel inteiro
+// é redesenhado (onchange, não oninput: só ao sair do campo).
+function _simFutRedesenhar() { _simVendaCalcular(); }
+
+function _simFutCalcular() {
+  const alvoRes = document.getElementById("simFut-resultado");
+  if (alvoRes) alvoRes.innerHTML = _simFutResultadoHtml();
+}
+
+// Resultado da projeção: uma linha por faixa de sobrevivência, com a biomassa
+// no peso-alvo, o FCA estimado do ciclo inteiro e o lucro.
+// Só esta parte é redesenhada quando se digita — os campos de entrada ficam
+// de pé, senão o foco se perderia a cada tecla.
+function _simFutResultadoHtml() {
+  const sel = document.getElementById("simVenda-viveiro");
+  if (!sel || sel.value === "") return "";
+  const viveiro = viveiros[sel.value];
+  const dados = _simularDadosViveiro(viveiro);
+  if (!dados) return "";
+
+  const pop = dados.populacaoNum || 0;
+  if (!(pop > 0)) return `<div class="sim-aviso" style="margin-top:12px">Informe o <b>total povoado</b> do viveiro para projetar a biomassa.</div>`;
+
+  const alvo = parseDecimalBR(document.getElementById("simFut-alvo")?.value) || 15;
+  const preco = parseDecimalBR(document.getElementById("simVenda-preco")?.value) || 0;
+  if (!(preco > 0)) return `<div class="sim-aviso" style="margin-top:12px">Informe o <b>preço por kg</b> lá em cima para ver o lucro de cada cenário.</div>`;
+
+  // Ração que ainda vai ser dada e o que ela custa.
+  const racaoFutura = _simFutRacao.reduce((s, v) => s + (Number(v) || 0), 0);
+  // Se o select ainda não respondeu (primeiro desenho), cai no último tipo
+  // usado no viveiro e, por fim, no primeiro cadastrado — nunca em custo zero
+  // sem avisar, que faria o lucro parecer bem maior do que é.
+  const tipoId = document.getElementById("simFut-tipo")?.value || "";
+  const ultUsado = [...(viveiro.racoes || [])].reverse().find(r => r.tipoRacaoId);
+  const tipo = tiposRacao.find(t => t.id === tipoId)
+    || tiposRacao.find(t => ultUsado && t.id === ultUsado.tipoRacaoId)
+    || tiposRacao[0];
+  const custoKgRacao = tipo ? Number(tipo.custoPorKg) || 0 : 0;
+  const custoRacaoFutura = racaoFutura * custoKgRacao;
+
+  const extra = parseMoedaBR(document.getElementById("simFut-extra")?.value || "");
+  const custoExtra = isNaN(extra) || extra < 0 ? 0 : extra;
+  const custoTotal = dados.custoTotal + custoRacaoFutura + custoExtra;
+
+  // Ração já consumida no ciclo — base do FCA junto com a futura.
+  const racaoJa = (viveiro.racoes || []).reduce((s, r) => s + (Number(r.racao) || 0), 0);
+  const racaoTotal = racaoJa + racaoFutura;
+
+  // Receita das despescas já feitas, pelo preço real de cada uma.
+  const receitaDesp = (viveiro.despescas || []).reduce((s, d) => {
+    const kg = Number(d.quantidadeKg) || 0;
+    const pk = Number(d.precoKg) || 0;
+    return s + kg * (pk > 0 ? pk : preco);
+  }, 0);
+
+  const de = Number(document.getElementById("simSobr-de")?.value) || 50;
+  const ate = Number(document.getElementById("simSobr-ate")?.value) || 90;
+  const ini = Math.min(de, ate), fim = Math.max(de, ate);
+
+  const linhas = [];
+  for (let p = ini; p <= fim; p += 5) {
+    const emPe = pop * (p / 100) - (dados.despQtd || 0);
+    if (emPe <= 0) {
+      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro">abaixo do já despescado</span></div>`);
+      continue;
+    }
+    const kg = emPe * alvo / 1000;
+    const produzido = kg + (dados.despKgTotal || 0);
+    const fca = produzido > 0 ? racaoTotal / produzido : 0;
+    const lucro = kg * preco + receitaDesp - custoTotal;
+    linhas.push(`
+      <div class="sim-sobr-linha">
+        <span class="ss-pct">${p}%</span>
+        <span class="ss-kg">${formatarNumeroBR(kg, 0)} kg</span>
+        <span class="ss-fca ${fca > 0 && fca <= 1.5 ? "ss-pos" : fca <= 2 ? "" : "ss-neg"}">${fca > 0 ? formatarNumeroBR(fca, 2) : "—"}</span>
+        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">R$ ${formatarNumeroBR(lucro, 2)}</span>
+      </div>`);
+  }
+
+  return `
+    <div class="simfut-sec">Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g</div>
+    <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro</span></div>
+    ${linhas.join("")}
+    <div class="sim-sobr-custo"><span>Custo já lançado</span><b>R$ ${formatarNumeroBR(dados.custoTotal, 2)}</b></div>
+    <div class="sim-sobr-custo"><span>Ração futura (${formatarNumeroBR(racaoFutura, 0)} kg${custoKgRacao > 0 ? " × R$ " + formatarNumeroBR(custoKgRacao, 2) : ""})</span><b>+ R$ ${formatarNumeroBR(custoRacaoFutura, 2)}</b></div>
+    ${racaoFutura > 0 && custoKgRacao <= 0 ? `<div class="sim-sobr-custo" style="color:#92400e"><span>⚠️ Ração sem preço cadastrado — o custo dela ficou de fora</span><b></b></div>` : ""}
+    ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>Outros custos futuros</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
+    <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
+    <p class="sim-hint">FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.</p>`;
+}
+
+function _simFutPainel(viveiro, dados) {
+  const medido = _simFutCrescMedido(viveiro);
+  const alvoAtual = parseDecimalBR(document.getElementById("simFut-alvo")?.value);
+  const alvo = !isNaN(alvoAtual) && alvoAtual > 0 ? alvoAtual : 15;
+  const cresLido = parseDecimalBR(document.getElementById("simFut-cresc")?.value);
+  const gSem = !isNaN(cresLido) && cresLido > 0 ? cresLido : (medido || 1.5);
+
+  const proj = _simFutProjecao(viveiro, alvo, gSem);
+  if (!proj) {
+    return `<div class="sim-aviso">Para projetar é preciso ter pelo menos uma <b>biometria</b> lançada neste viveiro.</div>`;
+  }
+
+  // Tipos de ração para o custo do que ainda vai ser dado.
+  const ultTipo = [...(viveiro.racoes || [])].reverse().find(r => r.tipoRacaoId);
+  const tipoSel = document.getElementById("simFut-tipo")?.value
+    ?? (ultTipo ? ultTipo.tipoRacaoId : (tiposRacao[0] && tiposRacao[0].id) || "");
+
+  const padraoSemana = _simFutRacaoSemanaAtual(viveiro);
+  const campos = [];
+  for (let i = 0; i < proj.semanas; i++) {
+    if (_simFutRacao[i] === undefined) _simFutRacao[i] = Math.round(padraoSemana);
+    campos.push(`
+      <div class="simfut-semana">
+        <label>Semana ${i + 1}</label>
+        <div class="campo-input-unidade">
+          <input type="text" inputmode="decimal" value="${formatarNumeroBR(_simFutRacao[i], 0)}"
+                 oninput="_simFutSetSemana(${i}, this.value)">
+          <span class="campo-unidade">kg</span>
+        </div>
+      </div>`);
+  }
+  _simFutRacao.length = proj.semanas;
+
+  return `
+    <div class="simfut-bloco">
+      <div class="simfut-linha2">
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Peso-alvo</label></div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="simFut-alvo" value="${formatarNumeroBR(alvo, 1)}" onchange="_simFutRedesenhar()">
+            <span class="campo-unidade">g</span>
+          </div>
+        </div>
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Crescimento</label></div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="simFut-cresc" value="${formatarNumeroBR(gSem, 2)}" onchange="_simFutRedesenhar()">
+            <span class="campo-unidade">g/sem</span>
+          </div>
+        </div>
+      </div>
+      <p class="sim-hint" style="margin-top:4px">
+        ${medido ? `Medido pelas biometrias: <b>${formatarNumeroBR(medido, 2)} g/sem</b>. ` : ""}
+        Peso hoje estimado <b>${formatarNumeroBR(proj.pesoHoje, 2)} g</b>
+        (última biometria ${formatarNumeroBR(proj.pesoUltBio, 2)} g há ${proj.diasDesdeBio} dia${proj.diasDesdeBio === 1 ? "" : "s"}).
+      </p>
+
+      ${proj.diasFalta <= 0
+        ? `<div class="sim-aviso" style="margin-top:10px">O camarão já estaria com ${formatarNumeroBR(proj.pesoHoje, 2)} g, no peso-alvo ou acima. Aumente o peso-alvo para projetar.</div>`
+        : `
+      <div class="simfut-resumo">
+        <div><small>Faltam</small><b>${proj.diasFalta} dias</b></div>
+        <div><small>Semanas</small><b>${proj.semanas}</b></div>
+        <div><small>Despesca em</small><b>${formatarData(proj.dataAlvo)}</b></div>
+      </div>
+
+      <div class="simfut-sec">Ração planejada por semana</div>
+      <div class="simfut-semanas">${campos.join("")}</div>
+
+      ${tiposRacao.length ? `
+      <div class="campo-form" style="margin-top:10px">
+        <div class="campo-label"><label>Ração usada (para o custo)</label></div>
+        <select id="simFut-tipo" onchange="_simFutCalcular()">
+          ${tiposRacao.map(t => `<option value="${t.id}"${t.id === tipoSel ? " selected" : ""}>${_esc(t.nome)} — R$ ${formatarNumeroBR(t.custoPorKg, 2)}/kg</option>`).join("")}
+        </select>
+      </div>` : `<div class="sim-aviso" style="margin-top:10px">Cadastre um <b>tipo de ração</b> com preço para o custo da ração futura entrar na conta.</div>`}
+
+      <div class="campo-form" style="margin-top:10px">
+        <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
+        <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+      </div>
+
+      <div id="simFut-resultado"></div>`}
+    </div>`;
+}
 function _simSobrFaixa() { _simVendaCalcular(); }
 
 // Tabela "e se a sobrevivência for X%": para cada faixa, quantos animais ficam
