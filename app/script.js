@@ -6443,7 +6443,7 @@ function _simVendaCalcular() {
       Simular por sobrevivência
       <span class="sim-sobr-chev">${_simSobrAberto ? "⌃" : "⌄"}</span>
     </button>
-    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca) : ""}`;
+    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos) : ""}`;
 }
 
 function _simSobrToggle() { _simSobrAberto = !_simSobrAberto; _simVendaCalcular(); }
@@ -6453,7 +6453,7 @@ function _simSobrFaixa() { _simVendaCalcular(); }
 // em pé, quanto isso dá em kg no peso médio de hoje, e qual seria o lucro.
 // Os já despescados contam como sobreviventes (saíram vivos) e a receita deles
 // é a real, não revalorizada — por isso entram como parcela fixa.
-function _simSobrTabela(dados, preco, custoTotal, receitaDespesca) {
+function _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos) {
   const pop = dados.populacaoNum || 0;
   const peso = dados.pesoUltimaBio || 0;
   if (!(pop > 0) || !(peso > 0)) {
@@ -6502,7 +6502,17 @@ function _simSobrTabela(dados, preco, custoTotal, receitaDespesca) {
       </div>
       <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-lucro">Lucro</span></div>
       ${linhas.join("")}
-      <p class="sim-hint" style="margin-top:8px">Biomassa = animais vivos × peso médio de hoje (${formatarNumeroBR(peso, 1)} g), menos os ${formatarNumeroBR(dados.despQtd || 0, 0)} já despescados. Lucro já com o custo de R$ ${formatarNumeroBR(custoTotal, 2)}.</p>
+      <div class="sim-sobr-custo">
+        <span>Custo lançado</span><b>R$ ${formatarNumeroBR(custoTotal - (custosFuturos || 0), 2)}</b>
+      </div>
+      ${custosFuturos > 0 ? `
+      <div class="sim-sobr-custo">
+        <span>Custos futuros</span><b>+ R$ ${formatarNumeroBR(custosFuturos, 2)}</b>
+      </div>` : ""}
+      <div class="sim-sobr-custo sim-sobr-custo-total">
+        <span>Descontado de cada linha</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b>
+      </div>
+      <p class="sim-hint" style="margin-top:8px">Biomassa = animais vivos × peso médio de hoje (${formatarNumeroBR(peso, 1)} g), menos os ${formatarNumeroBR(dados.despQtd || 0, 0)} já despescados.</p>
     </div>`;
 }
 
