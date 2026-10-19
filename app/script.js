@@ -6242,8 +6242,61 @@ let _simSobrAberto = false;
 // levar até X gramas": projeta o peso pelo ganho semanal, pergunta quanta
 // ração vai em cada semana que falta e devolve biomassa, FCA e lucro por faixa
 // de sobrevivência.
-let _simFutAberto = false;
 let _simFutRacao = [];        // kg planejados por semana (índice = semana)
+
+// Opções de 20% a 100%, de 5 em 5 — mesma escala nas duas telas.
+function _simFaixaOpcoes(padrao) {
+  let html = "";
+  for (let p = 20; p <= 100; p += 5) html += `<option value="${p}"${p === padrao ? " selected" : ""}>${p}%</option>`;
+  return html;
+}
+
+function abrirProjetarDespesca() {
+  esconderMenu();
+  _simFutRacao = [];   // planejamento começa limpo a cada entrada
+  const area = document.getElementById("area-gestao");
+  const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Projetar despesca</h3>
+    <div class="cfg-wrap">
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+          <label>Viveiro</label>
+        </div>
+        <select id="simVenda-viveiro" onchange="_projDespRender()">
+          <option value="">Selecione o viveiro</option>
+          ${ativos.map(o => `<option value="${o.i}">${_esc(o.v.nome)}</option>`).join("")}
+        </select>
+      </div>
+
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <label>Preço de venda (R$/kg)</label>
+        </div>
+        <input type="text" inputmode="decimal" id="simVenda-preco" placeholder="Ex.: 23,00" oninput="_simFutCalcular()">
+      </div>
+
+      <div id="projDesp-painel"></div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
+    </div>`;
+}
+
+// Redesenha o painel inteiro: usado quando muda o viveiro, o peso-alvo ou o
+// crescimento — tudo que altera o NÚMERO de semanas de ração.
+function _projDespRender() {
+  const alvo = document.getElementById("projDesp-painel");
+  if (!alvo) return;
+  const sel = document.getElementById("simVenda-viveiro");
+  if (!sel || sel.value === "") { alvo.innerHTML = ""; return; }
+  const viveiro = viveiros[sel.value];
+  const dados = _simularDadosViveiro(viveiro);
+  if (!dados) { alvo.innerHTML = ""; return; }
+  alvo.innerHTML = _simFutPainel(viveiro, dados);
+  _simFutCalcular();
+}
 
 // Ganho semanal medido no ciclo EM ANDAMENTO: entre a 1ª e a última biometria.
 // Mesma régua do relatório e do ranking — não é peso ÷ dias de cultivo.
@@ -6299,21 +6352,57 @@ function _simFutProjecao(viveiro, alvoG, gSem) {
   };
 }
 
+// Duas perguntas diferentes, duas telas: "quanto dá se eu vender hoje" e
+// "quanto dá se eu levar até X gramas". Empilhadas na mesma tela viravam uma
+// rolagem longa; aqui a pessoa escolhe antes de entrar.
 function abrirSimularVenda() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
+
+  const topo = `
+    <div class="form-topo" style="margin-top:8px">
+      <div class="form-icone-circulo">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h2 class="form-titulo">Simular venda</h2>
+    </div>`;
+
   if (!ativos.length) {
-    area.innerHTML = `
-      <h3 class="titulo-secao">Simular venda</h3>
-      <div class="cfg-wrap">
-        <p class="sobrevivencia-texto" style="margin:18px 0">Nenhum viveiro em cultivo ativo para simular.<br><small>Cadastre um ciclo e lance ração/biometria primeiro.</small></p>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-      </div>`;
+    area.innerHTML = topo + `
+      <p style="text-align:center;color:#9ca3af;padding:16px 0;font-size:14px">Nenhum viveiro em cultivo ativo para simular.<br><small>Cadastre um ciclo e lance ração/biometria primeiro.</small></p>
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>`;
     return;
   }
+
+  area.innerHTML = topo + `
+    <button class="hc-viv-card" onclick="abrirVenderHoje()">
+      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+      <span class="hc-viv-txt">
+        <b>Vender hoje</b>
+        <small>Com a biomassa que está no viveiro agora</small>
+      </span>
+      <span class="hc-viv-seta">›</span>
+    </button>
+
+    <button class="hc-viv-card" onclick="abrirProjetarDespesca()">
+      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span>
+      <span class="hc-viv-txt">
+        <b>Projetar despesca</b>
+        <small>Levando o camarão até o peso que você escolher</small>
+      </span>
+      <span class="hc-viv-seta">›</span>
+    </button>
+
+    <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+}
+
+function abrirVenderHoje() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
   area.innerHTML = `
-    <h3 class="titulo-secao">Simular venda</h3>
+    <h3 class="titulo-secao">Vender hoje</h3>
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
@@ -6361,7 +6450,7 @@ function abrirSimularVenda() {
       </div>
 
       <div id="simVenda-resultado"></div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
     </div>
   `;
 }
@@ -6505,27 +6594,11 @@ function _simVendaCalcular() {
       Simular por sobrevivência
       <span class="sim-sobr-chev">${_simSobrAberto ? "⌃" : "⌄"}</span>
     </button>
-    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos) : ""}
-
-    <button type="button" class="sim-sobr-btn${_simFutAberto ? " aberto" : ""}" onclick="_simFutToggle()">
-      <svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
-      Simulação futura (até a despesca)
-      <span class="sim-sobr-chev">${_simFutAberto ? "⌃" : "⌄"}</span>
-    </button>
-    ${_simFutAberto ? _simFutPainel(viveiro, dados) : ""}`;
-
-  // O resultado só pode ser montado depois que os campos existem no DOM —
-  // ele lê o peso-alvo, o tipo de ração e os extras de lá.
-  if (_simFutAberto) _simFutCalcular();
+    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos) : ""}`;
 }
 
 function _simSobrToggle() { _simSobrAberto = !_simSobrAberto; _simVendaCalcular(); }
 
-function _simFutToggle() {
-  _simFutAberto = !_simFutAberto;
-  if (_simFutAberto) _simFutRacao = [];   // recomeça o planejamento a cada abertura
-  _simVendaCalcular();
-}
 
 // Guarda o que foi digitado numa semana SEM redesenhar os campos — redesenhar
 // a cada tecla tiraria o foco e o teclado do celular fecharia sozinho.
@@ -6537,7 +6610,7 @@ function _simFutSetSemana(i, valor) {
 
 // Peso-alvo e crescimento mudam o NÚMERO de semanas, então aí o painel inteiro
 // é redesenhado (onchange, não oninput: só ao sair do campo).
-function _simFutRedesenhar() { _simVendaCalcular(); }
+function _simFutRedesenhar() { _projDespRender(); }
 
 function _simFutCalcular() {
   const alvoRes = document.getElementById("simFut-resultado");
@@ -6590,8 +6663,10 @@ function _simFutResultadoHtml() {
     return s + kg * (pk > 0 ? pk : preco);
   }, 0);
 
+  // Os mesmos padrões do painel (50–80): se divergirem, a tabela mostra uma
+  // faixa diferente da que o seletor exibe.
   const de = Number(document.getElementById("simSobr-de")?.value) || 50;
-  const ate = Number(document.getElementById("simSobr-ate")?.value) || 90;
+  const ate = Number(document.getElementById("simSobr-ate")?.value) || 80;
   const ini = Math.min(de, ate), fim = Math.max(de, ate);
 
   const linhas = [];
@@ -6642,6 +6717,11 @@ function _simFutPainel(viveiro, dados) {
   const ultTipo = [...(viveiro.racoes || [])].reverse().find(r => r.tipoRacaoId);
   const tipoSel = document.getElementById("simFut-tipo")?.value
     ?? (ultTipo ? ultTipo.tipoRacaoId : (tiposRacao[0] && tiposRacao[0].id) || "");
+
+  // O painel é redesenhado quando muda o peso-alvo ou o crescimento. Sem ler a
+  // faixa escolhida antes, ela voltaria para 50–80 no meio do ajuste.
+  const fDe  = Number(document.getElementById("simSobr-de")?.value)  || 50;
+  const fAte = Number(document.getElementById("simSobr-ate")?.value) || 80;
 
   const padraoSemana = _simFutRacaoSemanaAtual(viveiro);
   const campos = [];
@@ -6706,6 +6786,20 @@ function _simFutPainel(viveiro, dados) {
       <div class="campo-form" style="margin-top:10px">
         <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
         <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+      </div>
+
+      <div class="simfut-sec">Faixa de sobrevivência</div>
+      <div class="sim-sobr-faixa">
+        <label class="sim-sobr-sel">De
+          <select id="simSobr-de" onchange="_simFutCalcular()">
+            ${_simFaixaOpcoes(fDe)}
+          </select>
+        </label>
+        <label class="sim-sobr-sel">até
+          <select id="simSobr-ate" onchange="_simFutCalcular()">
+            ${_simFaixaOpcoes(fAte)}
+          </select>
+        </label>
       </div>
 
       <div id="simFut-resultado"></div>`}
