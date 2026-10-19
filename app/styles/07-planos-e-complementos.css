@@ -404,3 +404,12 @@ body.tema-escuro .sim-sobr-btn { background: #1f2937; border-color: #374151; }
 body.tema-escuro .sim-sobr-bloco { background: #1f2937; border-color: #374151; }
 body.tema-escuro .ss-pct { color: #f3f4f6; }
 body.tema-escuro .sim-sobr-linha { border-bottom-color: #374151; }
+
+/* Composição do custo embaixo da tabela: dizer só o total deixava a dúvida de
+   se os custos futuros já estavam lá dentro. */
+.sim-sobr-custo { display: flex; justify-content: space-between; align-items: center; padding: 5px 2px; font-size: 12px; color: #6b7280; }
+.sim-sobr-custo b { font-weight: 700; color: #4b5563; }
+.sim-sobr-custo-total { border-top: 1.5px solid #eef0f2; margin-top: 2px; padding-top: 7px; font-weight: 700; color: #1f2937; }
+.sim-sobr-custo-total b { color: #1f2937; font-size: 13px; }
+body.tema-escuro .sim-sobr-custo b, body.tema-escuro .sim-sobr-custo-total { color: #e5e7eb; }
+body.tema-escuro .sim-sobr-custo-total { border-top-color: #374151; }
