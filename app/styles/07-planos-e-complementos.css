@@ -413,3 +413,29 @@ body.tema-escuro .sim-sobr-linha { border-bottom-color: #374151; }
 .sim-sobr-custo-total b { color: #1f2937; font-size: 13px; }
 body.tema-escuro .sim-sobr-custo b, body.tema-escuro .sim-sobr-custo-total { color: #e5e7eb; }
 body.tema-escuro .sim-sobr-custo-total { border-top-color: #374151; }
+
+/* ─── SIMULAÇÃO FUTURA (até a despesca) ────────────────────────────────────── */
+.simfut-bloco { margin-top: 8px; padding: 12px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px; }
+.simfut-linha2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.simfut-linha2 .campo-label label { font-size: 12px; }
+.simfut-linha2 .campo-input-unidade input { font-size: 15px; }
+
+.simfut-resumo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 10px 0 4px; }
+.simfut-resumo > div { background: #f0fdf4; border: 1px solid #d1fae5; border-radius: 9px; padding: 7px 8px; text-align: center; }
+.simfut-resumo small { display: block; font-size: 9.5px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .4px; }
+.simfut-resumo b { font-size: 13px; font-weight: 800; color: #15803d; }
+
+.simfut-sec { margin: 14px 0 6px; font-size: 11px; font-weight: 800; color: rgb(6,107,99); text-transform: uppercase; letter-spacing: .5px; }
+
+.simfut-semanas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.simfut-semana label { display: block; margin-bottom: 3px; font-size: 11px; font-weight: 700; color: #6b7280; }
+.simfut-semana .campo-input-unidade input { font-size: 14px; padding: 8px 10px; }
+
+/* Coluna do FCA, que só existe na projeção */
+.ss-fca { flex: 0 0 48px; font-size: 12.5px; font-weight: 700; color: #4b5563; text-align: center; }
+.sim-sobr-cab .ss-fca { font-size: 10px; font-weight: 800; color: #9ca3af; }
+
+body.tema-escuro .simfut-bloco { background: #1f2937; border-color: #374151; }
+body.tema-escuro .simfut-resumo > div { background: #064e3b; border-color: #065f46; }
+body.tema-escuro .simfut-resumo b { color: #6ee7b7; }
+body.tema-escuro .ss-fca { color: #d1d5db; }
