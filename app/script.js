@@ -6731,7 +6731,7 @@ function _simFutResultadoHtml() {
   for (let p = ini; p <= fim; p += 5) {
     const emPe = pop * (p / 100) - (dados.despQtd || 0);
     if (emPe <= 0) {
-      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro">abaixo do já despescado</span></div>`);
+      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span></div>`);
       continue;
     }
     const kg = emPe * alvo / 1000;
@@ -6749,8 +6749,10 @@ function _simFutResultadoHtml() {
 
   return `
     <div class="simfut-sec">Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g</div>
-    <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro</span></div>
-    ${linhas.join("")}
+    <div class="sim-sobr-tab">
+      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro</span></div>
+      ${linhas.join("")}
+    </div>
     <div class="sim-sobr-custo"><span>Custo já lançado</span><b>R$ ${formatarNumeroBR(dados.custoTotal, 2)}</b></div>
     <div class="sim-sobr-custo"><span>Ração futura (${formatarNumeroBR(racaoFutura, 0)} kg${custoKgRacao > 0 ? " × R$ " + formatarNumeroBR(custoKgRacao, 2) : ""})</span><b>+ R$ ${formatarNumeroBR(custoRacaoFutura, 2)}</b></div>
     ${racaoFutura > 0 && custoKgRacao <= 0 ? `<div class="sim-sobr-custo" style="color:#92400e"><span>⚠️ Ração sem preço cadastrado — o custo dela ficou de fora</span><b></b></div>` : ""}
@@ -6938,8 +6940,10 @@ function _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos
         ${sel("simSobr-de", de, "De")}
         ${sel("simSobr-ate", ate, "até")}
       </div>
-      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-lucro">Lucro</span></div>
-      ${linhas.join("")}
+      <div class="sim-sobr-tab sem-fca">
+        <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-lucro">Lucro</span></div>
+        ${linhas.join("")}
+      </div>
       <div class="sim-sobr-custo">
         <span>Custo lançado</span><b>R$ ${formatarNumeroBR(custoTotal - (custosFuturos || 0), 2)}</b>
       </div>
