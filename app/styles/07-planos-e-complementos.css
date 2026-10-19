@@ -351,3 +351,56 @@ body.tema-escuro .ct-caixa h4 { color: #f3f4f6; }
 body.tema-escuro .ct-ico { background: rgba(52,211,153,0.12); }
 body.tema-escuro .ct-ico svg { stroke: #34d399; }
 body.tema-escuro .ct-fechar { color: #6b7280; }
+
+/* ─── SIMULAR VENDA: faixa de sobrevivência ────────────────────────────────── */
+/* Um cenário por linha, para a pessoa correr o olho e ver a partir de que
+   sobrevivência o ciclo deixa de dar lucro. */
+
+.sim-sobr-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 11px 13px;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 11px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: rgb(6,107,99);
+    cursor: pointer;
+}
+.sim-sobr-btn.aberto { background: rgba(6,107,99,.07); border-color: rgba(6,107,99,.3); }
+.sim-sobr-btn svg { width: 16px; height: 16px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sim-sobr-chev { margin-left: auto; font-size: 15px; line-height: 1; color: #9ca3af; }
+
+.sim-sobr-bloco {
+    margin-top: 8px;
+    padding: 12px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+.sim-sobr-faixa { display: flex; gap: 10px; margin-bottom: 10px; }
+.sim-sobr-sel { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #6b7280; }
+.sim-sobr-sel select { flex: 1; width: auto; margin: 0; padding: 7px 8px; font-size: 13px; font-weight: 700; }
+
+.sim-sobr-cab, .sim-sobr-linha { display: flex; align-items: center; gap: 8px; padding: 7px 2px; }
+.sim-sobr-cab { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #eef0f2; }
+.sim-sobr-linha { border-bottom: 1px solid #f3f4f6; }
+.sim-sobr-linha:last-of-type { border-bottom: none; }
+.sim-sobr-na { opacity: .5; }
+
+.ss-pct { flex: 0 0 54px; font-size: 13.5px; font-weight: 800; color: #1f2937; }
+.ss-kg { flex: 1; font-size: 12.5px; color: #6b7280; font-weight: 600; }
+.ss-lucro { flex: 0 0 auto; font-size: 13.5px; font-weight: 800; text-align: right; }
+.ss-pos { color: #16a34a; }
+.ss-neg { color: #dc2626; }
+.sim-sobr-cab .ss-pct, .sim-sobr-cab .ss-kg, .sim-sobr-cab .ss-lucro { font-size: 10px; font-weight: 800; color: #9ca3af; }
+
+body.tema-escuro .sim-sobr-btn { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sim-sobr-bloco { background: #1f2937; border-color: #374151; }
+body.tema-escuro .ss-pct { color: #f3f4f6; }
+body.tema-escuro .sim-sobr-linha { border-bottom-color: #374151; }
