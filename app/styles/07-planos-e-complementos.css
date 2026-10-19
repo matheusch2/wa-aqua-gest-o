@@ -453,3 +453,8 @@ body.tema-escuro .ss-fca { color: #d1d5db; }
 .simfut-domingo-txt small { font-size: 10.5px; color: #9ca3af; }
 body.tema-escuro .simfut-domingo { background: #111827; border-color: #374151; }
 body.tema-escuro .simfut-domingo-txt b { color: #f3f4f6; }
+
+/* Total da semana ao lado do campo diário: a pessoa digita kg/dia e vê na
+   hora quanto aquilo dá na semana. */
+.simfut-semana-tot { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 700; color: #6b7280; }
+body.tema-escuro .simfut-semana-tot { color: #9ca3af; }

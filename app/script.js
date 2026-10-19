@@ -6614,6 +6614,10 @@ function _simFutSetSemana(i, valor) {
   const n = parseDecimalBR(valor);
   _simFutRacao[i] = isNaN(n) || n < 0 ? 0 : n;
   _simFutEditado.add(i);
+  // Atualiza só o "= X kg" ao lado, nunca o próprio campo: reescrever o input
+  // enquanto se digita joga o cursor para o fim e trava o teclado do celular.
+  const tot = document.getElementById(`simfut-tot-${i}`);
+  if (tot) tot.textContent = "= " + formatarNumeroBR(_simFutRacao[i] * (_simFutDomingo ? 7 : 6), 0) + " kg";
   _simFutCalcular();
 }
 
@@ -6650,7 +6654,9 @@ function _simFutResultadoHtml() {
   if (!(preco > 0)) return `<div class="sim-aviso" style="margin-top:12px">Informe o <b>preço por kg</b> lá em cima para ver o lucro de cada cenário.</div>`;
 
   // Ração que ainda vai ser dada e o que ela custa.
-  const racaoFutura = _simFutRacao.reduce((s, v) => s + (Number(v) || 0), 0);
+  // _simFutRacao guarda kg por DIA de cada semana.
+  const diasSemana = _simFutDomingo ? 7 : 6;
+  const racaoFutura = _simFutRacao.reduce((s, v) => s + (Number(v) || 0) * diasSemana, 0);
   // Se o select ainda não respondeu (primeiro desenho), cai no último tipo
   // usado no viveiro e, por fim, no primeiro cadastrado — nunca em custo zero
   // sem avisar, que faria o lucro parecer bem maior do que é.
@@ -6739,22 +6745,25 @@ function _simFutPainel(viveiro, dados) {
 
   const diasSemana = _simFutDomingo ? 7 : 6;
   const porDia = _simFutRacaoPorDia(viveiro);
-  const padraoSemana = Math.round(porDia * diasSemana);
+  const padraoDia = Math.round(porDia);
 
+  // O campo é a oferta DIÁRIA daquela semana — é assim que se planeja ração
+  // ("essa semana vou dar 45, na outra 50"). O total da semana sai da conta.
   const campos = [];
   for (let i = 0; i < proj.semanas; i++) {
     // Só sugere nas semanas que a pessoa ainda não mexeu: mudar o domingo ou
     // o peso-alvo não pode apagar o que ela já planejou à mão.
-    if (!_simFutEditado.has(i)) _simFutRacao[i] = padraoSemana;
-    if (_simFutRacao[i] === undefined) _simFutRacao[i] = padraoSemana;
+    if (!_simFutEditado.has(i) || _simFutRacao[i] === undefined) _simFutRacao[i] = padraoDia;
+    const totalSem = (Number(_simFutRacao[i]) || 0) * diasSemana;
     campos.push(`
       <div class="simfut-semana">
         <label>Semana ${i + 1}</label>
         <div class="campo-input-unidade">
           <input type="text" inputmode="decimal" value="${formatarNumeroBR(_simFutRacao[i], 0)}"
                  oninput="_simFutSetSemana(${i}, this.value)">
-          <span class="campo-unidade">kg</span>
+          <span class="campo-unidade">kg/dia</span>
         </div>
+        <span class="simfut-semana-tot" id="simfut-tot-${i}">= ${formatarNumeroBR(totalSem, 0)} kg</span>
       </div>`);
   }
   _simFutRacao.length = proj.semanas;
@@ -6802,8 +6811,8 @@ function _simFutPainel(viveiro, dados) {
       </button>
       <p class="sim-hint" style="margin:6px 0 8px">
         ${porDia > 0
-          ? `Hoje você dá cerca de <b>${formatarNumeroBR(porDia, 0)} kg</b> por dia de oferta — sugeri <b>${formatarNumeroBR(padraoSemana, 0)} kg</b> por semana (${diasSemana} dias). Pode trocar.`
-          : `Sem ração lançada ainda para sugerir um valor. Preencha as semanas à mão.`}
+          ? `Hoje você dá cerca de <b>${formatarNumeroBR(porDia, 0)} kg</b> por dia. Digite a oferta diária de cada semana — o total sai por ${diasSemana} dias.`
+          : `Sem ração lançada ainda para sugerir um valor. Digite a oferta diária de cada semana.`}
       </p>
       <div class="simfut-semanas">${campos.join("")}</div>
 
