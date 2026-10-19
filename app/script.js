@@ -6510,9 +6510,8 @@ function _simSobrTabela(dados, preco, custoTotal, receitaDespesca, custosFuturos
         <span>Custos futuros</span><b>+ R$ ${formatarNumeroBR(custosFuturos, 2)}</b>
       </div>` : ""}
       <div class="sim-sobr-custo sim-sobr-custo-total">
-        <span>Descontado de cada linha</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b>
+        <span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b>
       </div>
-      <p class="sim-hint" style="margin-top:8px">Biomassa = animais vivos × peso médio de hoje (${formatarNumeroBR(peso, 1)} g), menos os ${formatarNumeroBR(dados.despQtd || 0, 0)} já despescados.</p>
     </div>`;
 }
 
