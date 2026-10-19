@@ -387,23 +387,29 @@ body.tema-escuro .ct-fechar { color: #6b7280; }
 .sim-sobr-sel { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #6b7280; }
 .sim-sobr-sel select { flex: 1; width: auto; margin: 0; padding: 7px 8px; font-size: 13px; font-weight: 700; }
 
-.sim-sobr-cab, .sim-sobr-linha { display: flex; align-items: center; gap: 8px; padding: 7px 2px; }
-.sim-sobr-cab { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #eef0f2; }
-.sim-sobr-linha { border-bottom: 1px solid #f3f4f6; }
-.sim-sobr-linha:last-of-type { border-bottom: none; }
-.sim-sobr-na { opacity: .5; }
+/* Uma grade só para o cabeçalho e todas as linhas: assim as colunas têm a
+   mesma largura em toda a tabela. Com flex em cada linha, "Lucro" (estreito)
+   e "R$ 27.774,51" (largo) davam larguras diferentes e a tabela saía torta.
+   display:contents faz as células entrarem direto na grade do pai. */
+.sim-sobr-tab { display: grid; grid-template-columns: auto 1fr auto auto; column-gap: 10px; align-items: center; }
+.sim-sobr-tab.sem-fca { grid-template-columns: auto 1fr auto; }
+.sim-sobr-cab, .sim-sobr-linha { display: contents; }
+.sim-sobr-tab > div > span { padding: 7px 0; border-bottom: 1px solid #f3f4f6; }
+.sim-sobr-tab > .sim-sobr-cab > span { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #eef0f2; }
+.sim-sobr-tab > div:last-child > span { border-bottom: none; }
+.sim-sobr-na > span { opacity: .5; }
 
-.ss-pct { flex: 0 0 54px; font-size: 13.5px; font-weight: 800; color: #1f2937; }
-.ss-kg { flex: 1; font-size: 12.5px; color: #6b7280; font-weight: 600; }
-.ss-lucro { flex: 0 0 auto; font-size: 13.5px; font-weight: 800; text-align: right; }
+.ss-pct { font-size: 13.5px; font-weight: 800; color: #1f2937; }
+.ss-kg { font-size: 12.5px; color: #6b7280; font-weight: 600; }
+.ss-lucro { font-size: 13.5px; font-weight: 800; text-align: right; white-space: nowrap; }
+.ss-nota { font-size: 11px; font-weight: 600; color: #9ca3af; }
 .ss-pos { color: #16a34a; }
 .ss-neg { color: #dc2626; }
-.sim-sobr-cab .ss-pct, .sim-sobr-cab .ss-kg, .sim-sobr-cab .ss-lucro { font-size: 10px; font-weight: 800; color: #9ca3af; }
 
 body.tema-escuro .sim-sobr-btn { background: #1f2937; border-color: #374151; }
 body.tema-escuro .sim-sobr-bloco { background: #1f2937; border-color: #374151; }
 body.tema-escuro .ss-pct { color: #f3f4f6; }
-body.tema-escuro .sim-sobr-linha { border-bottom-color: #374151; }
+body.tema-escuro .sim-sobr-tab > div > span { border-bottom-color: #374151; }
 
 /* Composição do custo embaixo da tabela: dizer só o total deixava a dúvida de
    se os custos futuros já estavam lá dentro. */
@@ -432,8 +438,7 @@ body.tema-escuro .sim-sobr-custo-total { border-top-color: #374151; }
 .simfut-semana .campo-input-unidade input { font-size: 14px; padding: 8px 10px; }
 
 /* Coluna do FCA, que só existe na projeção */
-.ss-fca { flex: 0 0 48px; font-size: 12.5px; font-weight: 700; color: #4b5563; text-align: center; }
-.sim-sobr-cab .ss-fca { font-size: 10px; font-weight: 800; color: #9ca3af; }
+.ss-fca { font-size: 12.5px; font-weight: 700; color: #4b5563; text-align: right; white-space: nowrap; }
 
 body.tema-escuro .simfut-bloco { background: #1f2937; border-color: #374151; }
 body.tema-escuro .simfut-resumo > div { background: #064e3b; border-color: #065f46; }
