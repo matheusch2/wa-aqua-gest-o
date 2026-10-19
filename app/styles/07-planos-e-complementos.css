@@ -439,3 +439,17 @@ body.tema-escuro .simfut-bloco { background: #1f2937; border-color: #374151; }
 body.tema-escuro .simfut-resumo > div { background: #064e3b; border-color: #065f46; }
 body.tema-escuro .simfut-resumo b { color: #6ee7b7; }
 body.tema-escuro .ss-fca { color: #d1d5db; }
+
+/* Chave de oferta no domingo: muda só a SUGESTÃO de ração da semana
+   (6 ou 7 dias), não o crescimento, que corre no calendário. */
+.simfut-domingo { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; cursor: pointer; text-align: left; }
+.simfut-domingo.ligado { background: rgba(6,107,99,.07); border-color: rgba(6,107,99,.3); }
+.simfut-switch { flex: 0 0 auto; width: 36px; height: 20px; border-radius: 99px; background: #d1d5db; position: relative; transition: background .15s; }
+.simfut-switch > span { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+.simfut-domingo.ligado .simfut-switch { background: rgb(6,107,99); }
+.simfut-domingo.ligado .simfut-switch > span { transform: translateX(16px); }
+.simfut-domingo-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.simfut-domingo-txt b { font-size: 13px; font-weight: 800; color: #1f2937; }
+.simfut-domingo-txt small { font-size: 10.5px; color: #9ca3af; }
+body.tema-escuro .simfut-domingo { background: #111827; border-color: #374151; }
+body.tema-escuro .simfut-domingo-txt b { color: #f3f4f6; }

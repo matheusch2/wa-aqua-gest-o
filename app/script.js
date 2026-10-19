@@ -6243,6 +6243,8 @@ let _simSobrAberto = false;
 // ração vai em cada semana que falta e devolve biomassa, FCA e lucro por faixa
 // de sobrevivência.
 let _simFutRacao = [];        // kg planejados por semana (índice = semana)
+let _simFutEditado = new Set();   // semanas que a pessoa digitou à mão
+let _simFutDomingo = false;       // oferta ração no domingo? (padrão: não)
 
 // Opções de 20% a 100%, de 5 em 5 — mesma escala nas duas telas.
 function _simFaixaOpcoes(padrao) {
@@ -6253,7 +6255,7 @@ function _simFaixaOpcoes(padrao) {
 
 function abrirProjetarDespesca() {
   esconderMenu();
-  _simFutRacao = [];   // planejamento começa limpo a cada entrada
+  _simFutRacao = []; _simFutEditado = new Set();   // planejamento começa limpo
   const area = document.getElementById("area-gestao");
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
@@ -6312,17 +6314,23 @@ function _simFutCrescMedido(viveiro) {
   return gSem > 0 ? gSem : null;
 }
 
-// Consumo médio dos últimos 7 dias lançados — chute inicial de quanta ração
-// vai em cada semana que falta. A pessoa troca à vontade.
-function _simFutRacaoSemanaAtual(viveiro) {
+// Quanto se oferta POR DIA DE OFERTA, olhando os últimos 7 dias lançados.
+// Dividir pelos 7 dias do calendário estaria errado para quem já folga no
+// domingo: a média sairia menor do que o que realmente se dá por dia.
+function _simFutRacaoPorDia(viveiro) {
   const rs = [...(viveiro.racoes || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
   if (!rs.length) return 0;
   const fim = _parseDataLocal(rs[rs.length - 1].data);
   const ini = new Date(fim.getTime() - 6 * 86400000);
-  return rs.filter(r => {
+  const janela = rs.filter(r => {
     const d = _parseDataLocal(r.data);
     return d >= ini && d <= fim;
-  }).reduce((s, r) => s + (Number(r.racao) || 0), 0);
+  });
+  // Dias DISTINTOS com oferta: dois lançamentos no mesmo dia (transição de
+  // ração) são um dia só, senão a média cairia pela metade.
+  const dias = new Set(janela.filter(r => Number(r.racao) > 0).map(r => String(r.data).substring(0, 10)));
+  const total = janela.reduce((s, r) => s + (Number(r.racao) || 0), 0);
+  return dias.size > 0 ? total / dias.size : 0;
 }
 
 // Projeção do peso: parte da ÚLTIMA biometria, cresce no ritmo informado e
@@ -6605,7 +6613,13 @@ function _simSobrToggle() { _simSobrAberto = !_simSobrAberto; _simVendaCalcular(
 function _simFutSetSemana(i, valor) {
   const n = parseDecimalBR(valor);
   _simFutRacao[i] = isNaN(n) || n < 0 ? 0 : n;
+  _simFutEditado.add(i);
   _simFutCalcular();
+}
+
+function _simFutToggleDomingo() {
+  _simFutDomingo = !_simFutDomingo;
+  _projDespRender();
 }
 
 // Peso-alvo e crescimento mudam o NÚMERO de semanas, então aí o painel inteiro
@@ -6723,10 +6737,16 @@ function _simFutPainel(viveiro, dados) {
   const fDe  = Number(document.getElementById("simSobr-de")?.value)  || 50;
   const fAte = Number(document.getElementById("simSobr-ate")?.value) || 80;
 
-  const padraoSemana = _simFutRacaoSemanaAtual(viveiro);
+  const diasSemana = _simFutDomingo ? 7 : 6;
+  const porDia = _simFutRacaoPorDia(viveiro);
+  const padraoSemana = Math.round(porDia * diasSemana);
+
   const campos = [];
   for (let i = 0; i < proj.semanas; i++) {
-    if (_simFutRacao[i] === undefined) _simFutRacao[i] = Math.round(padraoSemana);
+    // Só sugere nas semanas que a pessoa ainda não mexeu: mudar o domingo ou
+    // o peso-alvo não pode apagar o que ela já planejou à mão.
+    if (!_simFutEditado.has(i)) _simFutRacao[i] = padraoSemana;
+    if (_simFutRacao[i] === undefined) _simFutRacao[i] = padraoSemana;
     campos.push(`
       <div class="simfut-semana">
         <label>Semana ${i + 1}</label>
@@ -6773,6 +6793,18 @@ function _simFutPainel(viveiro, dados) {
       </div>
 
       <div class="simfut-sec">Ração planejada por semana</div>
+      <button type="button" class="simfut-domingo${_simFutDomingo ? " ligado" : ""}" onclick="_simFutToggleDomingo()">
+        <span class="simfut-switch"><span></span></span>
+        <span class="simfut-domingo-txt">
+          <b>Ofertar no domingo</b>
+          <small>${_simFutDomingo ? "7 dias por semana" : "6 dias por semana — folga no domingo"}</small>
+        </span>
+      </button>
+      <p class="sim-hint" style="margin:6px 0 8px">
+        ${porDia > 0
+          ? `Hoje você dá cerca de <b>${formatarNumeroBR(porDia, 0)} kg</b> por dia de oferta — sugeri <b>${formatarNumeroBR(padraoSemana, 0)} kg</b> por semana (${diasSemana} dias). Pode trocar.`
+          : `Sem ração lançada ainda para sugerir um valor. Preencha as semanas à mão.`}
+      </p>
       <div class="simfut-semanas">${campos.join("")}</div>
 
       ${tiposRacao.length ? `
