@@ -6217,9 +6217,25 @@ function _simularDadosViveiro(viveiro) {
     const res = _calcularBiomassa(populacaoNum, _consumoUltimoDia(racoesSorted).total, pesoUltimaBio);
     if (res && res.biomassa > 0) biomassaAtual = res.biomassa;
   }
+  // Animais já despescados — cada despesca com o SEU peso médio. Entram na
+  // conta de sobrevivência: quem saiu estava vivo, não morreu.
+  const despQtd = (viveiro.despescas || []).reduce((s, d) => {
+    const pm = Number(d.pesoMedio || d.gramatura) || 0;
+    return s + (pm > 0 ? (Number(d.quantidadeKg) || 0) / (pm / 1000) : 0);
+  }, 0);
+
   const dias = calcularDiasCultivo(viveiro.dataPovoamento) || 0;
-  return { biomassaAtual, custoTotal, pesoUltimaBio, despKgTotal, dias };
+  return { biomassaAtual, custoTotal, pesoUltimaBio, despKgTotal, despQtd, populacaoNum, dias };
 }
+
+// Custos que ainda vão acontecer (despesca, frete, gelo…). Opcional: quem não
+// preencher simula só com o que já foi lançado, como antes.
+function _simVendaCustosFuturos() {
+  const v = parseMoedaBR(document.getElementById("simVenda-futuros")?.value || "");
+  return isNaN(v) || v < 0 ? 0 : v;
+}
+
+let _simSobrAberto = false;
 
 function abrirSimularVenda() {
   esconderMenu();
@@ -6269,6 +6285,19 @@ function abrirSimularVenda() {
         </div>
         <input type="text" inputmode="decimal" step="0.01" id="simVenda-preco" placeholder="Ex.: 15,00" oninput="_simVendaCalcular()">
       </div>
+
+      <!-- Custos que ainda não foram lançados porque ainda não aconteceram:
+           a despesca em si, frete, gelo. Sem eles o lucro simulado sai alto
+           demais justamente no fim do ciclo, que é quando a conta importa. -->
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <label>Custos futuros (opcional)</label>
+        </div>
+        <input type="text" inputmode="decimal" id="simVenda-futuros" placeholder="Ex.: 2.500,00" oninput="_simVendaCalcular()">
+        <p class="sim-hint" style="margin-top:6px">O que ainda vai gastar e não foi lançado: despesca, frete, gelo. Entra no custo da simulação.</p>
+      </div>
+
       <div id="simVenda-resultado"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
@@ -6357,7 +6386,8 @@ function _simVendaCalcular() {
   }
   const despKgTotal = dados.despKgTotal;                  // o que já foi despescado
   const biomassaTotal = biomassaAtual + despKgTotal;      // produção total (base do custo/kg e lucro/kg)
-  const custoTotal = dados.custoTotal;
+  const custosFuturos = _simVendaCustosFuturos();
+  const custoTotal = dados.custoTotal + custosFuturos;
   const custoKg = biomassaTotal > 0 ? custoTotal / biomassaTotal : 0;
   // parseDecimalBR: o replace de vírgula na mão lia "1.234,50" como 1,234.
   const precoLido = parseDecimalBR(document.getElementById("simVenda-preco").value);
@@ -6405,8 +6435,75 @@ function _simVendaCalcular() {
       <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por kg</small><strong>R$ ${formatarNumeroBR(lucroKg, 2)}</strong></div>
       <div class="sim-card ${ok ? "sim-ok" : "sim-neg"}"><small>Lucro por mês</small><strong>R$ ${formatarNumeroBR(lucroMes, 2)}</strong></div>
     </div>
-    <div class="sim-hint">Faturamento = biomassa em pé × preço simulado + receita real das despescas já vendidas. Lucro/mês = lucro ÷ ${formatarNumeroBR(meses, 1)} ${meses >= 2 ? "meses" : "mês"}.</div>
-    ${avisoSemPreco}`;
+    <div class="sim-hint">Faturamento = biomassa em pé × preço simulado + receita real das despescas já vendidas. Lucro/mês = lucro ÷ ${formatarNumeroBR(meses, 1)} ${meses >= 2 ? "meses" : "mês"}.${custosFuturos > 0 ? ` Inclui <b>R$ ${formatarNumeroBR(custosFuturos, 2)}</b> de custos futuros.` : ""}</div>
+    ${avisoSemPreco}
+
+    <button type="button" class="sim-sobr-btn${_simSobrAberto ? " aberto" : ""}" onclick="_simSobrToggle()">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Simular por sobrevivência
+      <span class="sim-sobr-chev">${_simSobrAberto ? "⌃" : "⌄"}</span>
+    </button>
+    ${_simSobrAberto ? _simSobrTabela(dados, preco, custoTotal, receitaDespesca) : ""}`;
+}
+
+function _simSobrToggle() { _simSobrAberto = !_simSobrAberto; _simVendaCalcular(); }
+function _simSobrFaixa() { _simVendaCalcular(); }
+
+// Tabela "e se a sobrevivência for X%": para cada faixa, quantos animais ficam
+// em pé, quanto isso dá em kg no peso médio de hoje, e qual seria o lucro.
+// Os já despescados contam como sobreviventes (saíram vivos) e a receita deles
+// é a real, não revalorizada — por isso entram como parcela fixa.
+function _simSobrTabela(dados, preco, custoTotal, receitaDespesca) {
+  const pop = dados.populacaoNum || 0;
+  const peso = dados.pesoUltimaBio || 0;
+  if (!(pop > 0) || !(peso > 0)) {
+    return `<div class="sim-aviso">Para simular por sobrevivência é preciso ter o <b>total povoado</b> e pelo menos uma <b>biometria</b>.</div>`;
+  }
+  if (!(preco > 0)) {
+    return `<div class="sim-aviso">Informe o <b>preço por kg</b> acima para ver o lucro de cada sobrevivência.</div>`;
+  }
+
+  const de  = Number(document.getElementById("simSobr-de")?.value)  || 50;
+  const ate = Number(document.getElementById("simSobr-ate")?.value) || 90;
+  const ini = Math.min(de, ate), fim = Math.max(de, ate);
+
+  const opcoes = [];
+  for (let p = 20; p <= 100; p += 5) opcoes.push(p);
+  const sel = (id, val, rot) => `
+    <label class="sim-sobr-sel">${rot}
+      <select id="${id}" onchange="_simSobrFaixa()">
+        ${opcoes.map(p => `<option value="${p}"${p === val ? " selected" : ""}>${p}%</option>`).join("")}
+      </select>
+    </label>`;
+
+  const linhas = [];
+  for (let p = ini; p <= fim; p += 5) {
+    const vivos = pop * (p / 100);
+    const emPe = vivos - (dados.despQtd || 0);     // já despescados saíram vivos
+    if (emPe <= 0) {
+      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-lucro">abaixo do já despescado</span></div>`);
+      continue;
+    }
+    const kg = emPe * peso / 1000;
+    const lucro = kg * preco + receitaDespesca - custoTotal;
+    linhas.push(`
+      <div class="sim-sobr-linha">
+        <span class="ss-pct">${p}%</span>
+        <span class="ss-kg">${formatarNumeroBR(kg, 0)} kg</span>
+        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">R$ ${formatarNumeroBR(lucro, 2)}</span>
+      </div>`);
+  }
+
+  return `
+    <div class="sim-sobr-bloco">
+      <div class="sim-sobr-faixa">
+        ${sel("simSobr-de", de, "De")}
+        ${sel("simSobr-ate", ate, "até")}
+      </div>
+      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-lucro">Lucro</span></div>
+      ${linhas.join("")}
+      <p class="sim-hint" style="margin-top:8px">Biomassa = animais vivos × peso médio de hoje (${formatarNumeroBR(peso, 1)} g), menos os ${formatarNumeroBR(dados.despQtd || 0, 0)} já despescados. Lucro já com o custo de R$ ${formatarNumeroBR(custoTotal, 2)}.</p>
+    </div>`;
 }
 
 // ═══ CUSTOS FIXOS MENSAIS — TELA E CRUD ════════════════════════════════════════
