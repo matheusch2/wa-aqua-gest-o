@@ -6245,6 +6245,10 @@ let _simSobrAberto = false;
 let _simFutRacao = [];        // kg planejados por semana (índice = semana)
 let _simFutEditado = new Set();   // semanas que a pessoa digitou à mão
 let _simFutDomingo = false;       // oferta ração no domingo? (padrão: não)
+// "projecao" = só o resultado no peso-alvo. "comparativo" = o mesmo, mais a
+// coluna do que se ganha por esperar e o campo de mortalidade do período.
+// As duas telas compartilham o painel: mudam o título e o que é exclusivo.
+let _simFutModo = "projecao";
 
 // Opções de 20% a 100%, de 5 em 5 — mesma escala nas duas telas.
 function _simFaixaOpcoes(padrao) {
@@ -6285,14 +6289,18 @@ function _simFutDiasDeOferta(diasFalta, domingo) {
   return out;
 }
 
-function abrirProjetarDespesca() {
+function abrirProjetarDespesca() { _simFutAbrir("projecao", "Projetar despesca"); }
+function abrirComparativo()      { _simFutAbrir("comparativo", "Comparativo"); }
+
+function _simFutAbrir(modo, titulo) {
   esconderMenu();
+  _simFutModo = modo;
   _simFutRacao = []; _simFutEditado = new Set();   // planejamento começa limpo
   const area = document.getElementById("area-gestao");
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
   area.innerHTML = `
-    <h3 class="titulo-secao">Projetar despesca</h3>
+    <h3 class="titulo-secao">${titulo}</h3>
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
@@ -6430,6 +6438,15 @@ function abrirSimularVenda() {
       <span class="hc-viv-txt">
         <b>Projetar despesca</b>
         <small>Levando o camarão até o peso que você escolher</small>
+      </span>
+      <span class="hc-viv-seta">›</span>
+    </button>
+
+    <button class="hc-viv-card" onclick="abrirComparativo()">
+      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span>
+      <span class="hc-viv-txt">
+        <b>Comparativo</b>
+        <small>Vale mais vender hoje ou esperar até o peso-alvo?</small>
       </span>
       <span class="hc-viv-seta">›</span>
     </button>
@@ -6729,7 +6746,8 @@ function _simFutResultadoHtml() {
 
   // Mortalidade do período: incide sobre quem está VIVO hoje. 5% = 5 de cada
   // 100 que estão no viveiro não chegam na despesca.
-  const mortLida = parseDecimalBR(document.getElementById("simFut-mort")?.value);
+  const comparar = _simFutModo === "comparativo";
+  const mortLida = comparar ? parseDecimalBR(document.getElementById("simFut-mort")?.value) : 0;
   const mort = isNaN(mortLida) || mortLida < 0 ? 0 : Math.min(mortLida, 100);
   const sobrevive = 1 - mort / 100;
 
@@ -6740,7 +6758,7 @@ function _simFutResultadoHtml() {
   for (let p = ini; p <= fim; p += 5) {
     const emPe = pop * (p / 100) - (dados.despQtd || 0);
     if (emPe <= 0) {
-      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span><span class="ss-ganho">—</span></div>`);
+      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span>${comparar ? `<span class="ss-ganho">—</span>` : ""}</div>`);
       continue;
     }
 
@@ -6762,15 +6780,17 @@ function _simFutResultadoHtml() {
         <span class="ss-pct">${p}%</span>
         <span class="ss-kg">${formatarNumeroBR(kg, 0)} kg</span>
         <span class="ss-fca ${fca > 0 && fca <= 1.5 ? "ss-pos" : fca <= 2 ? "" : "ss-neg"}">${fca > 0 ? formatarNumeroBR(fca, 2) : "—"}</span>
-        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">${formatarNumeroBR(lucro, 0)}</span>
-        <span class="ss-ganho ${ganho >= 0 ? "ss-pos" : "ss-neg"}">${ganho >= 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(ganho), 0)}</span>
+        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">${comparar ? "" : "R$ "}${formatarNumeroBR(lucro, comparar ? 0 : 2)}</span>
+        ${comparar ? `<span class="ss-ganho ${ganho >= 0 ? "ss-pos" : "ss-neg"}">${ganho >= 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(ganho), 0)}</span>` : ""}
       </div>`);
   }
 
   return `
-    <div class="simfut-sec">Esperar até ${formatarNumeroBR(alvo, 1)} g, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g)</div>
-    <div class="sim-sobr-tab com-ganho">
-      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro R$</span><span class="ss-ganho">vs hoje</span></div>
+    <div class="simfut-sec">${comparar
+      ? `Esperar até ${formatarNumeroBR(alvo, 1)} g, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g)`
+      : `Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g`}</div>
+    <div class="sim-sobr-tab${comparar ? " com-ganho" : ""}">
+      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro${comparar ? " R$" : ""}</span>${comparar ? `<span class="ss-ganho">vs hoje</span>` : ""}</div>
       ${linhas.join("")}
     </div>
     <div class="sim-sobr-custo"><span>Custo já lançado</span><b>R$ ${formatarNumeroBR(dados.custoTotal, 2)}</b></div>
@@ -6779,8 +6799,7 @@ function _simFutResultadoHtml() {
     ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>Outros custos futuros</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
     <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
     <p class="sim-hint">
-      <b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos extras${mort > 0 ? ` e os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}.
-      Vender hoje não carrega esses custos.<br>
+      ${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos extras${mort > 0 ? ` e os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}. Vender hoje não carrega esses custos.<br>` : ""}
       FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.
     </p>`;
 }
@@ -6889,6 +6908,7 @@ function _simFutPainel(viveiro, dados) {
         </select>
       </div>` : `<div class="sim-aviso" style="margin-top:10px">Cadastre um <b>tipo de ração</b> com preço para o custo da ração futura entrar na conta.</div>`}
 
+      ${_simFutModo === "comparativo" ? `
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Outros custos futuros</label></div>
@@ -6902,7 +6922,12 @@ function _simFutPainel(viveiro, dados) {
           </div>
         </div>
       </div>
-      <p class="sim-hint" style="margin-top:6px">A mortalidade vale sobre os camarões que estão <b>vivos hoje</b>: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.</p>
+      <p class="sim-hint" style="margin-top:6px">A mortalidade vale sobre os camarões que estão <b>vivos hoje</b>: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.</p>`
+      : `
+      <div class="campo-form" style="margin-top:10px">
+        <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
+        <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+      </div>`}
 
       <div class="simfut-sec">Faixa de sobrevivência</div>
       <div class="sim-sobr-faixa">
