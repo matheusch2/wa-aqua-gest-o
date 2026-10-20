@@ -6273,6 +6273,22 @@ function _simFutGSem(viveiro) {
   return _simFutCrescMedido(viveiro) || 1.5;
 }
 
+// Ajuda em "?": a explicação fica guardada atrás do ícone, em vez de ocupar
+// quatro linhas de texto em cada campo. Quem já sabe não lê; quem não sabe
+// toca e lê. A tela de projeção tinha mais texto do que número.
+function _ajudaBtn(id) {
+  return `<button type="button" class="ajuda-btn" aria-label="O que é isso?" onclick="_ajudaToggle('${id}')">?</button>`;
+}
+
+function _ajudaTxt(id, html) {
+  return `<div class="ajuda-txt" id="ajuda-${id}" style="display:none">${html}</div>`;
+}
+
+function _ajudaToggle(id) {
+  const el = document.getElementById("ajuda-" + id);
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
 function _simFutDiasDeOferta(diasFalta, domingo) {
   const out = [];
   if (!(diasFalta > 0)) return out;
@@ -6802,7 +6818,7 @@ function _simFutResultadoHtml() {
   return `
     <div class="simfut-sec">${comparar
       ? `Esperar até ${formatarNumeroBR(alvo, 1)} g a R$ ${formatarNumeroBR(precoAlvo, 2)}, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g a R$ ${formatarNumeroBR(preco, 2)})`
-      : `Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g`}</div>
+      : `Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g`}${_ajudaBtn("tabela")}</div>
     <div class="sim-sobr-tab${comparar ? " com-ganho" : ""}">
       <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro${comparar ? " R$" : ""}</span>${comparar ? `<span class="ss-ganho">vs hoje</span>` : ""}</div>
       ${linhas.join("")}
@@ -6814,10 +6830,8 @@ function _simFutResultadoHtml() {
     ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>${comparar ? "Custos só de esperar" : "Outros custos futuros"}</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
     <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total${comparar ? " esperando" : ""}</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
     ${comparar ? `<div class="sim-sobr-custo"><span>Custo se vender hoje</span><b>R$ ${formatarNumeroBR(custoHoje, 2)}</b></div>` : ""}
-    <p class="sim-hint">
-      ${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos só de esperar${mort > 0 ? `, os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}${precoAlvo !== preco ? ` e a diferença de preço (R$ ${formatarNumeroBR(preco, 2)} hoje contra R$ ${formatarNumeroBR(precoAlvo, 2)} no peso-alvo)` : ""}. Os custos da despesca entram nos dois lados, então não mexem na diferença.<br>` : ""}
-      FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.
-    </p>`;
+    ${_ajudaTxt("tabela", `${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência. Já desconta a ração futura, os custos só de esperar${mort > 0 ? `, os ${formatarNumeroBR(mort, 1)}% de mortalidade` : ""}${precoAlvo !== preco ? ` e a diferença de preço (R$ ${formatarNumeroBR(preco, 2)} hoje contra R$ ${formatarNumeroBR(precoAlvo, 2)} no peso-alvo)` : ""}. Os custos da despesca entram nos dois lados, então não mexem na diferença.<br>` : ""}
+      <b>FCA</b> = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.`)}`;
 }
 
 function _simFutPainel(viveiro, dados) {
@@ -6886,11 +6900,11 @@ function _simFutPainel(viveiro, dados) {
           </div>
         </div>
       </div>
-      <p class="sim-hint" style="margin-top:4px">
-        ${medido ? `Medido pelas biometrias: <b>${formatarNumeroBR(medido, 2)} g/sem</b>. ` : ""}
-        Peso hoje estimado <b>${formatarNumeroBR(proj.pesoHoje, 2)} g</b>
-        (última biometria ${formatarNumeroBR(proj.pesoUltBio, 2)} g há ${proj.diasDesdeBio} dia${proj.diasDesdeBio === 1 ? "" : "s"}).
-      </p>
+      <div class="simfut-nota">
+        Peso hoje <b>${formatarNumeroBR(proj.pesoHoje, 2)} g</b>${_ajudaBtn("peso")}
+      </div>
+      ${_ajudaTxt("peso", `${medido ? `Crescimento medido pelas biometrias: <b>${formatarNumeroBR(medido, 2)} g/sem</b>. ` : ""}
+        O peso de hoje é estimado: parte da última biometria (${formatarNumeroBR(proj.pesoUltBio, 2)} g, há ${proj.diasDesdeBio} dia${proj.diasDesdeBio === 1 ? "" : "s"}) e cresce no ritmo acima até hoje.`)}
 
       ${proj.diasFalta <= 0
         ? `<div class="sim-aviso" style="margin-top:10px">O camarão já estaria com ${formatarNumeroBR(proj.pesoHoje, 2)} g, no peso-alvo ou acima. Aumente o peso-alvo para projetar.</div>`
@@ -6901,7 +6915,12 @@ function _simFutPainel(viveiro, dados) {
         <div><small>Despesca em</small><b>${formatarData(proj.dataAlvo)}</b></div>
       </div>
 
-      <div class="simfut-sec">Ração planejada por semana</div>
+      <div class="simfut-sec">Ração planejada por semana${_ajudaBtn("racao")}</div>
+      ${_ajudaTxt("racao", porDia > 0
+        ? `Hoje você dá cerca de <b>${formatarNumeroBR(porDia, 0)} kg</b> por dia de oferta, e é esse o valor sugerido.
+           Digite a oferta diária de cada semana — os dias de cada uma vêm do calendário até ${formatarData(proj.dataAlvo)}, somando <b>${totalDiasOferta}</b> dias de oferta.
+           A chave do domingo muda esses dias.`
+        : `Sem ração lançada ainda para sugerir um valor. Digite a oferta diária de cada semana.`)}
       <button type="button" class="simfut-domingo${_simFutDomingo ? " ligado" : ""}" onclick="_simFutToggleDomingo()">
         <span class="simfut-switch"><span></span></span>
         <span class="simfut-domingo-txt">
@@ -6909,11 +6928,7 @@ function _simFutPainel(viveiro, dados) {
           <small>${_simFutDomingo ? "7 dias por semana" : "6 dias por semana — folga no domingo"}</small>
         </span>
       </button>
-      <p class="sim-hint" style="margin:6px 0 8px">
-        ${porDia > 0
-          ? `Hoje você dá cerca de <b>${formatarNumeroBR(porDia, 0)} kg</b> por dia. Digite a oferta diária de cada semana — os dias de cada uma vêm do calendário até ${formatarData(proj.dataAlvo)} (<b>${totalDiasOferta}</b> dias de oferta no total).`
-          : `Sem ração lançada ainda para sugerir um valor. Digite a oferta diária de cada semana.`}
-      </p>
+
       <div class="simfut-semanas">${campos.join("")}</div>
 
       ${tiposRacao.length ? `
@@ -6927,7 +6942,7 @@ function _simFutPainel(viveiro, dados) {
       ${_simFutModo === "comparativo" ? `
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
-          <div class="campo-label"><label>Custos da despesca</label></div>
+          <div class="campo-label"><label>Custos da despesca</label>${_ajudaBtn("custos")}</div>
           <input type="text" inputmode="decimal" id="simFut-ambos" placeholder="Ex.: 2.500,00" oninput="_simFutCalcular()">
         </div>
         <div class="campo-form" style="margin:0">
@@ -6935,13 +6950,11 @@ function _simFutPainel(viveiro, dados) {
           <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
         </div>
       </div>
-      <p class="sim-hint" style="margin-top:6px">
-        <b>Custos da despesca</b> são os que você paga nos DOIS casos — despesca, técnico, gelo. Entram nos dois lados, então não pesam a favor nem contra esperar.
-        <b>Custos só de esperar</b> são os que só existem se você segurar o camarão (a ração futura já está contada à parte).
-      </p>
+      ${_ajudaTxt("custos", `<b>Custos da despesca</b> são os que você paga nos DOIS casos — despesca, técnico, gelo. Entram nos dois lados, então não pesam a favor nem contra esperar.<br>
+        <b>Custos só de esperar</b> são os que só existem se você segurar o camarão. A ração futura já é contada à parte.`)}
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
-          <div class="campo-label"><label>Mortalidade até lá</label></div>
+          <div class="campo-label"><label>Mortalidade até lá</label>${_ajudaBtn("mort")}</div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="simFut-mort" placeholder="0" oninput="_simFutCalcular()">
             <span class="campo-unidade">%</span>
@@ -6955,10 +6968,8 @@ function _simFutPainel(viveiro, dados) {
           </div>
         </div>
       </div>
-      <p class="sim-hint" style="margin-top:6px">
-        A mortalidade vale sobre os camarões <b>vivos hoje</b>: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.
-        O preço do camarão maior costuma ser outro — deixe em branco para usar o mesmo de hoje.
-      </p>`
+      ${_ajudaTxt("mort", `A <b>mortalidade</b> vale sobre os camarões vivos hoje: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.<br>
+        O <b>preço no peso-alvo</b> costuma ser maior, porque camarão graúdo vale mais por kg. Em branco, usa o mesmo preço de hoje.`)}`
       : `
       <div class="campo-form" style="margin-top:10px">
         <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
