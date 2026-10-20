@@ -6316,7 +6316,7 @@ function _simFutAbrir(modo, titulo) {
       <div class="campo-form">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <label>Preço de venda (R$/kg)</label>
+          <label>${modo === "comparativo" ? "Preço hoje (R$/kg)" : "Preço de venda (R$/kg)"}</label>
         </div>
         <input type="text" inputmode="decimal" id="simVenda-preco" placeholder="Ex.: 23,00" oninput="_simFutCalcular()">
       </div>
@@ -6749,6 +6749,12 @@ function _simFutResultadoHtml() {
   const comparar = _simFutModo === "comparativo";
   const mortLida = comparar ? parseDecimalBR(document.getElementById("simFut-mort")?.value) : 0;
   const mort = isNaN(mortLida) || mortLida < 0 ? 0 : Math.min(mortLida, 100);
+
+  // Preço do camarão no peso-alvo. Camarão maior costuma valer mais por kg, e
+  // usar um preço só nos dois cenários esconderia parte do ganho de esperar.
+  // Em branco = mesmo preço de hoje.
+  const preco2Lido = comparar ? parseDecimalBR(document.getElementById("simFut-preco2")?.value) : NaN;
+  const precoAlvo = !isNaN(preco2Lido) && preco2Lido > 0 ? preco2Lido : preco;
   const sobrevive = 1 - mort / 100;
 
   // Peso de hoje: o cenário "vender agora", para comparar com o de esperar.
@@ -6767,7 +6773,7 @@ function _simFutResultadoHtml() {
     const kg = emPeAlvo * alvo / 1000;
     const produzido = kg + (dados.despKgTotal || 0);
     const fca = produzido > 0 ? racaoTotal / produzido : 0;
-    const lucro = kg * preco + receitaDesp - custoTotal;
+    const lucro = kg * precoAlvo + receitaDesp - custoTotal;
 
     // Vender hoje: MESMA sobrevivência, peso de hoje, e sem os custos futuros
     // — quem vende agora não vai gastar a ração que ainda nem comprou.
@@ -6787,7 +6793,7 @@ function _simFutResultadoHtml() {
 
   return `
     <div class="simfut-sec">${comparar
-      ? `Esperar até ${formatarNumeroBR(alvo, 1)} g, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g)`
+      ? `Esperar até ${formatarNumeroBR(alvo, 1)} g a R$ ${formatarNumeroBR(precoAlvo, 2)}, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g a R$ ${formatarNumeroBR(preco, 2)})`
       : `Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g`}</div>
     <div class="sim-sobr-tab${comparar ? " com-ganho" : ""}">
       <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro${comparar ? " R$" : ""}</span>${comparar ? `<span class="ss-ganho">vs hoje</span>` : ""}</div>
@@ -6799,7 +6805,7 @@ function _simFutResultadoHtml() {
     ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>Outros custos futuros</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
     <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
     <p class="sim-hint">
-      ${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos extras${mort > 0 ? ` e os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}. Vender hoje não carrega esses custos.<br>` : ""}
+      ${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos extras${mort > 0 ? `, os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}${precoAlvo !== preco ? ` e a diferença de preço (R$ ${formatarNumeroBR(preco, 2)} hoje contra R$ ${formatarNumeroBR(precoAlvo, 2)} no peso-alvo)` : ""}. Vender hoje não carrega esses custos.<br>` : ""}
       FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.
     </p>`;
 }
@@ -6909,11 +6915,11 @@ function _simFutPainel(viveiro, dados) {
       </div>` : `<div class="sim-aviso" style="margin-top:10px">Cadastre um <b>tipo de ração</b> com preço para o custo da ração futura entrar na conta.</div>`}
 
       ${_simFutModo === "comparativo" ? `
+      <div class="campo-form" style="margin-top:10px">
+        <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
+        <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+      </div>
       <div class="simfut-linha2" style="margin-top:10px">
-        <div class="campo-form" style="margin:0">
-          <div class="campo-label"><label>Outros custos futuros</label></div>
-          <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
-        </div>
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Mortalidade até lá</label></div>
           <div class="campo-input-unidade">
@@ -6921,8 +6927,18 @@ function _simFutPainel(viveiro, dados) {
             <span class="campo-unidade">%</span>
           </div>
         </div>
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Preço no peso-alvo</label></div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="simFut-preco2" placeholder="igual a hoje" oninput="_simFutCalcular()">
+            <span class="campo-unidade">R$/kg</span>
+          </div>
+        </div>
       </div>
-      <p class="sim-hint" style="margin-top:6px">A mortalidade vale sobre os camarões que estão <b>vivos hoje</b>: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.</p>`
+      <p class="sim-hint" style="margin-top:6px">
+        A mortalidade vale sobre os camarões <b>vivos hoje</b>: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.
+        O preço do camarão maior costuma ser outro — deixe em branco para usar o mesmo de hoje.
+      </p>`
       : `
       <div class="campo-form" style="margin-top:10px">
         <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
