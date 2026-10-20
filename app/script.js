@@ -6785,10 +6785,13 @@ function _simFutResultadoHtml() {
   const pesoHoje = projCalc ? projCalc.pesoHoje : 0;
 
   const linhas = [];
+  const ganhos = [];   // alimenta o veredito acima da tabela
   for (let p = ini; p <= fim; p += 5) {
     const emPe = pop * (p / 100) - (dados.despQtd || 0);
     if (emPe <= 0) {
-      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span>${comparar ? `<span class="ss-ganho">—</span>` : ""}</div>`);
+      linhas.push(comparar
+        ? `<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-hoje">—</span><span class="ss-lucro">—</span><span class="ss-ganho">—</span></div>`
+        : `<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span></div>`);
       continue;
     }
 
@@ -6805,22 +6808,53 @@ function _simFutResultadoHtml() {
     const lucroHoje = kgHoje * preco + receitaDesp - custoHoje;
     const ganho = lucro - lucroHoje;
 
-    linhas.push(`
-      <div class="sim-sobr-linha">
-        <span class="ss-pct">${p}%</span>
-        <span class="ss-kg">${formatarNumeroBR(kg, 0)} kg</span>
-        <span class="ss-fca ${fca > 0 && fca <= 1.5 ? "ss-pos" : fca <= 2 ? "" : "ss-neg"}">${fca > 0 ? formatarNumeroBR(fca, 2) : "—"}</span>
-        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">${comparar ? "" : "R$ "}${formatarNumeroBR(lucro, comparar ? 0 : 2)}</span>
-        ${comparar ? `<span class="ss-ganho ${ganho >= 0 ? "ss-pos" : "ss-neg"}">${ganho >= 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(ganho), 0)}</span>` : ""}
-      </div>`);
+    // Na comparação vão os DOIS lucros e a diferença: com um número só
+    // ("Lucro R$") não dava para saber de qual cenário ele era.
+    if (comparar) {
+      ganhos.push(ganho);
+      linhas.push(`
+        <div class="sim-sobr-linha">
+          <span class="ss-pct">${p}%</span>
+          <span class="ss-hoje">${formatarNumeroBR(lucroHoje, 0)}</span>
+          <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">${formatarNumeroBR(lucro, 0)}</span>
+          <span class="ss-ganho ${ganho >= 0 ? "ss-pos" : "ss-neg"}">${ganho >= 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(ganho), 0)}</span>
+        </div>`);
+    } else {
+      linhas.push(`
+        <div class="sim-sobr-linha">
+          <span class="ss-pct">${p}%</span>
+          <span class="ss-kg">${formatarNumeroBR(kg, 0)} kg</span>
+          <span class="ss-fca ${fca > 0 && fca <= 1.5 ? "ss-pos" : fca <= 2 ? "" : "ss-neg"}">${fca > 0 ? formatarNumeroBR(fca, 2) : "—"}</span>
+          <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">R$ ${formatarNumeroBR(lucro, 2)}</span>
+        </div>`);
+    }
   }
+
+  // Veredito: a resposta da pergunta que a tela existe para responder.
+  const todosPos = ganhos.length && ganhos.every(g => g > 0);
+  const todosNeg = ganhos.length && ganhos.every(g => g < 0);
+  const viraEm = (() => {
+    for (let i = 0; i < ganhos.length; i++) if (ganhos[i] > 0) return ini + i * 5;
+    return null;
+  })();
+  const veredito = !comparar || !ganhos.length ? "" : `
+    <div class="simfut-veredito ${todosPos ? "bom" : todosNeg ? "ruim" : "misto"}">
+      ${todosPos
+        ? `<b>Esperar compensa</b> em toda a faixa — de +R$ ${formatarNumeroBR(Math.min(...ganhos), 0)} a +R$ ${formatarNumeroBR(Math.max(...ganhos), 0)}.`
+        : todosNeg
+          ? `<b>Vender hoje é melhor</b> em toda a faixa — esperar custaria de R$ ${formatarNumeroBR(Math.abs(Math.max(...ganhos)), 0)} a R$ ${formatarNumeroBR(Math.abs(Math.min(...ganhos)), 0)}.`
+          : `<b>Esperar só compensa</b> se a sobrevivência ficar em ${viraEm}% ou mais. Abaixo disso, vale vender hoje.`}
+    </div>`;
 
   return `
     <div class="simfut-sec">${comparar
-      ? `Esperar até ${formatarNumeroBR(alvo, 1)} g a R$ ${formatarNumeroBR(precoAlvo, 2)}, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g a R$ ${formatarNumeroBR(preco, 2)})`
+      ? `Vender hoje (${formatarNumeroBR(pesoHoje, 1)} g · R$ ${formatarNumeroBR(preco, 2)}) ou esperar até ${formatarNumeroBR(alvo, 1)} g (R$ ${formatarNumeroBR(precoAlvo, 2)})?`
       : `Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g`}${_ajudaBtn("tabela")}</div>
-    <div class="sim-sobr-tab${comparar ? " com-ganho" : ""}">
-      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro${comparar ? " R$" : ""}</span>${comparar ? `<span class="ss-ganho">vs hoje</span>` : ""}</div>
+    ${veredito}
+    <div class="sim-sobr-tab${comparar ? " comparar" : ""}">
+      ${comparar
+        ? `<div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-hoje">Vender hoje</span><span class="ss-lucro">Esperando</span><span class="ss-ganho">Diferença</span></div>`
+        : `<div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro</span></div>`}
       ${linhas.join("")}
     </div>
     <div class="sim-sobr-custo"><span>Custo já lançado</span><b>R$ ${formatarNumeroBR(dados.custoTotal, 2)}</b></div>

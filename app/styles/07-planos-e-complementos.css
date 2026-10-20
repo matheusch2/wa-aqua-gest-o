@@ -393,14 +393,24 @@ body.tema-escuro .ct-fechar { color: #6b7280; }
    display:contents faz as células entrarem direto na grade do pai. */
 .sim-sobr-tab { display: grid; grid-template-columns: auto 1fr auto auto; column-gap: 10px; align-items: center; }
 .sim-sobr-tab.sem-fca { grid-template-columns: auto 1fr auto; }
-/* Com a coluna de comparação são cinco: aperta o espaçamento e o corpo dos
-   números, senão não cabe num celular estreito. */
-.sim-sobr-tab.com-ganho { grid-template-columns: auto 1fr auto auto auto; column-gap: 7px; }
-.sim-sobr-tab.com-ganho .ss-pct { font-size: 12.5px; }
-.sim-sobr-tab.com-ganho .ss-kg { font-size: 11.5px; }
-.sim-sobr-tab.com-ganho .ss-fca { font-size: 11.5px; }
-.sim-sobr-tab.com-ganho .ss-lucro { font-size: 12.5px; }
+/* Comparação: quatro colunas, as três de dinheiro alinhadas à direita.
+   Biomassa e FCA saem daqui — esta tela é para decidir entre dois cenários,
+   não para detalhar produção (isso está em Projetar despesca). */
+.sim-sobr-tab.comparar { grid-template-columns: auto 1fr 1fr 1fr; column-gap: 8px; }
+.sim-sobr-tab.comparar .ss-pct { font-size: 12.5px; }
+.ss-hoje { font-size: 12.5px; font-weight: 700; color: #6b7280; text-align: right; white-space: nowrap; }
 .ss-ganho { font-size: 12.5px; font-weight: 800; text-align: right; white-space: nowrap; }
+.sim-sobr-tab.comparar .ss-lucro { font-size: 12.5px; }
+
+/* Veredito: a resposta da pergunta, antes da tabela que a sustenta. */
+.simfut-veredito { margin: 2px 0 10px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; border-left: 3px solid; }
+.simfut-veredito b { font-weight: 800; }
+.simfut-veredito.bom { background: #f0fdf4; border-color: #16a34a; color: #15803d; }
+.simfut-veredito.ruim { background: #fef2f2; border-color: #dc2626; color: #b91c1c; }
+.simfut-veredito.misto { background: #fffbeb; border-color: #d97706; color: #b45309; }
+body.tema-escuro .simfut-veredito.bom { background: #064e3b; color: #6ee7b7; }
+body.tema-escuro .simfut-veredito.ruim { background: #3f1212; color: #fca5a5; }
+body.tema-escuro .simfut-veredito.misto { background: #2a2111; color: #fbbf24; }
 .sim-sobr-cab, .sim-sobr-linha { display: contents; }
 .sim-sobr-tab > div > span { padding: 7px 0; border-bottom: 1px solid #f3f4f6; }
 .sim-sobr-tab > .sim-sobr-cab > span { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #eef0f2; }
