@@ -6329,13 +6329,14 @@ function _simFutAbrir(modo, titulo) {
         </select>
       </div>
 
+      ${modo === "comparativo" ? "" : `
       <div class="campo-form">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <label>${modo === "comparativo" ? "Preço hoje (R$/kg)" : "Preço de venda (R$/kg)"}</label>
+          <label>Preço de venda (R$/kg)</label>
         </div>
         <input type="text" inputmode="decimal" id="simVenda-preco" placeholder="Ex.: 23,00" oninput="_simFutCalcular()">
-      </div>
+      </div>`}
 
       <div id="projDesp-painel"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
@@ -6884,10 +6885,16 @@ function _simFutPainel(viveiro, dados) {
   const tipoSel = document.getElementById("simFut-tipo")?.value
     ?? (ultTipo ? ultTipo.tipoRacaoId : (tiposRacao[0] && tiposRacao[0].id) || "");
 
-  // O painel é redesenhado quando muda o peso-alvo ou o crescimento. Sem ler a
-  // faixa escolhida antes, ela voltaria para 50–80 no meio do ajuste.
+  // O painel é redesenhado quando muda o peso-alvo ou o crescimento. Tudo que
+  // já foi digitado precisa ser lido ANTES e devolvido nos campos novos —
+  // senão custos, mortalidade, preços e faixa somem no meio do ajuste.
   const fDe  = Number(document.getElementById("simSobr-de")?.value)  || 50;
   const fAte = Number(document.getElementById("simSobr-ate")?.value) || 80;
+  const _v = (id) => (document.getElementById(id)?.value || "").replace(/"/g, "&quot;");
+  const vExtra  = _v("simFut-extra");
+  const vAmbos  = _v("simFut-ambos");
+  const vMort   = _v("simFut-mort");
+  const vPreco2 = _v("simFut-preco2");
 
   const porDia = _simFutRacaoPorDia(viveiro);
   const padraoDia = Math.round(porDia);
@@ -6977,52 +6984,66 @@ function _simFutPainel(viveiro, dados) {
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Custos da despesca</label>${_ajudaBtn("custos")}</div>
-          <input type="text" inputmode="decimal" id="simFut-ambos" placeholder="Ex.: 2.500,00" oninput="_simFutCalcular()">
+          <input type="text" inputmode="decimal" id="simFut-ambos" value="${vAmbos}" placeholder="Ex.: 2.500,00" oninput="_simFutCalcular()">
         </div>
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Custos só de esperar</label></div>
-          <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+          <input type="text" inputmode="decimal" id="simFut-extra" value="${vExtra}" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
         </div>
       </div>
       ${_ajudaTxt("custos", `<b>Custos da despesca</b> são os que você paga nos DOIS casos — despesca, técnico, gelo. Entram nos dois lados, então não pesam a favor nem contra esperar.<br>
         <b>Custos só de esperar</b> são os que só existem se você segurar o camarão. A ração futura já é contada à parte.`)}
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
-          <div class="campo-label"><label>Mortalidade até lá</label>${_ajudaBtn("mort")}</div>
+          <div class="campo-label"><label>Preço hoje</label>${_ajudaBtn("preco")}</div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="simFut-mort" placeholder="0" oninput="_simFutCalcular()">
-            <span class="campo-unidade">%</span>
+            <input type="text" inputmode="decimal" id="simVenda-preco" value="${_v("simVenda-preco")}" placeholder="Ex.: 23,00" oninput="_simFutCalcular()">
+            <span class="campo-unidade">R$/kg</span>
           </div>
         </div>
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Preço no peso-alvo</label></div>
           <div class="campo-input-unidade">
-            <input type="text" inputmode="decimal" id="simFut-preco2" placeholder="igual a hoje" oninput="_simFutCalcular()">
+            <input type="text" inputmode="decimal" id="simFut-preco2" value="${vPreco2}" placeholder="igual a hoje" oninput="_simFutCalcular()">
             <span class="campo-unidade">R$/kg</span>
           </div>
         </div>
       </div>
-      ${_ajudaTxt("mort", `A <b>mortalidade</b> vale sobre os camarões vivos hoje: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.<br>
-        O <b>preço no peso-alvo</b> costuma ser maior, porque camarão graúdo vale mais por kg. Em branco, usa o mesmo preço de hoje.`)}`
-      : `
-      <div class="campo-form" style="margin-top:10px">
-        <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
-        <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
-      </div>`}
+      ${_ajudaTxt("preco", `O <b>preço no peso-alvo</b> costuma ser maior, porque camarão graúdo vale mais por kg. Em branco, usa o mesmo preço de hoje.`)}
 
-      <div class="simfut-sec">Faixa de sobrevivência</div>
-      <div class="sim-sobr-faixa">
-        <label class="sim-sobr-sel">De
-          <select id="simSobr-de" onchange="_simFutCalcular()">
-            ${_simFaixaOpcoes(fDe)}
-          </select>
-        </label>
-        <label class="sim-sobr-sel">até
-          <select id="simSobr-ate" onchange="_simFutCalcular()">
-            ${_simFaixaOpcoes(fAte)}
-          </select>
-        </label>
+      <div class="simfut-linha2" style="margin-top:10px">
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Mortalidade até lá</label>${_ajudaBtn("mort")}</div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="simFut-mort" value="${vMort}" placeholder="0" oninput="_simFutCalcular()">
+            <span class="campo-unidade">%</span>
+          </div>
+        </div>
+        <div class="campo-form simfut-faixa-inline" style="margin:0">
+          <div class="campo-label"><label>Sobrevivência</label></div>
+          <div class="simfut-faixa2">
+            <select id="simSobr-de" onchange="_simFutCalcular()">${_simFaixaOpcoes(fDe)}</select>
+            <span>a</span>
+            <select id="simSobr-ate" onchange="_simFutCalcular()">${_simFaixaOpcoes(fAte)}</select>
+          </div>
+        </div>
       </div>
+      ${_ajudaTxt("mort", `A <b>mortalidade</b> vale sobre os camarões vivos hoje: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.`)}`
+      : `
+      <div class="simfut-linha2" style="margin-top:10px">
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Outros custos futuros</label></div>
+          <input type="text" inputmode="decimal" id="simFut-extra" value="${vExtra}" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+        </div>
+        <div class="campo-form simfut-faixa-inline" style="margin:0">
+          <div class="campo-label"><label>Sobrevivência</label></div>
+          <div class="simfut-faixa2">
+            <select id="simSobr-de" onchange="_simFutCalcular()">${_simFaixaOpcoes(fDe)}</select>
+            <span>a</span>
+            <select id="simSobr-ate" onchange="_simFutCalcular()">${_simFaixaOpcoes(fAte)}</select>
+          </div>
+        </div>
+      </div>`}
 
       <div id="simFut-resultado"></div>`}
     </div>`;
