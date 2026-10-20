@@ -6725,7 +6725,15 @@ function _simFutResultadoHtml() {
 
   const extra = parseMoedaBR(document.getElementById("simFut-extra")?.value || "");
   const custoExtra = isNaN(extra) || extra < 0 ? 0 : extra;
-  const custoTotal = dados.custoTotal + custoRacaoFutura + custoExtra;
+
+  // Custos que acontecem NOS DOIS casos — despesca, técnico, gelo. Cobrá-los
+  // só de quem espera fazia a comparação mentir: o valor aparecia inteiro como
+  // desvantagem de esperar, quando vendendo hoje ele seria pago do mesmo jeito.
+  const ambosLido = parseMoedaBR(document.getElementById("simFut-ambos")?.value || "");
+  const custoAmbos = isNaN(ambosLido) || ambosLido < 0 ? 0 : ambosLido;
+
+  const custoTotal = dados.custoTotal + custoRacaoFutura + custoExtra + custoAmbos;
+  const custoHoje = dados.custoTotal + custoAmbos;
 
   // Ração já consumida no ciclo — base do FCA junto com a futura.
   const racaoJa = (viveiro.racoes || []).reduce((s, r) => s + (Number(r.racao) || 0), 0);
@@ -6778,7 +6786,7 @@ function _simFutResultadoHtml() {
     // Vender hoje: MESMA sobrevivência, peso de hoje, e sem os custos futuros
     // — quem vende agora não vai gastar a ração que ainda nem comprou.
     const kgHoje = emPe * pesoHoje / 1000;
-    const lucroHoje = kgHoje * preco + receitaDesp - dados.custoTotal;
+    const lucroHoje = kgHoje * preco + receitaDesp - custoHoje;
     const ganho = lucro - lucroHoje;
 
     linhas.push(`
@@ -6802,10 +6810,12 @@ function _simFutResultadoHtml() {
     <div class="sim-sobr-custo"><span>Custo já lançado</span><b>R$ ${formatarNumeroBR(dados.custoTotal, 2)}</b></div>
     <div class="sim-sobr-custo"><span>Ração futura (${formatarNumeroBR(racaoFutura, 0)} kg${custoKgRacao > 0 ? " × R$ " + formatarNumeroBR(custoKgRacao, 2) : ""})</span><b>+ R$ ${formatarNumeroBR(custoRacaoFutura, 2)}</b></div>
     ${racaoFutura > 0 && custoKgRacao <= 0 ? `<div class="sim-sobr-custo" style="color:#92400e"><span>⚠️ Ração sem preço cadastrado — o custo dela ficou de fora</span><b></b></div>` : ""}
-    ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>Outros custos futuros</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
-    <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
+    ${custoAmbos > 0 ? `<div class="sim-sobr-custo"><span>Custos da despesca (nos dois casos)</span><b>+ R$ ${formatarNumeroBR(custoAmbos, 2)}</b></div>` : ""}
+    ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>${comparar ? "Custos só de esperar" : "Outros custos futuros"}</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
+    <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total${comparar ? " esperando" : ""}</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
+    ${comparar ? `<div class="sim-sobr-custo"><span>Custo se vender hoje</span><b>R$ ${formatarNumeroBR(custoHoje, 2)}</b></div>` : ""}
     <p class="sim-hint">
-      ${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos extras${mort > 0 ? `, os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}${precoAlvo !== preco ? ` e a diferença de preço (R$ ${formatarNumeroBR(preco, 2)} hoje contra R$ ${formatarNumeroBR(precoAlvo, 2)} no peso-alvo)` : ""}. Vender hoje não carrega esses custos.<br>` : ""}
+      ${comparar ? `<b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos só de esperar${mort > 0 ? `, os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}${precoAlvo !== preco ? ` e a diferença de preço (R$ ${formatarNumeroBR(preco, 2)} hoje contra R$ ${formatarNumeroBR(precoAlvo, 2)} no peso-alvo)` : ""}. Os custos da despesca entram nos dois lados, então não mexem na diferença.<br>` : ""}
       FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.
     </p>`;
 }
@@ -6915,10 +6925,20 @@ function _simFutPainel(viveiro, dados) {
       </div>` : `<div class="sim-aviso" style="margin-top:10px">Cadastre um <b>tipo de ração</b> com preço para o custo da ração futura entrar na conta.</div>`}
 
       ${_simFutModo === "comparativo" ? `
-      <div class="campo-form" style="margin-top:10px">
-        <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
-        <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+      <div class="simfut-linha2" style="margin-top:10px">
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Custos da despesca</label></div>
+          <input type="text" inputmode="decimal" id="simFut-ambos" placeholder="Ex.: 2.500,00" oninput="_simFutCalcular()">
+        </div>
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Custos só de esperar</label></div>
+          <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+        </div>
       </div>
+      <p class="sim-hint" style="margin-top:6px">
+        <b>Custos da despesca</b> são os que você paga nos DOIS casos — despesca, técnico, gelo. Entram nos dois lados, então não pesam a favor nem contra esperar.
+        <b>Custos só de esperar</b> são os que só existem se você segurar o camarão (a ração futura já está contada à parte).
+      </p>
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Mortalidade até lá</label></div>
