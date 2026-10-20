@@ -6727,30 +6727,50 @@ function _simFutResultadoHtml() {
   const ate = Number(document.getElementById("simSobr-ate")?.value) || 80;
   const ini = Math.min(de, ate), fim = Math.max(de, ate);
 
+  // Mortalidade do período: incide sobre quem está VIVO hoje. 5% = 5 de cada
+  // 100 que estão no viveiro não chegam na despesca.
+  const mortLida = parseDecimalBR(document.getElementById("simFut-mort")?.value);
+  const mort = isNaN(mortLida) || mortLida < 0 ? 0 : Math.min(mortLida, 100);
+  const sobrevive = 1 - mort / 100;
+
+  // Peso de hoje: o cenário "vender agora", para comparar com o de esperar.
+  const pesoHoje = projCalc ? projCalc.pesoHoje : 0;
+
   const linhas = [];
   for (let p = ini; p <= fim; p += 5) {
     const emPe = pop * (p / 100) - (dados.despQtd || 0);
     if (emPe <= 0) {
-      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span></div>`);
+      linhas.push(`<div class="sim-sobr-linha sim-sobr-na"><span class="ss-pct">${p}%</span><span class="ss-kg">—</span><span class="ss-fca">—</span><span class="ss-lucro ss-nota">abaixo do já despescado</span><span class="ss-ganho">—</span></div>`);
       continue;
     }
-    const kg = emPe * alvo / 1000;
+
+    // Esperar: os mesmos animais, menos a mortalidade do período, no peso-alvo.
+    const emPeAlvo = emPe * sobrevive;
+    const kg = emPeAlvo * alvo / 1000;
     const produzido = kg + (dados.despKgTotal || 0);
     const fca = produzido > 0 ? racaoTotal / produzido : 0;
     const lucro = kg * preco + receitaDesp - custoTotal;
+
+    // Vender hoje: MESMA sobrevivência, peso de hoje, e sem os custos futuros
+    // — quem vende agora não vai gastar a ração que ainda nem comprou.
+    const kgHoje = emPe * pesoHoje / 1000;
+    const lucroHoje = kgHoje * preco + receitaDesp - dados.custoTotal;
+    const ganho = lucro - lucroHoje;
+
     linhas.push(`
       <div class="sim-sobr-linha">
         <span class="ss-pct">${p}%</span>
         <span class="ss-kg">${formatarNumeroBR(kg, 0)} kg</span>
         <span class="ss-fca ${fca > 0 && fca <= 1.5 ? "ss-pos" : fca <= 2 ? "" : "ss-neg"}">${fca > 0 ? formatarNumeroBR(fca, 2) : "—"}</span>
-        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">R$ ${formatarNumeroBR(lucro, 2)}</span>
+        <span class="ss-lucro ${lucro >= 0 ? "ss-pos" : "ss-neg"}">${formatarNumeroBR(lucro, 0)}</span>
+        <span class="ss-ganho ${ganho >= 0 ? "ss-pos" : "ss-neg"}">${ganho >= 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(ganho), 0)}</span>
       </div>`);
   }
 
   return `
-    <div class="simfut-sec">Resultado no peso-alvo de ${formatarNumeroBR(alvo, 1)} g</div>
-    <div class="sim-sobr-tab">
-      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro</span></div>
+    <div class="simfut-sec">Esperar até ${formatarNumeroBR(alvo, 1)} g, comparado a vender hoje (${formatarNumeroBR(pesoHoje, 1)} g)</div>
+    <div class="sim-sobr-tab com-ganho">
+      <div class="sim-sobr-cab"><span class="ss-pct">Sobrev.</span><span class="ss-kg">Biomassa</span><span class="ss-fca">FCA</span><span class="ss-lucro">Lucro R$</span><span class="ss-ganho">vs hoje</span></div>
       ${linhas.join("")}
     </div>
     <div class="sim-sobr-custo"><span>Custo já lançado</span><b>R$ ${formatarNumeroBR(dados.custoTotal, 2)}</b></div>
@@ -6758,7 +6778,11 @@ function _simFutResultadoHtml() {
     ${racaoFutura > 0 && custoKgRacao <= 0 ? `<div class="sim-sobr-custo" style="color:#92400e"><span>⚠️ Ração sem preço cadastrado — o custo dela ficou de fora</span><b></b></div>` : ""}
     ${custoExtra > 0 ? `<div class="sim-sobr-custo"><span>Outros custos futuros</span><b>+ R$ ${formatarNumeroBR(custoExtra, 2)}</b></div>` : ""}
     <div class="sim-sobr-custo sim-sobr-custo-total"><span>Custo total</span><b>R$ ${formatarNumeroBR(custoTotal, 2)}</b></div>
-    <p class="sim-hint">FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.</p>`;
+    <p class="sim-hint">
+      <b>vs hoje</b> = o que você ganha a mais (ou a menos) por esperar, na MESMA sobrevivência: já desconta a ração futura, os custos extras${mort > 0 ? ` e os ${formatarNumeroBR(mort, 1)}% de mortalidade do período` : ""}.
+      Vender hoje não carrega esses custos.<br>
+      FCA = ${formatarNumeroBR(racaoJa, 0)} kg já dados + ${formatarNumeroBR(racaoFutura, 0)} kg planejados, sobre a produção de cada cenário.
+    </p>`;
 }
 
 function _simFutPainel(viveiro, dados) {
@@ -6865,10 +6889,20 @@ function _simFutPainel(viveiro, dados) {
         </select>
       </div>` : `<div class="sim-aviso" style="margin-top:10px">Cadastre um <b>tipo de ração</b> com preço para o custo da ração futura entrar na conta.</div>`}
 
-      <div class="campo-form" style="margin-top:10px">
-        <div class="campo-label"><label>Outros custos futuros (opcional)</label></div>
-        <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+      <div class="simfut-linha2" style="margin-top:10px">
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Outros custos futuros</label></div>
+          <input type="text" inputmode="decimal" id="simFut-extra" placeholder="Ex.: 1.200,00" oninput="_simFutCalcular()">
+        </div>
+        <div class="campo-form" style="margin:0">
+          <div class="campo-label"><label>Mortalidade até lá</label></div>
+          <div class="campo-input-unidade">
+            <input type="text" inputmode="decimal" id="simFut-mort" placeholder="0" oninput="_simFutCalcular()">
+            <span class="campo-unidade">%</span>
+          </div>
+        </div>
       </div>
+      <p class="sim-hint" style="margin-top:6px">A mortalidade vale sobre os camarões que estão <b>vivos hoje</b>: 5% quer dizer que 5 de cada 100 que estão no viveiro não chegam na despesca.</p>
 
       <div class="simfut-sec">Faixa de sobrevivência</div>
       <div class="sim-sobr-faixa">
