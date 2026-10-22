@@ -8130,8 +8130,27 @@ function _imprimirNoNavegador(html) {
     _toastErro("Este relatório ficou grande demais para abrir no navegador. Use um filtro menor.");
     return;
   }
-  const janela = window.open(url, "_blank");
-  if (!janela) _toastErro("Permita abrir o navegador para imprimir.");
+
+  // window.open num app instalado NÃO abre o Safari: abre uma janela dentro
+  // do próprio app, que também não imprime (é a tela que aparecia e não ia).
+  // O esquema x-safari-https entrega o endereço ao Safari de verdade, que é
+  // de onde a impressão funciona.
+  let saiu = false;
+  const marcarSaida = () => { saiu = true; };
+  window.addEventListener("pagehide", marcarSaida, { once: true });
+  window.addEventListener("blur", marcarSaida, { once: true });
+
+  try {
+    location.href = "x-safari-" + url;   // x-safari-https://...
+  } catch (e) { console.log("Safari:", e); }
+
+  // Se o esquema não for aceito, o app continua aqui parado. Depois de um
+  // tempo curto, abre do jeito antigo para pelo menos mostrar o relatório.
+  setTimeout(() => {
+    if (saiu || document.hidden) return;
+    const janela = window.open(url, "_blank");
+    if (!janela) _toastErro("Permita abrir o navegador para imprimir.");
+  }, 1200);
 }
 
 function imprimirBoletos() {
