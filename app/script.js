@@ -5144,46 +5144,57 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
     return total + item.quantidadeKg;
   }, 0);
 
+  // Faturamento do que já saiu: só entra despesca COM preço informado.
+  const faturado = despescas.reduce((t, d) => t + ((Number(d.precoKg) || 0) * (Number(d.quantidadeKg) || 0)), 0);
+  const semPreco = despescas.filter(d => !(Number(d.precoKg) > 0)).length;
+
   resultado.innerHTML = `
         <h3 class="titulo-secao">Despesca - ${abreviarViveiro(viveiro.nome)}</h3>
 
-        <div class="tabela-historico">
-            <div class="linha-historico-acoes cabecalho">
-                <span>DATA</span>
-                <span class="col-centro">KG</span>
-                <span class="col-centro">PESO</span>
-                <span></span>
-            </div>
+        ${despescas.length === 0 ? "" : `
+        <div class="rh-resumo">
+          <div class="rh-rcard"><small>Despescado</small><strong>${formatarNumeroBR(totalDespescado, 1)}<span> kg</span></strong></div>
+          <div class="rh-rcard"><small>Faturado</small><strong>${faturado > 0 ? "R$ " + formatarNumeroBR(faturado, 0) : "—"}</strong></div>
+          <div class="rh-rcard"><small>Despescas</small><strong>${despescas.length}</strong></div>
+        </div>`}
 
+        <div class="rh-lista">
             ${
               despescas.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
-                : `<p class="dica-toque">Toque na linha para ver o valor e o detalhe</p>` + despescas
+                : despescas
                     .map((item) => {
                       // Mesmo cuidado da biometria: a tela ordena por data, mas
                       // editar/excluir/detalhe indexam viveiro.despescas, que está
                       // na ordem de cadastro.
                       const iOriginal = viveiro.despescas.findIndex(d => d.id === item.id);
+                      const dia = calcularDiasCultivo(viveiro.dataPovoamento, item.data);
+                      const kg = Number(item.quantidadeKg) || 0;
+                      const preco = Number(item.precoKg) || 0;
                       return `
-                    <div class="linha-historico-acoes despesca-clicavel" id="desp-row-${index}-${iOriginal}" onclick="_toggleDetalheDespesca(${index}, ${iOriginal})" title="Toque para ver o detalhe">
-                        <span>${formatarData(item.data)}</span>
-                        <span class="col-centro">${formatarNumeroBR(item.quantidadeKg, 1)} kg</span>
-                        <span class="col-centro">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
-                        <span class="col-acoes">
-                          <button class="botao-editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${iOriginal}, '${elementoId}', ${direto})">✏️</button>
-                          <button class="botao-editar botao-excluir" onclick="event.stopPropagation(); confirmarExcluirDespesca(${index}, ${iOriginal}, '${elementoId}', ${direto})">🗑️</button>
-                        </span>
+                    <div class="rh-grupo">
+                      <div class="rh-row rh-row-desp" id="desp-row-${index}-${iOriginal}" onclick="_toggleDetalheDespesca(${index}, ${iOriginal})">
+                        <div class="rh-dia"><b>${dia || "—"}</b><small>dia</small></div>
+                        <div class="rh-mid">
+                          <div class="rh-mid-top">
+                            <span class="rh-kg">${formatarNumeroBR(kg, 1)} kg</span>
+                            <span class="rh-tipo">${formatarNumeroBR(item.pesoMedio, 1)} g</span>
+                            ${preco > 0 ? `<span class="rh-tipo desp-valor">R$ ${formatarNumeroBR(kg * preco, 0)}</span>` : ""}
+                          </div>
+                          <div class="rh-data">${formatarData(item.data)}</div>
+                        </div>
+                        <div class="rh-acoes">
+                          <button class="rh-btn edit" aria-label="Editar" onclick="event.stopPropagation(); abrirEdicaoDespesca(${index}, ${iOriginal}, '${elementoId}', ${direto})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                          <button class="rh-btn del" aria-label="Excluir" onclick="event.stopPropagation(); confirmarExcluirDespesca(${index}, ${iOriginal}, '${elementoId}', ${direto})"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        </div>
+                        <span class="rh-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                      </div>
                     </div>
                 `;
                     })
                     .join("")
             }
         </div>
-
-    <div class="total-chip">
-      <span class="total-chip-label">Total despescado</span>
-      <span class="total-chip-valor">${formatarNumeroBR(totalDespescado, 1)} kg</span>
-    </div>
 
     <button class="botao-voltar-form" style="margin-top:10px" onclick="${direto ? `mostrarHistoricoDoViveiroDireto(${index})` : `voltarOpcoesHistorico()`}">Voltar</button>
     `;
@@ -5195,9 +5206,9 @@ function _toggleDetalheDespesca(index, i) {
   if (!row) return;
   const jaAberto = document.getElementById(`desp-det-${index}-${i}`);
   document.querySelectorAll(".despesca-detalhe").forEach(e => e.remove());
-  document.querySelectorAll(".despesca-clicavel.aberta").forEach(e => e.classList.remove("aberta"));
+  document.querySelectorAll(".rh-row-desp.aberto").forEach(e => e.classList.remove("aberto"));
   if (jaAberto) return; // clicou no que já estava aberto só fecha
-  row.classList.add("aberta");
+  row.classList.add("aberto");
 
   const viveiro = viveiros[index];
   // 'i' é o índice no array ORIGINAL (viveiro.despescas), o mesmo que a linha e
