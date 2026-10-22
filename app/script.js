@@ -5158,7 +5158,7 @@ function renderizarHistoricoDespesca(index, elementoId, direto) {
             ${
               despescas.length === 0
                 ? `<p class="sobrevivencia-texto">Nenhuma despesca lançada.</p>`
-                : despescas
+                : `<p class="dica-toque">Toque na linha para ver o valor e o detalhe</p>` + despescas
                     .map((item) => {
                       // Mesmo cuidado da biometria: a tela ordena por data, mas
                       // editar/excluir/detalhe indexam viveiro.despescas, que está
@@ -5195,7 +5195,9 @@ function _toggleDetalheDespesca(index, i) {
   if (!row) return;
   const jaAberto = document.getElementById(`desp-det-${index}-${i}`);
   document.querySelectorAll(".despesca-detalhe").forEach(e => e.remove());
+  document.querySelectorAll(".despesca-clicavel.aberta").forEach(e => e.classList.remove("aberta"));
   if (jaAberto) return; // clicou no que já estava aberto só fecha
+  row.classList.add("aberta");
 
   const viveiro = viveiros[index];
   // 'i' é o índice no array ORIGINAL (viveiro.despescas), o mesmo que a linha e
@@ -5220,6 +5222,7 @@ function _toggleDetalheDespesca(index, i) {
     <div class="dd-row"><span>Nº de camarões</span><b>${animais != null ? formatarNumeroBR(animais, 0) : "—"}</b></div>
     <div class="dd-row"><span>Preço de venda</span><b>${preco > 0 ? "R$ " + formatarNumeroBR(preco, 2) + "/kg" : "— não informado"}</b></div>
     <div class="dd-row dd-total"><span>Total faturado</span><b>${total != null ? "R$ " + formatarNumeroBR(total, 2) : "—"}</b></div>
+    ${preco > 0 ? "" : `<p class="dd-sem-preco">Toque no lápis desta despesca e informe o preço por kg para ver o faturamento.</p>`}
   `;
   row.after(det);
 }
