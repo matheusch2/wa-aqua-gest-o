@@ -8062,6 +8062,10 @@ function _limparImpressao() {
 }
 
 function _imprimirDoc(html) {
+  // Instalado na tela de início: imprimir daqui não funciona no iPhone, então
+  // o relatório vai para o Safari.
+  if (_appInstalado()) { _imprimirNoNavegador(html); return; }
+
   _limparImpressao();   // sobra de uma impressão anterior não pode vazar
 
   const estilos = [...String(html).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map(m => m[1]).join("\n");
@@ -8100,6 +8104,34 @@ function _imprimirDoc(html) {
     try { window.print(); }
     catch (e) { console.log("Impressão:", e); _toastErro("Não consegui abrir a impressão neste aparelho."); _limparImpressao(); }
   }, 120);
+}
+
+// O app está rodando INSTALADO na tela de início?
+// No iPhone esse modo não tem a barra de compartilhar, e é dela que sai a
+// impressão: window.print() simplesmente não faz nada ali. Confirmado em
+// teste — o mesmo relatório imprime pelo Safari e não imprime pelo ícone.
+function _appInstalado() {
+  try {
+    return window.navigator.standalone === true ||
+           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  } catch (e) { return false; }
+}
+
+// Manda o relatório para o Safari, onde a impressão funciona. O conteúdo vai
+// no # da URL: é o único canal possível, porque o app instalado e o Safari
+// não compartilham login nem armazenamento no iPhone.
+function _imprimirNoNavegador(html) {
+  // Enxuga antes de virar URL: o HTML gerado tem muita indentação, e isso
+  // sozinho corta quase um terço do tamanho.
+  const enxuto = String(html).replace(/\n\s+/g, "\n").replace(/>\s+</g, "><");
+  const url = new URL("imprimir.html", location.href).href + "#" + encodeURIComponent(enxuto);
+
+  if (url.length > 120000) {
+    _toastErro("Este relatório ficou grande demais para abrir no navegador. Use um filtro menor.");
+    return;
+  }
+  const janela = window.open(url, "_blank");
+  if (!janela) _toastErro("Permita abrir o navegador para imprimir.");
 }
 
 function imprimirBoletos() {
