@@ -8003,43 +8003,103 @@ function _setBoletoMesPago(v) {
 // fechando o app). Aqui a impressão roda num iframe OCULTO dentro do próprio
 // app: abre o diálogo de impressão/salvar-PDF e, ao fechar, a pessoa continua
 // exatamente onde estava.
-function _imprimirDoc(html) {
-  const iframe = document.createElement("iframe");
-  iframe.setAttribute("aria-hidden", "true");
-  // FORA da tela, mas com tamanho REAL de papel. Com width/height 0 e
-  // opacity 0 o navegador pode não desenhar o conteúdo, e aí a impressão sai
-  // em branco ou simplesmente não abre — o Safari do iPhone faz isso.
-  // Jogar para fora da área visível esconde do mesmo jeito, sem esse risco.
-  iframe.style.cssText = "position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0";
-  document.body.appendChild(iframe);
+// Impressão SEM iframe e SEM janela nova.
+//
+// O caminho antigo escrevia o relatório num iframe escondido e chamava
+// print() nele. O Safari do iPhone parou de aceitar isso numa atualização:
+// não imprime, não avisa, não faz nada. E window.open num app instalado abre
+// uma tela sem barra de navegação que PRENDE o usuário.
+//
+// Então agora imprime-se a PRÓPRIA página: o relatório é injetado num
+// container, o CSS dele é reescrito para valer só ali dentro, e no modo
+// impressão todo o resto do app é escondido. Quem imprime é o documento
+// principal, que é o que todo navegador sabe fazer.
+const _PRINT_ID = "wa-area-impressao";
+const _PRINT_CSS_ID = "wa-css-impressao";
 
-  let jaImprimiu = false;
-  const imprimir = () => {
-    if (jaImprimiu) return;
-    jaImprimiu = true;
-    try {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    } catch (e) {
-      console.log("Impressão:", e);
-      _toastErro("Não consegui abrir a impressão neste aparelho.");
+// Reescreve o CSS do relatório para valer só dentro do container. Usa o
+// parser do próprio navegador (CSSOM) em vez de recortar texto na mão: o CSS
+// tem @media, vírgulas e pseudo-seletores que quebram qualquer gambiarra de
+// string.
+function _escoparCssImpressao(cssTexto, escopo) {
+  const st = document.createElement("style");
+  st.textContent = cssTexto;
+  document.head.appendChild(st);
+
+  const prefixa = (sel) => String(sel || "").split(",").map(x => {
+    x = x.trim();
+    if (!x) return "";
+    // "body" e "html" no relatório passam a significar o próprio container.
+    if (x === "body" || x === "html") return escopo;
+    return escopo + " " + x;
+  }).filter(Boolean).join(", ");
+
+  const regras = [];
+  try {
+    for (const r of st.sheet.cssRules) {
+      if (r.selectorText) {
+        regras.push(prefixa(r.selectorText) + "{" + r.style.cssText + "}");
+      } else if (r.cssRules) {            // @media
+        const dentro = [];
+        for (const sub of r.cssRules) {
+          if (sub.selectorText) dentro.push(prefixa(sub.selectorText) + "{" + sub.style.cssText + "}");
+        }
+        if (dentro.length) regras.push("@media " + (r.conditionText || "print") + "{" + dentro.join("") + "}");
+      }
     }
-  };
+  } catch (e) {
+    console.log("CSS da impressão:", e);
+  }
+  st.remove();
+  return regras.join("\n");
+}
 
-  // Imprime quando o documento terminar de montar, em vez de apostar num
-  // tempo fixo: num aparelho lento 350 ms podiam não bastar, e a folha saía
-  // pela metade.
-  iframe.addEventListener("load", () => setTimeout(imprimir, 120));
+function _limparImpressao() {
+  const a = document.getElementById(_PRINT_ID);
+  const c = document.getElementById(_PRINT_CSS_ID);
+  if (a) a.remove();
+  if (c) c.remove();
+}
 
-  const doc = iframe.contentWindow.document;
-  doc.open();
-  doc.write(html);
-  doc.close();
+function _imprimirDoc(html) {
+  _limparImpressao();   // sobra de uma impressão anterior não pode vazar
 
-  // Rede de segurança: com document.write o evento load nem sempre dispara.
-  setTimeout(imprimir, 700);
-  // Some sozinho bem depois, sem atrapalhar o diálogo de impressão.
-  setTimeout(() => { try { iframe.remove(); } catch (e) {} }, 60000);
+  const estilos = [...String(html).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map(m => m[1]).join("\n");
+  const mBody = String(html).match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const corpo = mBody ? mBody[1] : String(html);
+
+  const area = document.createElement("div");
+  area.id = _PRINT_ID;
+  area.innerHTML = corpo;
+
+  const css = document.createElement("style");
+  css.id = _PRINT_CSS_ID;
+  css.textContent = `
+    #${_PRINT_ID} { display: none; }
+    @media print {
+      /* Esconde o app inteiro e deixa só o relatório. */
+      body > * { display: none !important; }
+      body > #${_PRINT_ID} { display: block !important; }
+      html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+      #${_PRINT_ID} { color: #000; }
+      @page { margin: 10mm; }
+    }
+    ${_escoparCssImpressao(estilos, "#" + _PRINT_ID)}
+  `;
+
+  document.head.appendChild(css);
+  document.body.appendChild(area);
+
+  // Limpa depois que o diálogo fecha. onafterprint não dispara em todo
+  // navegador, então o tempo é a rede de segurança.
+  const limpar = () => { window.removeEventListener("afterprint", limpar); setTimeout(_limparImpressao, 300); };
+  window.addEventListener("afterprint", limpar);
+  setTimeout(_limparImpressao, 60000);
+
+  setTimeout(() => {
+    try { window.print(); }
+    catch (e) { console.log("Impressão:", e); _toastErro("Não consegui abrir a impressão neste aparelho."); _limparImpressao(); }
+  }, 120);
 }
 
 function imprimirBoletos() {
