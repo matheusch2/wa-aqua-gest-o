@@ -8006,17 +8006,38 @@ function _setBoletoMesPago(v) {
 function _imprimirDoc(html) {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
-  iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0";
+  // FORA da tela, mas com tamanho REAL de papel. Com width/height 0 e
+  // opacity 0 o navegador pode não desenhar o conteúdo, e aí a impressão sai
+  // em branco ou simplesmente não abre — o Safari do iPhone faz isso.
+  // Jogar para fora da área visível esconde do mesmo jeito, sem esse risco.
+  iframe.style.cssText = "position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0";
   document.body.appendChild(iframe);
+
+  let jaImprimiu = false;
+  const imprimir = () => {
+    if (jaImprimiu) return;
+    jaImprimiu = true;
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch (e) {
+      console.log("Impressão:", e);
+      _toastErro("Não consegui abrir a impressão neste aparelho.");
+    }
+  };
+
+  // Imprime quando o documento terminar de montar, em vez de apostar num
+  // tempo fixo: num aparelho lento 350 ms podiam não bastar, e a folha saía
+  // pela metade.
+  iframe.addEventListener("load", () => setTimeout(imprimir, 120));
+
   const doc = iframe.contentWindow.document;
   doc.open();
   doc.write(html);
   doc.close();
-  // Espera o conteúdo montar antes de chamar a impressão.
-  setTimeout(() => {
-    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
-    catch (e) { console.log("Impressão:", e); }
-  }, 350);
+
+  // Rede de segurança: com document.write o evento load nem sempre dispara.
+  setTimeout(imprimir, 700);
   // Some sozinho bem depois, sem atrapalhar o diálogo de impressão.
   setTimeout(() => { try { iframe.remove(); } catch (e) {} }, 60000);
 }
