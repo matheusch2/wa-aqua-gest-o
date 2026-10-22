@@ -26,7 +26,7 @@
 // app/index.html (script.js?v=...). Ao publicar, bumpe os dois juntos: assim o
 // service worker muda, reinstala, apaga o cache antigo e re-guarda os arquivos
 // da versao nova — e a abertura offline nunca serve JavaScript velho.
-const CACHE = "waaqua-20261022b";
+const CACHE = "waaqua-20261022c";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -41,6 +41,8 @@ const ESSENCIAIS = [
   // O sistema
   "/app/login.html",
   "/app/index.html",
+  "/app/imprimir.html",   // página de impressão aberta no navegador quando o
+                          // app está instalado (o iPhone não imprime de lá)
   "/app/styles/01-base-e-painel.css",
   "/app/styles/02-viveiros-e-formularios.css",
   "/app/styles/03-tema-custos-e-crescimento.css",
