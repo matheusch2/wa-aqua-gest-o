@@ -1233,3 +1233,10 @@ body.tema-escuro .proj-alvo-btn:active { background: #4b5563; }
 body.tema-escuro .proj-alvo-val-wrap { border-color: #374151; }
 body.tema-escuro .proj-alvo-val-wrap input { color: #f9fafb; }
 body.tema-escuro .proj-alvo-val-wrap span { color: #9ca3af; }
+
+/* Reajustar o preço de uma ração assusta: a dúvida é se os lançamentos
+   antigos vão junto. O aviso responde antes de a pessoa perguntar. */
+.aviso-reajuste { display: flex; gap: 9px; align-items: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; color: #15803d; line-height: 1.45; }
+.aviso-reajuste svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; stroke: #16a34a; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.aviso-reajuste b { font-weight: 800; }
+body.tema-escuro .aviso-reajuste { background: #064e3b; border-color: #065f46; color: #6ee7b7; }
