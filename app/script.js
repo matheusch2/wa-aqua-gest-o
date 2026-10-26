@@ -2340,6 +2340,10 @@ function abrirEdicaoTipoRacao(i) {
             <span class="campo-unidade">R$</span>
           </div>
         </div>
+        <div class="aviso-reajuste">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>O preço novo vale para os <b>próximos lançamentos</b>. O que já foi lançado mantém o preço do dia, e o custo dos ciclos não muda.</span>
+        </div>
         <div id="erro-edit-tipo-racao" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;font-size:13px;color:#b91c1c;margin-bottom:4px"></div>
         <button class="botao-salvar" onclick="salvarEdicaoTipoRacao(${i})">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -2685,10 +2689,12 @@ async function salvarLancamentoRacao(indexDireto = "") {
     const el = document.getElementById(selId);
     const v = el ? el.value : "";
     const t = (v !== "" && v !== undefined && v !== null) ? tiposRacao[v] : null;
-    return { nome: t ? t.nome : null, id: t ? t.id : null };
+    return { nome: t ? t.nome : null, id: t ? t.id : null, custoPorKg: t ? (Number(t.custoPorKg) || null) : null };
   };
   const _t1 = _tipoSel("tipoRacaoSelect");
-  const lancamentos = [{ racao, nome: _t1.nome, tipoId: _t1.id }];
+  // custoKg: o preço do catálogo AGORA, congelado no lançamento. Reajuste
+  // futuro do preço não mexe mais neste dia.
+  const lancamentos = [{ racao, nome: _t1.nome, tipoId: _t1.id, custoKg: _t1.custoPorKg || null }];
 
   const _bloco2 = document.getElementById("racao-2-bloco");
   if (_bloco2 && _bloco2.style.display === "block") {
@@ -2697,7 +2703,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
     if (isNaN(racao2) || racao2 < 0) { mostrarErroRacao("Preencha a quantidade da 2ª ração (ou remova-a)."); return; }
     if (!_t1.id || !_t2.id) { mostrarErroRacao("Com 2 rações, escolha o tipo de cada uma."); return; }
     if (_t1.id === _t2.id) { mostrarErroRacao("As duas rações têm o mesmo tipo. Escolha tipos diferentes."); return; }
-    lancamentos.push({ racao: racao2, nome: _t2.nome, tipoId: _t2.id });
+    lancamentos.push({ racao: racao2, nome: _t2.nome, tipoId: _t2.id, custoKg: _t2.custoPorKg || null });
   }
 
   // Não duplicar: bloqueia se já existe ração do MESMO tipo nessa data (agora
@@ -2726,6 +2732,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
     user_id: usuario.id,
     nome_racao: l.nome,
     tipo_racao_id: l.tipoId,
+    custo_por_kg: l.custoKg,   // congela o preço do dia
   }));
 
   const { data: racaoSalva, error } = await supabaseClient
@@ -2750,6 +2757,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
       racao: l.racao,
       nomeRacao: l.nome,
       tipoRacaoId: l.tipoId,
+      custoPorKg: l.custoKg,
     });
   });
 
@@ -4559,6 +4567,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
       racao: novaQtd,
       nome_racao: novoTipo ? novoTipo.nome : null,
       tipo_racao_id: novoTipo ? novoTipo.id : null,
+      custo_por_kg: _precoEdicaoRacao(racao, novoTipo),
     })
     .eq("id", racao.id)
     .eq("user_id", usuario.id);
@@ -4572,6 +4581,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     id: racao.id, data: novaData, racao: novaQtd,
     nomeRacao: novoTipo ? novoTipo.nome : null,
     tipoRacaoId: novoTipo ? novoTipo.id : null,
+    custoPorKg: _precoEdicaoRacao(racao, novoTipo),
   };
 
   // Os protocolos atrelados à ração dosam por kg lançado: ao corrigir o
@@ -4602,6 +4612,32 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   restaurarScroll();
 }
 
+// Preço por kg de UM lançamento de ração.
+//
+// Vale o preço gravado no dia do lançamento. Antes o custo saía sempre do
+// preço ATUAL do catálogo, então reajustar uma ração no meio do ciclo
+// reescrevia todos os lançamentos anteriores: a ração comprada a R$ 4,50 e já
+// consumida virava R$ 4,80 no relatório, e o custo do ciclo mudava sozinho.
+//
+// Lançamento antigo (anterior a esta coluna) não tem preço gravado e continua
+// usando o catálogo — é o melhor palpite disponível para ele, e nenhum número
+// muda por causa da correção.
+function _precoKgRacao(r) {
+  const gravado = Number(r && r.custoPorKg);
+  if (gravado > 0) return gravado;
+  const t = tiposRacao.find(x => x.id === (r && r.tipoRacaoId));
+  return t ? (Number(t.custoPorKg) || 0) : 0;
+}
+
+// Preço de um lançamento ao EDITAR. Corrigir a quantidade ou a data não pode
+// reprecificar o dia — o preço gravado fica. Trocar o TIPO é outra coisa: o
+// lançamento passa a ser de outra ração, então vale o preço dessa ração.
+function _precoEdicaoRacao(racaoAtual, novoTipo) {
+  const mudouTipo = (novoTipo ? novoTipo.id : null) !== (racaoAtual.tipoRacaoId || null);
+  if (mudouTipo) return novoTipo ? (Number(novoTipo.custoPorKg) || null) : null;
+  return racaoAtual.custoPorKg != null ? racaoAtual.custoPorKg : null;
+}
+
 // Ração derivada de um viveiro: preço do catálogo × kg lançados no ciclo
 // ativo. Fonte única usada pelo registro em memória E pelo congelamento no
 // encerramento — os dois nunca podem divergir.
@@ -4609,10 +4645,7 @@ function _racaoDerivada(v) {
   const lancs = (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0);
   if (!lancs.length) return null;
   const qtdG = lancs.reduce((s, r) => s + r.racao * 1000, 0);
-  const valor = lancs.reduce((s, r) => {
-    const t = tiposRacao.find(x => x.id === r.tipoRacaoId);
-    return s + r.racao * (t ? (t.custoPorKg || 0) : 0);
-  }, 0);
+  const valor = lancs.reduce((s, r) => s + r.racao * _precoKgRacao(r), 0);
   return { qtdG, valor, data: lancs.map(r => r.data).sort()[0] };
 }
 
@@ -8845,14 +8878,11 @@ function _finItensRateioFixo(alvos) {
 // distorce o filtro por período (toda a ração cai no primeiro dia). Usa a mesma
 // precificação de _racaoDerivada (preço do catálogo × kg), então o total bate.
 function _racaoLancamentosAtivo(v) {
-  return (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0).map(r => {
-    const t = tiposRacao.find(x => x.id === r.tipoRacaoId);
-    return {
-      tipo: "produto", produtoId: null, nomeProduto: "Ração", categoria: "Ração",
-      quantidadeG: r.racao * 1000, valor: r.racao * (t ? (t.custoPorKg || 0) : 0),
-      data: r.data, derivado: true, cicloId: v.cicloId || null,
-    };
-  });
+  return (v.racoes || []).filter(r => r.tipoRacaoId && r.racao > 0).map(r => ({
+    tipo: "produto", produtoId: null, nomeProduto: "Ração", categoria: "Ração",
+    quantidadeG: r.racao * 1000, valor: r.racao * _precoKgRacao(r),
+    data: r.data, derivado: true, cicloId: v.cicloId || null,
+  }));
 }
 
 // Custos de um viveiro para o filtro por PERÍODO: troca o registro derivado
@@ -12610,6 +12640,7 @@ async function carregarViveiros(usuarioConhecido) {
         racao: Number(racao.racao),
         nomeRacao: racao.nome_racao || null,
         tipoRacaoId: racao.tipo_racao_id || null,
+        custoPorKg: racao.custo_por_kg != null ? Number(racao.custo_por_kg) : null,
       })),
 
     biometrias: biometriasData
