@@ -2735,10 +2735,20 @@ async function salvarLancamentoRacao(indexDireto = "") {
     custo_por_kg: l.custoKg,   // congela o preço do dia
   }));
 
-  const { data: racaoSalva, error } = await supabaseClient
+  let { data: racaoSalva, error } = await supabaseClient
     .from("racoes")
     .insert(_linhas)
     .select();
+
+  // Banco ainda sem a coluna do preço: salva o lançamento assim mesmo. O
+  // custo continua saindo do catálogo, como era antes — melhor do que não
+  // deixar lançar ração.
+  if (error && _erroColunaCustoRacao(error)) {
+    ({ data: racaoSalva, error } = await supabaseClient
+      .from("racoes")
+      .insert(_semCustoPorKg(_linhas))
+      .select());
+  }
 
   if (error) {
     console.log(error);
@@ -4560,17 +4570,23 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
     ? tiposRacao[novoTipoIdx] : null;
 
   // UPDATE de verdade — ver a nota em salvarEdicaoBiometria.
-  const { error } = await supabaseClient
-    .from("racoes")
-    .update({
-      data: novaData,
-      racao: novaQtd,
-      nome_racao: novoTipo ? novoTipo.nome : null,
-      tipo_racao_id: novoTipo ? novoTipo.id : null,
-      custo_por_kg: _precoEdicaoRacao(racao, novoTipo),
-    })
-    .eq("id", racao.id)
-    .eq("user_id", usuario.id);
+  const _campos = {
+    data: novaData,
+    racao: novaQtd,
+    nome_racao: novoTipo ? novoTipo.nome : null,
+    tipo_racao_id: novoTipo ? novoTipo.id : null,
+    custo_por_kg: _precoEdicaoRacao(racao, novoTipo),
+  };
+  let { error } = await supabaseClient
+    .from("racoes").update(_campos)
+    .eq("id", racao.id).eq("user_id", usuario.id);
+
+  // Banco ainda sem a coluna do preço: salva a edição sem ela.
+  if (error && _erroColunaCustoRacao(error)) {
+    ({ error } = await supabaseClient
+      .from("racoes").update(_semCustoPorKg([_campos])[0])
+      .eq("id", racao.id).eq("user_id", usuario.id));
+  }
 
   if (error) { restaurar(); _toastErro("Erro ao salvar: " + error.message); return; }
 
@@ -4627,6 +4643,20 @@ function _precoKgRacao(r) {
   if (gravado > 0) return gravado;
   const t = tiposRacao.find(x => x.id === (r && r.tipoRacaoId));
   return t ? (Number(t.custoPorKg) || 0) : 0;
+}
+
+// A coluna custo_por_kg de "racoes" é nova e pode não existir ainda no banco
+// de quem não rodou a migração. Sem esta rede, o lançamento de ração falha
+// inteiro com "Could not find the 'custo_por_kg' column" — o app para de
+// salvar ração por causa de um campo que é só um detalhe do custo.
+// Tenta com a coluna; se o banco não a conhece, repete sem ela.
+function _erroColunaCustoRacao(error) {
+  const m = ((error && error.message) || "").toLowerCase();
+  return m.includes("custo_por_kg");
+}
+
+function _semCustoPorKg(linhas) {
+  return linhas.map(l => { const c = { ...l }; delete c.custo_por_kg; return c; });
 }
 
 // Preço de um lançamento ao EDITAR. Corrigir a quantidade ou a data não pode
