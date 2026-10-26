@@ -11545,8 +11545,20 @@ function recalcularValorEditCusto(index, chaveEnc) {
   if (!el || isNaN(qtdRaw) || qtdRaw <= 0) return;
   const qtdG = _paraGramas(qtdRaw, _editCustoUnidade, prod);
   if (qtdG === null) return;
-  const valor = prod.custoPorGrama * qtdG;
+  const valor = _precoGramaDoLancamento(grupo, prod) * qtdG;
   el.value = valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Preço por grama do próprio lançamento: valor gravado ÷ quantidade gravada.
+// Corrigir a quantidade de um custo antigo não pode reprecificá-lo pelo
+// catálogo de hoje — se o produto reajustou desde então, o lançamento passado
+// mudaria de valor sozinho, que é o mesmo problema que a ração tinha.
+// Sem quantidade gravada (custo manual antigo), cai no catálogo.
+function _precoGramaDoLancamento(grupo, prod) {
+  const qtd = grupo.reduce((t, c) => t + (Number(c.quantidadeG) || 0), 0);
+  const val = grupo.reduce((t, c) => t + (Number(c.valor) || 0), 0);
+  if (qtd > 0 && val > 0) return val / qtd;
+  return prod ? (Number(prod.custoPorGrama) || 0) : 0;
 }
 
 function selecionarUnidade(u) {
@@ -12184,7 +12196,15 @@ function abrirEditarGrupoCusto(index, chaveEnc, elementoId, direto) {
       <div class="campo-form">
         <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><label>Valor total (R$)</label></div>
         <input type="text" inputmode="decimal" id="editCustoValor" value="${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" onblur="formatarMoedaBlur(this)">
-        ${prod ? `<p class="rc-print-dica">Recalculado pela quantidade (R$ ${formatarNumeroBR(prod.custoPorGrama * 1000, 2)}/kg). Você ainda pode ajustar o valor na mão.</p>` : ""}
+        ${prod ? (() => {
+          // O preço mostrado é o DESTE lançamento, não o do catálogo: se o
+          // produto reajustou depois, corrigir a quantidade aqui não pode
+          // trazer o preço novo para um custo do passado.
+          const pKg = _precoGramaDoLancamento(grupo, prod) * 1000;
+          const pCat = (Number(prod.custoPorGrama) || 0) * 1000;
+          const mudou = pKg > 0 && Math.abs(pKg - pCat) > 0.005;
+          return `<p class="rc-print-dica">Recalculado pelo preço deste lançamento (R$ ${formatarNumeroBR(pKg, 2)}/kg). Você ainda pode ajustar o valor na mão.${mudou ? ` Hoje o produto está R$ ${formatarNumeroBR(pCat, 2)}/kg.` : ""}</p>`;
+        })() : ""}
       </div>
       <div id="msg-edit-custo" style="display:none;color:#ef4444;font-size:13px;margin:0 0 8px;text-align:center;font-weight:500"></div>
       <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarEdicaoGrupoCusto(${index},'${chaveEnc}','${elementoId}',${_dArg(direto)}))">Salvar alterações</button>
