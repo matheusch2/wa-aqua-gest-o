@@ -12886,7 +12886,38 @@ async function _garantirCicloIdViveirosAtivos() {
 // quando o app já está pronto na tela — enquanto carrega, a splash cobre a
 // tela branca. Em caso de redirecionamento pro login, NÃO escondemos: a splash
 // do login assume, e a entrada fica contínua.
+// Frases da abertura conforme o tempo passa.
+//
+// A frase era fixa. Num viveiro com sinal fraco o carregamento leva 15, 20
+// segundos, e quem olhava a mesma tela parada não tinha como saber se estava
+// carregando ou se tinha travado — a reação é fechar e abrir de novo, o que
+// recomeça tudo e demora mais ainda.
+//
+// Nada disso acelera o carregamento. Serve para a pessoa saber que o app está
+// vivo, e para quem ficou preso de verdade ter uma saída no fim.
+const _SPLASH_FASES = [
+  { aos:  4000, texto: "Carregando seus viveiros…" },
+  { aos: 10000, texto: "A conexão está lenta, mas ainda estou tentando…" },
+  { aos: 20000, texto: "Continua demorando. Verifique sua internet.", retry: true },
+];
+let _splashTimers = [];
+
+function _armarFrasesSplash() {
+  const txt = document.getElementById("splash-wa-texto");
+  if (!txt) return;
+  _SPLASH_FASES.forEach(f => {
+    _splashTimers.push(setTimeout(() => {
+      const el = document.getElementById("splash-wa-texto");
+      if (el) el.textContent = f.texto;
+      if (f.retry) document.getElementById("splash-wa-retry")?.classList.add("aparece");
+    }, f.aos));
+  });
+}
+
 function _esconderSplash() {
+  // Os avisos de lentidão não podem disparar depois que a tela já saiu.
+  _splashTimers.forEach(clearTimeout);
+  _splashTimers = [];
   const s = document.getElementById("splash-wa");
   if (!s) return;
   s.classList.add("sumindo");
@@ -12894,6 +12925,7 @@ function _esconderSplash() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  _armarFrasesSplash();
   if (localStorage.getItem("tema") === "escuro") {
     document.body.classList.add("tema-escuro");
   }

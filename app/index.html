@@ -124,6 +124,10 @@
         transform:translateY(-50%);filter:drop-shadow(0 3px 5px rgba(0,24,27,.38));
         animation:splash-wa-nadar 1.8s linear infinite;}
       .splash-wa-peixe-carga svg{display:block;width:100%;height:auto;transform:scaleX(-1);}
+      .splash-wa-retry{display:none;margin-top:4px;padding:9px 18px;border:1px solid rgba(255,255,255,.45);
+        border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font-size:13px;font-weight:700;
+        font-family:inherit;cursor:pointer;width:auto;}
+      .splash-wa-retry.aparece{display:block;}
       .splash-wa-particulas{position:absolute;inset:0;z-index:1;pointer-events:none;}
       .splash-wa-particulas i{position:absolute;bottom:-18px;width:5px;height:5px;border-radius:50%;
         background:rgba(213,255,248,.44);box-shadow:0 0 9px rgba(118,238,220,.24);
@@ -172,7 +176,7 @@
         </div>
         <div class="splash-wa-identidade"><strong>WA AQUA</strong><span>GESTÃO INTELIGENTE</span></div>
         <div class="splash-wa-carregamento">
-          <p class="splash-wa-texto">Preparando seu cultivo</p>
+          <p class="splash-wa-texto" id="splash-wa-texto">Preparando seu cultivo</p>
           <div class="splash-wa-barra" aria-hidden="true">
             <div class="splash-wa-barra-trilho"><span class="splash-wa-brilho"></span></div>
             <span class="splash-wa-peixe-carga"><svg viewBox="0 0 40 40">
@@ -182,6 +186,7 @@
               <circle cx="12" cy="18.5" r="1.7" fill="#066b63"/>
             </svg></span>
           </div>
+          <button type="button" id="splash-wa-retry" class="splash-wa-retry" onclick="location.reload()">Tentar de novo</button>
         </div>
       </div>
     </div>
@@ -279,7 +284,7 @@
 
     </div>
 
-    <script src="script.js?v=20261028b"></script>
+    <script src="script.js?v=20261028c"></script>
 
 </body>
 </html>
