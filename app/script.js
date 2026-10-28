@@ -6101,6 +6101,22 @@ function _dentroDaCarencia(a) {
   return Math.floor((hoje - venc) / 86400000) <= _DIAS_CARENCIA;
 }
 
+// O plano venceu e já passou da carência?
+//
+// Olha a DATA, não o campo "status". O painel mostrava "Ativo" e "Vencido há
+// 8 dias" no mesmo cartão: o selo de vencido vem da data, mas o status tinha
+// ficado para trás — e a trava, que só lia o status, deixava a conta aberta.
+// Quem manda é a data do vencimento, que é o que o painel de fato controla.
+//
+// Sem data gravada, devolve false: não dá para afirmar que venceu, e travar
+// quem está pagando é pior do que deixar passar quem não está.
+function _planoVencido(a) {
+  const venc = _parseVenc(a && a.proximo_vencimento);
+  if (!venc) return false;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  return Math.floor((hoje - venc) / 86400000) > _DIAS_CARENCIA;
+}
+
 // Limite de viveiros do plano vigente. Grátis / plano pago bloqueado = 1.
 // O plano pago vale enquanto está ativo OU pendente dentro da carência
 // (a carência protege o limite por viveiro igual protege a trava geral).
@@ -6108,7 +6124,8 @@ function _dentroDaCarencia(a) {
 // padrão do plano — nunca rebaixa um pagante em dia para o grátis.
 function _planoLimiteEfetivo() {
   const a = assinatura;
-  if (a && a.plano && a.plano !== "gratis" && (a.status === "ativo" || _dentroDaCarencia(a))) {
+  if (a && a.plano && a.plano !== "gratis" && !_planoVencido(a)
+      && (a.status === "ativo" || _dentroDaCarencia(a))) {
     const lim = Number(a.limite_viveiros);
     if (lim > 0) return lim;
     return _LIMITES_PLANO[a.plano] || 1;
@@ -6123,9 +6140,13 @@ function _contaBloqueada() {
   const a = assinatura;
   if (!a) return false;                                // sem assinatura não trava
   if (!a.plano || a.plano === "gratis") return false;  // grátis não trava
-  if (a.status === "ativo") return false;              // pagamento em dia
   if (viveiros.length <= 1) return false;              // dentro do grátis (1 viveiro)
   if (a.status === "cancelado") return true;           // assinatura cancelada só leitura
+  // A data vem ANTES do status: um plano com vencimento vencido há mais que a
+  // carência trava mesmo que o status ainda diga "ativo". Era por aqui que o
+  // cliente bloqueado continuava usando tudo normalmente.
+  if (_planoVencido(a)) return true;
+  if (a.status === "ativo") return false;              // em dia de verdade
   return !_dentroDaCarencia(a);                        // pendente: trava só após a carência
 }
 
