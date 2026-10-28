@@ -1493,12 +1493,22 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
           ${viveiro.dataPovoamento
             ? `<span class="vc-badge-cultivo">● Em cultivo</span>`
             : `<span class="vc-badge-vazio">● Vazio</span>`}
-          ${_viveiroForaDoLimite(indexOriginal) ? `<span class="vc-badge-bloqueado" onclick="abrirAssinatura()">🔒 Fora do plano — só leitura</span>` : ""}
+
         </div>
         <div class="vc-pls-badge">
           🦐 ${viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR") : "--"} PLs
         </div>
       </div>
+
+      ${_viveiroForaDoLimite(indexOriginal) ? `
+      <button class="vc-aviso-bloqueado" onclick="abrirAssinatura()">
+        <span class="vc-ab-ico"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <span class="vc-ab-txt">
+          <b>Fora do plano</b>
+          <small>Só leitura — toque para ver os planos</small>
+        </span>
+        <span class="vc-ab-seta">›</span>
+      </button>` : ""}
 
       <hr class="vc-separador">
 
