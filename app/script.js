@@ -6434,11 +6434,18 @@ function _simFutSemanasOferta(viveiro, dataAlvo, domingo) {
     let fimSemana = new Date(cursor.getTime() + ateDomingo * 86400000);
     if (fimSemana > fim) fimSemana = fim;
 
-    let dias = 0;
+    // de/ate são o primeiro e o último dia COM OFERTA, não as bordas do
+    // calendário: com a folga ligada a semana fecha no domingo, mas o rótulo
+    // precisa dizer sábado — é o último dia em que a ração vai de fato.
+    let dias = 0, primeiro = null, ultimo = null;
     for (let d = new Date(cursor); d <= fimSemana; d = new Date(d.getTime() + 86400000)) {
-      if (domingo || d.getDay() !== 0) dias++;
+      if (domingo || d.getDay() !== 0) {
+        dias++;
+        if (!primeiro) primeiro = new Date(d);
+        ultimo = new Date(d);
+      }
     }
-    if (dias > 0) out.push({ dias, de: new Date(cursor), ate: new Date(fimSemana) });
+    if (dias > 0) out.push({ dias, de: primeiro, ate: ultimo });
     cursor = new Date(fimSemana.getTime() + 86400000);
   }
   return out;
