@@ -1,0 +1,288 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTERFACE DE COMPUTADOR  (≥ 900px)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Este arquivo é carregado por último e SÓ no desktop — o media está no
+   próprio <link> do index.html:
+
+       <link rel="stylesheet" href="styles/90-desktop.css" media="(min-width: 900px)">
+
+   Duas consequências de propósito:
+
+   1. No celular o navegador não aplica nada daqui (e baixa com prioridade
+      baixa). Quem está no viveiro não paga por CSS que não usa.
+
+   2. Como carrega depois de todos os outros, ele ganha por ORDEM. Antes isto
+      vivia no meio da fila (4º de 7) e só conseguia vencer os arquivos
+      seguintes na força do !important — eram 71 deles em 270 linhas, quase um
+      a cada quatro linhas. É por isso que mexer no desktop era uma briga.
+
+   Como o arquivo inteiro já é desktop, não envolva regras em
+   @media (min-width: 900px) aqui dentro: escreva CSS normal.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── LAYOUT DESKTOP (≥ 900px) ───────────────────────────────────────────── */
+
+/* Fundo = mesma cor do topo/sidebar  tudo vira um bloco verde contínuo */
+body {
+  background: rgb(4,75,70);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Topo fica colado ao topo sem borda visível */
+.topo {
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+/* Título centralizado */
+.topo-conteudo {
+  position: relative;
+}
+
+.topo-esquerda {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.topo-direita {
+  margin-left: auto;
+}
+
+/* Card preenche o resto da altura sem margens externas */
+#card-gestao {
+  display: flex !important;
+  flex-direction: row !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+/* Sidebar: funde visualmente com o fundo verde */
+#menuGestao {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  flex-shrink: 0 !important;
+  background: rgba(0,0,0,0.15) !important;
+  padding: 20px 10px !important;
+  gap: 3px !important;
+  margin-top: 0 !important;
+  border-radius: 0 !important;
+  overflow-y: auto !important;
+}
+
+#menuGestao::before {
+  content: "Menu principal";
+  display: block;
+  color: rgba(255,255,255,0.72);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  padding: 0 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.18);
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+/* Botões da sidebar: horizontais */
+#menuGestao .botao-gestao {
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  min-height: unset !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: rgba(255,255,255,0.82) !important;
+  text-align: left !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  transition: background 0.15s, color 0.15s !important;
+}
+
+#menuGestao .botao-gestao:hover {
+  background: rgba(255,255,255,0.13) !important;
+  color: white !important;
+}
+
+#menuGestao .botao-gestao:active {
+  background: rgba(255,255,255,0.22) !important;
+}
+
+#menuGestao .btn-svg {
+  width: 17px !important;
+  height: 17px !important;
+  stroke: rgba(255,255,255,0.72) !important;
+  flex-shrink: 0 !important;
+}
+
+#menuGestao .botao-gestao:hover .btn-svg {
+  stroke: white !important;
+}
+
+/* Área de conteúdo: painel flutuante com margem mostrando o verde ao redor */
+#area-gestao {
+  flex: 1 !important;
+  margin: 16px 16px 16px 0 !important;
+  padding: 28px 32px !important;
+  background: #f4f9f7 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.22) !important;
+  overflow-y: auto !important;
+  color: #1a1a1a !important;
+  box-sizing: border-box !important;
+  min-height: 0 !important;
+}
+
+#area-gestao.resultado:empty::before {
+  content: "Selecione uma opção no menu lateral";
+  display: block;
+  text-align: center;
+  color: #b0c4be;
+  font-size: 15px;
+  margin-top: 100px;
+  font-weight: 500;
+}
+
+/* ── Ajustes só do PC ── */
+/* A setinha de voltar do topo é navegação de celular (Android/iPhone).
+   No computador a navegação é pela barra lateral, então ela some. */
+#btn-voltar-topo { display: none !important; }
+
+/* Conteúdo maior, aproveitando a tela grande do notebook */
+#area-gestao { font-size: 15px !important; }
+#area-gestao .titulo-secao { font-size: 23px !important; margin-bottom: 18px !important; }
+#area-gestao .viveiro-card { max-width: 760px; margin-left: auto; margin-right: auto; padding: 28px !important; }
+#area-gestao .viveiro-card h3 { font-size: 24px !important; }
+#area-gestao .vc-info-item strong { font-size: 14.5px !important; }
+#area-gestao .vc-info-item p { font-size: 16px !important; }
+#area-gestao .vc-pls-badge { font-size: 14px !important; }
+#area-gestao .botao-abrir { font-size: 17px !important; padding: 16px !important; }
+#area-gestao .nav-viveiros { max-width: 760px; margin-left: auto; margin-right: auto; }
+/* Painel na tela grande: e aqui que ele vira a tela de entrada, entao ganha
+   as tres colunas de indicadores, os dois blocos lado a lado e a lista de
+   viveiros alinhada como tabela de verdade. */
+#area-gestao .pnl-cabecalho,
+#area-gestao .pnl-stats,
+#area-gestao .pnl-alertas,
+#area-gestao .pnl-grade,
+#area-gestao .pnl-acoes,
+#area-gestao .pnl-info,
+#area-gestao .pnl-vazio-geral { max-width: 1120px; margin-left: auto; margin-right: auto; }
+
+#area-gestao .pnl-ola { font-size: 27px; }
+#area-gestao .pnl-stats {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+#area-gestao .pnl-stat {
+  min-height: 0;
+  padding: 21px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #e2e9e7;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(5,76,69,.06);
+}
+#area-gestao .pnl-stat-icone {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 14px;
+  font-size: 22px;
+  order: 0;
+}
+#area-gestao .pnl-stat-valor { font-size: 28px; }
+#area-gestao .pnl-grade { grid-template-columns: 1fr 1fr; gap: 18px; }
+#area-gestao .pnl-painel { padding: 20px; }
+#area-gestao .pnl-acoes-grade { grid-template-columns: repeat(4, 1fr); }
+#area-gestao .pnl-info { margin-bottom: 6px; }
+
+/* A lista vira tabela: cabecalho aparece e as colunas alinham entre as linhas. */
+#area-gestao .pnl-cabeca {
+  display: grid;
+  grid-template-columns: 2fr .75fr .95fr .55fr 26px;
+  gap: 8px;
+  padding: 0 13px 8px;
+  border-bottom: 1px solid #eef3f2;
+  margin-bottom: 8px;
+}
+#area-gestao .pnl-cabeca span {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #8b979e;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+#area-gestao .pnl-linha {
+  grid-template-columns: 2fr .75fr .95fr .55fr 26px;
+  gap: 8px;
+}
+#area-gestao .pnl-linha-nome { grid-column: auto; }
+/* Na tabela o titulo da coluna ja esta no cabecalho — repeti-lo em cada
+   linha viraria ruido. */
+#area-gestao .pnl-celula small { display: none; }
+#area-gestao .pnl-celula b { font-size: 14px; }
+#area-gestao .pnl-linha-seta { display: block; color: #9ca3af; font-size: 19px; text-align: center; }
+#area-gestao .pnl-grafico { height: 250px; }
+
+body.tema-escuro #area-gestao .pnl-stat {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: none;
+}
+
+/* Na tela grande cabe tudo: a tira quebra em linhas em vez de rolar. */
+#area-gestao .vv-seletor { max-width: 760px; margin-left: auto; margin-right: auto; flex-wrap: wrap; overflow-x: visible; justify-content: center; }
+#area-gestao .botao-voltar-form { max-width: 760px; margin-left: auto; margin-right: auto; font-size: 15px !important; }
+/* Cartões de configuração/menus internos um pouco maiores */
+#area-gestao .cfg-item-titulo { font-size: 15px !important; }
+#area-gestao .cfg-item-sub { font-size: 12.5px !important; }
+
+/* Formulários e telas internas: largura confortável e centralizada,
+   em vez de esticar os botões de ponta a ponta na tela grande */
+#area-gestao .form-lancamento,
+#area-gestao .cfg-wrap { max-width: 680px; margin-left: auto; margin-right: auto; }
+
+/* ─── DARK MODE no desktop ────────────────────────────────────────────────── */
+body.tema-escuro {
+  background: #021a18;
+}
+
+body.tema-escuro #menuGestao {
+  background: rgba(0,0,0,0.3) !important;
+}
+
+body.tema-escuro #area-gestao {
+  background: #111827 !important;
+  color: #f3f4f6 !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important;
+}
+
+body.tema-escuro #area-gestao.resultado:empty::before {
+  color: #374151;
+}
