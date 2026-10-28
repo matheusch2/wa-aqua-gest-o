@@ -6397,18 +6397,49 @@ function _ajudaToggle(id) {
   if (el) el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
-function _simFutDiasDeOferta(diasFalta, domingo) {
+// Semanas de oferta até a despesca — pelo CALENDÁRIO, não em blocos de 7.
+//
+// Antes eram blocos de 7 dias corridos a partir de amanhã. Numa quarta-feira,
+// a "Semana 1" ia de quinta a quarta, pegava um domingo e aparecia com 6 dias
+// — como se fosse uma semana cheia. Mas quem planeja ração pensa na semana do
+// calendário: o que falta DESTA semana (quarta, quinta, sexta, sábado = 4
+// dias), depois as semanas inteiras, e no fim outra quebrada até a despesca.
+// A primeira e a última são quase sempre parciais; as do meio é que são
+// cheias.
+//
+// O começo também mudou: conta a partir de HOJE quando a ração de hoje ainda
+// não foi lançada, e só a partir de amanhã quando já foi. Antes começava
+// sempre amanhã e perdia um dia de ração de quem ainda ia lançar.
+function _simFutInicioOferta(viveiro) {
+  const hojeStr = _hojeLocal();
+  const jaLancou = (viveiro.racoes || []).some(r =>
+    String(r.data).substring(0, 10) === hojeStr && Number(r.racao) > 0);
+  const hoje = _parseDataLocal(hojeStr);
+  return new Date(hoje.getTime() + (jaLancou ? 86400000 : 0));
+}
+
+// Devolve uma entrada por semana do calendário: { dias, de, ate }.
+// Semana sem nenhum dia de oferta (ex.: sobra só o domingo com a folga
+// ligada) não entra — não faz sentido pedir a ração de uma semana vazia.
+function _simFutSemanasOferta(viveiro, dataAlvo, domingo) {
   const out = [];
-  if (!(diasFalta > 0)) return out;
-  const hoje = _parseDataLocal(_hojeLocal());
-  const semanas = Math.ceil(diasFalta / 7);
-  for (let i = 0; i < semanas; i++) {
-    let n = 0;
-    for (let d = i * 7; d < Math.min((i + 1) * 7, diasFalta); d++) {
-      const dia = new Date(hoje.getTime() + (d + 1) * 86400000);
-      if (domingo || dia.getDay() !== 0) n++;
+  const fim = _parseDataLocal(dataAlvo);
+  let cursor = _simFutInicioOferta(viveiro);
+  if (!fim || cursor > fim) return out;
+
+  let guarda = 0;
+  while (cursor <= fim && guarda++ < 60) {
+    // A semana fecha no domingo; o resto do período entra na próxima volta.
+    const ateDomingo = (7 - cursor.getDay()) % 7;
+    let fimSemana = new Date(cursor.getTime() + ateDomingo * 86400000);
+    if (fimSemana > fim) fimSemana = fim;
+
+    let dias = 0;
+    for (let d = new Date(cursor); d <= fimSemana; d = new Date(d.getTime() + 86400000)) {
+      if (domingo || d.getDay() !== 0) dias++;
     }
-    out.push(n);
+    if (dias > 0) out.push({ dias, de: new Date(cursor), ate: new Date(fimSemana) });
+    cursor = new Date(fimSemana.getTime() + 86400000);
   }
   return out;
 }
@@ -6835,8 +6866,8 @@ function _simFutResultadoHtml() {
   // da MESMA função que desenhou os campos — se as duas contas divergissem, o
   // total do custo não bateria com a soma que a pessoa vê nos campos.
   const projCalc = _simFutProjecao(viveiro, alvo, _simFutGSem(viveiro));
-  const diasPorSemana = _simFutDiasDeOferta(projCalc ? projCalc.diasFalta : 0, _simFutDomingo);
-  const racaoFutura = _simFutRacao.reduce((s, v, i) => s + (Number(v) || 0) * (diasPorSemana[i] || 0), 0);
+  const semanasOferta = projCalc ? _simFutSemanasOferta(viveiro, projCalc.dataAlvo, _simFutDomingo) : [];
+  const racaoFutura = _simFutRacao.reduce((s, v, i) => s + (Number(v) || 0) * ((semanasOferta[i] || {}).dias || 0), 0);
   // Se o select ainda não respondeu (primeiro desenho), cai no último tipo
   // usado no viveiro e, por fim, no primeiro cadastrado — nunca em custo zero
   // sem avisar, que faria o lucro parecer bem maior do que é.
@@ -7006,30 +7037,30 @@ function _simFutPainel(viveiro, dados) {
 
   const porDia = _simFutRacaoPorDia(viveiro);
   const padraoDia = Math.round(porDia);
-  const diasPorSemana = _simFutDiasDeOferta(proj.diasFalta, _simFutDomingo);
-  const totalDiasOferta = diasPorSemana.reduce((a, b) => a + b, 0);
+  const semanasOferta = _simFutSemanasOferta(viveiro, proj.dataAlvo, _simFutDomingo);
+  const totalDiasOferta = semanasOferta.reduce((a, w) => a + w.dias, 0);
 
   // O campo é a oferta DIÁRIA daquela semana — é assim que se planeja ração
   // ("essa semana vou dar 45, na outra 50"). O total da semana sai da conta.
   const campos = [];
-  for (let i = 0; i < proj.semanas; i++) {
+  const _dm = (d) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+  semanasOferta.forEach((w, i) => {
     // Só sugere nas semanas que a pessoa ainda não mexeu: mudar o domingo ou
     // o peso-alvo não pode apagar o que ela já planejou à mão.
     if (!_simFutEditado.has(i) || _simFutRacao[i] === undefined) _simFutRacao[i] = padraoDia;
-    const nDias = diasPorSemana[i] || 0;
-    const totalSem = (Number(_simFutRacao[i]) || 0) * nDias;
+    const totalSem = (Number(_simFutRacao[i]) || 0) * w.dias;
     campos.push(`
       <div class="simfut-semana">
-        <label>Semana ${i + 1} <span class="simfut-semana-dias">${nDias} dia${nDias === 1 ? "" : "s"}</span></label>
+        <label>Semana ${i + 1} <span class="simfut-semana-dias">${_dm(w.de)} a ${_dm(w.ate)} · ${w.dias} dia${w.dias === 1 ? "" : "s"}</span></label>
         <div class="campo-input-unidade">
           <input type="text" inputmode="decimal" value="${formatarNumeroBR(_simFutRacao[i], 0)}"
                  oninput="_simFutSetSemana(${i}, this.value)">
           <span class="campo-unidade">kg/dia</span>
         </div>
-        <span class="simfut-semana-tot" id="simfut-tot-${i}" data-dias="${nDias}">= ${formatarNumeroBR(totalSem, 0)} kg</span>
+        <span class="simfut-semana-tot" id="simfut-tot-${i}" data-dias="${w.dias}">= ${formatarNumeroBR(totalSem, 0)} kg</span>
       </div>`);
-  }
-  _simFutRacao.length = proj.semanas;
+  });
+  _simFutRacao.length = semanasOferta.length;
 
   return `
     <div class="simfut-bloco">
@@ -7060,7 +7091,7 @@ function _simFutPainel(viveiro, dados) {
         : `
       <div class="simfut-resumo">
         <div><small>Faltam</small><b>${proj.diasFalta} dias</b></div>
-        <div><small>Semanas</small><b>${proj.semanas}</b></div>
+        <div><small>Semanas</small><b>${semanasOferta.length}</b></div>
         <div><small>Despesca em</small><b>${formatarData(proj.dataAlvo)}</b></div>
       </div>
 
