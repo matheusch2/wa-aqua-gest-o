@@ -6174,10 +6174,38 @@ function _bloqueioEdicao() {
 // Um viveiro (pela POSIÇÃO na lista ordenada) está fora do limite do plano?
 // Ex.: no grátis (limite 1), só o 1º viveiro fica liberado; do 2º em diante
 // fica em modo leitura, mesmo já estando cadastrado.
+// Quais viveiros ficam liberados quando o plano não cobre todos.
+//
+// Antes era a POSIÇÃO no array: liberava os primeiros e travava o resto. A
+// posição vem da ordem de cadastro, que não tem nada a ver com o que está
+// acontecendo no campo — podia travar justamente o viveiro com cultivo em
+// andamento e liberar um vazio.
+//
+// Agora a ordem é a do produtor: primeiro os que estão EM CULTIVO, do mais
+// antigo para o mais novo; depois os vazios. Bloqueado com um viveiro só, o
+// que sobra é o cultivo mais velho — o que está mais perto da despesca e não
+// pode ficar sem lançamento.
+function _viveirosLiberados() {
+  const lim = _planoLimiteEfetivo();
+  const ordem = viveiros
+    .map((v, i) => ({ i, v }))
+    .sort((a, b) => {
+      const emCultivoA = a.v && a.v.dataPovoamento ? 0 : 1;
+      const emCultivoB = b.v && b.v.dataPovoamento ? 0 : 1;
+      if (emCultivoA !== emCultivoB) return emCultivoA - emCultivoB;
+      if (emCultivoA === 0) {
+        const r = String(a.v.dataPovoamento).localeCompare(String(b.v.dataPovoamento));
+        if (r !== 0) return r;   // povoado há mais tempo primeiro
+      }
+      return a.i - b.i;          // desempate estável
+    });
+  return new Set(ordem.slice(0, lim).map(x => x.i));
+}
+
 function _viveiroForaDoLimite(idx) {
   const i = Number(idx);
-  if (!Number.isFinite(i) || i < 0) return false;
-  return i >= _planoLimiteEfetivo();
+  if (!Number.isFinite(i) || i < 0 || i >= viveiros.length) return false;
+  return !_viveirosLiberados().has(i);
 }
 
 // Guarda de escrita POR VIVEIRO: bloqueia se a conta está travada OU se este

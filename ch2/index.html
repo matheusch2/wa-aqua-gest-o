@@ -121,8 +121,12 @@
 
         .cli-corpo { display: none; border-top: 1px solid #eef3f2; padding: 14px; background: #fafcfb; }
         .cli-card.aberto .cli-corpo { display: block; }
-        .cli-linha { display: flex; gap: 8px; margin-bottom: 10px; }
-        .cli-corpo select { flex: 1; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 10px; font-size: 14px; background: #fff; outline: none; }
+        .cli-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        /* min-width:0 é o que faltava: sem ele o select não encolhe abaixo do
+           texto da opção mais longa e estoura o card para fora da tela. */
+        .cli-corpo select { flex: 1; min-width: 0; width: 100%; border: 1.5px solid #dde5e3; border-radius: 10px; padding: 10px; font-size: 14px; background: #fff; outline: none; }
+        .cli-campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+        .cli-campo > label { font-size: 11px; font-weight: 700; color: #64748b; }
         .cli-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .acao-btn { border: none; border-radius: 9px; padding: 11px 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .acao-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
@@ -133,8 +137,12 @@
         .a-reativar { background: #e3f2ef; color: var(--verde-esc); }
         .a-hist { background: #f1f5f9; color: #334155; }
         .a-venc { background: #eef6ff; color: #1e40af; white-space: nowrap; }
-        .cli-linha-venc { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
-        .cli-linha-venc input[type=date] { flex: 1; min-width: 0; padding: 10px; border: 1px solid #e2e8e6; border-radius: 9px; font-size: 13px; color: #334155; }
+        .cli-linha-venc { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 10px; }
+        .cli-linha-venc .acao-btn { flex: 1 1 auto; }
+        /* A data precisa de largura para caber inteira; abaixo disso o campo
+           quebra para a linha de baixo em vez de espremer. */
+        .cli-linha-venc .cli-campo { flex: 1 1 160px; }
+        .cli-linha-venc input[type=date] { width: 100%; min-width: 0; padding: 10px; border: 1px solid #e2e8e6; border-radius: 9px; font-size: 13px; color: #334155; }
 
         /* Zona de perigo — excluir conta (discreto até confirmar) */
         .cli-perigo { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef3f2; }
@@ -662,16 +670,25 @@
                     </div>
                     <div class="cli-corpo">
                         <div class="cli-linha">
-                            <select id="plano-${esc(c.id)}">
-                                ${PLANOS.map(p => `<option value="${p.key}" ${p.key === plano ? "selected" : ""}>${p.nome}</option>`).join("")}
-                            </select>
-                            <select id="ciclo-${esc(c.id)}">
-                                <option value="mensal" ${a && a.ciclo === "anual" ? "" : "selected"}>Mensal (+30 dias)</option>
-                                <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
-                            </select>
+                            <div class="cli-campo">
+                                <label for="plano-${esc(c.id)}">Plano</label>
+                                <select id="plano-${esc(c.id)}">
+                                    ${PLANOS.map(p => `<option value="${p.key}" ${p.key === plano ? "selected" : ""}>${p.nome}</option>`).join("")}
+                                </select>
+                            </div>
+                            <div class="cli-campo">
+                                <label for="ciclo-${esc(c.id)}">Cobrança</label>
+                                <select id="ciclo-${esc(c.id)}">
+                                    <option value="mensal" ${a && a.ciclo === "anual" ? "" : "selected"}>Mensal (+30 dias)</option>
+                                    <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="cli-linha-venc">
-                            <input type="date" id="venc-${esc(c.id)}" value="${a && a.proximo_vencimento ? esc(String(a.proximo_vencimento).slice(0, 10)) : ""}">
+                            <div class="cli-campo">
+                                <label for="venc-${esc(c.id)}">Vencimento</label>
+                                <input type="date" id="venc-${esc(c.id)}" value="${a && a.proximo_vencimento ? esc(String(a.proximo_vencimento).slice(0, 10)) : ""}">
+                            </div>
                             <button class="acao-btn a-venc" onclick="ajustarVencimento(this,'${esc(c.id)}')">${ICO.calendar} Ajustar vencimento</button>
                         </div>
                         <div class="cli-acoes">
