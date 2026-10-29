@@ -132,10 +132,8 @@
         .acao-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
         .acao-btn:disabled { opacity: .6; }
         .a-liberar { background: var(--verde); color: #fff; grid-column: 1 / -1; }
-        .a-trocar { background: #f1f5f9; color: #334155; }
         .a-bloquear { background: #fbe9e9; color: #a4241c; }
         .a-reativar { background: #e3f2ef; color: var(--verde-esc); }
-        .a-hist { background: #f1f5f9; color: #334155; }
         .a-venc { background: #eef6ff; color: #1e40af; white-space: nowrap; }
         .cli-linha-venc { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 10px; }
         .cli-linha-venc .acao-btn { flex: 1 1 auto; }
@@ -156,10 +154,6 @@
         .exc-ok { flex: 1; background: #dc2626; border: none; border-radius: 9px; padding: 10px; font-weight: 700; font-size: 13px; cursor: pointer; color: #fff; }
         .exc-ok:disabled { opacity: .6; }
 
-        .hist-lista { margin-top: 12px; border-top: 1px dashed #dde5e3; padding-top: 10px; }
-        .hist-item { font-size: 12px; color: #45565f; padding: 6px 0; border-bottom: 1px solid #eef3f2; }
-        .hist-item b { color: var(--verde); text-transform: capitalize; }
-        .hist-item small { color: #94a3b8; display: block; }
 
         .adm-carregando { text-align: center; color: #94a3b8; padding: 40px 0; font-size: 14px; }
         .skel { height: 74px; background: linear-gradient(90deg,#fff 25%,#f3f7f6 50%,#fff 75%); background-size: 200% 100%; border: 1px solid var(--linha); border-radius: 15px; margin-bottom: 10px; animation: sk 1.2s infinite; }
@@ -247,8 +241,6 @@
             copy:     `<svg ${_svgAttrs}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
             download: `<svg ${_svgAttrs}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
             check:    `<svg ${_svgAttrs}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-            swap:     `<svg ${_svgAttrs}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
-            history:  `<svg ${_svgAttrs}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>`,
             block:    `<svg ${_svgAttrs}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
         };
 
@@ -691,14 +683,15 @@
                             </div>
                             <button class="acao-btn a-venc" onclick="ajustarVencimento(this,'${esc(c.id)}')">${ICO.calendar} Ajustar vencimento</button>
                         </div>
+                        <!-- "Trocar plano" saiu: o "Registrar pagamento / Liberar"
+                             já envia o plano e a cobrança escolhidos acima, então
+                             eram dois caminhos para a mesma coisa. "Histórico"
+                             saiu por não ser usado no dia a dia. -->
                         <div class="cli-acoes">
                             <button class="acao-btn a-liberar" onclick="acao(this,'liberar','${esc(c.id)}')">${ICO.check} Registrar pagamento / Liberar</button>
-                            <button class="acao-btn a-trocar" onclick="acao(this,'trocar','${esc(c.id)}')">${ICO.swap} Trocar plano</button>
-                            <button class="acao-btn a-hist" onclick="verHistorico(this,'${esc(c.id)}')">${ICO.history} Histórico</button>
                             <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">${ICO.check} Reativar</button>
                             <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
                         </div>
-                        <div class="hist-lista" id="hist-${esc(c.id)}" style="display:none"></div>
                         <div class="cli-perigo">
                             <button class="cli-excluir-link" onclick="pedirExcluir('${esc(c.id)}')">Excluir conta e todos os dados</button>
                             <div class="cli-excluir-conf" id="exc-${esc(c.id)}" style="display:none">
@@ -805,24 +798,6 @@
                 toast("Conta excluída definitivamente.", "ok");
             } catch (e) {
                 toast("Conta excluída. Atualize a página para ver a lista.", "ok");
-            }
-        }
-
-        async function verHistorico(btn, alvo) {
-            const box = document.getElementById("hist-" + alvo);
-            if (box.style.display !== "none") { box.style.display = "none"; return; }
-            box.style.display = "block";
-            box.innerHTML = `<div class="hist-item">Carregando…</div>`;
-            try {
-                const data = await chamar({ action: "historico", alvo });
-                const h = data.historico || [];
-                box.innerHTML = h.length ? h.map(i => {
-                    const d = new Date(i.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-                    const det = i.detalhes && i.detalhes.plano ? ` — ${esc(NOME_PLANO[i.detalhes.plano] || i.detalhes.plano)}${i.detalhes.ciclo ? " · " + esc(i.detalhes.ciclo) : ""}${i.detalhes.vencimento ? " · vence " + esc(String(i.detalhes.vencimento).split("-").reverse().join("/")) : ""}` : "";
-                    return `<div class="hist-item"><b>${esc(i.acao)}</b>${det}<small>${d}</small></div>`;
-                }).join("") : `<div class="hist-item">Nenhum registro ainda.</div>`;
-            } catch (e) {
-                box.innerHTML = `<div class="hist-item">Erro ao carregar histórico.</div>`;
             }
         }
 
