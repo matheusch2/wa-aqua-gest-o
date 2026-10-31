@@ -95,19 +95,24 @@ html:not(.natal) .wa-luzes { display: none; }
 }
 
 /* ---------------------------------------------------------------------------
-   A barra de cima
+   Onde o gorro não cabe
 
-   É o caso apertado: a barra encosta no topo da tela do aparelho, então o
-   pompom seria cortado pela borda. Em dezembro a barra ganha uns pixels de
-   folga em cima, e o gorro entra um pouco menor pra não cobrir o "WA" (ali a
-   logo é desenhada a 110% e o "WA" sobe dentro da caixa).
+   Dois lugares apertam, por motivos diferentes, e nos dois a saída é a mesma:
+   dar folga em cima. Encolher o gorro não serve — ele tem que cobrir o logo
+   inteiro, que é o ponto do desenho.
+
+   .topo   — a barra encosta no topo da tela do aparelho, e o pompom era
+             cortado pela borda.
+   .login-wrapper — tem overflow:hidden pra segurar o camarão de marca d'água
+             no canto (ver .login-wrapper::after no 01-base-e-painel.css).
+             Liberar o overflow soltaria o camarão; então é folga mesmo.
+
+   As contas: o gorro sobe 57% da altura da caixa da logo. Na barra isso dá
+   ~37px sobre 65px de logo, e na entrada ~42px sobre 74px. A folga abaixo
+   cobre os dois com uma sobra pequena.
    --------------------------------------------------------------------------- */
-html.natal .topo { padding-top: 38px; }
-
-.topo .wa-gorro {
-  width: calc(var(--wa-gw, 110%) * .82);
-  top: calc(var(--wa-gy, -57%) * .86);
-}
+html.natal .topo { padding-top: 44px; }
+html.natal .login-wrapper { padding-top: 58px; }
 
 /* O defs do SVG mora uma vez só na página, invisível, e todos os gorros
    apontam pra ele. Sem isto o mesmo gradiente seria repetido a cada logo. */
