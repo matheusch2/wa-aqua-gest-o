@@ -1,0 +1,119 @@
+/* ============================================================================
+   91-natal.css — gorro de Papai Noel e pisca-pisca na logo, em dezembro.
+
+   Por que um arquivo só pra isso: é enfeite de época. Fica separado pra poder
+   ser lido, ajustado e, se um dia não quisermos mais, apagado inteiro sem
+   garimpar linha solta no meio do CSS do produto.
+
+   A logo (logo-wa.jpg) NÃO é tocada. O gorro é um SVG desenhado por cima, e o
+   mesmo desenho serve nos três lugares onde a logo aparece: a abertura
+   (.splash-wa-logo-card, 110px), a entrada (.login-logo, 74px) e a barra de
+   cima (.logo-circulo, 65px). Por isso todas as medidas do gorro são em %: ele
+   acompanha o tamanho de cada caixa sozinho.
+
+   Quem liga é o natal.js, que põe a classe "natal" no <html> só em dezembro.
+   Este arquivo é carregado o ano inteiro e não pinta nada fora do mês.
+
+   Carregado por: app/index.html e app/login.html.
+   ========================================================================== */
+
+/* Rede de segurança: sem a classe do mês, nada aparece — mesmo que algum
+   enfeite sobre no HTML por um caminho que não previmos. */
+html:not(.natal) .wa-gorro,
+html:not(.natal) .wa-luzes { display: none; }
+
+/* ---------------------------------------------------------------------------
+   Envoltório
+
+   .login-logo e .logo-circulo têm overflow:hidden (é o que arredonda a logo).
+   Se o gorro nascesse dentro delas, viria cortado rente à borda — só a pontinha
+   vermelha apareceria. Por isso o natal.js embrulha a caixa da logo neste
+   envoltório e pendura o enfeite AQUI, por fora do recorte.
+   --------------------------------------------------------------------------- */
+.wa-natal {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  line-height: 0;        /* sem o espaço fantasma que <img> em linha deixa */
+}
+
+/* ---------------------------------------------------------------------------
+   O gorro
+
+   Medidas pensadas pra aba de pelo atravessar TODA a largura da logo, logo
+   acima do "WA" — o logo inteiro usando o gorro, não um enfeite de cantinho.
+   --------------------------------------------------------------------------- */
+.wa-gorro {
+  position: absolute;
+  width: var(--wa-gw, 110%);   /* um tiquinho mais largo que a logo: a aba sobra */
+  height: auto;
+  left: var(--wa-gx, -5%);
+  top: var(--wa-gy, -57%);
+  transform: rotate(-2deg);    /* quase reto; o tortinho é só pra não ficar duro */
+  transform-origin: 62% 82%;
+  pointer-events: none;        /* a logo da barra é botão: o gorro não pode comer o toque */
+  z-index: 6;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .28));
+}
+
+/* ---------------------------------------------------------------------------
+   O pisca-pisca
+
+   Fica só no arco de baixo e nas laterais, tipo festão pendurado: em cima quem
+   manda é o gorro, e luz escondida atrás dele seria desenho jogado fora. As
+   posições vêm em % pelo natal.js, então o anel acompanha qualquer tamanho.
+   --------------------------------------------------------------------------- */
+.wa-luzes {
+  position: absolute;
+  inset: 0;
+  z-index: 5;            /* atrás do gorro, à frente da logo */
+  pointer-events: none;
+}
+
+.wa-luz {
+  position: absolute;
+  width: var(--d, 7px);
+  height: var(--d, 7px);
+  border-radius: 50%;
+  /* puxa pelo próprio centro: o left/top do natal.js aponta o centro da luz */
+  margin: calc(var(--d, 7px) / -2) 0 0 calc(var(--d, 7px) / -2);
+  background: var(--c, #ff3b30);
+  box-shadow: 0 0 6px var(--c, #ff3b30), 0 0 12px var(--c, #ff3b30);
+  animation: wa-pisca 2.4s ease-in-out infinite;
+  animation-delay: var(--atraso, 0s);
+}
+
+@keyframes wa-pisca {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  45%      { opacity: .18; transform: scale(.72); }
+}
+
+/* Quem desligou animação no aparelho não precisa de luz pulando na cara:
+   as cores ficam, o pisca para. */
+@media (prefers-reduced-motion: reduce) {
+  .wa-luz { animation: none; opacity: .92; }
+}
+
+/* ---------------------------------------------------------------------------
+   A barra de cima
+
+   É o caso apertado: a barra encosta no topo da tela do aparelho, então o
+   pompom seria cortado pela borda. Em dezembro a barra ganha uns pixels de
+   folga em cima, e o gorro entra um pouco menor pra não cobrir o "WA" (ali a
+   logo é desenhada a 110% e o "WA" sobe dentro da caixa).
+   --------------------------------------------------------------------------- */
+html.natal .topo { padding-top: 38px; }
+
+.topo .wa-gorro {
+  width: calc(var(--wa-gw, 110%) * .82);
+  top: calc(var(--wa-gy, -57%) * .86);
+}
+
+/* O defs do SVG mora uma vez só na página, invisível, e todos os gorros
+   apontam pra ele. Sem isto o mesmo gradiente seria repetido a cada logo. */
+.wa-natal-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
