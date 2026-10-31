@@ -6,6 +6,11 @@
 -->
 <html lang="pt-BR" translate="no">
 <head>
+    <!-- Primeira coisa do <head>, e tem que continuar sendo: o navegador decide
+         a codificação nos primeiros 1024 bytes. Sem isto a página só mostra os
+         acentos certos porque o servidor manda charset no cabeçalho; aberta de
+         outro jeito (arquivo salvo, outro servidor), "Gestão" virava "GestÃ£o". -->
+    <meta charset="utf-8">
     <meta name="google" content="notranslate">
     <!-- Fora do Google. Esta é uma tela de trabalho, não uma página de
          venda: quando ela era indexada, a descrição do site no Google
@@ -48,15 +53,15 @@
     <!-- Era 04-desktop-e-configuracoes.css, que deixou de existir quando o CSS
          de computador saiu pro 90-desktop.css: o pedido virava 404 a cada
          abertura da entrada. -->
-    <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261031c">
+    <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261031d">
     <link rel="stylesheet" href="styles/05-financeiro.css?v=20260910g">
     <link rel="stylesheet" href="styles/06-viveiro-e-relatorios.css?v=20260910k">
     <link rel="stylesheet" href="styles/07-planos-e-complementos.css?v=20260910g">
-    <link rel="stylesheet" href="styles/90-desktop.css?v=20261031c" media="(min-width: 900px)">
+    <link rel="stylesheet" href="styles/90-desktop.css?v=20261031d" media="(min-width: 900px)">
 
     <!-- Enfeite de dezembro (mesmo par do app). -->
-    <link rel="stylesheet" href="styles/91-natal.css?v=20261031c">
-    <script defer src="natal.js?v=20261031c"></script>
+    <link rel="stylesheet" href="styles/91-natal.css?v=20261031d">
+    <script defer src="natal.js?v=20261031d"></script>
     <style>
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear { display: none; }

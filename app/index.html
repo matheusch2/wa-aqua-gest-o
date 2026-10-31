@@ -6,6 +6,11 @@
 -->
 <html lang="pt-BR" translate="no">
 <head>
+    <!-- Primeira coisa do <head>, e tem que continuar sendo: o navegador decide
+         a codificação nos primeiros 1024 bytes. Sem isto a página só mostra os
+         acentos certos porque o servidor manda charset no cabeçalho; aberta de
+         outro jeito (arquivo salvo, outro servidor), "Gestão" virava "GestÃ£o". -->
+    <meta charset="utf-8">
     <meta name="google" content="notranslate">
     <!-- Fora do Google. Esta é uma tela de trabalho, não uma página de
          venda: quando ela era indexada, a descrição do site no Google
@@ -56,8 +61,8 @@
 
     <!-- Enfeite de dezembro. O CSS vem o ano inteiro e não pinta nada fora do
          mês; quem liga é o natal.js, pelo relógio do aparelho. -->
-    <link rel="stylesheet" href="styles/91-natal.css?v=20261031c">
-    <script defer src="natal.js?v=20261031c"></script>
+    <link rel="stylesheet" href="styles/91-natal.css?v=20261031d">
+    <script defer src="natal.js?v=20261031d"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
