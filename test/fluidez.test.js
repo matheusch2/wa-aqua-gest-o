@@ -74,6 +74,44 @@ test("ração: tocar 'continuar' pula pro dia seguinte e some a etiqueta",()=>{
   assert.equal(a.get('dataRacao').value,'2026-09-21');       // 20/09 + 1 dia
   assert.equal(a.get('racao-ultimo-chip').innerHTML,'');      // some ao tocar
 });
+test("ração: primeiro dia em aberto é o dia seguinte ou o povoamento",()=>{
+  const a=load();seed(a);
+  assert.equal(a.run('_proximoDiaRacao(viveiros[0])'),'2026-09-21'); // 20/09 + 1
+  assert.equal(a.run(`_proximoDiaRacao({dataPovoamento:'2026-09-05',racoes:[]})`),'2026-09-05');
+  assert.equal(a.run(`_proximoDiaRacao({dataPovoamento:'2026-09-05T00:00:00',racoes:[]})`),'2026-09-05');
+  assert.equal(a.run('_proximoDiaRacao({racoes:[]})'),null);          // sem povoamento
+  assert.equal(a.run('_proximoDiaRacao(undefined)'),null);
+});
+test("ração: sem lançamento no ciclo, a etiqueta leva pro dia do povoamento",()=>{
+  const a=load();seed(a);
+  a.run(`_hojeLocal = () => '2026-09-25';
+    viveiros[2]={id:'v3',nome:'Viveiro 3',dataPovoamento:'2026-09-05',racoes:[],custos:[],ciclosFinalizados:[]};`);
+  a.run('_atualizarChipUltimoRacao(2)');
+  const html = a.get('racao-ultimo-chip').innerHTML;
+  assert.match(html,/Povoamento/);        // não diz "Último": não houve lançamento
+  assert.match(html,/05\/09\/2026/);
+  assert.match(html,/há 20 dias/);
+  a.run('_continuarDoUltimo(2)');
+  assert.equal(a.get('dataRacao').value,'2026-09-05');
+});
+test("ração: etiqueta some quando o próximo dia em aberto seria futuro",()=>{
+  const a=load();seed(a);
+  a.run(`_hojeLocal = () => '2026-09-20';`); // já lançou hoje -> próximo seria 21/09
+  a.run('_atualizarChipUltimoRacao(0)');
+  assert.equal(a.get('racao-ultimo-chip').innerHTML,'');
+  // povoamento hoje e nenhuma ração: oferece o próprio dia, sem mandar pro futuro
+  a.run(`viveiros[2]={id:'v3',nome:'V3',dataPovoamento:'2026-09-20',racoes:[],custos:[],ciclosFinalizados:[]};
+    _atualizarChipUltimoRacao(2);`);
+  assert.match(a.get('racao-ultimo-chip').innerHTML,/Povoamento/);
+  a.run('_continuarDoUltimo(2)');
+  assert.equal(a.get('dataRacao').value,'2026-09-20');
+});
+test("ração: viveiro sem povoamento e sem ração não mostra etiqueta",()=>{
+  const a=load();seed(a);
+  a.run(`viveiros[2]={id:'v3',nome:'V3',racoes:[],custos:[],ciclosFinalizados:[]};
+    _atualizarChipUltimoRacao(2);`);
+  assert.equal(a.get('racao-ultimo-chip').innerHTML,'');
+});
 test("ração: troca de viveiro atualiza sugestão e custo, não quantidade/data",()=>{
   const a=load();seed(a);a.get('consumoRacao').value='10';a.get('dataRacao').value='2026-09-21';
   a.run('_sugerirUltimaRacao(0)');assert.equal(a.get('tipoRacaoSelect').value,'1');
