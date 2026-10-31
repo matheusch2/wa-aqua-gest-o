@@ -26,7 +26,7 @@
 // app/index.html (script.js?v=...). Ao publicar, bumpe os dois juntos: assim o
 // service worker muda, reinstala, apaga o cache antigo e re-guarda os arquivos
 // da versao nova — e a abertura offline nunca serve JavaScript velho.
-const CACHE = "waaqua-20261031b";
+const CACHE = "waaqua-20261031c";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -51,6 +51,8 @@ const ESSENCIAIS = [
   "/app/styles/06-viveiro-e-relatorios.css",
   "/app/styles/07-planos-e-complementos.css",
   "/app/styles/90-desktop.css",
+  "/app/styles/91-natal.css",   // enfeite de dezembro; o par deles some do
+  "/app/natal.js",              // caminho sozinho fora do mês
   "/app/script.js",   // o cérebro do app: sem ele no precache, a PRIMEIRA
                       // abertura offline carregava a casca sem funcionar.
                       // Continua rede-primeiro; isto é só a reserva offline.
