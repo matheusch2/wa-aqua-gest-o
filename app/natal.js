@@ -1,8 +1,12 @@
 /* ============================================================================
-   natal.js — põe o gorro de Papai Noel e o pisca-pisca na logo, em dezembro.
+   natal.js — põe o gorro de Papai Noel e o pisca-pisca na logo.
 
-   Fora de dezembro este arquivo não faz NADA: sai na primeira linha. Então em
-   1º de janeiro o enfeite some sozinho, pelo relógio do próprio aparelho, sem
+   Quando aparece: dezembro inteiro, todo ano. Mais a janela de adiantamento
+   abaixo, aberta porque quisemos ver o enfeite no app de verdade antes da
+   época. Passado 30/11/2026 essa janela morre sozinha e sobra só dezembro.
+
+   Fora disso este arquivo não faz NADA: sai na primeira linha. Então em 1º de
+   janeiro o enfeite some sozinho, pelo relógio do próprio aparelho, sem
    precisar publicar versão nova pra tirar.
 
    Fica fora do script.js de propósito. O script.js é o cérebro do app e não
@@ -10,13 +14,30 @@
    (app/index.html e app/login.html) e some do mapa o resto do ano.
 
    O desenho e as medidas moram no CSS: app/styles/91-natal.css.
+   Quem testa a data: test/natal.test.js.
    ========================================================================== */
 
 (function () {
   "use strict";
 
-  // Dezembro inteiro. getMonth() conta de 0, então 11 é dezembro.
-  if (new Date().getMonth() !== 11) return;
+  // Adiantamento: liga agora e segue até a véspera de dezembro, quando a regra
+  // do mês assume. Mexa nestas duas datas pra abrir a janela de novo um dia.
+  var ADIANTADO_DE  = "2026-10-31";
+  var ADIANTADO_ATE = "2026-11-30";
+
+  function diaLocal(d) {
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  function temNatal(hoje) {
+    if (hoje.getMonth() === 11) return true;   // dezembro: getMonth conta de 0
+    var dia = diaLocal(hoje);
+    return dia >= ADIANTADO_DE && dia <= ADIANTADO_ATE;
+  }
+
+  if (!temNatal(new Date())) return;
 
   /* Gradientes e sombras numa <defs> só, pendurada uma vez na página. Cada
      gorro aponta pra cá por id — senão o mesmo gradiente seria repetido em
