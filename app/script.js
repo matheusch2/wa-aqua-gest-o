@@ -1069,12 +1069,30 @@ function _checarDataCiclo(dataYmd, iniYmd, hojeYmd) {
 }
 
 // Mensagem pronta para a data de um lancamento (ou "" se estiver ok).
-function _erroDataCiclo(viveiro, dataYmd) {
-  const ini = (viveiro && (viveiro.dataPreparacao || viveiro.dataPovoamento)) || "";
+//
+// exigePovoamento: para o que só existe COM CAMARÃO no viveiro — ração,
+// biometria e despesca. O piso vira a data de POVOAMENTO, não o início do
+// ciclo. Eles não são a mesma coisa quando há fase de preparação: o ciclo
+// começa na preparação, quando o viveiro ainda está vazio, e usar esse piso
+// deixava lançar ração em dia sem camarão nenhum para comer.
+//
+// Custo continua medido pelo início do ciclo — preparar viveiro gasta
+// dinheiro de verdade antes de povoar.
+function _erroDataCiclo(viveiro, dataYmd, exigePovoamento) {
+  if (exigePovoamento && viveiro && !viveiro.dataPovoamento) {
+    return "Este viveiro ainda não foi povoado. Informe o povoamento antes de lançar.";
+  }
+  const ini = exigePovoamento
+    ? ((viveiro && viveiro.dataPovoamento) || "")
+    : ((viveiro && (viveiro.dataPreparacao || viveiro.dataPovoamento)) || "");
   const r = _checarDataCiclo(dataYmd, ini, _hojeLocal());
   if (r === "vazia") return "Informe a data.";
   if (r === "futuro") return "A data não pode ser no futuro.";
-  if (r === "antes") return `A data não pode ser anterior ao início do ciclo (${formatarData(ini)}).`;
+  if (r === "antes") {
+    return exigePovoamento
+      ? `A data não pode ser anterior ao povoamento (${formatarData(ini)}).`
+      : `A data não pode ser anterior ao início do ciclo (${formatarData(ini)}).`;
+  }
   return "";
 }
 
@@ -2691,7 +2709,7 @@ async function salvarLancamentoRacao(indexDireto = "") {
     mostrarErroRacao("Preencha a data e a quantidade (pode ser 0 para dia sem ração).");
     return;
   }
-  const _eDataR = _erroDataCiclo(viveiros[index], data);
+  const _eDataR = _erroDataCiclo(viveiros[index], data, true);
   if (_eDataR) { mostrarErroRacao(_eDataR); return; }
 
   // ── Monta a 1ª e, se o bloco estiver aberto, a 2ª ração (transição) ──
@@ -2956,7 +2974,7 @@ async function salvarBiometria(index) {
     mostrarErroBio("Preencha a data e uma gramatura maior que zero.");
     return;
   }
-  const _eDataB = _erroDataCiclo(viveiros[index], data);
+  const _eDataB = _erroDataCiclo(viveiros[index], data, true);
   if (_eDataB) { mostrarErroBio(_eDataB); return; }
 
   const dataDuplicada = (viveiros[index].biometrias || []).some(b => b.data === data);
@@ -3134,7 +3152,7 @@ async function salvarDespesca(index) {
     mostrarErroDespesca("Preencha a data, e quantidade, peso médio e preço maiores que zero.");
     return;
   }
-  const _eDataD = _erroDataCiclo(viveiros[index], data);
+  const _eDataD = _erroDataCiclo(viveiros[index], data, true);
   if (_eDataD) { mostrarErroDespesca(_eDataD); return; }
 
   const restaurar = _travarBotao(botao, "Salvando...");
@@ -4309,7 +4327,7 @@ async function salvarEdicaoBiometria(viveiroIndex, bioIndex, elementoId, direto)
 
   // Mesma validação de data do cadastro: não pode ser no futuro nem antes do
   // início do ciclo (a edição pulava essa checagem e deixava passar).
-  const _eDataEditBio = _erroDataCiclo(viveiros[viveiroIndex], novaData);
+  const _eDataEditBio = _erroDataCiclo(viveiros[viveiroIndex], novaData, true);
   if (_eDataEditBio) { _toastErro(_eDataEditBio); return; }
 
   // Impede duas biometrias na mesma data (ignora a própria que está sendo editada)
@@ -4559,7 +4577,7 @@ async function salvarEdicaoRacao(viveiroIndex, racaoIndex, elementoId, direto, p
   // ser futura nem anterior ao início do ciclo, e não pode haver duas rações do
   // MESMO TIPO no mesmo dia (ignora a própria, que está sendo editada). Desde
   // a transição, dois lançamentos no mesmo dia são válidos — só não do mesmo tipo.
-  const _eDataEditR = _erroDataCiclo(viveiros[viveiroIndex], novaData);
+  const _eDataEditR = _erroDataCiclo(viveiros[viveiroIndex], novaData, true);
   if (_eDataEditR) { _toastErro(_eDataEditR); return; }
   const _tipoIdxDup = document.getElementById("tipoRacaoEdicaoSelect")?.value;
   const _tipoDup = (_tipoIdxDup !== "" && _tipoIdxDup !== undefined) ? tiposRacao[_tipoIdxDup] : null;
@@ -4867,7 +4885,7 @@ async function salvarEdicaoDiaRacao(viveiroIndex, dataYmd, elementoId, direto, p
 
   const novaData = document.getElementById("edDiaData")?.value;
   if (!novaData) { _toastErro("Informe a data."); return; }
-  const eData = _erroDataCiclo(viveiros[viveiroIndex], novaData);
+  const eData = _erroDataCiclo(viveiros[viveiroIndex], novaData, true);
   if (eData) { _toastErro(eData); return; }
 
   const novos = [];
