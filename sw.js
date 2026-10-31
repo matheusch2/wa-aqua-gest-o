@@ -26,7 +26,7 @@
 // app/index.html (script.js?v=...). Ao publicar, bumpe os dois juntos: assim o
 // service worker muda, reinstala, apaga o cache antigo e re-guarda os arquivos
 // da versao nova — e a abertura offline nunca serve JavaScript velho.
-const CACHE = "waaqua-20261031e";
+const CACHE = "waaqua-20261031f";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -108,12 +108,55 @@ function podeCuidar(req) {
   return true;
 }
 
+// A página em si (a navegação, ou qualquer .html).
+function ehPagina(req) {
+  if (req.mode === "navigate") return true;
+  try { return /\.html$/.test(new URL(req.url).pathname); } catch (e) { return false; }
+}
+
+/*
+ * REDE PRIMEIRO DE VERDADE.
+ *
+ * Um fetch(req) comum obedece a REGRA DE OURO só pela metade: ele sai daqui,
+ * mas o navegador tem uma despensa própria no caminho, e o GitHub Pages manda
+ * cada página com um bilhete de 10 minutos de validade (Cache-Control:
+ * max-age=600). Dentro desses 10 minutos o navegador responde da despensa dele
+ * sem chegar no servidor — e o "rede primeiro" entregava a casca velha.
+ *
+ * Isso não estragava só a página: a casca é quem diz quais arquivos carregar
+ * (script.js?v=..., css?v=...). Casca velha pede os ?v= velhos, que estão
+ * todos guardados, e o app inteiro fica na versão anterior com a nova no ar.
+ * Era o "publiquei mas não chegou".
+ *
+ * O no-store vale SÓ pra página, que é justamente o arquivo sem "?v=" pra se
+ * virar sozinho. Os versionados mudam de endereço a cada publicação, então
+ * ali a despensa do navegador é amiga: desligar só faria baixar tudo à toa.
+ *
+ * Prova: test/sw-rede-primeiro.test.js sobe um servidor com os mesmos
+ * cabeçalhos do GitHub Pages e falha se a publicação não chegar no cliente.
+ */
+function buscarNaRede(req) {
+  if (!ehPagina(req)) return fetch(req);
+  return fetch(req.url, { cache: "no-store", credentials: "same-origin" })
+    .then((resposta) => {
+      // Navegação não aceita resposta vinda de redirecionamento. Como pedimos
+      // pela URL, e não pelo Request original, remontamos nesse caso — senão a
+      // página simplesmente não abre.
+      if (!resposta.redirected) return resposta;
+      return resposta.blob().then((corpo) => new Response(corpo, {
+        status: resposta.status,
+        statusText: resposta.statusText,
+        headers: resposta.headers,
+      }));
+    });
+}
+
 self.addEventListener("fetch", (evento) => {
   const req = evento.request;
   if (!podeCuidar(req)) return; // deixa o navegador cuidar normalmente
 
   evento.respondWith(
-    fetch(req)
+    buscarNaRede(req)
       .then((resposta) => {
         // Guarda uma cópia só do que veio certo e do próprio site.
         if (resposta && resposta.ok && resposta.type === "basic") {
