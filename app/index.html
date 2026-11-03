@@ -43,11 +43,19 @@
     <meta name="apple-mobile-web-app-title" content="WA Aqua">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!-- "default" dava uma faixa clara em cima da barra verde, no iPhone em modo
+         aplicativo: o app parava logo abaixo do relógio e aquela tira ficava com
+         o cinza do fundo da página. Com "black-translucent" o app vai ATÉ o topo
+         da tela, a barra verde passa por baixo do relógio, e o relógio fica
+         branco — que é o que combina com o verde. Vale só aqui: a tela de
+         entrada é clara e com relógio branco ele sumiria.
+         Anda junto com o viewport-fit=cover lá embaixo e com o
+         env(safe-area-inset-top) do .topo. Mexer em um sem o outro quebra. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
     <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
-    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261018a">
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261103a">
     <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20261016g">
     <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20261026a">
     <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261028a">
@@ -61,13 +69,16 @@
 
     <!-- Enfeite de dezembro. O CSS vem o ano inteiro e não pinta nada fora do
          mês; quem liga é o natal.js, pelo relógio do aparelho. -->
-    <link rel="stylesheet" href="styles/91-natal.css?v=20261031f">
+    <link rel="stylesheet" href="styles/91-natal.css?v=20261103a">
     <script defer src="natal.js?v=20261031f"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- viewport-fit=cover: sem ele o iPhone encolhe a área de desenho até a
+         borda do relógio e pinta o resto com o fundo da página. É o que liga os
+         env(safe-area-inset-*) — sem ele todos devolvem zero. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
     <title>WA Aqua gestão</title>
     

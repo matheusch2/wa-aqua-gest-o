@@ -17,7 +17,11 @@ body {
 
 .topo {
     background: linear-gradient(135deg, rgb(4,75,70) 0%, rgb(6,107,99) 60%, rgb(7,125,115) 100%);
-    padding: 14px 18px 18px;
+    /* O env() é o espaço do relógio e do notch no iPhone em modo aplicativo: a
+       barra verde cresce pra cobrir essa faixa, e o conteúdo dela continua
+       exatamente onde estava. Fora do iPhone instalado o env() vale zero e isto
+       é o mesmo 14px de sempre. Depende do viewport-fit=cover no index.html. */
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 18px;
     width: 100%;
     box-sizing: border-box;
     position: relative;
