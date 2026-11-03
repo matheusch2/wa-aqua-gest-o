@@ -21,12 +21,15 @@
  *     visita todos os aparelhos param de usar cache.
  */
 
-// Trocar o nome do cache faz o "activate" apagar o antigo sozinho. Para o cache
-// ACOMPANHAR cada publicacao, use aqui a MESMA versao do script.js que esta em
-// app/index.html (script.js?v=...). Ao publicar, bumpe os dois juntos: assim o
-// service worker muda, reinstala, apaga o cache antigo e re-guarda os arquivos
-// da versao nova — e a abertura offline nunca serve JavaScript velho.
-const CACHE = "waaqua-20261031f";
+// Trocar este nome faz o "activate" apagar o cache antigo sozinho. A REGRA:
+// mude aqui a cada publicacao, sem excecao. Trocar o nome muda o sw.js, que
+// reinstala, limpa o que estava guardado e re-guarda os arquivos novos — e a
+// abertura offline nunca serve codigo velho.
+//
+// (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
+// publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
+// parado. A data da publicacao, com uma letra pra desempatar, basta.)
+const CACHE = "waaqua-20261103a";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
