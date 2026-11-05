@@ -289,6 +289,32 @@ body.tema-escuro .ma-badge-alerta { background: rgba(220,38,38,0.22); color: #fc
 body.tema-escuro .ma-resumo { background: #16241f; border-color: #2b3a37; color: #9ca3af; }
 body.tema-escuro .ma-resumo b { color: #6ee7d8; }
 
+/* Desfazer tudo que o manejo lançou no ciclo.
+   Discreto de propósito: é irreversível e fica logo abaixo do resumo, que é
+   onde o produtor está olhando quando percebe que o manejo entrou errado. Um
+   botão grande e vermelho aqui convidaria ao toque sem querer. */
+.ma-desfazer {
+    display: block; margin: -4px 0 12px auto; padding: 4px 2px;
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; font-weight: 700; color: #b91c1c;
+    text-decoration: underline; text-underline-offset: 3px;
+}
+.ma-desfazer:active { opacity: .6; }
+body.tema-escuro .ma-desfazer { color: #f87171; }
+
+.ma-confirm {
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px;
+    padding: 13px 14px; margin-bottom: 12px;
+}
+.ma-confirm p { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: #7f1d1d; }
+.ma-confirm b { font-weight: 800; }
+.ma-confirm .ma-confirm-nota { font-size: 12px; color: #9a6a6a; margin-bottom: 12px; }
+.ma-confirm-acoes { display: flex; gap: 8px; }
+.ma-confirm-acoes .botao-voltar-form { flex: 1; margin: 0; min-width: 0; }
+body.tema-escuro .ma-confirm { background: #2a1414; border-color: #7f1d1d; }
+body.tema-escuro .ma-confirm p { color: #fca5a5; }
+body.tema-escuro .ma-confirm .ma-confirm-nota { color: #b08c8c; }
+
 /* Prévia do custo dentro do formulário do protocolo */
 .ma-previa {
     font-size: 12.5px; color: #4b5563; line-height: 1.5;
