@@ -10716,6 +10716,20 @@ function _maResumoProtocolo(p) {
   return `${formatarNumeroBR(p.quantidadeG, 0)} g · ${dias || "—"}${desde}`;
 }
 
+// O que o manejo automático já lançou no ciclo ABERTO do viveiro.
+//
+// Fonte única: a tela conta por aqui e o "desfazer" apaga por aqui. Se cada um
+// tivesse seu próprio filtro, o produtor leria "18 lançamentos", mandaria
+// apagar, e sumiria outra coisa — ou sobraria lançamento que ele achou que
+// tinha ido embora. Função pura -> tem teste.
+function _maLancamentosDoCiclo(viveiro) {
+  if (!viveiro) return [];
+  const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || "";
+  return (viveiro.custos || []).filter(c =>
+    (c.observacao || "").startsWith("Automático") &&
+    ((viveiro.cicloId && c.cicloId) ? c.cicloId === viveiro.cicloId : (!iniCiclo || String(c.data || "") >= iniCiclo)));
+}
+
 function abrirManejoAutomatico(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
@@ -10723,21 +10737,29 @@ function abrirManejoAutomatico(index) {
 
   // O que o manejo já lançou neste ciclo — sem isso o produtor não tinha como
   // saber se os protocolos estavam realmente funcionando nem quanto custaram.
-  const iniCiclo = viveiro.dataPreparacao || viveiro.dataPovoamento || "";
-  const lancados = (viveiro.custos || []).filter(c =>
-    (c.observacao || "").startsWith("Automático") &&
-    ((viveiro.cicloId && c.cicloId) ? c.cicloId === viveiro.cicloId : (!iniCiclo || String(c.data || "") >= iniCiclo)));
+  const lancados = _maLancamentosDoCiclo(viveiro);
   const totalLancado = lancados.reduce((s, c) => s + (Number(c.valor) || 0), 0);
 
   area.innerHTML = `
     <h3 class="titulo-secao">Manejo automático — ${abreviarViveiro(viveiro.nome)}</h3>
     <div class="cfg-wrap">
       <p class="cfg-secao-desc">Produtos lançados automaticamente neste viveiro. Os lançamentos viram custos e podem ser editados/excluídos no histórico de custos.
-      Pausar interrompe os lançamentos enquanto estiver pausado; excluir um protocolo não apaga o que já foi lançado.</p>
+      Pausar interrompe os lançamentos enquanto estiver pausado; excluir um protocolo não apaga o que já foi lançado — para isso use "Desfazer estes lançamentos".</p>
       ${produtos.length === 0 ? `<div class="viveiro-sem-ciclo-msg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Cadastre um produto em Insumos antes de criar um protocolo.</span></div>` : ""}
       ${lancados.length > 0 ? `<div class="ma-resumo">
         <span>${lancados.length} lançamento${lancados.length !== 1 ? "s" : ""} automático${lancados.length !== 1 ? "s" : ""} neste ciclo</span>
         <b>R$ ${formatarNumeroBR(totalLancado, 2)}</b>
+      </div>
+      <button class="ma-desfazer" onclick="_maConfirmDesfazer(${index})">Desfazer estes lançamentos</button>
+      <div id="ma-confirm-desfazer-${index}" class="ma-confirm" style="display:none">
+        <p>Isto apaga <b>${lancados.length} lançamento${lancados.length !== 1 ? "s" : ""}</b>, somando
+        <b>R$ ${formatarNumeroBR(totalLancado, 2)}</b>, do histórico de custos deste ciclo. Não tem como voltar atrás.</p>
+        <p class="ma-confirm-nota">Os protocolos ficam como estão. O que já passou não volta a ser lançado;
+        do próximo dia em diante eles seguem normalmente. Para parar de lançar, pause ou exclua o protocolo.</p>
+        <div class="ma-confirm-acoes">
+          <button class="botao-voltar-form botao-perigo-outline" onclick="_maDesfazerLancamentos(${index}, this)">Sim, apagar tudo</button>
+          <button class="botao-voltar-form" onclick="_maConfirmDesfazer(${index})">Cancelar</button>
+        </div>
       </div>` : ""}
       <div class="ma-lista">
         ${prots.length === 0 ? `<p class="ma-vazio">Nenhum protocolo configurado.</p>` : prots.map(p => {
@@ -10762,6 +10784,84 @@ function abrirManejoAutomatico(index) {
       <button class="botao-voltar-form" style="margin-top:10px" onclick="abrirViveiro(${index})">Voltar</button>
     </div>
   `;
+}
+
+function _maConfirmDesfazer(index) {
+  const painel = document.getElementById(`ma-confirm-desfazer-${index}`);
+  if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
+}
+
+/*
+ * Apaga de uma vez tudo que o manejo automático lançou no ciclo aberto.
+ *
+ * Por que existe: até aqui, desfazer um manejo que entrou errado (dose trocada,
+ * protocolo criado por engano) era caçar lançamento por lançamento no histórico
+ * de custos. Num ciclo de quatro meses com dois produtos, são mais de cem.
+ *
+ * O que NÃO faz, de propósito: não mexe nos protocolos nem na marca de
+ * progresso deles. Zerar a marca faria a varredura relançar amanhã tudo que o
+ * produtor acabou de apagar — desfazer que se desfaz sozinho. Quem quer parar
+ * de lançar pausa ou exclui o protocolo, e a tela diz isso.
+ */
+async function _maDesfazerLancamentos(index, botao) {
+  if (_bloqueioViveiro(index)) return;
+  if (botao?.disabled) return;              // trava contra duplo toque
+  const restaurar = _travarBotao(botao, "Apagando...");
+
+  // Entra na mesma fila dos lançamentos: apagar enquanto um protocolo está
+  // gravando deixaria o custo novo órfão, fora da conta que o produtor viu.
+  const r = await _maSerial(() => _maDesfazerSerial(index));
+
+  if (r.apagados > 0) {
+    _toastSucesso(`${r.apagados} lançamento${r.apagados !== 1 ? "s" : ""} apagado${r.apagados !== 1 ? "s" : ""}.`);
+  }
+  if (!r.ok) {
+    restaurar();
+    // Parcial é o caso perigoso: o produtor precisa saber que sobrou coisa,
+    // senão fecha a tela achando que limpou tudo.
+    _toastErro(r.apagados > 0
+      ? `Apaguei ${r.apagados}, mas o resto não foi. Confira a conexão e tente de novo.`
+      : "Não deu para apagar. Confira a conexão e tente de novo.");
+  }
+  abrirManejoAutomatico(index);             // redesenha com a conta nova
+}
+
+async function _maDesfazerSerial(index) {
+  const v = viveiros[index];
+  const alvos = _maLancamentosDoCiclo(v);
+  if (!alvos.length) return { ok: true, apagados: 0 };
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return { ok: false, apagados: 0 };
+
+  const ids = alvos.map(c => c.id).filter(Boolean);
+  // Em lotes: um ciclo longo com dois protocolos diários passa de 200 custos, e
+  // 200 ids num .in() estouram o tamanho da URL. O lote some do banco e da
+  // memória junto, então uma falha no meio deixa a tela contando certo o que
+  // ainda resta.
+  const LOTE = 50;
+  const apagadosIds = new Set();
+  for (let i = 0; i < ids.length; i += LOTE) {
+    const fatia = ids.slice(i, i + LOTE);
+    const { error } = await supabaseClient
+      .from("custos").delete().in("id", fatia).eq("user_id", usuario.id);
+    if (error) {
+      console.log(error);
+      _maEsquecerCustos(v, apagadosIds);
+      return { ok: false, apagados: apagadosIds.size };
+    }
+    fatia.forEach(id => apagadosIds.add(id));
+  }
+
+  _maEsquecerCustos(v, apagadosIds);
+  return { ok: true, apagados: apagadosIds.size };
+}
+
+// Tira da memória só o que o banco confirmou. Nunca apagar da memória antes da
+// resposta: numa falha, o custo sumia da tela e continuava lá no banco.
+function _maEsquecerCustos(viveiro, idsApagados) {
+  if (!viveiro || !idsApagados.size) return;
+  viveiro.custos = (viveiro.custos || []).filter(c => !idsApagados.has(c.id));
 }
 
 async function toggleProtocolo(index, protId, botao) {

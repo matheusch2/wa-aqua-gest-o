@@ -218,3 +218,52 @@ test("financeiro: viveiro removido não seleciona outro indevidamente",()=>{
   const a=load();seed(a);a.run('_finRenderCicloSel=()=>{};_finAtualizarPeriodoVisivel=()=>{};mostrarCustosFinanceiro=()=>{};_finViveiroId="removido";_finCicloSel="antigo";abrirFinanceiro()');
   assert.equal(a.run('_finViveiroId'),null);assert.equal(a.run('_finCicloSel'),'');
 });
+
+// ── Manejo automático: o que o "desfazer" leva junto ─────────────────────────
+// A tela conta e o desfazer apaga pela MESMA função. Se os dois filtros se
+// separarem, o produtor lê "18 lançamentos", manda apagar, e some outra coisa.
+// Por isso o que está testado aqui é a fronteira: o que entra e o que fica.
+function viveiroComCustos(extra) {
+  return Object.assign({
+    dataPreparacao: "2026-09-01", dataPovoamento: "2026-09-10", cicloId: "c-9",
+    custos: [
+      { id: "a1", data: "2026-09-15", valor: 10, observacao: "Automático (ração)",  cicloId: "c-9" },
+      { id: "a2", data: "2026-09-20", valor: 20, observacao: "Automático (semanal)", cicloId: "c-9" },
+      { id: "m1", data: "2026-09-21", valor: 99, observacao: "Comprei na loja",      cicloId: "c-9" },
+      { id: "m2", data: "2026-09-22", valor: 50, observacao: "",                     cicloId: "c-9" },
+      { id: "v1", data: "2026-05-05", valor: 77, observacao: "Automático (ração)",  cicloId: "c-8" },
+    ],
+  }, extra || {});
+}
+const ids = (l) => l.map(c => c.id).join(",");
+
+test("manejo: leva só o automático, e só do ciclo aberto",()=>{
+  const a=load();
+  a.run(`__v = (${viveiroComCustos.toString()})();`);
+  assert.equal(a.run('_maLancamentosDoCiclo(__v).map(c=>c.id).join(",")'), "a1,a2");
+});
+test("manejo: custo lançado na mão nunca entra",()=>{
+  const a=load();
+  a.run(`__v = (${viveiroComCustos.toString()})();`);
+  const pegos = a.run('_maLancamentosDoCiclo(__v).map(c=>c.id)');
+  for (const manual of ["m1","m2"]) assert.equal(pegos.includes(manual), false, manual);
+});
+test("manejo: sem cicloId, corta pela data de início do ciclo",()=>{
+  const a=load();
+  a.run(`__v = (${viveiroComCustos.toString()})({cicloId:null});
+    __v.custos.forEach(c => { c.cicloId = null; });`);
+  // o de maio fica de fora porque é anterior à preparação (01/09)
+  assert.equal(a.run('_maLancamentosDoCiclo(__v).map(c=>c.id).join(",")'), "a1,a2");
+});
+test("manejo: viveiro sem custos, ou sem viveiro, devolve lista vazia",()=>{
+  const a=load();
+  assert.equal(a.run('_maLancamentosDoCiclo({}).length'), 0);
+  assert.equal(a.run('_maLancamentosDoCiclo(null).length'), 0);
+  assert.equal(a.run('_maLancamentosDoCiclo({custos:[]}).length'), 0);
+});
+test("manejo: a conta da tela e a do desfazer são a mesma lista",()=>{
+  const a=load();
+  a.run(`__v = (${viveiroComCustos.toString()})();`);
+  // o total que a tela mostra sai dos mesmos itens que vão ser apagados
+  assert.equal(a.run('_maLancamentosDoCiclo(__v).reduce((s,c)=>s+Number(c.valor),0)'), 30);
+});
