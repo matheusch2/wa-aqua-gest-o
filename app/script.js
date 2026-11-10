@@ -2060,6 +2060,43 @@ function abrirViveiro(index) {
     const v = (box.querySelector("strong")?.textContent || "").trim();
     if (v === "--" || v.startsWith("-- ")) box.classList.add("info-box-vazio");
   });
+
+  _vvAjustarTitulo(area);
+}
+
+/*
+ * Encolhe o nome do viveiro até caber numa linha só.
+ *
+ * O cabeçalho é ícone + nome + etiqueta de PLs na mesma linha, e sobra pouco
+ * para o nome: num Android de 360px eram 90px. "VIVEIRO 3" não cabia e o
+ * navegador quebrava no espaço — o número caía sozinho embaixo do nome. No
+ * iPhone de 390px passava, e por isso o defeito parecia "coisa de Android".
+ *
+ * Mexer só na largura não resolve: medindo, com o cabeçalho compacto o
+ * "Viveiro 3" passava a caber a 360px, mas "Berçário 2" continuava quebrando a
+ * 390px. Largura só muda o nome a partir do qual quebra. Encolher a letra
+ * resolve para qualquer nome em qualquer tela.
+ *
+ * Desce de 1 em 1 px até caber, com piso em 15px — abaixo disso o nome fica
+ * ilegível. O nome que não couber nem aos 15px volta a quebrar em duas linhas,
+ * de propósito: entre quebrar e cortar com reticências, quebrar é melhor,
+ * porque o produtor continua lendo o nome inteiro. A quebra que ele reclamou
+ * acontecia com "Viveiro 3", que cabe de sobra encolhendo um pouco.
+ */
+function _vvAjustarTitulo(area) {
+  const t = (area || document).querySelector(".vv-titulo");
+  if (!t) return;
+  t.style.fontSize = "";                       // volta ao tamanho do CSS
+  t.classList.remove("vv-titulo-quebra");
+  const cheio = parseFloat(getComputedStyle(t).fontSize) || 22;
+  // Sem layout (tela ainda não desenhada, aba em segundo plano) a medida vem
+  // zerada e o laço encolheria o título à toa. Melhor deixar como está.
+  if (!t.clientWidth) return;
+  for (let px = Math.round(cheio); px >= 15; px--) {
+    t.style.fontSize = px + "px";
+    if (t.scrollWidth <= t.clientWidth) return;
+  }
+  t.classList.add("vv-titulo-quebra");         // nome comprido: quebra, não corta
 }
 
 // ═══ CATÁLOGO DE RAÇÕES ════════════════════════════════════════════════════════
