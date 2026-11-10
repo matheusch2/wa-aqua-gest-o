@@ -267,3 +267,34 @@ test("manejo: a conta da tela e a do desfazer são a mesma lista",()=>{
   // o total que a tela mostra sai dos mesmos itens que vão ser apagados
   assert.equal(a.run('_maLancamentosDoCiclo(__v).reduce((s,c)=>s+Number(c.valor),0)'), 30);
 });
+
+// ── Nome do viveiro numa linha só ───────────────────────────────────────────
+// O ajuste mede o elemento, então o miolo só dá pra testar em navegador (está
+// coberto pelo roteiro do /tmp). Aqui ficam as bordas que falham caladas: sem
+// elemento, e sem layout (aba em segundo plano, tela ainda não desenhada). Num
+// desses o laço encolheria o título à toa, ou quebraria a abertura do viveiro.
+test("título do viveiro: sem elemento na tela, não quebra",()=>{
+  const a=load();
+  a.run('document.querySelector = () => null;');
+  assert.doesNotThrow(() => a.run('_vvAjustarTitulo()'));
+});
+test("título do viveiro: sem layout medido, não mexe no tamanho",()=>{
+  const a=load();
+  a.run(`globalThis.getComputedStyle = () => ({ fontSize: "22px" });
+         __t = { style:{fontSize:""}, classList:{add(){this.q=true;},remove(){this.q=false;}},
+           clientWidth: 0, scrollWidth: 999 };
+         document.querySelector = () => __t;`);
+  a.run('_vvAjustarTitulo()');
+  assert.equal(a.run('__t.style.fontSize'), "");   // continua com o tamanho do CSS
+  assert.equal(a.run('__t.classList.q'), false);   // e sem a classe de quebra
+});
+test("título do viveiro: nome que não cabe nem no mínimo volta a quebrar",()=>{
+  const a=load();
+  a.run(`globalThis.getComputedStyle = () => ({ fontSize: "22px" });
+         __t = { style:{fontSize:"22px"}, classList:{add(){this.q=true;},remove(){this.q=false;}},
+           clientWidth: 90, scrollWidth: 999 };
+         document.querySelector = () => __t;`);
+  a.run('_vvAjustarTitulo()');
+  assert.equal(a.run('__t.classList.q'), true);    // quebra, em vez de cortar
+  assert.equal(a.run('__t.style.fontSize'), "15px"); // parou no piso
+});

@@ -35,6 +35,21 @@
     font-weight: 900;
     color: rgb(6,107,99);
     letter-spacing: -0.5px;
+    /* Uma linha só: sem isto o navegador quebrava "VIVEIRO 3" no espaço e o
+       número caía sozinho embaixo do nome. Quem faz o nome caber é o
+       _vvAjustarTitulo() no script.js, encolhendo a letra; as reticências
+       valem só para o nome que não cabe nem no tamanho mínimo. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Nome que não cabe nem no tamanho mínimo: volta a quebrar em duas linhas.
+   Entre quebrar e cortar com reticências, quebrar é melhor — o produtor
+   continua lendo o nome inteiro. Quem põe esta classe é o _vvAjustarTitulo(). */
+.vv-titulo.vv-titulo-quebra {
+    white-space: normal;
+    overflow: visible;
+    line-height: 1.15;
 }
 
 .vv-badge {
