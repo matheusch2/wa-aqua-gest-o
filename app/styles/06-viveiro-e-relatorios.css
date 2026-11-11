@@ -810,3 +810,14 @@ body.tema-escuro .rg-abas { background: #374151; }
 body.tema-escuro .rg-aba.ativa { background: #1f2937; color: #5eead4; }
 body.tema-escuro .rg-chip { background: #1f2937; border-color: #374151; color: #d1d5db; }
 body.tema-escuro .rg-linha { background: #1f2937; border-color: #374151; }
+
+/* Formulário "lançar custo esquecido", na tela de custos do ciclo encerrado.
+   Separado do que está acima por uma linha, pra leitura não confundir o que já
+   foi lançado com o que está sendo lançado agora. */
+.cce-form {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+}
+.cce-form .vv-secao-lbl { margin-bottom: 10px; }
+body.tema-escuro .cce-form { border-top-color: #374151; }

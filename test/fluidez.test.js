@@ -298,3 +298,41 @@ test("título do viveiro: nome que não cabe nem no mínimo volta a quebrar",()=
   assert.equal(a.run('__t.classList.q'), true);    // quebra, em vez de cortar
   assert.equal(a.run('__t.style.fontSize'), "15px"); // parou no piso
 });
+
+// ── Custos de um ciclo já encerrado ─────────────────────────────────────────
+// O custo entra no relatório certo por casar o ciclo_id. Achar o ciclo errado
+// (ou não achar) lançaria a despesa num cultivo que não é o dele, e isso o
+// produtor só descobriria conferindo o lucro de um ciclo que ele já fechou.
+function viveiroComCiclos() {
+  return {
+    cicloId: "atual", custos: [],
+    ciclosFinalizados: [
+      { cicloId: "c-01", nomeViveiro: "Viveiro 01", dataEncerramento: "2026-07-19" },
+      { cicloId: "c-02", nomeViveiro: "Viveiro 01", dataEncerramento: "2026-11-02" },
+    ],
+  };
+}
+test("ciclo encerrado: acha o ciclo pelo id, não pela posição",()=>{
+  const a=load();
+  a.run(`viveiros = [(${viveiroComCiclos.toString()})()];`);
+  assert.equal(a.run(`_cicloEncerradoPorId(0,"c-02").dataEncerramento`), "2026-11-02");
+  assert.equal(a.run(`_cicloEncerradoPorId(0,"c-01").dataEncerramento`), "2026-07-19");
+});
+test("ciclo encerrado: id desconhecido devolve nada, em vez de chutar o primeiro",()=>{
+  const a=load();
+  a.run(`viveiros = [(${viveiroComCiclos.toString()})()];`);
+  assert.equal(a.run(`_cicloEncerradoPorId(0,"nao-existe")`), null);
+  assert.equal(a.run(`_cicloEncerradoPorId(0,"")`), null);
+  assert.equal(a.run(`_cicloEncerradoPorId(9,"c-01")`), null);   // viveiro fora da lista
+});
+test("ciclo encerrado: o custo marcado com o ciclo antigo não entra no atual",()=>{
+  const a=load();
+  a.run(`__v = { cicloId: "atual", dataPreparacao: "2026-10-01", custos: [
+    { id:"x1", data:"2026-07-10", valor: 350, cicloId: "c-01" },
+    { id:"x2", data:"2026-10-20", valor:  80, cicloId: "atual" }
+  ]};`);
+  // relatório do ciclo encerrado vê só o dele
+  assert.equal(a.run(`_custosManuaisDoCiclo(__v.custos,"c-01","2026-03-27","2026-07-19").map(c=>c.id).join()`), "x1");
+  // e a tela do viveiro em cultivo continua vendo só o dela
+  assert.equal(a.run(`_custosDoEscopoPares(__v).map(p=>p.c.id).join()`), "x2");
+});
