@@ -9950,6 +9950,10 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
           <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir histórico de ração
         </button>` : ""}
+        <button class="botao-voltar-form" style="padding:11px 10px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="abrirCustosDoCicloEncerrado(${index},'${_jsAttr(ciclo.cicloId || "")}','${_jsAttr(origem)}')">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Custos deste ciclo
+        </button>
         <button class="botao-voltar-form" style="padding:11px 10px;font-size:14px" onclick="${origem === 'viveiro' ? `mostrarViveiroSemCiclo(${index})` : `mostrarCiclosDoViveiro(${index})`}">Voltar</button>
       </div>
 
@@ -12256,6 +12260,178 @@ document.addEventListener("click", (e) => {
 // Devolve pares { c, i } onde `i` é o índice REAL em viveiro.custos. Editar e
 // excluir indexam o array original (viveiros[x].custos[i]), por isso o índice
 // nunca pode vir de um array já filtrado — sairia mexendo no custo errado.
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOS DE UM CICLO JÁ ENCERRADO
+
+   Por que isto existe: um cliente fechou o ciclo e só depois lembrou de uma
+   despesa. A ideia inicial era reabrir o cultivo, lançar e fechar de novo.
+   Não precisa, e seria perigoso: o encerramento APAGA rações, biometrias e
+   despescas depois de congelá-las em JSON, então reabrir significaria
+   restaurar tudo e re-congelar, com chance de o relatório sair diferente do
+   que já foi impresso.
+
+   Os custos, não. Eles continuam na tabela, marcados com o ciclo_id, e o
+   relatório do ciclo encerrado os soma AO VIVO (ver _custosCicloAtivo). Um
+   custo gravado com o id daquele ciclo entra no relatório sozinho, sem
+   reabrir nada.
+
+   O que faltava era por onde mexer: o histórico de custos é preso ao ciclo
+   ATUAL do viveiro (ver _custosDoEscopoPares), então um custo de ciclo
+   fechado ficaria invisível — o cliente lançaria e não conseguiria tirar.
+   Daí esta tela, que lista, lança e remove, sempre do mesmo ciclo.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _cicloEncerradoPorId(index, cicloId) {
+  const v = viveiros[index];
+  if (!v) return null;
+  return (v.ciclosFinalizados || []).find(c => String(c.cicloId || "") === String(cicloId || "")) || null;
+}
+
+function abrirCustosDoCicloEncerrado(index, cicloId, origem = "historico") {
+  const viveiro = viveiros[index];
+  const ciclo = _cicloEncerradoPorId(index, cicloId);
+  const area = document.getElementById("area-gestao");
+  if (!viveiro || !ciclo || !area) return;
+
+  const ini = ciclo.dataPreparacao || ciclo.dataPovoamento || "";
+  const fim = ciclo.dataEncerramento || "";
+  // Mesma função que o relatório usa para somar: o que aparece aqui é
+  // exatamente o que entra no "Custos manuais" de lá.
+  const custos = _custosManuaisDoCiclo(viveiro.custos, ciclo.cicloId, ini, fim)
+    .slice().sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  const total = custos.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+
+  area.innerHTML = `
+    <h3 class="titulo-secao">Custos do ciclo — ${abreviarViveiro(ciclo.nomeViveiro || viveiro.nome)}</h3>
+    <div class="cfg-wrap">
+      <p class="cfg-secao-desc">Ciclo encerrado em ${formatarData(fim)}. O que você lançar aqui entra no
+      relatório deste ciclo, sem reabrir o cultivo. O rateio de custos fixos não muda: ele ficou congelado no encerramento.</p>
+
+      <div class="ma-resumo">
+        <span>${custos.length} custo${custos.length !== 1 ? "s" : ""} lançado${custos.length !== 1 ? "s" : ""} neste ciclo</span>
+        <b>R$ ${formatarNumeroBR(total, 2)}</b>
+      </div>
+
+      <div class="ma-lista">
+        ${custos.length === 0 ? `<p class="ma-vazio">Nenhum custo lançado à mão neste ciclo.</p>` : custos.map(c => `
+          <div class="ma-item">
+            <div class="ma-item-info">
+              <span class="ma-item-nome">${_esc(c.nomeProduto || c.categoria || "Custo")}</span>
+              <span class="ma-item-regra">${formatarData(c.data)} · R$ ${formatarNumeroBR(Number(c.valor) || 0, 2)}${
+                (c.observacao || "").startsWith("Automático") ? " · automático" : ""}</span>
+            </div>
+            <div class="ma-item-acoes">
+              <button class="ma-btn-ic" title="Excluir"
+                onclick="_excluirCustoDoCicloEncerrado(${index},'${_jsAttr(c.id)}','${_jsAttr(cicloId)}','${_jsAttr(origem)}', this)">🗑️</button>
+            </div>
+          </div>`).join("")}
+      </div>
+
+      <div class="cce-form">
+        <div class="vv-secao-lbl">Lançar custo esquecido</div>
+        <div class="campo-form">
+          <div class="campo-label"><label>Data</label></div>
+          <input type="date" id="cceData" value="${fim}" min="${ini}" max="${_hojeLocal()}">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><label>Descrição</label></div>
+          <input type="text" id="cceNome" placeholder="Ex.: Frete da despesca" autocomplete="off">
+        </div>
+        <div class="campo-form">
+          <div class="campo-label"><label>Valor (R$)</label></div>
+          <input type="text" id="cceValor" inputmode="decimal" placeholder="Ex.: 350,00" onblur="formatarMoedaBlur(this)">
+        </div>
+        <div id="cce-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
+        <button class="botao-salvar" onclick="_salvarCustoDoCicloEncerrado(${index},'${_jsAttr(cicloId)}','${_jsAttr(origem)}', this)">
+          Lançar neste ciclo
+        </button>
+      </div>
+
+      <button class="botao-voltar-form" style="margin-top:10px"
+        onclick="mostrarRelatorioCiclo(${index}, _cicloEncerradoPorId(${index},'${_jsAttr(cicloId)}'), '${_jsAttr(origem)}')">
+        Voltar ao relatório
+      </button>
+    </div>
+  `;
+}
+
+async function _salvarCustoDoCicloEncerrado(index, cicloId, origem, botao) {
+  if (_bloqueioViveiro(index)) return;
+  if (botao?.disabled) return;                       // trava contra duplo toque
+  const ciclo = _cicloEncerradoPorId(index, cicloId);
+  if (!ciclo) return;
+
+  const cx = document.getElementById("cce-erro");
+  const erro = (msg) => { if (cx) { cx.textContent = msg; cx.style.display = "block"; } };
+  if (cx) cx.style.display = "none";
+
+  const data = document.getElementById("cceData").value;
+  const descricao = document.getElementById("cceNome").value.trim();
+  const valor = parseMoedaBR(document.getElementById("cceValor").value);
+
+  if (!descricao) { erro("Digite o nome do custo."); return; }
+  // Mesmo nome reservado do lançamento normal: o custo de ração é derivado dos
+  // lançamentos de ração, e um registro chamado "Ração" seria descartado na
+  // montagem do relatório — o cliente lançaria e o valor sumiria.
+  if (_normNomeCusto(descricao) === "racao") {
+    erro('Para ração use o histórico de ração — esse nome é reservado.'); return;
+  }
+  if (!data || isNaN(valor) || valor <= 0) { erro("Preencha a data e um valor maior que zero."); return; }
+
+  const reabilitar = _travarBotao(botao, "Salvando...");
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { reabilitar(); return; }
+
+  // O ciclo_id é o do ciclo ENCERRADO, não o atual do viveiro — é isso que faz
+  // o custo cair no relatório certo.
+  const { data: salvo, error } = await supabaseClient
+    .from("custos")
+    .insert([{
+      user_id: usuario.id, viveiro_id: viveiros[index].id, tipo: "outro",
+      nome_produto: descricao, valor, categoria: descricao, data, ciclo_id: cicloId || null,
+    }])
+    .select();
+
+  if (error || !salvo || !salvo.length) {
+    erro("Erro ao salvar: " + (error?.message || "tente novamente."));
+    reabilitar();
+    return;
+  }
+
+  if (!viveiros[index].custos) viveiros[index].custos = [];
+  viveiros[index].custos.push({
+    id: salvo[0].id, tipo: "outro", produtoId: null, nomeProduto: descricao,
+    quantidadeG: null, valor, categoria: descricao, data, observacao: null, cicloId: cicloId || null,
+  });
+
+  _toastSucesso(`Custo lançado no ciclo: ${descricao} — R$ ${formatarNumeroBR(valor, 2)}`);
+  abrirCustosDoCicloEncerrado(index, cicloId, origem);   // redesenha com o total novo
+}
+
+async function _excluirCustoDoCicloEncerrado(index, custoId, cicloId, origem, botao) {
+  if (_bloqueioViveiro(index)) return;
+  if (botao?.disabled) return;
+  const restaurar = _travarBotao(botao, "…");
+
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) { restaurar(); return; }
+
+  const { error } = await supabaseClient
+    .from("custos").delete().eq("id", custoId).eq("user_id", usuario.id);
+  if (error) {
+    console.log(error);
+    restaurar();
+    _toastErro("Não deu para excluir. Confira a conexão e tente de novo.");
+    return;
+  }
+
+  // Só tira da memória depois do banco confirmar: ao contrário, o custo sumia
+  // da tela e continuava lá, e o relatório voltava a mostrá-lo na recarga.
+  viveiros[index].custos = (viveiros[index].custos || []).filter(c => c.id !== custoId);
+  _toastSucesso("Custo excluído.");
+  abrirCustosDoCicloEncerrado(index, cicloId, origem);
+}
+
 function _custosDoEscopoPares(viveiro) {
   const pares = (viveiro.custos || []).map((c, i) => ({ c, i }));
   // Mesma regra de _custosManuaisDoCiclo, que é a fonte única usada pelo card
