@@ -1240,3 +1240,19 @@ body.tema-escuro .proj-alvo-val-wrap span { color: #9ca3af; }
 .aviso-reajuste svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; stroke: #16a34a; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .aviso-reajuste b { font-weight: 800; }
 body.tema-escuro .aviso-reajuste { background: #064e3b; border-color: #065f46; color: #6ee7b7; }
+
+/* Boleto JÁ VENCIDO é outra conversa: ele está correndo juros agora, enquanto
+   "vence em 5 dias" ainda é aviso. Mesmo desenho, cor mais séria — o âmbar
+   fica para o que está chegando. */
+.boleto-banner-vencido {
+    background: #fee2e2;
+    border-color: #dc2626;
+}
+.boleto-banner-vencido .boleto-banner-icone { background: #fecaca; }
+.boleto-banner-vencido .boleto-banner-icone svg { stroke: #b91c1c; }
+.boleto-banner-vencido .boleto-banner-texto strong { color: #7f1d1d; }
+.boleto-banner-vencido .boleto-banner-texto span { color: #9a4040; }
+.boleto-banner-vencido .boleto-banner-seta { color: #b91c1c; }
+body.tema-escuro .boleto-banner-vencido { background: #2a1414; border-color: #7f1d1d; }
+body.tema-escuro .boleto-banner-vencido .boleto-banner-texto strong { color: #fca5a5; }
+body.tema-escuro .boleto-banner-vencido .boleto-banner-texto span { color: #b08c8c; }
