@@ -491,3 +491,61 @@ test("nome: cadastro em branco ou só espaço não conta como preenchido",()=>{
   a.run(`__u = ${JSON.stringify(U({ proprietario: '   ' }, 'ana.paula@x.com'))};`);
   assert.equal(a.run(`_nomeDoProdutor(__u, {nome:'  '})`), 'Ana Paula');
 });
+
+// ── Lucro do ano, na tela inicial ───────────────────────────────────────────
+// O risco aqui não é quebrar, é somar errado em silêncio: um número grande na
+// tela inicial não tem com o que ser comparado, e o produtor acredita nele.
+function fazendaComCiclos() {
+  return [{
+    nome: 'V1', cicloId: 'atual', custos: [
+      { id: 'a', data: '2026-03-01', valor: 1000, cicloId: 'c-26a' },
+      { id: 'b', data: '2025-03-01', valor: 900,  cicloId: 'c-25' },
+      { id: 'c', data: '2026-09-01', valor: 500,  cicloId: 'c-26b' },
+    ],
+    ciclosFinalizados: [
+      // fechado em 2026, com preço: entra
+      { cicloId: 'c-26a', dataPreparacao: '2026-01-01', dataEncerramento: '2026-05-10',
+        producaoFinal: 1000, precoVenda: 20, despescas: [], custoFixoRateado: 0 },
+      // fechado em 2025: fica de fora
+      { cicloId: 'c-25', dataPreparacao: '2025-01-01', dataEncerramento: '2025-05-10',
+        producaoFinal: 1000, precoVenda: 20, despescas: [], custoFixoRateado: 0 },
+      // fechado em 2026 SEM preço lançado: não entra, e não entra como zero
+      { cicloId: 'c-26b', dataPreparacao: '2026-07-01', dataEncerramento: '2026-10-10',
+        producaoFinal: 800, precoVenda: 0, despescas: [], custoFixoRateado: 0 },
+    ],
+  }];
+}
+
+test("lucro do ano: só conta ciclo encerrado NESTE ano",()=>{
+  const a=load();
+  a.run(`__f = (${fazendaComCiclos.toString()})();`);
+  // 1000 kg x R$ 20 = 20.000, menos 1.000 de custo = 19.000
+  assert.equal(a.run(`_lucroDoAno(__f, 2026).total`), 19000);
+  assert.equal(a.run(`_lucroDoAno(__f, 2026).ciclos`), 1);
+  assert.equal(a.run(`_lucroDoAno(__f, 2025).total`), 19100);  // 20.000 - 900
+});
+test("lucro do ano: ciclo sem preço fica fora, não entra como zero",()=>{
+  const a=load();
+  a.run(`__f = (${fazendaComCiclos.toString()})();`);
+  // se o sem-preço entrasse como zero, ciclos seria 2 e a média mentiria
+  assert.equal(a.run(`_lucroDoAno(__f, 2026).ciclos`), 1);
+});
+test("lucro do ano: ano sem ciclo fechado devolve zero e nenhum ciclo",()=>{
+  const a=load();
+  a.run(`__f = (${fazendaComCiclos.toString()})();`);
+  assert.equal(a.run(`_lucroDoAno(__f, 2024).total`), 0);
+  assert.equal(a.run(`_lucroDoAno(__f, 2024).ciclos`), 0);
+  assert.equal(a.run(`_lucroDoAno([], 2026).ciclos`), 0);
+  assert.equal(a.run(`_lucroDoAno(null, 2026).ciclos`), 0);
+});
+test("receita do ciclo: parcial usa o preço dela; sem preço, cai no da venda",()=>{
+  const a=load();
+  // parcial COM preço próprio: 100 kg x 30 = 3.000, mais final 500 x 20 = 10.000
+  assert.equal(a.run(`_receitaDoCiclo({ precoVenda: 20, producaoFinal: 500,
+    despescas: [{ quantidadeKg: 100, precoKg: 30 }] })`), 13000);
+  // parcial SEM preço (registro antigo): usa os 20 da venda -> 2.000 + 10.000
+  assert.equal(a.run(`_receitaDoCiclo({ precoVenda: 20, producaoFinal: 500,
+    despescas: [{ quantidadeKg: 100, precoKg: null }] })`), 12000);
+  assert.equal(a.run(`_receitaDoCiclo({})`), 0);
+  assert.equal(a.run(`_receitaDoCiclo(null)`), 0);
+});
