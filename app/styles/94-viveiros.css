@@ -275,3 +275,50 @@ body.tema-escuro .sv-linha-ico { background: #273445; color: #7fb8ae; }
 body.tema-escuro .sv-linha-txt b { color: #e5e7eb; }
 body.tema-escuro .sv-linha-txt small { color: #9ca3af; }
 body.tema-escuro .sv-linha-seta { color: #6b7280; }
+
+/* ---------------------------------------------------------------------------
+   A lupa
+
+   Só aparece passando de sete viveiros (ver _VV_BUSCA_A_PARTIR_DE): abaixo
+   disso a lista cabe numa rolada e o campo seria mais um trambolho na frente
+   do que a pessoa veio ver.
+
+   Ela filtra o DOM, não redesenha a tela — redesenhar a cada tecla recria o
+   <input>, e o campo recriado perde o foco: no celular isso fecha o teclado a
+   cada letra digitada.
+   --------------------------------------------------------------------------- */
+.sv-busca {
+    display: flex; align-items: center; gap: 9px;
+    margin: 0 0 12px; padding: 0 13px;
+    background: #fff; border: 1px solid #e4edec; border-radius: 12px;
+}
+.sv-busca svg {
+    width: 16px; height: 16px; flex-shrink: 0;
+    fill: none; stroke: #93a5a2; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.sv-busca input {
+    flex: 1; min-width: 0;
+    margin: 0; padding: 11px 0;
+    background: none; border: none; box-shadow: none;
+    font-family: inherit; font-size: 14px; color: #10322f;
+}
+.sv-busca input:focus { outline: none; }
+/* O X nativo do type=search vem cinza-sistema e desalinhado; o campo já
+   esvazia sozinho apagando. */
+.sv-busca input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.sv-sem-resultado {
+    margin: 4px 0 0; padding: 22px 10px;
+    text-align: center; font-size: 13.5px; color: #8a9a97;
+}
+
+/* O camarão é o mascote, não um ícone de controle: aqui o emoji cabe. Num
+   botão de apagar não caberia — lá ele precisaria de cor e peso próprios, e
+   emoji não aceita nenhum dos dois. */
+.sv-item-ico-camarao { font-size: 16px; line-height: 1; }
+
+body.tema-escuro .sv-busca { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sv-busca input { color: #e5e7eb; }
+body.tema-escuro .sv-busca svg { stroke: #6b7280; }
+body.tema-escuro .sv-sem-resultado { color: #9ca3af; }

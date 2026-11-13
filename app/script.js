@@ -1783,6 +1783,46 @@ function _cicloReferencia(viveiro, lista) {
  * apontando um viveiro ("volta e me mostra o que eu acabei de renomear").
  * Antes isso escolhia qual único cartão desenhar; agora rola até ele.
  */
+/*
+ * LUPA DA LISTA DE VIVEIROS
+ *
+ * Só aparece passando de _VV_BUSCA_A_PARTIR_DE viveiros. Abaixo disso a lista
+ * inteira cabe numa rolada e um campo de busca seria mais um trambolho na
+ * frente do que a pessoa veio ver.
+ *
+ * A alternativa era um "ver mais 14 viveiros": ela cobra um toque de TODO
+ * mundo pra resolver o problema de quem tem vinte. A lupa só cobra de quem
+ * precisa.
+ *
+ * FILTRA O DOM, não redesenha a tela. Redesenhar a cada tecla recria o
+ * <input>, e o campo recriado perde o foco — no celular isso fecha o teclado
+ * a cada letra digitada.
+ */
+const _VV_BUSCA_A_PARTIR_DE = 7;
+
+// "Viveiro - 12", "viveiro 12" e "12" têm que casar entre si. Tira acento,
+// caixa e tudo que não for letra ou número, pra sobrar só o miolo.
+function _vvNormalizar(t) {
+  return String(t || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function _vvFiltrar(termo) {
+  const q = _vvNormalizar(termo);
+  const lista = document.getElementById("sv-lista");
+  if (!lista) return;
+  let achou = 0;
+  lista.querySelectorAll("[data-vv-nome]").forEach(el => {
+    const casa = !q || _vvNormalizar(el.dataset.vvNome).includes(q);
+    el.style.display = casa ? "" : "none";
+    if (casa) achou++;
+  });
+  const vazio = document.getElementById("sv-sem-resultado");
+  if (vazio) vazio.style.display = achou ? "none" : "block";
+}
+
 // Troca qual viveiro está aberto na lista. Guardado em módulo, e não no
 // elemento: redesenhar a tela (lançar ração, voltar de outra tela) tem que
 // reabrir o mesmo, senão a pessoa perde o lugar a cada ida e volta.
@@ -1826,11 +1866,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     : (viveirosOrdenados.find(v => v.dataPovoamento) || viveirosOrdenados[0]);
 
   const ICO = {
-    cultivo:    `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
-    // Três pontinhos = um punhado de pós-larva, igual ao dos Custos. Tentei
-    // desenhar um camarão e a 15px ele vira rabisco; círculo continua círculo
-    // em qualquer tamanho.
-    povoamento: `<circle cx="9" cy="9" r="2.4"/><circle cx="15.5" cy="11" r="2.4"/><circle cx="11" cy="15.5" r="2.4"/>`,
+    biomassa:   `<path d="M5 8h14l1.4 11a2 2 0 0 1-2 2.3H5.6A2 2 0 0 1 3.6 19z"/><path d="M8.5 8V6.2A3.5 3.5 0 0 1 15.5 6.2V8"/>`,
     // Um talhão visto de cima, não uma régua: a régua inclinada a 15px lia
     // como losango.
     area:       `<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="12" y1="3.5" x2="12" y2="20.5"/>`,
@@ -1854,6 +1890,12 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       ? (pls >= 1000 ? formatarNumeroBR(pls / 1000, 0) + " mil PLs" : formatarNumeroBR(pls, 0) + " PLs")
       : "--";
 
+    // Biomassa pela MESMA conta do painel "Sua fazenda hoje" (_resumoFazenda):
+    // se a fazenda soma 2.076 kg, os viveiros têm que somar 2.076 kg. Duas
+    // contas pro mesmo número é como as telas começam a discordar uma da outra.
+    const bio1 = _resumoFazenda([viveiro], hojeYmd).biomassa;
+    const biomassaTxt = bio1 > 0 ? formatarNumeroBR(bio1, 0) + " kg" : "--";
+
     const semRacao = emCultivoV && !(viveiro.racoes || []).some(x => String(x.data).substring(0, 10) === hojeYmd);
     const bloqueado = _viveiroForaDoLimite(i);
 
@@ -1863,7 +1905,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     </div>`;
 
     return `
-    <div class="sv-card sv-card-aberto" id="viveiro-card-${i}">
+    <div class="sv-card sv-card-aberto" id="viveiro-card-${i}" data-vv-nome="${_esc(viveiro.nome)}">
       <div class="sv-cab">
         <div class="sv-cab-txt">
           <h3>${_esc(viveiro.nome)}</h3>
@@ -1883,8 +1925,11 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       </div>` : ""}
 
       <div class="sv-grade">
-        ${item("cultivo", "Cultivo", emCultivoV ? `${dias} ${dias === 1 ? "dia" : "dias"}` : "--")}
-        ${item("povoamento", "Povoamento", plsTxt)}
+        <div class="sv-item">
+          <span class="sv-item-ico sv-item-ico-camarao">🦐</span>
+          <span class="sv-item-txt"><small>Povoamento</small><b>${plsTxt}</b></span>
+        </div>
+        ${item("biomassa", "Biomassa est.", biomassaTxt)}
         ${item("area", "Área", _fmtHa(viveiro.tamanho) + " ha")}
         ${item("biometria", "Biometria", peso)}
       </div>
@@ -1916,7 +1961,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     // nada que a seta já não diga. No lugar vai o estado de cada um.
     const sub = emCultivoV ? `Em cultivo · ${dias} ${dias === 1 ? "dia" : "dias"}` : "Vazio";
     return `
-    <button class="sv-linha" onclick="_vvAbrir(${i})" id="viveiro-card-${i}">
+    <button class="sv-linha" onclick="_vvAbrir(${i})" id="viveiro-card-${i}" data-vv-nome="${_esc(viveiro.nome)}">
       <span class="sv-linha-ico">${svg("agua")}</span>
       <span class="sv-linha-txt"><b>${_esc(viveiro.nome)}</b><small>${sub}</small></span>
       <span class="sv-linha-seta">›</span>
@@ -1930,8 +1975,15 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         <p>${viveirosOrdenados.length} ${viveirosOrdenados.length === 1 ? "viveiro" : "viveiros"}${emCultivo ? ` · ${emCultivo} em cultivo` : ""}</p>
       </div>
     </div>
-    <div class="sv-lista">
+    ${viveirosOrdenados.length >= _VV_BUSCA_A_PARTIR_DE ? `
+    <div class="sv-busca">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.2" y1="16.2" x2="21" y2="21"/></svg>
+      <input type="search" inputmode="search" placeholder="Buscar viveiro pelo número ou nome"
+             aria-label="Buscar viveiro" oninput="_vvFiltrar(this.value)">
+    </div>` : ""}
+    <div class="sv-lista" id="sv-lista">
       ${viveirosOrdenados.map(v => v === aberto ? cartaoAberto(v) : linhaFechada(v)).join("")}
+      <p class="sv-sem-resultado" id="sv-sem-resultado" style="display:none">Nenhum viveiro com esse nome.</p>
     </div>
     <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
   `;
