@@ -1714,6 +1714,8 @@ async function salvarViveiro() {
     cicloId: it.ciclo_id || null,
     racoes: [], biometrias: [], despescas: [], ciclosFinalizados: [], custos: [],
     protocolos: Array.isArray(it.protocolos) ? it.protocolos : [],
+    pausas: Array.isArray(it.pausas) ? it.pausas : [],
+    semHistorico: !!it.sem_historico,
   });
   viveiros.sort(_compararViveirosPorNome);
 
@@ -10078,7 +10080,7 @@ async function salvarEncerramentoCiclo(index) {
     producao_total: producaoTotal,
     peso_final: pesoFinal,
     racao_consumida: racaoConsumida,
-    custo_fixo_rateado: _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, dataEncerramento),
+    custo_fixo_rateado: _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, dataEncerramento, viveiro),
     fca: fca,
     sobrevivencia: sobrevivencia,
     observacoes: observacoes,
@@ -10629,7 +10631,7 @@ function gerarRelatorioImpressao() {
   );
   const custoFixoRateado = (ciclo.custoFixoRateado != null && !isNaN(Number(ciclo.custoFixoRateado)))
     ? Number(ciclo.custoFixoRateado)
-    : _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
+    : _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento, viveiros[index]);
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFixoRateado;
 
   // Agrupa por nome normalizado: sem isso, "Análise de água" e "Analise de
@@ -10922,10 +10924,40 @@ function _custoFixoDiaTotalNaData(ymd) {
   return _custoFixoMensalNaData(ymd) / _diasNoMes(ymd);
 }
 
+/*
+ * PAUSA DE VIVEIRO (reforma)
+ *
+ * Guardado como PERÍODOS, não como um interruptor, e a diferença não é
+ * preciosismo: o rateio do custo fixo não é gravado em lugar nenhum — ele é
+ * recalculado do zero, dia a dia, toda vez que alguém abre a tela. Com um
+ * campo "pausado: sim", pausar hoje apagaria o viveiro de TODOS os dias
+ * anteriores, e o custo de ciclos já encerrados (já impressos, já mostrados ao
+ * cliente) mudaria sozinho. Com [{de, ate}], cada dia do passado continua
+ * sabendo se o viveiro estava parado NAQUELE dia.
+ *
+ * "ate" nulo = pausa em aberto, vale até hoje.
+ */
+function _viveiroPausadoEm(v, ymd) {
+  const ps = (v && v.pausas) || [];
+  for (const p of ps) {
+    if (!p || !p.de || p.de > ymd) continue;
+    if (!p.ate || ymd <= p.ate) return true;
+  }
+  return false;
+}
+
+function _viveiroPausadoHoje(v) {
+  return _viveiroPausadoEm(v, _hojeLocal());
+}
+
 // Quantos viveiros estavam ativos (preparação ou cultivo) numa data (YYYY-MM-DD)
 function _viveirosAtivosNaData(ymd, hojeYmd) {
   let n = 0;
   for (const v of viveiros) {
+    // Parado naquele dia (reforma): não recebe rateio e, principalmente, não
+    // entra no divisor. Se entrasse, ele barateava o custo fixo de quem estava
+    // produzindo — e ninguém veria, porque não dá erro, só dá número errado.
+    if (_viveiroPausadoEm(v, ymd)) continue;
     // Ciclo atual em andamento (preparação ou cultivo)
     const ini = v.dataPreparacao || v.dataPovoamento;
     if (ini && ini <= ymd && ymd <= hojeYmd) { n++; continue; }
@@ -10939,15 +10971,24 @@ function _viveirosAtivosNaData(ymd, hojeYmd) {
   return n;
 }
 
-// Custo fixo rateado acumulado para um viveiro no período [iniYmd, fimYmd] (inclusive)
-function _custoFixoRateado(iniYmd, fimYmd) {
+/*
+ * Custo fixo rateado acumulado para UM viveiro no período [iniYmd, fimYmd].
+ *
+ * O `viveiro` não é enfeite: sem ele, um viveiro parado para reforma saía do
+ * DIVISOR (não barateava mais o custo dos outros) mas continuava RECEBENDO a
+ * parte dele, porque a função só conhecia a janela de datas. Os dias em que
+ * ESTE viveiro esteve parado valem zero para ele.
+ *
+ * Sem o parâmetro a conta é a de antes — nenhum dia é pulado.
+ */
+function _custoFixoRateado(iniYmd, fimYmd, viveiro) {
   if (!iniYmd || !fimYmd || iniYmd > fimYmd) return 0;
   if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return 0;
   const hoje = _hojeLocal();
   let total = 0, cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
     const mensalNoDia = _custoFixoMensalNaData(cur); // soma dos custos que já valiam nesse dia
-    if (mensalNoDia > 0) {
+    if (mensalNoDia > 0 && !(viveiro && _viveiroPausadoEm(viveiro, cur))) {
       total += _rateioFixoDia(mensalNoDia, cur, _viveirosAtivosNaData(cur, hoje));
     }
     cur = _maAddDias(cur, 1);
@@ -10961,7 +11002,7 @@ function _custoFixoRateado(iniYmd, fimYmd) {
 // Como cada parcela é valorMensal/dias/ativos, a soma dos itens bate exatamente
 // com o total do _custoFixoRateado. Devolve [{ nome, categoria, valor }] ordenado
 // do maior para o menor.
-function _custoFixoRateadoPorItem(iniYmd, fimYmd) {
+function _custoFixoRateadoPorItem(iniYmd, fimYmd, viveiro) {
   if (!iniYmd || !fimYmd || iniYmd > fimYmd) return [];
   if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return [];
   const hoje = _hojeLocal();
@@ -10969,7 +11010,7 @@ function _custoFixoRateadoPorItem(iniYmd, fimYmd) {
   let cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
     const nAtivos = _viveirosAtivosNaData(cur, hoje);
-    if (nAtivos > 0) {
+    if (nAtivos > 0 && !(viveiro && _viveiroPausadoEm(viveiro, cur))) {
       for (const cf of custosFixos) {
         if (!_custoFixoValeNaData(cf, cur)) continue;
         const parcela = _rateioFixoDia(cf.valorMensal, cur, nAtivos);
@@ -11019,7 +11060,7 @@ function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd, rateioCongelado) {
   const totalManuais = totalProdutos + totalOutros;
   const rateioFixo = (rateioCongelado !== null && rateioCongelado !== undefined && !isNaN(Number(rateioCongelado)))
     ? Number(rateioCongelado)
-    : _custoFixoRateado(iniYmd, fimYmd);
+    : _custoFixoRateado(iniYmd, fimYmd, viveiro);
   return { manuais, totalProdutos, totalOutros, totalManuais, rateioFixo, total: totalManuais + rateioFixo };
 }
 
@@ -13009,8 +13050,8 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   // rateioItens: o mesmo rateio SEPARADO por item, para listar um card por custo
   // (funcionário, energia, limpeza…) em vez de um monte só. A soma bate.
   const _iniCustos = viveiro.dataPreparacao || viveiro.dataPovoamento;
-  const rateioFixo = _custoFixoRateado(_iniCustos, _hojeLocal());
-  const rateioItens = _custoFixoRateadoPorItem(_iniCustos, _hojeLocal());
+  const rateioFixo = _custoFixoRateado(_iniCustos, _hojeLocal(), viveiro);
+  const rateioItens = _custoFixoRateadoPorItem(_iniCustos, _hojeLocal(), viveiro);
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome — soma quantidade e valor (sem datas)
@@ -13535,8 +13576,8 @@ function imprimirCustos(viveiroIndex) {
   const viveiro = viveiros[viveiroIndex];
   const custos = _custosDoEscopo(viveiro);
   const _iniImp = viveiro.dataPreparacao || viveiro.dataPovoamento;
-  const rateioFixo = _custoFixoRateado(_iniImp, _hojeLocal());
-  const rateioItens = _custoFixoRateadoPorItem(_iniImp, _hojeLocal());
+  const rateioFixo = _custoFixoRateado(_iniImp, _hojeLocal(), viveiro);
+  const rateioItens = _custoFixoRateadoPorItem(_iniImp, _hojeLocal(), viveiro);
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome (igual à tela): uma linha por item
@@ -13832,6 +13873,8 @@ async function carregarViveiros(usuarioConhecido) {
       })),
 
     protocolos: Array.isArray(item.protocolos) ? item.protocolos : [],
+    pausas: Array.isArray(item.pausas) ? item.pausas : [],
+    semHistorico: !!item.sem_historico,
   }));
 
   viveiros.sort(_compararViveirosPorNome);
@@ -13862,17 +13905,19 @@ async function _congelarRateioCiclosAntigos() {
   const pendentes = [];
   for (const v of viveiros) {
     for (const c of (v.ciclosFinalizados || [])) {
-      if (c.id && (c.custoFixoRateado === null || c.custoFixoRateado === undefined)) pendentes.push(c);
+      // Leva o viveiro junto: o rateio precisa dele pra pular os dias em que
+      // ESTE viveiro esteve parado (ver _custoFixoRateado).
+      if (c.id && (c.custoFixoRateado === null || c.custoFixoRateado === undefined)) pendentes.push({ v, c });
     }
   }
   if (!pendentes.length) return; // nada a migrar
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  for (const c of pendentes) {
+  for (const { v, c } of pendentes) {
     const ini = c.dataPreparacao || c.dataPovoamento;
     if (!ini || !c.dataEncerramento) continue;
-    const valor = _custoFixoRateado(ini, c.dataEncerramento);
+    const valor = _custoFixoRateado(ini, c.dataEncerramento, v);
     const { data, error } = await supabaseClient.from("ciclos")
       .update({ custo_fixo_rateado: valor })
       .eq("id", c.id).eq("user_id", usuario.id)
