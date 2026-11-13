@@ -188,17 +188,7 @@ body.tema-escuro .pnl-vazio {
     color: #9ca3af;
 }
 
-body.tema-escuro .vv-chip {
-    background: #1f2937;
-    border-color: #374151;
-    color: #d1d5db;
-}
 
-body.tema-escuro .vv-chip.ativo {
-    background: rgb(6,107,99);
-    border-color: rgb(6,107,99);
-    color: #fff;
-}
 
 /* ─── CUSTOS E INSUMOS ───────────────────────────────────────────────────────── */
 

@@ -14,63 +14,13 @@
 
 /* Tira para escolher o viveiro direto, sem passar um por um.
    Rola na horizontal: com 20 viveiros não cabem todos na tela do celular. */
-.vv-seletor {
-    display: flex;
-    gap: 7px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 2px 2px 8px;
-    margin: -6px 0 14px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    /* O card inteiro tem swipe lateral; sem isto o navegador ficaria em dúvida
-       entre rolar a tira e virar o card. */
-    touch-action: pan-x;
-}
 
-.vv-seletor::-webkit-scrollbar { display: none; }
 
-.vv-chip {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 46px;
-    height: 40px;
-    padding: 0 12px;
-    border-radius: 12px;
-    border: 1.5px solid #dde5e3;
-    background: #fff;
-    color: #53656a;
-    font-size: 14px;
-    font-weight: 800;
-    cursor: pointer;
-    /* O ponto de situação fica embaixo do número, dentro da mesma pastilha. */
-    position: relative;
-}
 
 /* Ponto verde = em cultivo. Sem ponto = vazio. */
-.vv-chip.cultivo::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: 5px;
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #10b981;
-}
 
-.vv-chip.bloqueado {
-    opacity: .55;
-}
 
-.vv-chip.ativo {
-    background: rgb(6,107,99);
-    border-color: rgb(6,107,99);
-    color: #fff;
-}
 
-.vv-chip.ativo.cultivo::after { background: #fff; }
 
 .nav-viveiros {
     display: flex;

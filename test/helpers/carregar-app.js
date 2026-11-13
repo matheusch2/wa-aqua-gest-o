@@ -78,7 +78,7 @@ const NOMES = [
   "_parseDataLocal", "_dataLocalISO", "_hojeLocal", "calcularDiasCultivo",
   // Relatorio de ciclo e custos
   "_seriesCiclo", "_statusBoleto",
-  "_custoFixoCatLabel", "_normNomeCusto", "_melhorRotulo", "_rotuloCurtoViveiro",
+  "_custoFixoCatLabel", "_normNomeCusto", "_melhorRotulo",
   "_custosCicloAtivo", "_custosManuaisDoCiclo",
   "_pesoMedioAmostra", "_custoRacaoEstimado", "_ratearIgual", "_checarDataCiclo",
   "_ciclosEncerradosOrdenados", "_numeroCicloEncerrado", "_numeroCicloAtual",
