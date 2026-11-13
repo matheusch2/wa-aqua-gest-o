@@ -2427,7 +2427,7 @@ function abrirViveiro(index) {
         <span>Sobrevivência estimada acima de 100% — verifique povoamento, ração, taxa alimentar, peso médio ou o cadastro das despescas.</span>
       </div>` : ""}
 
-      <div class="vv-secao-lbl">Ações de manejo</div>
+      <div class="vv-secao-lbl">Lançamentos</div>
       <div class="vv-manejo-grid">
         <button class="vv-manejo-btn" onclick="salvarScroll(); mostrarLancamentoRacao(${index})">
           <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
