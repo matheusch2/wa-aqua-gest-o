@@ -226,3 +226,83 @@ body.tema-escuro .painel-viveiro .vv-secao-lbl { color: #6b7280; }
 body.tema-escuro .painel-viveiro .vv-manejo-btn { background: #1f2937; border-color: #374151; color: #e5e7eb; }
 body.tema-escuro .painel-viveiro .vv-manejo-btn svg { background: #273445; }
 body.tema-escuro .painel-viveiro .vv-consulta-btn { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+
+/* ===========================================================================
+   SEGUNDA PASSADA — em cima do conceito que o dono mandou
+
+   Três mudanças, todas de CSS, nenhuma mexendo na marcação:
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Manejo: os quatro voltam pra uma linha
+
+   Eles tinham ido pra dois por linha porque "Lançar despesca parcial"
+   quebrava em três. Sem o verbo, o rótulo mais longo é "Despesca parcial",
+   que cabe em duas linhas curtas num quarto da tela — e aí a fila de quatro
+   volta a valer: uma varrida do olho em vez de duas.
+
+   Pastilha verde-clara em vez de cartão branco: aqui são AÇÕES no meio de uma
+   tela de números, e o tom cheio separa as duas coisas sem precisar de borda.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-manejo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.painel-viveiro .vv-manejo-btn {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
+    padding: 13px 6px;
+    background: #e9f4f0;
+    border: none;
+    box-shadow: none;
+    text-align: center;
+    font-size: 12.5px;
+    color: #0f5f57;
+}
+.painel-viveiro .vv-manejo-btn span { flex: none; }
+.painel-viveiro .vv-manejo-btn svg { background: none; padding: 0; width: 22px; height: 22px; }
+/* A cor por ação some nesta forma: quatro pastilhas coloridas de 80px lado a
+   lado viram confete. O traço fica no verde da casa, e quem separa as ações é
+   o desenho do ícone. */
+.painel-viveiro .vv-manejo-btn:nth-child(1) svg,
+.painel-viveiro .vv-manejo-btn:nth-child(2) svg,
+.painel-viveiro .vv-manejo-btn:nth-child(3) svg,
+.painel-viveiro .vv-manejo-btn:nth-child(4) svg { background: none; stroke: #0f766e; }
+
+/* ---------------------------------------------------------------------------
+   Consultas: a seta que diz "isto abre outra tela"
+
+   Histórico e Manejo automático levam pra outro lugar; os de manejo abrem
+   formulário ali mesmo. A seta é o que separa as duas coisas sem uma palavra.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-consulta-btn { position: relative; padding-right: 26px; }
+.painel-viveiro .vv-consulta-btn::after {
+    content: "›";
+    position: absolute; right: 12px; top: 50%; transform: translateY(-52%);
+    font-size: 19px; line-height: 1; color: #b6c4c2;
+}
+
+/* ---------------------------------------------------------------------------
+   Excluir viveiro: vermelho claro, não vermelho cheio
+
+   As cores voltaram a pedido do dono, e ficam. Mas no conceito que ele mesmo
+   mandou, "Excluir viveiro" aparece em vermelho CLARO com o texto vermelho —
+   e ele estava certo de novo: é a única ação da tela que apaga um viveiro
+   inteiro, e um bloco vermelho sólido do tamanho de "Encerrar ciclo" convida
+   o dedo em vez de segurar. Claro, ele continua dizendo "perigo" e para de
+   chamar.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-admin-vermelho {
+    background: #fdeaea;
+    color: #c33434;
+    box-shadow: none;
+}
+.painel-viveiro .vv-admin-vermelho svg { stroke: #c33434; background: none; }
+
+body.tema-escuro .painel-viveiro .vv-manejo-btn { background: #22313f; color: #9fd8cc; }
+body.tema-escuro .painel-viveiro .vv-manejo-btn svg,
+body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(1) svg,
+body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(2) svg,
+body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(3) svg,
+body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(4) svg { stroke: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-admin-vermelho { background: #3a1d1d; color: #fca5a5; }
+body.tema-escuro .painel-viveiro .vv-admin-vermelho svg { stroke: #fca5a5; }
