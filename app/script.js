@@ -12994,11 +12994,6 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     <div class="cx-topo">
       <span class="cx-topo-lbl">Total de custos</span>
       <span class="cx-topo-val">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
-      <span class="cx-topo-sub">${viveiro.dataPovoamento
-        ? `Cultivo atual, desde ${formatarData(viveiro.dataPreparacao || viveiro.dataPovoamento)}`
-        : (viveiro.dataPreparacao ? `Preparação atual, desde ${formatarData(viveiro.dataPreparacao)}` : "Este viveiro")}${
-        pares.length ? ` · ${pares.length} lançamento${pares.length !== 1 ? "s" : ""}` : ""}</span>
-      <span class="cx-topo-nota">Ciclos anteriores ficam no relatório de cada ciclo</span>
     </div>
     ${corpo}
     ${temConteudo ? `<button class="custo-imprimir" style="margin-top:14px" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
