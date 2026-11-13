@@ -374,3 +374,52 @@ body.tema-escuro .sv-passou { color: #e3b341; }
     stroke-linecap: round; stroke-linejoin: round;
 }
 body.tema-escuro .sv-ver-todos { background: #273445; color: #6ee7a8; }
+
+/* ---------------------------------------------------------------------------
+   Viveiro esperando despesca
+
+   O que já estava povoado antes de o produtor usar o sistema. Não tem tela de
+   viveiro: tem esta, curta, com o que ele tem de verdade — a parte dele no
+   custo fixo. A tela normal mostraria FCA, sobrevivência e biomassa calculados
+   em cima de zero lançamento, e tela que mente é pior que tela curta.
+   --------------------------------------------------------------------------- */
+.ed-cab { display: flex; align-items: center; gap: 12px; margin: 0 2px 14px; }
+.ed-cab-ico {
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #fdf3df; color: #a97714;
+}
+.ed-cab-ico svg {
+    width: 21px; height: 21px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.ed-cab-txt { min-width: 0; }
+.ed-cab-txt h2 {
+    margin: 0; text-align: left;
+    font-size: 19px; font-weight: 800; color: #10322f;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ed-cab-txt span { font-size: 12.5px; font-weight: 700; color: #a97714; }
+
+.ed-nota, .ed-sem-custo {
+    margin: 0 2px 14px;
+    font-size: 12.5px; color: #8a9a97; line-height: 1.5;
+}
+.ed-sem-custo { text-align: center; padding: 18px 10px; }
+
+/* Três opções não cabem lado a lado em 390px com o texto inteiro. */
+.cad-modo-3 { flex-wrap: wrap; }
+.cad-modo-3 .cad-modo-btn { flex: 1 1 30%; font-size: 12.5px; padding: 9px 4px; }
+
+.cad-espera-nota {
+    margin: 2px 0 14px;
+    font-size: 12.5px; color: #8a9a97; line-height: 1.5;
+}
+
+body.tema-escuro .ed-cab-ico { background: #2a2000; color: #e3b341; }
+body.tema-escuro .ed-cab-txt h2 { color: #e5e7eb; }
+body.tema-escuro .ed-cab-txt span { color: #e3b341; }
+body.tema-escuro .ed-nota,
+body.tema-escuro .ed-sem-custo,
+body.tema-escuro .cad-espera-nota { color: #9ca3af; }
