@@ -1723,48 +1723,21 @@ async function salvarViveiro() {
 /* ───────────────────────────────────────────────────────────────────────────
    QUANTO FALTA PRA DESPESCA
 
-   A barra de progresso do cartão de viveiro precisa de um "ciclo de
-   referência": dia 18 DE QUANTOS. Esse número não pode ser chutado. Ciclo de
-   camarão varia com densidade, temperatura, ração e com o peso que o produtor
-   quer vender — 120 dias numa fazenda é 95 noutra, e uma barra que mente é
-   pior que barra nenhuma.
+   A barra do cartão precisa de um "de quantos dias". A primeira versão tirava
+   isso da mediana dos ciclos já encerrados da própria fazenda: tecnicamente
+   mais justo, e o dono olhou e disse "não entendi ainda essa meta". Estava
+   certo. Número que a pessoa não consegue explicar é número errado, mesmo com
+   a conta certa — ela vê "~115 dias" e não tem como saber de onde saiu, nem
+   prever o que vai aparecer amanhã.
 
-   Então ele sai do histórico da PRÓPRIA fazenda: a mediana da duração dos
-   ciclos já encerrados daquele viveiro. Sem histórico no viveiro, usa o da
-   fazenda inteira. Sem nenhum ciclo encerrado — cliente novo —, não há
-   referência e a barra simplesmente não aparece; o cartão mostra os dias de
-   cultivo e pronto.
+   Então é uma meta fixa, escolhida por quem entende de camarão: 90 dias, a
+   referência que o dono usa na fazenda dele. A tela escreve "meta: 90 dias",
+   e aí dá pra discordar do número — coisa que com a mediana não dava.
 
-   Mediana, e não média: um ciclo interrompido aos 40 dias por mortalidade
-   puxaria a média da fazenda inteira pra baixo e encurtaria a barra de todo
-   mundo. A mediana ignora o caso solto.
+   Passar de 90 não é erro: ciclo que estica acontece. A barra enche e o meio
+   passa a dizer quantos dias passaram da meta.
    ─────────────────────────────────────────────────────────────────────────── */
-function _duracoesCiclos(v) {
-  return (((v && v.ciclosFinalizados) || []))
-    .map(c => {
-      if (!c || !c.dataPovoamento || !c.dataEncerramento) return 0;
-      return calcularDiasCultivo(c.dataPovoamento, c.dataEncerramento);
-    })
-    // Fora dessa faixa é ciclo abortado ou data digitada errada, e os dois
-    // estragariam a referência de todos os viveiros.
-    .filter(d => d >= 30 && d <= 365);
-}
-
-function _cicloReferencia(viveiro, lista) {
-  let d = _duracoesCiclos(viveiro);
-  let origem = "viveiro";
-  if (!d.length) {
-    d = (lista || []).reduce((acc, v) => acc.concat(_duracoesCiclos(v)), []);
-    origem = "fazenda";
-  }
-  if (!d.length) return null;
-  const ord = d.slice().sort((a, b) => a - b);
-  const meio = Math.floor(ord.length / 2);
-  const mediana = ord.length % 2
-    ? ord[meio]
-    : Math.round((ord[meio - 1] + ord[meio]) / 2);
-  return { dias: mediana, n: ord.length, origem };
-}
+const _CICLO_META_DIAS = 90;
 
 /*
  * LISTA DE VIVEIROS
@@ -1826,6 +1799,14 @@ function _vvFiltrar(termo) {
 // Troca qual viveiro está aberto na lista. Guardado em módulo, e não no
 // elemento: redesenhar a tela (lançar ração, voltar de outra tela) tem que
 // reabrir o mesmo, senão a pessoa perde o lugar a cada ida e volta.
+// Fecha o que estiver aberto e deixa a lista inteira em linha. Sem isto, não
+// havia como voltar à visão de lista depois de abrir um: só trocando por
+// outro, e sempre tinha um aberto ocupando meia tela.
+function _vvFecharTodos() {
+  _vvAberto = -1;
+  mostrarListaViveiros();
+}
+
 function _vvAbrir(index) {
   _vvAberto = index;
   mostrarListaViveiros();
@@ -1861,9 +1842,13 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   // "quero ver o detalhe" e "quero ver todos": a lista inteira cabe na tela, e
   // o detalhe fica no que a pessoa escolheu — sem Anterior/Próximo e sem
   // repetir quatro números vezes vinte viveiros.
-  let aberto = viveiros[_vvAberto] && viveirosOrdenados.includes(viveiros[_vvAberto])
-    ? viveiros[_vvAberto]
-    : (viveirosOrdenados.find(v => v.dataPovoamento) || viveirosOrdenados[0]);
+  // _vvAberto === -1 é "fechei todos no X". Diferente de null, que é "ainda
+  // não escolhi nada" e abre o primeiro em cultivo sozinho.
+  let aberto = _vvAberto === -1
+    ? null
+    : (viveiros[_vvAberto] && viveirosOrdenados.includes(viveiros[_vvAberto])
+        ? viveiros[_vvAberto]
+        : (viveirosOrdenados.find(v => v.dataPovoamento) || viveirosOrdenados[0]));
 
   const ICO = {
     biomassa:   `<path d="M5 8h14l1.4 11a2 2 0 0 1-2 2.3H5.6A2 2 0 0 1 3.6 19z"/><path d="M8.5 8V6.2A3.5 3.5 0 0 1 15.5 6.2V8"/>`,
@@ -1879,8 +1864,9 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     const i = viveiros.indexOf(viveiro);
     const emCultivoV = !!viveiro.dataPovoamento;
     const dias = emCultivoV ? calcularDiasCultivo(viveiro.dataPovoamento) : 0;
-    const ref = emCultivoV ? _cicloReferencia(viveiro, viveiros) : null;
-    const pct = ref ? Math.min(100, Math.round(dias / ref.dias * 100)) : 0;
+    const meta = _CICLO_META_DIAS;
+    const pct = emCultivoV ? Math.min(100, Math.round(dias / meta * 100)) : 0;
+    const passou = dias - meta;
 
     const bios = [...(viveiro.biometrias || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
     const peso = bios.length ? fmtG(bios[bios.length - 1].gramatura) + " g" : "Sem registro";
@@ -1915,13 +1901,20 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
               : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Vazio`}
           </span>
         </div>
+        <button class="sv-fechar" onclick="event.stopPropagation(); _vvFecharTodos()" title="Fechar" aria-label="Fechar este viveiro"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
         <button class="sv-lapis" onclick="event.stopPropagation(); editarNomeViveiro(${i})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>
 
-      ${emCultivoV && ref ? `
+      ${emCultivoV ? `
       <div class="sv-ciclo">
-        <div class="sv-barra"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
-        <div class="sv-marcos"><span>dia ${dias}</span><span>${pct}% do ciclo</span><span>~${ref.dias} dias</span></div>
+        <div class="sv-barra${passou > 0 ? " sv-barra-passou" : ""}"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
+        <div class="sv-marcos">
+          <span>dia ${dias}</span>
+          <span${passou > 0 ? ` class="sv-passou"` : ""}>${passou > 0
+            ? `${passou} ${passou === 1 ? "dia" : "dias"} além da meta`
+            : `${pct}%`}</span>
+          <span>meta: ${meta} dias</span>
+        </div>
       </div>` : ""}
 
       <div class="sv-grade">

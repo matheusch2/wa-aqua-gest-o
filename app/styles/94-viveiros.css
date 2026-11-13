@@ -322,3 +322,29 @@ body.tema-escuro .sv-busca { background: #1f2937; border-color: #374151; }
 body.tema-escuro .sv-busca input { color: #e5e7eb; }
 body.tema-escuro .sv-busca svg { stroke: #6b7280; }
 body.tema-escuro .sv-sem-resultado { color: #9ca3af; }
+
+/* O X fecha o viveiro aberto e deixa a lista inteira em linha. Sem ele não
+   havia como voltar à visão de lista: só trocando por outro, e sempre tinha
+   um aberto ocupando meia tela.
+   Largura e altura explícitas — ver a armadilha do <button> no topo. */
+.sv-fechar {
+    width: 30px; height: 30px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; margin: 0;
+    background: #f3f7f6; border: none; border-radius: 9px;
+    color: #8a9a97; cursor: pointer;
+}
+.sv-fechar svg {
+    width: 15px; height: 15px;
+    fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Passar da meta não é erro — ciclo que estica acontece. Fica âmbar, que
+   nesta casa quer dizer "repare nisso", e não vermelho, que quer dizer
+   "algo está errado". */
+.sv-barra-passou i { background: linear-gradient(90deg, #c98a22, #e3a93d); }
+.sv-passou { color: #b4761a; }
+
+body.tema-escuro .sv-fechar { background: #273445; color: #8d9aa8; }
+body.tema-escuro .sv-passou { color: #e3b341; }
