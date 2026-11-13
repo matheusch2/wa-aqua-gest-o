@@ -1419,17 +1419,21 @@ function _painelFazenda() {
         <span class="hm-painel-titulo">Sua fazenda hoje</span>
         <span class="hm-painel-data">${formatarData(hoje)}</span>
       </div>
-      <div class="hm-heroi">
-        <small>Biomassa estimada</small>
-        <b>${formatarNumeroBR(r.biomassa, 0)}<i>kg</i></b>
+      <div class="hm-herois">
+        <div class="hm-heroi">
+          <small>Biomassa estimada</small>
+          <b>${formatarNumeroBR(r.biomassa, 0)}<i>kg</i></b>
+        </div>
+        <div class="hm-heroi hm-heroi-lucro">
+          <small>Lucro ${String(hoje).substring(0, 4)}</small>
+          <b>${r.ciclosAno > 0 ? reais(r.lucroAno) : "—"}</b>
+        </div>
       </div>
       <div class="hm-risco"></div>
       <div class="hm-nums">
         <div class="hm-num"><small>Em cultivo</small><b>${r.emCultivo}<i>viv.</i></b></div>
         <div class="hm-num"><small>Peso médio</small><b>${formatarNumeroBR(r.pesoMedio, 1)}<i>g</i></b></div>
-        <div class="hm-num"><small>Lucro ${String(hoje).substring(0, 4)}</small><b>${
-          r.ciclosAno > 0 ? reais(r.lucroAno) : "—"
-        }</b></div>
+        <div class="hm-num"><small>Investido</small><b>${reais(r.investido)}</b></div>
       </div>
       ${r.semRacao > 0 ? `<div class="hm-alerta">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>

@@ -101,12 +101,21 @@
 }
 .hm-painel-data { font-size: 11px; color: rgba(255,255,255,.45); }
 
+/* Dois números grandes lado a lado: o que está na água e o que já virou
+   dinheiro no ano. Eles fecham o painel em cima; os três pequenos explicam
+   embaixo. */
+.hm-herois { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+
 .hm-heroi small {
     display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .07em;
     text-transform: uppercase; color: rgba(205,240,233,.62); margin-bottom: 2px;
 }
-.hm-heroi b { display: block; font-size: 36px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
-.hm-heroi b i { font-style: normal; font-size: 16px; font-weight: 700; opacity: .7; margin-left: 3px; }
+.hm-heroi b { display: block; font-size: 27px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+.hm-heroi b i { font-style: normal; font-size: 13px; font-weight: 700; opacity: .7; margin-left: 2px; }
+
+/* Verde claro no lucro: é a única cifra do painel que representa dinheiro que
+   já entrou. O branco fica com a biomassa, que ainda está no fundo. */
+.hm-heroi-lucro b { color: #6ee7a8; }
 
 .hm-risco { height: 1px; background: rgba(255,255,255,.11); margin: 13px 0 12px; }
 .hm-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
