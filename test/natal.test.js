@@ -58,13 +58,17 @@ test("natal: some sozinho na virada do ano", () => {
   assert.equal(ligouEm("2027-01-02"), false);
 });
 
-test("natal: a janela de adiantamento vale só neste ano", () => {
-  assert.equal(ligouEm("2026-10-30"), false);  // véspera: ainda desligado
-  assert.equal(ligouEm("2026-10-31"), true);   // abre aqui
-  assert.equal(ligouEm("2026-11-15"), true);
-  assert.equal(ligouEm("2026-11-30"), true);   // último dia antes de dezembro
-  assert.equal(ligouEm("2027-10-31"), false);  // não volta no ano seguinte
-  assert.equal(ligouEm("2027-11-15"), false);
+// A janela de adiantamento (31/10 a 30/11/2026) existia pra ver o enfeite
+// funcionando fora de dezembro. O dono viu e mandou fechar em 13/11/2026, com
+// dezembro valendo sozinho. Este teste é o que garante que fechada é fechada:
+// as duas datas vazias fazem a comparação de string ficar certa POR ACIDENTE
+// ("2026-11-13" >= "" dá true), e sem teste ninguém pegaria se alguém mexesse
+// no if que segura isso.
+test("natal: com a janela de adiantamento fechada, novembro fica limpo", () => {
+  for (const d of ["2026-10-30", "2026-10-31", "2026-11-13", "2026-11-15", "2026-11-30"]) {
+    assert.equal(ligouEm(d), false, d);
+  }
+  assert.equal(ligouEm("2026-12-01"), true);   // dezembro continua ligando sozinho
 });
 
 test("natal: o resto do ano fica limpo", () => {

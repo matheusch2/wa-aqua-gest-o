@@ -768,29 +768,51 @@ body.tema-escuro .botao-voltar-form.botao-perigo-outline:active {
 
 /* ─── LOGIN ───────────────────────────────────────────────────────────────── */
 
+/* Transparente: quem pinta agora é a arte de fundo na página inteira (logo
+   abaixo). O gradiente que ficava aqui desenhava um retângulo claro no meio
+   da arte e cobria justamente o camarão de marca d'água dela.
+   Largura maior que os 380px do .card comum porque não há mais caixa: o
+   limite passa a ser o cartão branco do formulário. */
 .card.modo-login {
-    background: linear-gradient(160deg, #ddf2ee 0%, #edfaf7 45%, #e2f5f0 100%);
+    background: none;
     box-shadow: none;
     padding: 0;
-    overflow: hidden;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Fundo da tela de entrada
+
+   A arte veio pronta do dono: gradiente de água com as ondas em cima e
+   embaixo e o camarão de marca d'água no canto. Ela PAINTA A PÁGINA INTEIRA,
+   não o cartão — por isso mora no <html class="tela-entrada">, que o
+   login.html põe, e não no .login-wrapper: pintar o wrapper deixaria faixa
+   cinza acima e abaixo em tela alta.
+
+   O arquivo é WebP de 7 KB. O PNG original tinha 1,6 MB, e isso é tempo de
+   abertura numa tela que a pessoa vê justamente quando ainda não entrou —
+   com a internet da fazenda, no 3G, é a diferença entre abrir e esperar.
+   Gradiente suave é o caso em que o WebP ganha mais: 1,6 MB para 7 KB sem
+   diferença visível.
+
+   background-attachment: fixed de propósito. Sem ele, abrir o teclado no
+   iPhone encolhe a janela, o fundo é reescalado junto e as ondas "pulam" na
+   tela enquanto a pessoa digita a senha.
+   --------------------------------------------------------------------------- */
+html.tela-entrada,
+html.tela-entrada body {
+    min-height: 100%;
+    background: #e8f4f2 url("/app/assets/fundo-login.webp?v=20261113w") center / cover no-repeat fixed;
 }
 
 .login-wrapper {
     position: relative;
     padding: 28px 20px 24px;
-    overflow: hidden;
 }
-
-.login-wrapper::after {
-    content: "🦐";
-    position: absolute;
-    right: -6px;
-    bottom: -18px;
-    font-size: 128px;
-    opacity: 0.05;
-    pointer-events: none;
-    transform: scaleX(-1) rotate(-8deg);
-}
+/* O camarão de marca d'água saiu daqui: a arte do fundo já tem o dela, e dois
+   camarões na mesma tela é um a mais. */
 
 .login-topo {
     display: flex;
@@ -799,14 +821,20 @@ body.tema-escuro .botao-voltar-form.botao-perigo-outline:active {
     margin-bottom: 22px;
 }
 
+/* Sem a caixa branca: na arte do fundo a logo fica solta sobre a água.
+   O logo-wa.jpg é JPEG e carrega o fundo branco dentro dele — quem apaga esse
+   branco é o mix-blend-mode: multiply, que sobre um fundo claro deixa passar
+   só o laranja e o azul do desenho. Sem ele apareceria um retângulo branco no
+   meio do gradiente. */
 .login-logo {
-    width: 74px !important;
-    height: 74px !important;
-    border: 1px solid rgba(6,107,99,0.12) !important;
-    border-radius: 20px !important;
-    background: white !important;
-    margin-bottom: 14px;
-    box-shadow: 0 8px 22px rgba(6,107,99,0.16), 0 0 0 1px rgba(6,107,99,0.05);
+    width: 104px !important;
+    height: 104px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: none !important;
+    margin-bottom: 2px;
+    box-shadow: none;
+    mix-blend-mode: multiply;
 }
 
 .login-logo .logo-wa {

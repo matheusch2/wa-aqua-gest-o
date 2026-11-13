@@ -106,7 +106,10 @@ html:not(.natal) .wa-luzes { display: none; }
    soltaria o camarão; então é folga mesmo. O gorro sobe 57% da altura da
    caixa da logo, ~42px sobre os 74px da entrada.
    --------------------------------------------------------------------------- */
-html.natal .login-wrapper { padding-top: 58px; }
+/* 80px e não 58: a logo da entrada cresceu de 74px pra 104px quando a tela
+   ganhou a arte de fundo, e o gorro, que sobe 57% da altura dela, passou a
+   pedir mais céu. Medido: com 58px faltavam 5px e a pontinha saía da tela. */
+html.natal .login-wrapper { padding-top: 80px; }
 
 /* O defs do SVG mora uma vez só na página, invisível, e todos os gorros
    apontam pra ele. Sem isto o mesmo gradiente seria repetido a cada logo. */
@@ -115,4 +118,27 @@ html.natal .login-wrapper { padding-top: 58px; }
   width: 0;
   height: 0;
   overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Dezembro × a tela de entrada nova
+
+   A tela de entrada ganhou a arte de fundo e a logo perdeu a caixa branca: ela
+   ficou solta sobre a água, com mix-blend-mode: multiply apagando o fundo
+   branco do logo-wa.jpg (ver 01-base-e-painel.css).
+
+   Só que o .wa-natal cria contexto de empilhamento próprio (position +
+   z-index), e dentro dele o multiply passa a misturar com o envoltório em vez
+   de com a página — o branco do JPEG volta a aparecer, agora como um
+   retângulo solto no meio do gradiente.
+
+   Em dezembro, então, a caixa branca volta. Ela é também o que o gorro foi
+   desenhado pra cobrir: a aba de pelo atravessa a largura da caixa.
+   --------------------------------------------------------------------------- */
+html.natal .login-logo {
+    mix-blend-mode: normal;
+    background: #fff !important;
+    border: 1px solid rgba(6,107,99,.12) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 8px 22px rgba(6,107,99,.16);
 }
