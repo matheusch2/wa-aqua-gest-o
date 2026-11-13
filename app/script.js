@@ -12983,6 +12983,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
 
   const temConteudo = custos.length > 0 || rateioFixo > 0;
   resultado.innerHTML = `
+    <div class="cx-tela">
     <div class="cx-cab">
       <h3>Custos</h3>
       <span class="cx-cab-viveiro">${_esc(abreviarViveiro(viveiro.nome))}</span>
@@ -12996,8 +12997,9 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
       <span class="cx-topo-val">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
     </div>
     ${corpo}
-    ${temConteudo ? `<button class="custo-imprimir" style="margin-top:14px" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
-    <button class="botao-voltar-form" style="margin-top:10px" onclick="${_custoVoltarAcao(index, direto)}">Voltar</button>
+    ${temConteudo ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
+    <button class="botao-voltar-form" onclick="${_custoVoltarAcao(index, direto)}">Voltar</button>
+    </div>
   `;
 }
 
