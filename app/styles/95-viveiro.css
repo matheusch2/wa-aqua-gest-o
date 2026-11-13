@@ -1,0 +1,232 @@
+/* ============================================================================
+   95-viveiro.css — a tela de um viveiro, na linguagem do resto do app
+
+   Ela ficou pra trás. Enquanto a tela inicial, os Custos e a lista de viveiros
+   foram reescritos em cartão branco, borda fina e pastilha de 30px, esta
+   continuava com o desenho anterior: cada número num cartão alto de 130px com
+   o ícone em cima e tudo centralizado, quatro botões de gradiente verde com o
+   texto quebrando em três linhas, e três blocos de cor cheia no rodapé.
+
+   O dono mandou um conceito de outra ferramenta e resumiu certo: "ficou muito
+   escandaloso, mas dá pra aproveitar alguma coisa — refaz no nosso tom".
+   O que se aproveitou foi a ARRUMAÇÃO: ícone à esquerda em vez de em cima,
+   rótulo pequeno e valor embaixo, tudo alinhado à esquerda. O que não se
+   aproveitou foi o volume: nem banner com foto, nem botão de gradiente.
+
+   Aqui só há CSS. O HTML desta tela tem cento e tantas linhas de template com
+   doze contas por trás (FCA, sobrevivência, biomassa) — reescrever a marcação
+   pra mudar a aparência seria arriscar a conta pra trocar a cor.
+
+   Carregado por: app/index.html.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Cabeçalho do viveiro
+
+   Virou cartão verde-escuro, o mesmo tom do painel "Sua fazenda hoje" da tela
+   inicial. É o único bloco escuro da tela, e é o que diz onde você está — nas
+   outras telas esse papel é do cabeçalho; aqui, do cartão.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-header {
+    gap: 12px;
+    padding: 14px 15px;
+    margin-bottom: 14px;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
+}
+.painel-viveiro .vv-header-ico {
+    width: 44px; height: 44px; border-radius: 13px;
+    background: rgba(255,255,255,.12);
+}
+.painel-viveiro .vv-header-ico svg { width: 22px; height: 22px; stroke: #9fe3d2; }
+
+.painel-viveiro .vv-titulo {
+    font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.01em;
+}
+.painel-viveiro .vv-badge {
+    background: rgba(110,231,168,.16); color: #8ff0bb;
+    border: none;
+}
+.painel-viveiro .vv-badge-dot { background: #6ee7a8; }
+.painel-viveiro .vv-pls {
+    background: rgba(255,255,255,.12); color: #d7f0ea; border: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Os doze números
+
+   Ícone à ESQUERDA, rótulo pequeno em cima e valor embaixo — a arrumação que
+   valeu a pena pegar do conceito. Centralizado, cada cartão gastava 130px de
+   altura pra dizer "82 dias", e a coluna de valores não se alinhava: o olho
+   tinha que procurar o número no meio de cada caixa. Doze cartões passaram de
+   ~780px para ~430px, e agora os valores descem alinhados.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .painel-info { gap: 8px; margin-bottom: 4px; }
+
+.painel-viveiro .info-box {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid #dde8e6;
+    border-radius: 14px;
+    box-shadow: 0 2px 7px rgba(6,107,99,.07);
+}
+.painel-viveiro .info-box-icone {
+    width: 28px; height: 28px; border-radius: 9px;
+    margin-bottom: 0; flex-shrink: 0;
+    background: #eef5f3;
+}
+.painel-viveiro .info-box-icone svg { width: 14px; height: 14px; }
+
+/* O <small> e o <strong> são irmãos diretos do .info-box, e não há elemento
+   envolvendo os dois. Em vez de mexer no HTML, o próprio cartão vira grade de
+   duas colunas: a primeira é o ícone (que atravessa as duas linhas), e o
+   rótulo e o valor empilham na segunda. */
+.painel-viveiro .info-box {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 9px;
+    row-gap: 1px;
+}
+.painel-viveiro .info-box-icone { grid-row: 1 / 3; align-self: center; }
+/* O rótulo PODE quebrar em duas linhas; o valor, não. "Sobrevivência est." e
+   "Média de crescimento" não cabem numa linha de 100px, e cortar o rótulo com
+   reticências deixaria dois cartões dizendo "Média de cres…". Número quebrado
+   em duas linhas, esse sim é ilegível — por isso só o rótulo cede. */
+.painel-viveiro .info-box small {
+    grid-column: 2; align-self: end;
+    font-size: 9.5px; font-weight: 800; letter-spacing: .04em; line-height: 1.2;
+    text-transform: uppercase; color: #93a5a2;
+}
+.painel-viveiro .info-box strong {
+    grid-column: 2; align-self: start;
+    font-size: 14.5px; font-weight: 800; color: #10322f; line-height: 1.2;
+    margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A data da biometria do FCA é uma terceira linha solta ("em 12/11/2026"). */
+.painel-viveiro .info-box > span,
+.painel-viveiro .info-box .info-box-nota {
+    grid-column: 2; font-size: 10.5px; color: #93a5a2;
+}
+
+/* ---------------------------------------------------------------------------
+   Rótulos de seção
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-secao-lbl {
+    font-size: 11px; font-weight: 800; letter-spacing: .09em;
+    color: #8a9a97; margin: 18px 2px 9px;
+}
+
+/* ---------------------------------------------------------------------------
+   Ações de manejo
+
+   Eram quatro blocos de gradiente verde em UMA linha de quatro colunas, com
+   98px de largura cada: "Lançar despesca parcial" quebrava em três linhas e o
+   botão virava um parágrafo. Agora são dois por linha, cartão branco e
+   pastilha colorida — a mesma língua dos atalhos da tela inicial.
+
+   A cor vem da ação, não da decoração: ração no ouro que a tela inicial já usa
+   pro "Lançar ração", biometria em azul, despesca em ciano, custo no marrom
+   do "Lançar custo". Quem usa o app todo dia reconhece a cor antes de ler.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-manejo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+.painel-viveiro .vv-manejo-btn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 12px 13px;
+    background: #fff;
+    border: 1px solid #dde8e6;
+    border-radius: 14px;
+    box-shadow: 0 2px 7px rgba(6,107,99,.07);
+    color: #10322f;
+    font-family: inherit; font-size: 13.5px; font-weight: 700;
+    text-align: left; line-height: 1.25;
+}
+.painel-viveiro .vv-manejo-btn:active {
+    transform: scale(.985); box-shadow: 0 2px 7px rgba(6,107,99,.07);
+}
+.painel-viveiro .vv-manejo-btn svg {
+    width: 16px; height: 16px; padding: 7px;
+    border-radius: 10px; flex-shrink: 0;
+    background: #eef5f3; stroke: #0f766e;
+}
+/* nth-child porque os quatro botões não têm classe própria no HTML, e a ordem
+   deles é fixa: ração, biometria, despesca, custo. */
+.painel-viveiro .vv-manejo-btn:nth-child(1) svg { background: #fdf3df; stroke: #a97714; }
+.painel-viveiro .vv-manejo-btn:nth-child(2) svg { background: #e6edfd; stroke: #2d4fa8; }
+.painel-viveiro .vv-manejo-btn:nth-child(3) svg { background: #e0f2f6; stroke: #0e7490; }
+.painel-viveiro .vv-manejo-btn:nth-child(4) svg { background: #f6eee6; stroke: #9a5b2d; }
+
+/* Rótulos sem o verbo: sob o título "Ações de manejo" ele está implícito, e
+   "Lançar despesca parcial" quebrava em TRÊS linhas num botão de 150px.
+   "Parcial" fica, e não é detalhe de estilo: o formulário grava tipo
+   "Parcial" fixo, e um cliente que leu só "despesca" lançou ali a despesca do
+   fim do ciclo, lançou de novo ao encerrar, e o ciclo fechou com o dobro de
+   camarão. A despesca final é lançada em "Encerrar ciclo". */
+.painel-viveiro .vv-manejo-btn span { flex: 1; min-width: 0; }
+
+/* ---------------------------------------------------------------------------
+   Consultas
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-consulta-btn {
+    background: #fff;
+    border: 1px solid #e4edec;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(6,107,99,.05);
+    color: #10322f;
+    font-weight: 700;
+}
+.painel-viveiro .vv-consulta-btn svg { stroke: #4d8e85; }
+
+/* ---------------------------------------------------------------------------
+   Ações de administração
+
+   Eram três blocos de cor cheia, lado a lado, do tamanho dos botões de uso
+   diário. Encerrar ciclo e Excluir viveiro são as duas ações que não têm
+   volta nesta tela, e estavam com o mesmo peso visual de "Lançar ração".
+
+   Agora são contorno, não preenchimento: a cor continua dizendo o que cada uma
+   é — âmbar para "atenção", vermelho para "destrutivo" —, mas elas param de
+   gritar do lado de ações corriqueiras. A cor cheia fica guardada pro momento
+   em que a pessoa confirma, que é quando ela precisa mesmo parar e ler.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-admin-btn {
+    background: #fff;
+    border: 1.5px solid #dde8e6;
+    border-radius: 13px;
+    box-shadow: none;
+    color: #52635f;
+    font-size: 12.5px; font-weight: 700;
+    padding: 11px 6px;
+}
+.painel-viveiro .vv-admin-btn svg { background: none; stroke: currentColor; padding: 0; }
+.painel-viveiro .vv-admin-amber    { color: #a9700f; border-color: #e8cf9a; }
+.painel-viveiro .vv-admin-cinza    { color: #52635f; border-color: #dde8e6; }
+.painel-viveiro .vv-admin-vermelho { color: #c33434; border-color: #f0bcbc; }
+
+/* ---------------------------------------------------------------------------
+   Tema escuro
+   --------------------------------------------------------------------------- */
+body.tema-escuro .painel-viveiro .vv-header {
+    background: linear-gradient(160deg, #15323a 0%, #0f2630 100%);
+}
+body.tema-escuro .painel-viveiro .info-box { background: #1f2937; border-color: #374151; }
+body.tema-escuro .painel-viveiro .info-box-icone { background: #273445; }
+body.tema-escuro .painel-viveiro .info-box small { color: #6b7280; }
+body.tema-escuro .painel-viveiro .info-box strong { color: #e5e7eb; }
+body.tema-escuro .painel-viveiro .vv-secao-lbl { color: #6b7280; }
+body.tema-escuro .painel-viveiro .vv-manejo-btn { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+body.tema-escuro .painel-viveiro .vv-manejo-btn svg { background: #273445; }
+body.tema-escuro .painel-viveiro .vv-consulta-btn { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+body.tema-escuro .painel-viveiro .vv-admin-btn { background: #1f2937; border-color: #374151; color: #9ca3af; }
+body.tema-escuro .painel-viveiro .vv-admin-amber { color: #e3b341; border-color: #6b541c; }
+body.tema-escuro .painel-viveiro .vv-admin-vermelho { color: #fca5a5; border-color: #7f3030; }
