@@ -348,3 +348,29 @@ body.tema-escuro .sv-sem-resultado { color: #9ca3af; }
 
 body.tema-escuro .sv-fechar { background: #273445; color: #8d9aa8; }
 body.tema-escuro .sv-passou { color: #e3b341; }
+
+/* ---------------------------------------------------------------------------
+   "Ver todos os N viveiros"
+
+   A lista mostra quatro. Sete viveiros fechados, todos iguais, viram uma
+   parede: a pessoa rola procurando o que ela já sabe o nome. Quatro cabem na
+   tela com o cabeçalho e ainda sobra o botão.
+
+   Quem decide o que aparece é uma função só, a _vvAtualizarVisiveis — este
+   botão e a busca não mexem no display por conta própria, senão um desfaria
+   o outro.
+   --------------------------------------------------------------------------- */
+.sv-ver-todos {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; box-sizing: border-box;
+    margin: 0 0 14px; padding: 11px 14px;
+    background: #f1f6f5; border: none; border-radius: 12px;
+    font-family: inherit; font-size: 13.5px; font-weight: 800; color: #0f5f57;
+    cursor: pointer;
+}
+.sv-ver-todos svg {
+    width: 15px; height: 15px;
+    fill: none; stroke: currentColor; stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+body.tema-escuro .sv-ver-todos { background: #273445; color: #6ee7a8; }

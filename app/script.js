@@ -46,6 +46,8 @@ let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalh
 // Qual viveiro está aberto na lista (índice em `viveiros`). A lista mostra um
 // aberto e os outros em linha fina; null = abre o primeiro em cultivo.
 let _vvAberto = null;
+// A lista mostra no máximo _VV_LIMITE de uma vez; "Ver todos" solta o resto.
+let _vvVerTodos = false;
 let _outroCustoModo = "um"; // "Outro custo" pelo menu: "um" viveiro ou "ratear" entre vários
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
@@ -1782,18 +1784,59 @@ function _vvNormalizar(t) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-function _vvFiltrar(termo) {
-  const q = _vvNormalizar(termo);
+const _VV_LIMITE = 4;
+
+/*
+ * QUEM APARECE NA LISTA
+ *
+ * Duas coisas escondem viveiro: a busca e o limite de quatro. Se cada uma
+ * mexesse no `display` por conta própria elas se desfariam uma à outra —
+ * buscar mostraria um viveiro que o limite tinha escondido, apagar a busca
+ * mostraria todos de novo. Por isso existe esta função só: ela é a ÚNICA que
+ * decide o que aparece, e as duas a chamam.
+ *
+ * Buscando, o limite não vale: quem digitou "12" quer o 12, não os quatro
+ * primeiros. E o viveiro ABERTO nunca é escondido pelo limite, mesmo que
+ * esteja na décima posição — esconder justamente o que a pessoa acabou de
+ * abrir seria o pior jeito de obedecer a regra.
+ */
+function _vvAtualizarVisiveis() {
   const lista = document.getElementById("sv-lista");
   if (!lista) return;
-  let achou = 0;
-  lista.querySelectorAll("[data-vv-nome]").forEach(el => {
+  const campo = document.getElementById("sv-busca-campo");
+  const q = _vvNormalizar(campo ? campo.value : "");
+  const itens = [...lista.querySelectorAll("[data-vv-nome]")];
+
+  let mostrados = 0, casaram = 0;
+  itens.forEach(el => {
     const casa = !q || _vvNormalizar(el.dataset.vvNome).includes(q);
-    el.style.display = casa ? "" : "none";
-    if (casa) achou++;
+    if (casa) casaram++;
+    const aberto = el.classList.contains("sv-card");
+    const cabe = q || _vvVerTodos || aberto || mostrados < _VV_LIMITE;
+    const ver = casa && cabe;
+    el.style.display = ver ? "" : "none";
+    if (ver) mostrados++;
   });
+
   const vazio = document.getElementById("sv-sem-resultado");
-  if (vazio) vazio.style.display = achou ? "none" : "block";
+  if (vazio) vazio.style.display = casaram ? "none" : "block";
+
+  // O botão só existe enquanto houver viveiro escondido pelo limite.
+  const btn = document.getElementById("sv-ver-todos");
+  if (btn) btn.style.display = (!q && !_vvVerTodos && itens.length > mostrados) ? "" : "none";
+  const menos = document.getElementById("sv-ver-menos");
+  if (menos) menos.style.display = (!q && _vvVerTodos && itens.length > _VV_LIMITE) ? "" : "none";
+}
+
+function _vvFiltrar() { _vvAtualizarVisiveis(); }
+
+function _vvAlternarTodos(ver) {
+  _vvVerTodos = !!ver;
+  _vvAtualizarVisiveis();
+  if (!ver) {
+    const topo = document.querySelector(".sv-topo");
+    if (topo) topo.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
 }
 
 // Troca qual viveiro está aberto na lista. Guardado em módulo, e não no
@@ -1971,15 +2014,26 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     ${viveirosOrdenados.length >= _VV_BUSCA_A_PARTIR_DE ? `
     <div class="sv-busca">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.2" y1="16.2" x2="21" y2="21"/></svg>
-      <input type="search" inputmode="search" placeholder="Buscar viveiro pelo número ou nome"
-             aria-label="Buscar viveiro" oninput="_vvFiltrar(this.value)">
+      <input type="search" inputmode="search" id="sv-busca-campo"
+             placeholder="Buscar viveiro pelo número ou nome"
+             aria-label="Buscar viveiro" oninput="_vvFiltrar()">
     </div>` : ""}
     <div class="sv-lista" id="sv-lista">
       ${viveirosOrdenados.map(v => v === aberto ? cartaoAberto(v) : linhaFechada(v)).join("")}
       <p class="sv-sem-resultado" id="sv-sem-resultado" style="display:none">Nenhum viveiro com esse nome.</p>
     </div>
+    <button class="sv-ver-todos" id="sv-ver-todos" style="display:none" onclick="_vvAlternarTodos(true)">
+      Ver todos os ${viveirosOrdenados.length} viveiros
+      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <button class="sv-ver-todos" id="sv-ver-menos" style="display:none" onclick="_vvAlternarTodos(false)">
+      Ver menos
+      <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
     <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
   `;
+
+  _vvAtualizarVisiveis();
 
   // Mensagem de sucesso (ex: após excluir viveiro)
   if (msg) {

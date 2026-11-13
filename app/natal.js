@@ -20,10 +20,13 @@
 (function () {
   "use strict";
 
-  // Adiantamento: liga agora e segue até a véspera de dezembro, quando a regra
-  // do mês assume. Mexa nestas duas datas pra abrir a janela de novo um dia.
-  var ADIANTADO_DE  = "2026-10-31";
-  var ADIANTADO_ATE = "2026-11-30";
+  // Adiantamento: uma janela fora de dezembro, pra ver o enfeite na prática.
+  // Fechada a pedido do dono em 13/11/2026: a janela existia só pra ele VER o
+  // enfeite funcionando fora de dezembro, e já viu. Dezembro continua valendo
+  // sozinho, logo abaixo — em 01/12 o gorro volta sem ninguém mexer em nada.
+  // Pra reabrir a janela um dia, é pôr duas datas aqui.
+  var ADIANTADO_DE  = "";
+  var ADIANTADO_ATE = "";
 
   function diaLocal(d) {
     return d.getFullYear() + "-" +
@@ -33,6 +36,10 @@
 
   function temNatal(hoje) {
     if (hoje.getMonth() === 11) return true;   // dezembro: getMonth conta de 0
+    // Janela fechada. Sem este if, "2026-11-13" >= "" dá true e o resultado
+    // só sai certo porque o segundo lado dá false — certo por acidente é a
+    // pior espécie de certo.
+    if (!ADIANTADO_DE || !ADIANTADO_ATE) return false;
     var dia = diaLocal(hoje);
     return dia >= ADIANTADO_DE && dia <= ADIANTADO_ATE;
   }
