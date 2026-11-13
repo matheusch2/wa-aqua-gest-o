@@ -1610,3 +1610,55 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
 }
 .topo-logo img { width: 110%; height: 110%; object-fit: contain; }
 .topo-logo:active { transform: scale(.92); box-shadow: 0 1px 3px rgba(0,0,0,.14); }
+
+/* ---------------------------------------------------------------------------
+   "BEM-VINDO DE VOLTA" — a entrada de quem o aparelho já conhece
+
+   A sessão do Supabase já fica salva, então quem entrou não vê mais o login:
+   vai direto pro app. Esta tela é pro caso em que a sessão caiu (saiu da
+   conta, token expirou, limpou os dados) e o aparelho continua o mesmo — e aí
+   pedir o e-mail de novo é pedir o que já sabemos.
+
+   Um campo em vez de dois, e a pessoa já na tela: a conta é dela, só falta
+   destravar. O caminho de sempre continua a um toque, em "Entrar com outra
+   conta".
+   --------------------------------------------------------------------------- */
+.volta-card { text-align: center; }
+
+.volta-avatar {
+    width: 78px; height: 78px; margin: 2px auto 12px;
+    border-radius: 50%; overflow: hidden;
+    background: #e3f0ee;
+    display: flex; align-items: center; justify-content: center;
+}
+.volta-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.volta-avatar span {
+    font-size: 26px; font-weight: 800; color: #0f766e; letter-spacing: .02em;
+}
+
+.volta-nome {
+    margin: 0;
+    font-size: 21px; font-weight: 800; color: #10322f; letter-spacing: -.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* O e-mail vem mascarado do JS (ma•••@gmail.com): o endereço inteiro na tela
+   de um aparelho que pode estar na mão de outra pessoa é informação dada de
+   graça, e os dois primeiros bastam pra reconhecer a própria conta. */
+.volta-email {
+    margin: 3px 0 18px;
+    font-size: 13px; color: #8a9a97;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.link-trocar-conta {
+    width: 100%; margin: 12px 0 0; padding: 10px;
+    background: none; border: none;
+    font-family: inherit; font-size: 13.5px; font-weight: 700;
+    color: #0f766e; cursor: pointer;
+}
+
+body.tema-escuro .volta-avatar { background: #273445; }
+body.tema-escuro .volta-avatar span { color: #6ee7a8; }
+body.tema-escuro .volta-nome { color: #e5e7eb; }
+body.tema-escuro .volta-email { color: #9ca3af; }
+body.tema-escuro .link-trocar-conta { color: #6ee7a8; }
