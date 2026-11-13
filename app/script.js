@@ -12986,7 +12986,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
     <div class="cx-tela">
     <div class="cx-cab">
       <h3>Custos</h3>
-      <span class="cx-cab-viveiro">${_esc(abreviarViveiro(viveiro.nome))}</span>
+      <span class="cx-cab-viveiro">${_esc(viveiro.nome)}</span>
     </div>
     <div class="cx-abas">
       <button class="cx-aba ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Geral</button>
