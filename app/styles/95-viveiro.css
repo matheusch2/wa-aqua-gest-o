@@ -375,3 +375,51 @@ body.tema-escuro .painel-viveiro .vv-admin-vermelho svg { stroke: #fca5a5; }
 body.tema-escuro .painel-viveiro .vv-manejo-btn {
     background: #1f2937; border-color: #374151; color: #e5e7eb;
 }
+
+/* ---------------------------------------------------------------------------
+   Viveiro parado para reforma
+
+   O estado "parado" precisa gritar mais que "em preparação", porque é o estado
+   que MUDA A CONTA de todo mundo: enquanto ele dura, o custo fixo é dividido
+   por um viveiro a menos. Âmbar, que nesta casa quer dizer "repare nisso".
+   --------------------------------------------------------------------------- */
+.prep-status-pausado {
+    background: #fdf6e7;
+    border-color: #ecd9a8;
+}
+.prep-status-pausado .prep-status-ico { background: #f7e9c6; }
+.prep-status-pausado .prep-status-ico svg { stroke: #a9700f; fill: #a9700f; }
+.prep-status-pausado .prep-status-txt { color: #7a540c; }
+.prep-status-pausado .prep-status-desde { color: #a9700f; }
+
+.prep-pausa-nota {
+    margin: 8px 2px 14px;
+    font-size: 12px; color: #8a9a97; line-height: 1.45; text-align: center;
+}
+
+.prep-btn-pausar { color: #a9700f !important; border-color: #e8cf9a !important; }
+
+.prep-confirm-pausa {
+    margin-top: 10px; padding: 13px 14px;
+    background: #fdf6e7; border: 1px solid #ecd9a8; border-radius: 13px;
+}
+.prep-confirm-pausa > span {
+    display: block;
+    font-size: 12.5px; color: #7a540c; line-height: 1.5;
+}
+.prep-confirm-btns { display: flex; gap: 9px; margin-top: 11px; }
+.prep-confirm-btns button {
+    flex: 1; width: auto; margin: 0;
+    padding: 10px; border-radius: 10px; border: none;
+    font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
+}
+.prep-confirm-nao { background: #fff; color: #7a540c; border: 1px solid #ecd9a8 !important; }
+.prep-confirm-sim { background: #c98a22; color: #fff; }
+
+body.tema-escuro .prep-status-pausado { background: #2a2000; border-color: #6b541c; }
+body.tema-escuro .prep-status-pausado .prep-status-ico { background: #3a2d08; }
+body.tema-escuro .prep-status-pausado .prep-status-txt,
+body.tema-escuro .prep-status-pausado .prep-status-desde { color: #e3b341; }
+body.tema-escuro .prep-confirm-pausa { background: #2a2000; border-color: #6b541c; }
+body.tema-escuro .prep-confirm-pausa > span { color: #fcd34d; }
+body.tema-escuro .prep-confirm-nao { background: #1f2937; color: #e3b341; }

@@ -10199,6 +10199,95 @@ async function salvarEncerramentoCiclo(index) {
   mostrarRelatorioCiclo(index, cicloFinalizado, "viveiro");
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   PARAR E RETOMAR UM VIVEIRO (reforma)
+
+   Só vale para viveiro em PREPARAÇÃO. Viveiro em cultivo não se pausa: tem
+   camarão dentro, o funcionário continua indo lá todo dia, e tirá-lo do rateio
+   seria mentir. Viveiro vazio já não entra no rateio, então não há o que
+   parar.
+
+   Guardado como período, nunca como interruptor — ver _viveiroPausadoEm.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+// Dia em que a pausa em aberto começou (ou null se não há).
+function _pausaAbertaDe(v) {
+  const ps = (v && v.pausas) || [];
+  for (let i = ps.length - 1; i >= 0; i--) {
+    if (ps[i] && ps[i].de && !ps[i].ate) return ps[i].de;
+  }
+  return null;
+}
+
+// Dias de preparação DESCONTANDO o que ficou parado. Sem isto, um viveiro
+// parado há dois meses apareceria como "90 dias em preparação" — número que
+// não quer dizer nada e assusta quem olha.
+function _diasEmPreparacao(v) {
+  if (!v || !v.dataPreparacao) return 0;
+  const hoje = _hojeLocal();
+  let dias = 0, cur = v.dataPreparacao, guard = 0;
+  while (cur <= hoje && guard < 5000) {
+    if (!_viveiroPausadoEm(v, cur)) dias++;
+    cur = _maAddDias(cur, 1);
+    guard++;
+  }
+  return dias;
+}
+
+async function _gravarPausas(index, pausas) {
+  const v = viveiros[index];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+  const { error } = await supabaseClient.from("viveiros")
+    .update({ pausas })
+    .eq("id", v.id).eq("user_id", usuario.id);
+  if (error) {
+    console.log(error);
+    _toastErro("Erro ao salvar. Tente de novo.");
+    return false;
+  }
+  v.pausas = pausas;
+  return true;
+}
+
+// Abre e fecha o painel de confirmação, no mesmo padrão do resto do app
+// (ver confirmarExcluirViveiro e _maConfirmDesfazer).
+function _confirmarPausa(index) {
+  const painel = document.getElementById(`prep-confirm-pausa-${index}`);
+  if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
+}
+
+async function _pausarViveiro(index) {
+  const v = viveiros[index];
+  if (_bloqueioViveiro(index)) return;
+  const pausas = [...(v.pausas || []), { de: _hojeLocal(), ate: null }];
+  if (await _gravarPausas(index, pausas)) {
+    _toastSucesso(`${v.nome} parado para reforma.`);
+    mostrarViveiroSemCiclo(index);
+  }
+}
+
+async function _retomarViveiro(index) {
+  const v = viveiros[index];
+  if (_bloqueioViveiro(index)) return;
+  // Fecha a pausa em aberto ONTEM, não hoje: hoje o viveiro já voltou a
+  // trabalhar, então hoje já conta pro rateio.
+  //
+  // E se ela começou HOJE, some com ela: parar e retomar no mesmo dia é uma
+  // pausa de zero dia, ou seja, não houve pausa. Fechando-a em si mesma o dia
+  // de hoje ficava marcado como parado e a tela continuava dizendo "parado
+  // para reforma" depois de retomar.
+  const hoje = _hojeLocal();
+  const ontem = _maAddDias(hoje, -1);
+  const pausas = (v.pausas || [])
+    .filter(p => !(p && p.de && !p.ate && p.de >= hoje))
+    .map(p => (p && p.de && !p.ate) ? { de: p.de, ate: ontem } : p);
+  if (await _gravarPausas(index, pausas)) {
+    _toastSucesso(`${v.nome} voltou para a preparação.`);
+    mostrarViveiroSemCiclo(index);
+  }
+}
+
 function mostrarViveiroSemCiclo(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
@@ -10213,10 +10302,21 @@ function mostrarViveiroSemCiclo(index) {
         <span class="form-caption">${viveiro.tamanho ? _fmtHa(viveiro.tamanho) + " ha" : ""}</span>
         <h2 class="form-titulo">${_esc(viveiro.nome)}</h2>
       </div>
-      ${viveiro.dataPreparacao ? `
+      ${viveiro.dataPreparacao ? (_viveiroPausadoHoje(viveiro) ? `
+      <div class="prep-status prep-status-pausado">
+        <div class="prep-status-ico"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></div>
+        <span class="prep-status-txt"><strong>Parado</strong> para reforma</span>
+        <small class="prep-status-desde">desde ${formatarData(_pausaAbertaDe(viveiro))}</small>
+      </div>
+      <p class="prep-pausa-nota">Enquanto estiver parado, este viveiro não entra na divisão dos custos fixos — nem recebe, nem divide com os outros.</p>
+      <button class="botao-salvar" onclick="_executarSalvamento(this, () => _retomarViveiro(${index}))" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        Retomar preparação
+      </button>
+      ` : `
       <div class="prep-status">
         <div class="prep-status-ico"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg></div>
-        <span class="prep-status-txt"><strong>${calcularDiasCultivo(viveiro.dataPreparacao)} dias</strong> em preparação</span>
+        <span class="prep-status-txt"><strong>${_diasEmPreparacao(viveiro)} dias</strong> em preparação</span>
         <small class="prep-status-desde">desde ${formatarData(viveiro.dataPreparacao)}</small>
       </div>
 
@@ -10232,7 +10332,18 @@ function mostrarViveiroSemCiclo(index) {
         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Ver custo de preparação
       </button>
-      ` : `
+      <button class="botao-voltar-form prep-btn-pausar" onclick="_confirmarPausa(${index})" style="margin-top:8px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:5px"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        Parar para reforma
+      </button>
+      <div id="prep-confirm-pausa-${index}" class="prep-confirm-pausa" style="display:none">
+        <span>Enquanto estiver parado, este viveiro <b>não entra na divisão dos custos fixos</b> — nem recebe a parte dele, nem divide com os outros. Os dias parados também não contam como preparação.</span>
+        <div class="prep-confirm-btns">
+          <button class="prep-confirm-nao" onclick="_confirmarPausa(${index})">Cancelar</button>
+          <button class="prep-confirm-sim" onclick="_executarSalvamento(this, () => _pausarViveiro(${index}))">Parar</button>
+        </div>
+      </div>
+      `) : `
       <div class="viveiro-sem-ciclo-msg">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span>Nenhum ciclo ativo. Inicie um novo ciclo para começar os lançamentos.</span>

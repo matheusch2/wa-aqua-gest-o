@@ -735,3 +735,43 @@ test("rateio: pausa suja nao quebra a conta",()=>{
     assert.ok(Math.abs(v - 3000) < 0.001, `${p} deu ${v}`);
   }
 });
+
+test("pausa: parar e retomar no mesmo dia nao deixa pausa nenhuma",()=>{
+  // Uma pausa de zero dia não é pausa. Fechando-a em si mesma, o dia de hoje
+  // ficava marcado como parado e a tela continuava dizendo "parado para
+  // reforma" DEPOIS de retomar — o botão parecia não funcionar.
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __v = { pausas: [{ de:'2026-11-13', ate:null }] };
+         __hoje = _hojeLocal();
+         __ontem = _maAddDias(__hoje, -1);
+         __novas = __v.pausas
+           .filter(p => !(p && p.de && !p.ate && p.de >= __hoje))
+           .map(p => (p && p.de && !p.ate) ? { de: p.de, ate: __ontem } : p);`);
+  assert.equal(a.run('__novas.length'), 0);
+});
+
+test("pausa: retomar depois de dias fecha o periodo ONTEM",()=>{
+  // Ontem, e não hoje: hoje o viveiro já voltou a trabalhar, então hoje já
+  // conta pro rateio.
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __hoje = _hojeLocal(); __ontem = _maAddDias(__hoje, -1);
+         __novas = [{ de:'2026-11-01', ate:null }]
+           .filter(p => !(p && p.de && !p.ate && p.de >= __hoje))
+           .map(p => (p && p.de && !p.ate) ? { de: p.de, ate: __ontem } : p);
+         __v = { pausas: __novas };`);
+  assert.equal(a.run('__novas[0].ate'), '2026-11-12');
+  assert.equal(a.run('_viveiroPausadoEm(__v, "2026-11-12")'), true);
+  assert.equal(a.run('_viveiroPausadoEm(__v, "2026-11-13")'), false, "hoje ja voltou a contar");
+});
+
+test("pausa: dias em preparacao descontam o que ficou parado",()=>{
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,30,12); } };
+         __v = { dataPreparacao:'2026-11-01', pausas:[{ de:'2026-11-11', ate:'2026-11-20' }] };`);
+  // 30 dias de novembro menos os 10 parados
+  assert.equal(a.run('_diasEmPreparacao(__v)'), 20);
+  a.run(`__v2 = { dataPreparacao:'2026-11-01', pausas:[] };`);
+  assert.equal(a.run('_diasEmPreparacao(__v2)'), 30);
+});
