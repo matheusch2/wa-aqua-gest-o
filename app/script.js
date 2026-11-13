@@ -6296,9 +6296,14 @@ function verificarBoletosVencendo() {
   const r = _resumoBoletos(boletos, _hojeLocal());
   if (!r.n) return;
 
-  // Na tela inicial do celular o aviso tem lugar próprio, logo abaixo da ação
-  // do dia. Fora dela (computador, outras telas) cai no #area-gestao, como era.
-  const area = document.getElementById("aviso-boletos") || document.getElementById("area-gestao");
+  // Na tela inicial do celular o aviso tem âncora própria, no pé da tela.
+  // O ".ativo" no seletor não é zelo à toa: #home-mobile existe no HTML
+  // sempre, mas só aparece nessa tela e nunca no computador (lá o espaço é da
+  // barra lateral). Sem ele, o aviso seria enfiado num elemento escondido e
+  // simplesmente não apareceria pra quem usa no computador. Fora da tela
+  // inicial cai no #area-gestao, como era antes.
+  const area = document.querySelector("#home-mobile.ativo #aviso-boletos")
+            || document.getElementById("area-gestao");
   const existente = document.getElementById("banner-boletos-alerta");
   if (existente) existente.remove();
 
@@ -13768,8 +13773,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         try { await aplicarProtocolosSemanais(); } catch (e) { console.log("Protocolos:", e); }
       }, 0);
 
-      verificarBoletosVencendo();
-      verificarVencimentoPlano();
       _armarVerificacaoDeVersao();
       _registrarAcesso(session.user);
       atualizarSaudacaoTopo();
@@ -13785,6 +13788,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         _mostrarHomeCelular(true);
         _mostrarBannerLeitura();
       }
+
+      // DEPOIS de montar a tela, não antes. Os dois avisos se penduram na
+      // tela que está no ar, e quem monta a tela limpa o #area-gestao (ou o
+      // preenche com a lista de viveiros) — rodando primeiro, como era, o
+      // aviso era criado e apagado no mesmo instante. Na prática: quem abria
+      // o app com boleto vencido não via nada; só aparecia depois de tocar na
+      // logo pra voltar à tela inicial, que refaz a chamada na ordem certa.
+      // É também o que deixa a âncora #aviso-boletos já estar visível aqui.
+      verificarBoletosVencendo();
+      verificarVencimentoPlano();
+
       _talvezPedirContato();
       _esconderSplash();   // app pronto na tela: tira a abertura
     } else {
