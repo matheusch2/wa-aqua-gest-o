@@ -23,33 +23,38 @@
 /* ---------------------------------------------------------------------------
    Cabeçalho do viveiro
 
-   Virou cartão verde-escuro, o mesmo tom do painel "Sua fazenda hoje" da tela
-   inicial. É o único bloco escuro da tela, e é o que diz onde você está — nas
-   outras telas esse papel é do cabeçalho; aqui, do cartão.
+   Cheguei a fazer verde-escuro, igual ao painel "Sua fazenda hoje" da tela
+   inicial. O dono olhou e pediu mais claro, e tinha razão: lá o painel escuro
+   é o único bloco pesado de uma tela curta; aqui ele abria uma tela que desce
+   por mil e duzentos pixels de cartão branco, e o contraste virava um tapa no
+   começo em vez de um cabeçalho.
+
+   Verde-água claro, então, com o texto no verde da casa. Continua sendo o
+   bloco que diz onde você está, sem ser o mais pesado da tela.
    --------------------------------------------------------------------------- */
 .painel-viveiro .vv-header {
     gap: 12px;
     padding: 14px 15px;
     margin-bottom: 14px;
     border-radius: 16px;
-    background: linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
+    background: linear-gradient(160deg, #e9f5f2 0%, #dcefeb 100%);
+    border: 1px solid #cfe5e0;
 }
 .painel-viveiro .vv-header-ico {
     width: 44px; height: 44px; border-radius: 13px;
-    background: rgba(255,255,255,.12);
+    background: #fff;
 }
-.painel-viveiro .vv-header-ico svg { width: 22px; height: 22px; stroke: #9fe3d2; }
+.painel-viveiro .vv-header-ico svg { width: 22px; height: 22px; stroke: #0f766e; }
 
 .painel-viveiro .vv-titulo {
-    font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.01em;
+    font-size: 19px; font-weight: 800; color: #0f5f57; letter-spacing: -.01em;
 }
 .painel-viveiro .vv-badge {
-    background: rgba(110,231,168,.16); color: #8ff0bb;
-    border: none;
+    background: #fff; color: #1d8a5e; border: none;
 }
-.painel-viveiro .vv-badge-dot { background: #6ee7a8; }
+.painel-viveiro .vv-badge-dot { background: #22a06b; }
 .painel-viveiro .vv-pls {
-    background: rgba(255,255,255,.12); color: #d7f0ea; border: none;
+    background: #fff; color: #0f766e; border: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -190,35 +195,29 @@
 /* ---------------------------------------------------------------------------
    Ações de administração
 
-   Eram três blocos de cor cheia, lado a lado, do tamanho dos botões de uso
-   diário. Encerrar ciclo e Excluir viveiro são as duas ações que não têm
-   volta nesta tela, e estavam com o mesmo peso visual de "Lançar ração".
+   Eu tinha trocado os três blocos de cor cheia por contorno: Encerrar ciclo e
+   Excluir viveiro são as ações sem volta desta tela, e estavam com o mesmo
+   peso visual de "Lançar ração".
 
-   Agora são contorno, não preenchimento: a cor continua dizendo o que cada uma
-   é — âmbar para "atenção", vermelho para "destrutivo" —, mas elas param de
-   gritar do lado de ações corriqueiras. A cor cheia fica guardada pro momento
-   em que a pessoa confirma, que é quando ela precisa mesmo parar e ler.
+   O dono pediu as cores de volta, e essa é a chamada dele — é a tela dele e é
+   ele quem atende o cliente que apertou errado. Então ficam cheias, como
+   eram. O que fica deste arquivo é só o tamanho: elas não precisam ser tão
+   altas quanto os botões de uso diário.
    --------------------------------------------------------------------------- */
-.painel-viveiro .vv-admin-btn {
-    background: #fff;
-    border: 1.5px solid #dde8e6;
-    border-radius: 13px;
-    box-shadow: none;
-    color: #52635f;
-    font-size: 12.5px; font-weight: 700;
-    padding: 11px 6px;
-}
-.painel-viveiro .vv-admin-btn svg { background: none; stroke: currentColor; padding: 0; }
-.painel-viveiro .vv-admin-amber    { color: #a9700f; border-color: #e8cf9a; }
-.painel-viveiro .vv-admin-cinza    { color: #52635f; border-color: #dde8e6; }
-.painel-viveiro .vv-admin-vermelho { color: #c33434; border-color: #f0bcbc; }
+.painel-viveiro .vv-admin-btn { padding: 12px 6px; }
 
 /* ---------------------------------------------------------------------------
    Tema escuro
    --------------------------------------------------------------------------- */
 body.tema-escuro .painel-viveiro .vv-header {
-    background: linear-gradient(160deg, #15323a 0%, #0f2630 100%);
+    background: linear-gradient(160deg, #22313f 0%, #1b2834 100%);
+    border-color: #374151;
 }
+body.tema-escuro .painel-viveiro .vv-header-ico { background: #1f2937; }
+body.tema-escuro .painel-viveiro .vv-header-ico svg { stroke: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-titulo { color: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-badge { background: #1f2937; color: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-pls { background: #1f2937; color: #9fd8cc; }
 body.tema-escuro .painel-viveiro .info-box { background: #1f2937; border-color: #374151; }
 body.tema-escuro .painel-viveiro .info-box-icone { background: #273445; }
 body.tema-escuro .painel-viveiro .info-box small { color: #6b7280; }
@@ -227,6 +226,3 @@ body.tema-escuro .painel-viveiro .vv-secao-lbl { color: #6b7280; }
 body.tema-escuro .painel-viveiro .vv-manejo-btn { background: #1f2937; border-color: #374151; color: #e5e7eb; }
 body.tema-escuro .painel-viveiro .vv-manejo-btn svg { background: #273445; }
 body.tema-escuro .painel-viveiro .vv-consulta-btn { background: #1f2937; border-color: #374151; color: #e5e7eb; }
-body.tema-escuro .painel-viveiro .vv-admin-btn { background: #1f2937; border-color: #374151; color: #9ca3af; }
-body.tema-escuro .painel-viveiro .vv-admin-amber { color: #e3b341; border-color: #6b541c; }
-body.tema-escuro .painel-viveiro .vv-admin-vermelho { color: #fca5a5; border-color: #7f3030; }
