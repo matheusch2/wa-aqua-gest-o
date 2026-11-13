@@ -135,8 +135,11 @@
     border: 1px solid #dde8e6;
     border-radius: 14px;
     box-shadow: 0 2px 7px rgba(6,107,99,.08);
-    overflow: hidden;
     margin: 0 0 14px;
+    /* SEM overflow:hidden de propósito. O menu de três pontinhos abre para
+       fora da linha, e o recorte cortaria o menu pela metade. Não faz falta:
+       os fios entre as linhas são border-top, que não vaza pelo canto
+       arredondado. */
 }
 
 .cx-linha {
@@ -275,6 +278,13 @@
 /* ---------------------------------------------------------------------------
    Tema escuro
    --------------------------------------------------------------------------- */
+body.tema-escuro .cx-cab h3 { color: #6ee7a8; }
+body.tema-escuro .cx-cab-viveiro { background: #273445; color: #9fd8cc; }
+/* O trilho das abas é a peça que mais denuncia tema esquecido: ele é um
+   retângulo cheio, então claro no escuro vira uma mancha branca na tela. */
+body.tema-escuro .cx-abas { background: #1a2433; }
+body.tema-escuro .cx-aba { color: #8d9aa8; }
+body.tema-escuro .cx-aba.ativo { background: #2b3747; color: #6ee7a8; box-shadow: none; }
 body.tema-escuro .cx-cartao { background: #1f2937; border-color: #374151; }
 body.tema-escuro .cx-linha { border-top-color: #2b3747; }
 body.tema-escuro .cx-nome { color: #e5e7eb; }

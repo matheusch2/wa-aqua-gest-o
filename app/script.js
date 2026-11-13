@@ -12864,127 +12864,208 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   });
   const lista = Object.values(grupos).sort((a, b) => b.valor - a.valor);
 
-  const dolarIco = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M14.5 9.5a2 2 0 0 0-2-1.5h-1a1.8 1.8 0 0 0 0 3.6h1a1.8 1.8 0 0 1 0 3.6h-1.2a2 2 0 0 1-2-1.5"/></svg>`;
+  // ── Pastilhas por categoria ───────────────────────────────────────────────
+  // Antes era o MESMO círculo verde de cifrão repetido em toda linha. Ícone
+  // que não muda não informa nada: ocupa 32px pra dizer o que a tela toda já
+  // diz. Agora a cor e o desenho vêm da categoria, então ração, probiótico e
+  // calcário se separam antes da leitura.
+  const _cxChip = (c) => {
+    const k = _cxCategoriaChave(c);
+    return `<div class="cx-ico cx-ico-${k}"><svg viewBox="0 0 24 24">${_CX_ICONES[k]}</svg></div>`;
+  };
 
   // Corpo conforme o modo escolhido
   let corpo;
   if (_custoModo === "detalhado") {
-    // Extrato: cada lançamento com a sua data (mais recente primeiro),
-    // agrupado por dia. Sem ícone; nome + valor na 1ª linha, categoria na 2ª,
-    // quantidade + menu de 3 pontinhos na 3ª.
+    // EXTRATO, no modelo do banco: a data fica FORA do cartão e o dia inteiro
+    // mora num cartão só, com fio de 1px entre as linhas. Antes cada
+    // lançamento era um cartão solto de três linhas — e a terceira quase
+    // vazia, só a quantidade de um lado e os três pontinhos do outro. Medido:
+    // 121px por lançamento contra 56px agora.
     const itens = pares.slice()
       .sort((a, b) => String(b.c.data || "").localeCompare(String(a.c.data || "")));
     if (itens.length === 0) {
       corpo = `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`;
     } else {
-      const totalListado = itens.reduce((s, x) => s + (Number(x.c.valor) || 0), 0);
-      let html = `<div class="cd-resumo">
-        <span>${itens.length} lançamento${itens.length !== 1 ? "s" : ""}</span>
-        <span class="cd-resumo-val">R$ ${formatarNumeroBR(totalListado, 2)}</span>
-      </div>`;
-      let dataAtual = null;
+      // Agrupa por dia mantendo a ordem (já vem do mais recente para o mais
+      // antigo), para poder somar o total de cada dia: três lançamentos de
+      // R$ 22,63 somam R$ 67,89 e ninguém soma de cabeça enquanto rola.
+      const dias = [];
       itens.forEach(({ c, i }) => {
-        const chaveData = String(c.data || "");
-        if (chaveData !== dataAtual) {
-          dataAtual = chaveData;
-          html += `<div class="cd-data-header">${_cdDataHeader(c.data)}</div>`;
-        }
-        const qtd = _fmtQtdCusto(c.quantidadeG);
-        const racao = _ehCustoRacao(c);
-        const menuId = `cd-menu-${index}-${i}`;
-        const l3 = (qtd || !racao)
-          ? `<div class="cd-l3">
-              <span class="cd-meta">${qtd || ""}</span>
-              ${racao ? "" : `<div class="cd-menu-wrap">
-                <button class="cd-menu-btn" onclick="_cdToggleMenu('${menuId}')" aria-label="Opções">⋮</button>
-                <div class="cd-menu" id="${menuId}">
-                  <button onclick="_cdFecharMenus();abrirEdicaoCusto(${index},${i},'${elementoId}',${_dArg(direto)})">Editar lançamento</button>
-                  <button class="cd-menu-excluir" onclick="_cdFecharMenus();confirmarExcluirCusto(${index},${i},'${elementoId}',${_dArg(direto)})">Excluir lançamento</button>
-                </div>
-              </div>`}
-            </div>`
-          : "";
-        html += `<div class="cd-card${racao ? " cd-card-auto" : ""}" id="custo-row-${index}-${i}">
-          <div class="cd-l1">
-            <span class="cd-nome">${_esc(c.nomeProduto || c.categoria || "Custo")}</span>
-            <span class="cd-valor">R$ ${formatarNumeroBR(Number(c.valor) || 0, 2)}</span>
-          </div>
-          <div class="cd-l2">
-            <span class="cd-cat">${_esc(racao ? "Lançamento automático" : (c.categoria || "Insumo"))}</span>
-            ${racao ? `<span class="cd-badge">Automático</span>` : ""}
-          </div>
-          ${l3}
-        </div>`;
+        const chave = String(c.data || "");
+        const ultimo = dias[dias.length - 1];
+        if (!ultimo || ultimo.chave !== chave) dias.push({ chave, data: c.data, itens: [{ c, i }] });
+        else ultimo.itens.push({ c, i });
       });
+
+      corpo = dias.map(dia => {
+        const totalDia = dia.itens.reduce((s, x) => s + (Number(x.c.valor) || 0), 0);
+        const linhas = dia.itens.map(({ c, i }) => {
+          const racao = _ehCustoRacao(c);
+          const qtd = _fmtQtdCusto(c.quantidadeG);
+          // "Automático", e não "Lançamento automático": com a quantidade do
+          // lado a legenda longa estourava a linha e vinha cortada.
+          const sub = [racao ? "Automático" : (c.categoria || "Insumo"), qtd].filter(Boolean).join(" · ");
+          return _cxLinha({
+            chip: _cxChip(c),
+            nome: c.nomeProduto || c.categoria || "Custo",
+            sub,
+            valor: Number(c.valor) || 0,
+            id: `custo-row-${index}-${i}`,
+            acoes: racao ? null : {
+              menuId: `cd-menu-${index}-${i}`,
+              editar: `abrirEdicaoCusto(${index},${i},'${elementoId}',${_dArg(direto)})`,
+              excluir: `confirmarExcluirCusto(${index},${i},'${elementoId}',${_dArg(direto)})`,
+              rotulo: "lançamento",
+            },
+          });
+        }).join("");
+        return `<div class="cx-dia">
+            <span class="cx-dia-data">${_cdDataHeader(dia.data)}</span>
+            <span class="cx-dia-val">R$ ${formatarNumeroBR(totalDia, 2)}</span>
+          </div>
+          <div class="cx-cartao">${linhas}</div>`;
+      }).join("");
+
       if (rateioFixo > 0) {
-        html += `<div class="cd-data-header">Custos fixos</div>`;
-        html += rateioItens.map(it => `
-          <div class="cd-card cd-card-auto">
-            <div class="cd-l1">
-              <span class="cd-nome">${_esc(it.nome)}</span>
-              <span class="cd-valor">R$ ${formatarNumeroBR(it.valor, 2)}</span>
-            </div>
-            <div class="cd-l2">
-              <span class="cd-cat">${_esc(it.categoria)} · rateio automático</span>
-              <span class="cd-badge">Automático</span>
-            </div>
-          </div>`).join("");
+        corpo += `<div class="cx-dia">
+            <span class="cx-dia-data">Custos fixos</span>
+            <span class="cx-dia-val">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
+          </div>
+          <div class="cx-cartao">${rateioItens.map(it => _cxLinha({
+            chip: _cxChip({ categoria: it.categoria, nomeProduto: it.nome }),
+            nome: it.nome,
+            sub: `${it.categoria} · rateio automático`,
+            valor: it.valor,
+            acoes: null,
+          })).join("")}</div>`;
       }
-      corpo = html;
     }
   } else {
-    // GERAL: cada produto somado num total só (sem datas)
-    corpo = lista.length === 0
+    // GERAL: cada produto somado num total só (sem datas).
+    corpo = lista.length === 0 && rateioItens.length === 0
       ? `<p class="sobrevivencia-texto">Nenhum custo lançado.</p>`
-      : lista.map((g, gi) => {
-          const qtd = _fmtQtdCusto(g.quantidadeG);
-          return `<div class="custo-card" id="cg-${index}-${gi}">
-            <div class="custo-card-ico">${dolarIco}</div>
-            <div class="custo-card-info">
-              <span class="custo-card-nome">${_esc(g.nome)}</span>
-              <span class="custo-card-qtd">${qtd || "—"}</span>
-            </div>
-            <span class="custo-card-valor">R$ ${formatarNumeroBR(g.valor, 2)}</span>
-            <div class="custo-card-acoes">${g.soLeitura
-              ? `<span style="font-size:10.5px;color:#9ca3af;font-weight:700" title="Calculado dos lançamentos de ração">auto</span>`
-              : `<button class="botao-editar" onclick="abrirEditarGrupoCusto(${index},'${_encArg(g.chave)}','${elementoId}',${_dArg(direto)})">✏️</button>
-              <button class="botao-editar botao-excluir" onclick="confirmarExcluirGrupoCusto(${index},${gi},'${_encArg(g.chave)}','${elementoId}',${_dArg(direto)})">🗑️</button>`}
-            </div>
-          </div>`;
-        }).join("");
+      : `<div class="cx-cartao cx-geral">${
+          lista.map((g, gi) => {
+            const qtd = _fmtQtdCusto(g.quantidadeG);
+            // A fatia no total é o que a tela não respondia: a ração ser dois
+            // terços do cultivo só aparecia para quem dividisse na mão.
+            const pct = totalCustos > 0 ? Math.round(g.valor / totalCustos * 100) : 0;
+            return _cxLinha({
+              chip: _cxChip({ categoria: g.nome, nomeProduto: g.nome }),
+              nome: g.nome,
+              sub: [qtd, `${pct}% do total`].filter(Boolean).join(" · "),
+              valor: g.valor,
+              id: `cg-${index}-${gi}`,
+              pct,
+              acoes: g.soLeitura ? null : {
+                menuId: `cg-menu-${index}-${gi}`,
+                editar: `abrirEditarGrupoCusto(${index},'${_encArg(g.chave)}','${elementoId}',${_dArg(direto)})`,
+                excluir: `confirmarExcluirGrupoCusto(${index},${gi},'${_encArg(g.chave)}','${elementoId}',${_dArg(direto)})`,
+                rotulo: "custo",
+              },
+            });
+          }).join("")
+        }${
+          rateioItens.map(it => {
+            const pct = totalCustos > 0 ? Math.round(it.valor / totalCustos * 100) : 0;
+            return _cxLinha({
+              chip: _cxChip({ categoria: it.categoria, nomeProduto: it.nome }),
+              nome: it.nome,
+              sub: `${it.categoria} · ${pct}% do total`,
+              valor: it.valor,
+              pct,
+              acoes: null,
+            });
+          }).join("")
+        }</div>`;
   }
 
-  const rateioCard = rateioItens.map(it => `<div class="custo-card custo-card-rateio">
-        <div class="custo-card-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div class="custo-card-info">
-          <span class="custo-card-nome">${_esc(it.nome)}</span>
-          <span class="custo-card-qtd">${_esc(it.categoria)} · rateio automático</span>
-        </div>
-        <span class="custo-card-valor">R$ ${formatarNumeroBR(it.valor, 2)}</span>
-      </div>`).join("");
-
+  const temConteudo = custos.length > 0 || rateioFixo > 0;
   resultado.innerHTML = `
-    <h3 class="custo-titulo">Custos — ${abreviarViveiro(viveiro.nome)}</h3>
-    <p class="custo-escopo">${viveiro.dataPovoamento
-      ? `Cultivo atual, desde ${formatarData(viveiro.dataPreparacao || viveiro.dataPovoamento)}`
-      : (viveiro.dataPreparacao ? `Preparação atual, desde ${formatarData(viveiro.dataPreparacao)}` : "Este viveiro")}
-      · ciclos anteriores ficam no relatório de cada ciclo</p>
-    ${(custos.length > 0 || rateioFixo > 0) ? `<button class="custo-imprimir" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
-    <div class="custo-modo-toggle">
-      <button class="cmt-btn ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Geral</button>
-      <button class="cmt-btn ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Detalhado</button>
+    <div class="cx-cab">
+      <h3>Custos</h3>
+      <span class="cx-cab-viveiro">${_esc(abreviarViveiro(viveiro.nome))}</span>
     </div>
-    <div class="custo-grupo-lista${_custoModo === "detalhado" ? " custo-grupo-lista-det" : ""}">
-      ${corpo}
-      ${_custoModo === "detalhado" ? "" : rateioCard}
+    <div class="cx-abas">
+      <button class="cx-aba ${_custoModo === "geral" ? "ativo" : ""}" onclick="_custoModo='geral';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Geral</button>
+      <button class="cx-aba ${_custoModo === "detalhado" ? "ativo" : ""}" onclick="_custoModo='detalhado';renderizarHistoricoCustos(${index},'${elementoId}',${_dArg(direto)})">Detalhado</button>
     </div>
-    <div class="custo-total">
-      <div class="custo-total-ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l1.5 11a2 2 0 0 1-2 2.3H5.5A2 2 0 0 1 3.5 19z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/><circle cx="12" cy="13.5" r="1.5"/></svg></div>
-      <span class="custo-total-lbl">Total de custos</span>
-      <span class="custo-total-val">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
+    <div class="cx-topo">
+      <span class="cx-topo-lbl">Total de custos</span>
+      <span class="cx-topo-val">R$ ${formatarNumeroBR(totalCustos, 2)}</span>
+      <span class="cx-topo-sub">${viveiro.dataPovoamento
+        ? `Cultivo atual, desde ${formatarData(viveiro.dataPreparacao || viveiro.dataPovoamento)}`
+        : (viveiro.dataPreparacao ? `Preparação atual, desde ${formatarData(viveiro.dataPreparacao)}` : "Este viveiro")}${
+        pares.length ? ` · ${pares.length} lançamento${pares.length !== 1 ? "s" : ""}` : ""}</span>
+      <span class="cx-topo-nota">Ciclos anteriores ficam no relatório de cada ciclo</span>
     </div>
-    <button class="botao-voltar-form" style="margin-top:14px" onclick="${_custoVoltarAcao(index, direto)}">Voltar</button>
+    ${corpo}
+    ${temConteudo ? `<button class="custo-imprimir" style="margin-top:14px" onclick="imprimirCustos(${index})"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>` : ""}
+    <button class="botao-voltar-form" style="margin-top:10px" onclick="${_custoVoltarAcao(index, direto)}">Voltar</button>
   `;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Peças das telas de Custos
+
+   Uma linha de extrato só, usada pelos dois modos. Antes o Geral e o
+   Detalhado montavam HTML cada um do seu jeito, com nomes de classe
+   diferentes para a mesma coisa — mexer no espaçamento de um não alcançava o
+   outro, e foi assim que eles foram ficando diferentes um do outro.
+   ─────────────────────────────────────────────────────────────────────────── */
+function _cxLinha({ chip, nome, sub, valor, id, pct, acoes }) {
+  const temBarra = typeof pct === "number";
+  return `<div class="cx-linha${temBarra ? " cx-linha-barra" : ""}"${id ? ` id="${id}"` : ""}>
+    ${chip}
+    <div class="cx-texto">
+      <span class="cx-nome">${_esc(nome)}</span>
+      ${sub ? `<span class="cx-sub">${_esc(sub)}</span>` : ""}
+    </div>
+    <span class="cx-valor">R$ ${formatarNumeroBR(valor, 2)}</span>
+    ${acoes ? `<div class="cd-menu-wrap cx-menu-wrap">
+        <button class="cd-menu-btn cx-menu-btn" onclick="_cdToggleMenu('${acoes.menuId}')" aria-label="Opções">⋮</button>
+        <div class="cd-menu" id="${acoes.menuId}">
+          <button onclick="_cdFecharMenus();${acoes.editar}">Editar ${acoes.rotulo}</button>
+          <button class="cd-menu-excluir" onclick="_cdFecharMenus();${acoes.excluir}">Excluir ${acoes.rotulo}</button>
+        </div>
+      </div>`
+      : `<span class="cx-auto" title="Calculado pelo sistema">auto</span>`}
+    ${temBarra ? `<div class="cx-barra"><i style="width:${Math.max(pct, 2)}%"></i></div>` : ""}
+  </div>`;
+}
+
+// Desenhos das pastilhas. Traço fino, 24x24, como todo ícone da casa.
+const _CX_ICONES = {
+  racao:    `<path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/>`,
+  probio:   `<path d="M12 2.7S5.5 9.5 5.5 14a6.5 6.5 0 0 0 13 0c0-4.5-6.5-11.3-6.5-11.3z"/>`,
+  calcario: `<path d="M12 2.6 20.5 7v10L12 21.4 3.5 17V7z"/>`,
+  aditivo:  `<path d="M9 2v6.3L3.8 17A2.4 2.4 0 0 0 5.9 21h12.2a2.4 2.4 0 0 0 2.1-4L15 8.3V2"/><line x1="8" y1="2" x2="16" y2="2"/>`,
+  // Três pontinhos = um punhado de pós-larva. Qualquer desenho de camarão
+  // vira rabisco a 16px; três círculos continuam legíveis.
+  larva:    `<circle cx="9" cy="9" r="2.4"/><circle cx="15.5" cy="11" r="2.4"/><circle cx="11" cy="15.5" r="2.4"/>`,
+  operacao: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>`,
+  energia:  `<polygon points="13 2 3 14 11 14 10 22 21 10 13 10 13 2"/>`,
+  outro:    `<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>`,
+};
+
+// Qual pastilha serve este custo. A categoria é texto livre (vem do cadastro
+// do produto e do custo fixo), então casa por palavra e cai em "outro" quando
+// não reconhece — nunca fica sem ícone.
+function _cxCategoriaChave(c) {
+  const t = `${(c && c.categoria) || ""} ${(c && c.nomeProduto) || ""}`
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "");   // tira acento: "calcario" casa com "Calcário"
+  // (^|[^a-z]) e não só "racao": a palavra "operacao" TERMINA em "racao", e
+  // com o padrão solto a Operação saía com a tigela de ração.
+  if (/(^|[^a-z])racao/.test(t)) return "racao";
+  if (/larva|povoament|semente/.test(t)) return "larva";
+  if (/probiot|bacter/.test(t)) return "probio";
+  if (/calcar|dolomit|calcio|cal /.test(t)) return "calcario";
+  if (/aditiv|fertiliz|melac|quimic/.test(t)) return "aditivo";
+  if (/energia|luz|combustiv|diesel|oleo/.test(t)) return "energia";
+  if (/funcionar|mao de obra|pessoal|operac|servic|limpeza|manutenc/.test(t)) return "operacao";
+  return "outro";
 }
 
 // Serializa o parâmetro `direto` para dentro de um onclick="..." (atributo com
