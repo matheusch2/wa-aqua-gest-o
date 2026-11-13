@@ -2725,10 +2725,6 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 
         <div id="msg-racao-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
 
-        <div id="msg-racao-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Ração lançada com sucesso!</span>
-        </div>
 
         <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarLancamentoRacao(${dentroDoViveiro ? indexSelecionado : ""}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -2886,15 +2882,12 @@ async function salvarLancamentoRacao(indexDireto = "") {
   const _chipUltEl = document.getElementById("racao-ultimo-chip"); if (_chipUltEl) _chipUltEl.innerHTML = "";
   restaurar();
 
-  const msgSucesso = document.getElementById("msg-racao-sucesso");
-  if (msgSucesso) {
-    // Mostra o viveiro no proprio aviso, pra confirmar de olho onde entrou.
-    // textContent ja escapa o nome — nao precisa de _esc aqui.
-    const alvoTexto = msgSucesso.querySelector(".msg-texto");
-    if (alvoTexto) alvoTexto.textContent = `Ração lançada no ${viveiros[index].nome}!`;
-    msgSucesso.style.display = "flex";
-    setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
-  }
+  // Aviso FLUTUANTE, não embutido no formulário. O bloco antigo entrava na
+  // página e empurrava o "Salvar lançamento" para baixo; lançando ração em
+  // sequência, o botão trocava de lugar entre um toque e o outro e o dedo caía
+  // no lugar errado. O flutuante não ocupa espaço, então nada se mexe.
+  // O nome do viveiro vai no aviso pra confirmar de olho onde entrou.
+  _toastSucesso(`Ração lançada no ${viveiros[index].nome}!`);
 
   // Avisa quais protocolos automáticos entraram junto (custo já lançado)
   if (_protAplicados.length) {
@@ -2995,10 +2988,6 @@ function abrirBiometria(index) {
         </div>
 
         <div id="msg-bio-erro" style="display:none;color:#ef4444;font-size:13px;margin:4px 0 8px;text-align:center;font-weight:500"></div>
-        <div id="msg-bio-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Biometria lançada!</span>
-        </div>
 
         <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarBiometria(${index}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -3082,11 +3071,7 @@ async function salvarBiometria(index) {
   const _qtBioEl = document.getElementById("qtdBiometria"); if (_qtBioEl) _qtBioEl.value = "";
   restaurar();
 
-  const msgSucesso = document.getElementById("msg-bio-sucesso");
-  if (msgSucesso) {
-    msgSucesso.style.display = "flex";
-    setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
-  }
+  _toastSucesso("Biometria lançada!");   // flutuante: não empurra o botão
 }
 
 // ═══ DESPESCAS ═════════════════════════════════════════════════════════════════
@@ -3167,10 +3152,6 @@ function abrirDespesca(index) {
 
         <div id="msg-despesca-erro" style="display:none;color:#e53e3e;background:#fff5f5;border:1px solid #feb2b2;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:8px;"></div>
 
-        <div id="msg-despesca-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Despesca lançada com sucesso!</span>
-        </div>
 
         <button class="botao-salvar" onclick="_executarSalvamento(this, () => salvarDespesca(${index}))">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -3258,11 +3239,7 @@ async function salvarDespesca(index) {
   const _pd = document.getElementById("precoDespesca"); if (_pd) _pd.value = "";
   restaurar();
 
-  const msgSucesso = document.getElementById("msg-despesca-sucesso");
-  if (msgSucesso) {
-    msgSucesso.style.display = "flex";
-    setTimeout(() => { msgSucesso.style.display = "none"; }, 2500);
-  }
+  _toastSucesso("Despesca lançada com sucesso!");   // flutuante: não empurra o botão
 }
 
 // ═══ HISTÓRICOS ════════════════════════════════════════════════════════════════
@@ -11224,10 +11201,6 @@ function abrirCadastrarProduto() {
         <div id="previa-custo-kg" class="custo-por-grama-preview" style="display:none">
           Custo por kg: <strong id="previa-custo-kg-valor">—</strong>
         </div>
-        <div id="msg-produto-sucesso" class="msg-sucesso-lancamento" style="display:none;">
-          <span class="msg-emoji">✅</span>
-          <span class="msg-texto">Produto cadastrado!</span>
-        </div>
         <div id="aviso-produto" class="aviso-cadastro" style="display:none"></div>
         <div id="erro-produto" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:12px"></div>
         <button class="botao-salvar" onclick="salvarProduto()">
@@ -11393,8 +11366,7 @@ async function salvarProduto() {
   if (botao) botao.innerHTML = _TXT_SALVAR_PRODUTO;
   if (botao) { botao.disabled = false; botao.style.opacity = ""; }
 
-  const msg = document.getElementById("msg-produto-sucesso");
-  if (msg) { msg.style.display = "flex"; setTimeout(() => { msg.style.display = "none"; }, 2500); }
+  _toastSucesso("Produto cadastrado!");   // flutuante: não empurra o botão
 }
 
 // Cor da pastilha de categoria do produto (só visual; agrupa por família).
