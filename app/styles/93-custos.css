@@ -1,0 +1,219 @@
+/* ============================================================================
+   93-custos.css — as duas telas de Custos (Geral e Detalhado)
+
+   De onde veio: o extrato do banco. Não por moda — porque é a mesma pergunta.
+   Um extrato é uma lista de lançamentos de dinheiro que a pessoa percorre com
+   o olho, e o banco resolveu isso com uma regra simples: a DATA fica fora do
+   cartão e o DIA inteiro mora dentro de um cartão só, com fios finos entre as
+   linhas.
+
+   O que havia aqui era o contrário. Cada lançamento era um cartão flutuando
+   sozinho, com três linhas — e a terceira quase vazia, só a quantidade de um
+   lado e os três pontinhos do outro, perdidos. Um cultivo de 121 lançamentos
+   virava uma coluna de 121 ilhas, mais de 3.500px de rolagem. A tela não era
+   feia por falta de enfeite; era alta demais por excesso de caixa.
+
+   Agora: um cartão por DIA, linhas de duas alturas, fio de 1px entre elas, e
+   a data (com o total do dia) por fora. Mesma informação, metade da altura.
+
+   As pastilhas de ícone não são decoração repetida: a cor vem da CATEGORIA do
+   custo, então ração, probiótico e calcário se distinguem antes da leitura.
+   O #dc2626 (excluir) e o #d97706/#f59e0b (boleto vencendo) não entram aqui —
+   nesta casa essas duas cores já querem dizer outra coisa.
+
+   Carregado por: app/index.html.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Cabeçalho da tela: total em cima, não embaixo
+
+   O total era a última coisa da página, depois de rolar os 121 lançamentos.
+   Mas "quanto já gastei neste cultivo" é justamente a pergunta que faz o
+   produtor abrir esta tela — ela se responde primeiro, e o detalhe vem depois
+   pra quem quiser conferir.
+   --------------------------------------------------------------------------- */
+.cx-topo {
+    background: linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
+    border-radius: 16px;
+    padding: 14px 16px 15px;
+    margin: 0 0 14px;
+    color: #fff;
+}
+.cx-topo-lbl {
+    display: block;
+    font-size: 11px; font-weight: 800; letter-spacing: .09em;
+    text-transform: uppercase; color: #8fcfc3;
+}
+.cx-topo-val {
+    display: block;
+    font-size: 27px; font-weight: 800; letter-spacing: -.02em;
+    line-height: 1.15; margin-top: 2px;
+}
+.cx-topo-sub {
+    display: block;
+    font-size: 12px; color: #a9c9c4; margin-top: 5px; line-height: 1.35;
+}
+
+/* ---------------------------------------------------------------------------
+   O cartão e as linhas
+
+   Um cartão, N linhas, fio de 1px entre elas. É o que dá o ritmo de extrato:
+   o olho desce pela coluna de valores sem ter que reconhecer a borda de uma
+   caixa nova a cada item.
+   --------------------------------------------------------------------------- */
+.cx-cartao {
+    background: #fff;
+    border: 1px solid #dde8e6;
+    border-radius: 14px;
+    box-shadow: 0 2px 7px rgba(6,107,99,.08);
+    overflow: hidden;
+    margin: 0 0 14px;
+}
+
+.cx-linha {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border-top: 1px solid #eef3f2;
+    position: relative;
+}
+.cx-linha:first-child { border-top: none; }
+
+/* Pastilha da categoria. 32px é a mesma do aviso de boletos na tela inicial —
+   a casa já tem esse tamanho de pastilha, não se inventa um segundo. */
+.cx-ico {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #e8f1ef; color: #0f766e;
+}
+.cx-ico svg {
+    width: 16px; height: 16px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* min-width:0 é o que deixa o nome encurtar em vez de empurrar o valor pra
+   fora da tela: sem isso o flex item nunca fica menor que o conteúdo. */
+.cx-texto { flex: 1; min-width: 0; }
+
+.cx-nome {
+    display: block;
+    font-size: 14px; font-weight: 700; color: #10322f;
+    line-height: 1.25;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cx-sub {
+    display: block;
+    font-size: 11.5px; color: #7b8b89; line-height: 1.3; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.cx-valor {
+    font-size: 14px; font-weight: 800; color: #0f5f57;
+    white-space: nowrap; flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Barra de participação (só no Geral)
+
+   2px no pé da linha, larga conforme a fatia do item no total. É o que
+   transforma a lista em gráfico sem gastar linha de texto: dá pra ver que a
+   ração é dois terços do cultivo antes de ler qualquer número.
+   --------------------------------------------------------------------------- */
+.cx-barra {
+    position: absolute; left: 55px; right: 12px; bottom: 6px;
+    height: 2px; border-radius: 2px; background: #edf2f1;
+    overflow: hidden;
+}
+.cx-barra i {
+    display: block; height: 100%; border-radius: 2px;
+    background: #2f8f82;
+}
+.cx-linha-barra { padding-bottom: 15px; }
+
+/* ---------------------------------------------------------------------------
+   Ações
+
+   Antes eram dois emojis, ✏️ e 🗑️. Emoji não é botão: muda de desenho em cada
+   aparelho, não aceita cor, e o da lixeira vinha azul no iPhone bem ao lado do
+   verde do app. Agora é o mesmo menu de três pontinhos que o Detalhado já
+   usava — um alvo só, e as duas ações com nome escrito dentro.
+   --------------------------------------------------------------------------- */
+.cx-menu-wrap { position: relative; flex-shrink: 0; }
+.cx-menu-btn {
+    width: 30px; height: 30px; border: none; background: none;
+    color: #93a5a2; font-size: 17px; line-height: 1; cursor: pointer;
+    border-radius: 8px; padding: 0;
+}
+.cx-menu-btn:active { background: #eef3f2; }
+
+.cx-auto {
+    font-size: 10px; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; color: #9aaba8;
+    background: #f1f5f4; border-radius: 6px; padding: 3px 6px;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Cabeçalho de dia (Detalhado)
+
+   Fora do cartão, como no extrato do banco, com o total do dia à direita. O
+   total do dia é a informação que o cartão sozinho não dá: três lançamentos
+   de R$ 22,63 somam R$ 67,89 e ninguém soma de cabeça enquanto rola.
+   --------------------------------------------------------------------------- */
+.cx-dia {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin: 16px 3px 7px;
+}
+.cx-dia-data {
+    font-size: 11px; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: #8a9a97;
+}
+.cx-dia-val { font-size: 12px; font-weight: 700; color: #7b8b89; }
+
+/* ---------------------------------------------------------------------------
+   Fio do tempo
+
+   O risquinho que liga uma pastilha à outra dentro do mesmo dia. Sozinho não
+   informa nada; o que ele faz é dizer que as linhas do cartão são do mesmo
+   dia, e não itens soltos — é o detalhe que o extrato do banco usa.
+   --------------------------------------------------------------------------- */
+.cx-linha::before {
+    content: "";
+    position: absolute;
+    left: 27px; top: 0; bottom: 0;
+    width: 1px; background: #e8efee;
+}
+.cx-linha:first-child::before { top: 50%; }
+.cx-linha:last-child::before  { bottom: 50%; }
+.cx-linha:only-child::before  { display: none; }
+/* No Geral não há fio: cada linha é um produto somado, não um momento. */
+.cx-geral .cx-linha::before { display: none; }
+
+/* ---------------------------------------------------------------------------
+   Cores por categoria
+   --------------------------------------------------------------------------- */
+.cx-ico-racao     { background: #f6eee6; color: #9a5b2d; }
+.cx-ico-probio    { background: #e2f1f5; color: #0e7490; }
+.cx-ico-calcario  { background: #eef0f2; color: #5b6b78; }
+.cx-ico-aditivo   { background: #f1ebfe; color: #7c3aed; }
+.cx-ico-larva     { background: #e0f4f8; color: #0891b2; }
+.cx-ico-operacao  { background: #eef7e0; color: #5b8a0a; }
+.cx-ico-energia   { background: #fdf4dd; color: #a16207; }
+.cx-ico-outro     { background: #e8f1ef; color: #0f766e; }
+
+/* ---------------------------------------------------------------------------
+   Tema escuro
+   --------------------------------------------------------------------------- */
+body.tema-escuro .cx-cartao { background: #1f2937; border-color: #374151; }
+body.tema-escuro .cx-linha { border-top-color: #2b3747; }
+body.tema-escuro .cx-nome { color: #e5e7eb; }
+body.tema-escuro .cx-sub { color: #9ca3af; }
+body.tema-escuro .cx-valor { color: #6ee7a8; }
+body.tema-escuro .cx-dia-data { color: #6b7280; }
+body.tema-escuro .cx-dia-val { color: #9ca3af; }
+body.tema-escuro .cx-barra { background: #2b3747; }
+body.tema-escuro .cx-linha::before { background: #2b3747; }
+body.tema-escuro .cx-auto { background: #273445; color: #8d9aa8; }
+body.tema-escuro .cx-topo { background: linear-gradient(160deg, #15323a 0%, #0f2630 100%); }
