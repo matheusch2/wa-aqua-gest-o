@@ -107,16 +107,14 @@
    --------------------------------------------------------------------------- */
 .cx-topo {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    /* A bolha de luz: um círculo claro grande, metade pra fora do cartão, no
-       canto de cima à direita. É o que faz o bloco escuro parecer iluminado em
-       vez de pintado — sem ela, o gradiente linear sozinho dá um retângulo
-       chapado. Veio de uma referência que o dono mandou (um cartão azul de
-       app de banco); aqui ela vai com o verde da casa.
-       Dois gradientes na mesma propriedade: o radial POR CIMA, o linear por
-       baixo. A ordem importa — invertida, o linear opaco tampa a luz. */
-    background:
-        radial-gradient(62% 118% at 93% 26%, rgba(176, 255, 236, .20) 0%, rgba(176, 255, 236, .15) 52%, rgba(176, 255, 236, .05) 72%, transparent 84%),
-        linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
+    /* SEM a bolha de luz, de propósito. Ela está no cabeçalho do viveiro (ver
+       95-viveiro.css), que foi onde o dono pediu. Aqui eu tinha posto por
+       conta própria, pra os painéis escuros ficarem iguais — ele olhou e
+       disse "deixa toda verde mesmo", e tinha razão: o branco do brilho
+       lava o verde e o painel fica de duas cores. Lá no cabeçalho ele é um
+       bloco de 70px e a luz passa como brilho; aqui, num painel de 194px
+       cheio de número, ela vira mancha atrás do texto. */
+    background: linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
     border-radius: 14px;
     padding: 11px 15px;
     margin: 0 0 12px;
