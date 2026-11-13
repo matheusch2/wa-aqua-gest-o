@@ -6238,30 +6238,93 @@ function _statusBoleto(dataCompra, prazoDias) {
   return { tipo: "ok", dias: diff, diff, label: `Vence em ${diff} dias`, dataFmt };
 }
 
-function verificarBoletosVencendo() {
-  if (!boletos.length) return;
-  const alertas = boletos
-    .filter(b => !b.pago)
+/*
+ * Resumo dos boletos que pedem atenção. Separado do desenho porque é a parte
+ * que erra calada: um aviso que conta errado ou soma errado parece
+ * perfeitamente normal na tela. Função pura -> tem teste.
+ *
+ * O aviso antigo listava o nome de cada boleto, um por um. Quem compra sempre
+ * do mesmo fornecedor via "Agromar, Agromar, Agromar, Agromar, Agromar,
+ * Agromar, Agromar, Agromar" — oito vezes a mesma palavra, nenhuma informação.
+ * Agora o nome só aparece quando identifica algo (um ou dois fornecedores), e
+ * o espaço vai para o que decide: quanto, e há quanto tempo.
+ */
+function _resumoBoletos(lista, hojeYmd) {
+  const abertos = (lista || [])
+    .filter(b => b && !b.pago && b.dataCompra)
     .map(b => ({ b, st: _statusBoleto(b.dataCompra, b.prazoDias) }))
     .filter(x => x.st.tipo !== "ok");
-  if (!alertas.length) return;
-  // Ao tocar no aviso, vai DIRETO pros boletos — já filtrado pelo que precisa de atenção
-  const temVencido = alertas.some(x => x.st.tipo === "vencido");
-  const temVencendo = alertas.some(x => x.st.tipo === "hoje" || x.st.tipo === "proximo");
-  const filtroBanner = temVencido && temVencendo ? "todos" : (temVencido ? "vencidos" : "vencendo");
+
+  const vencidos = abertos.filter(x => x.st.tipo === "vencido");
+  const vencendo = abertos.filter(x => x.st.tipo === "hoje" || x.st.tipo === "proximo");
+
+  // O que ainda falta pagar: um boleto pago pela metade não deve entrar pelo
+  // valor cheio, senão o total do aviso fica maior que a dívida real.
+  const falta = (x) => Math.max(0, (Number(x.b.valor) || 0) - (Number(x.b.valorPago) || 0));
+  const total = abertos.reduce((soma, x) => soma + falta(x), 0);
+
+  // Nomes SEM repetir, na ordem em que aparecem.
+  const nomes = [];
+  abertos.forEach(x => {
+    const n = String(x.b.nome || "").trim();
+    if (n && !nomes.includes(n)) nomes.push(n);
+  });
+
+  return {
+    total,
+    n: abertos.length,
+    nVencidos: vencidos.length,
+    nVencendo: vencendo.length,
+    // Há quantos dias está o mais atrasado — é o que diz a gravidade.
+    maisAtrasado: vencidos.reduce((m, x) => Math.max(m, x.st.dias), 0),
+    nomes,
+    // Para onde o toque leva, já filtrado pelo que precisa de atenção.
+    filtro: vencidos.length && vencendo.length ? "todos" : (vencidos.length ? "vencidos" : "vencendo"),
+  };
+}
+
+// Frase de fornecedores: um nome informa, dois informam, oito viram ruído.
+function _fornecedoresBoletos(nomes) {
+  if (!nomes || !nomes.length) return "";
+  if (nomes.length === 1) return nomes[0];
+  if (nomes.length === 2) return `${nomes[0]} e ${nomes[1]}`;
+  return `${nomes[0]} e mais ${nomes.length - 1} fornecedores`;
+}
+
+function verificarBoletosVencendo() {
+  if (!boletos.length) return;
+  const r = _resumoBoletos(boletos, _hojeLocal());
+  if (!r.n) return;
+
   const area = document.getElementById("area-gestao");
   const existente = document.getElementById("banner-boletos-alerta");
   if (existente) existente.remove();
+
+  // Título: o vencido manda, porque é o que já está custando juros. Sem
+  // vencido, o aviso fala do que está chegando.
+  const titulo = r.nVencidos
+    ? `${r.nVencidos} boleto${r.nVencidos > 1 ? "s" : ""} vencido${r.nVencidos > 1 ? "s" : ""}` +
+      (r.nVencendo ? ` e ${r.nVencendo} vencendo` : "")
+    : `${r.nVencendo} boleto${r.nVencendo > 1 ? "s" : ""} vencendo`;
+
+  const partes = [];
+  if (r.total > 0) partes.push(`R$ ${formatarNumeroBR(r.total, 2)}`);
+  if (r.maisAtrasado > 0) {
+    partes.push(r.maisAtrasado === 1 ? "o mais antigo há 1 dia" : `o mais antigo há ${r.maisAtrasado} dias`);
+  }
+  const forn = _fornecedoresBoletos(r.nomes);
+  if (forn) partes.push(forn);
+
   const div = document.createElement("div");
   div.id = "banner-boletos-alerta";
   div.innerHTML = `
-    <div class="boleto-banner" onclick="abrirBoletos('${filtroBanner}')">
+    <div class="boleto-banner${r.nVencidos ? " boleto-banner-vencido" : ""}" onclick="abrirBoletos('${r.filtro}')">
       <div class="boleto-banner-icone">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </div>
       <div class="boleto-banner-texto">
-        <strong>${alertas.length} boleto${alertas.length > 1 ? "s" : ""} ${alertas.length > 1 ? "precisam" : "precisa"} de atenção</strong>
-        <span>${_esc(alertas.map(x => x.b.nome).join(", "))}</span>
+        <strong>${titulo}</strong>
+        <span>${_esc(partes.join(" · "))}</span>
       </div>
       <span class="boleto-banner-seta">›</span>
     </div>

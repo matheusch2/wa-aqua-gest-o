@@ -549,3 +549,59 @@ test("receita do ciclo: parcial usa o preço dela; sem preço, cai no da venda",
   assert.equal(a.run(`_receitaDoCiclo({})`), 0);
   assert.equal(a.run(`_receitaDoCiclo(null)`), 0);
 });
+
+// ── Aviso de boletos ────────────────────────────────────────────────────────
+// Um aviso que conta ou soma errado parece perfeitamente normal na tela: não
+// há com o que comparar. Por isso a conta é separada do desenho e testada.
+function boletosDeTeste(hoje) {
+  // prazoDias contados a partir da dataCompra
+  return [
+    { nome: 'Agromar',   dataCompra: '2026-10-01', prazoDias: 30, valor: 1000, valorPago: 0,   pago: false }, // vencido
+    { nome: 'Agromar',   dataCompra: '2026-10-05', prazoDias: 30, valor: 500,  valorPago: 200, pago: false }, // vencido, parcial
+    { nome: 'Nutriaqua', dataCompra: '2026-11-10', prazoDias: 5,  valor: 300,  valorPago: 0,   pago: false }, // vencendo
+    { nome: 'Agromar',   dataCompra: '2026-01-01', prazoDias: 30, valor: 900,  valorPago: 0,   pago: true  }, // pago: fora
+    { nome: 'Longe',     dataCompra: '2026-11-10', prazoDias: 90, valor: 700,  valorPago: 0,   pago: false }, // longe: fora
+  ];
+}
+
+test("boletos: conta vencidos e vencendo separados, ignora pago e distante",()=>{
+  const a=load();
+  a.run(`globalThis.__hoje = '2026-11-13';
+         Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __b = (${boletosDeTeste.toString()})();
+         __r = _resumoBoletos(__b, '2026-11-13');`);
+  assert.equal(a.run('__r.n'), 3);
+  assert.equal(a.run('__r.nVencidos'), 2);
+  assert.equal(a.run('__r.nVencendo'), 1);
+});
+test("boletos: soma o que FALTA pagar, não o valor cheio",()=>{
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __r = _resumoBoletos((${boletosDeTeste.toString()})(), '2026-11-13');`);
+  // 1000 + (500-200) + 300 = 1600 — e não 1800, que seria o valor cheio
+  assert.equal(a.run('__r.total'), 1600);
+});
+test("boletos: nomes sem repetir",()=>{
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __r = _resumoBoletos((${boletosDeTeste.toString()})(), '2026-11-13');`);
+  // join(): o array vem do sandbox e tem outro protótipo, então deepEqual
+  // reclama de "mesma estrutura, referência diferente".
+  assert.equal(a.run(`__r.nomes.join(" | ")`), 'Agromar | Nutriaqua');
+});
+test("boletos: a frase de fornecedor resume em vez de listar",()=>{
+  const a=load();
+  assert.equal(a.run(`_fornecedoresBoletos(['Agromar'])`), 'Agromar');
+  assert.equal(a.run(`_fornecedoresBoletos(['Agromar','Nutriaqua'])`), 'Agromar e Nutriaqua');
+  assert.equal(a.run(`_fornecedoresBoletos(['A','B','C','D'])`), 'A e mais 3 fornecedores');
+  assert.equal(a.run(`_fornecedoresBoletos([])`), '');
+  assert.equal(a.run(`_fornecedoresBoletos(null)`), '');
+});
+test("boletos: lista vazia ou suja não quebra",()=>{
+  const a=load();
+  for (const l of ['[]', 'null', '[{}]', '[{pago:true}]']) {
+    a.run(`__r = _resumoBoletos(${l}, '2026-11-13');`);
+    assert.equal(a.run('__r.n'), 0, l);
+    assert.equal(a.run('__r.total'), 0, l);
+  }
+});
