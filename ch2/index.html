@@ -69,6 +69,25 @@
         .graf-legenda i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
 
         /* ── Busca + filtros ── */
+        /* ── Preços do camarão ── */
+        .pc-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-bottom:18px; }
+        .pc-aviso { margin:0 0 12px; font-size:12.5px; line-height:1.5; color:#6b7280; }
+        .pc-aviso b { color:#b45309; }
+        .pc-linha { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+        .pc-linha input { min-width:0; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font:inherit; font-size:13px; }
+        .pc-rot { flex:1; }
+        .pc-preco { width:110px; }
+        .pc-ant { font-size:11px; color:#9ca3af; width:92px; flex-shrink:0; }
+        .pc-x { border:none; background:#fee2e2; color:#b91c1c; border-radius:8px; width:30px; height:32px; cursor:pointer; font-weight:800; flex-shrink:0; }
+        .pc-acoes { display:flex; gap:8px; margin-top:12px; }
+        .pc-btn { flex:1; border:none; border-radius:9px; padding:10px; background:#066b63; color:#fff; font:inherit; font-weight:800; cursor:pointer; }
+        .pc-btn:disabled { opacity:.55; cursor:default; }
+        .pc-btn-sec { border:1px solid #d1d5db; background:#fff; border-radius:9px; padding:10px 12px; font:inherit; font-weight:700; color:#374151; cursor:pointer; }
+        .pc-msg { margin-top:10px; font-size:12.5px; font-weight:700; }
+        .pc-msg.ok { color:#15803d; }
+        .pc-msg.erro { color:#b91c1c; }
+        .pc-vazio { font-size:13px; color:#9ca3af; padding:10px 2px; }
+
         .adm-busca { width: 100%; border: 1.5px solid #dde5e3; border-radius: 13px; padding: 12px 14px; font-size: 15px; outline: none; margin-bottom: 10px; background: #fff; }
         .adm-busca:focus { border-color: var(--verde); }
         .filtros { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
@@ -211,6 +230,27 @@
                     <button class="backup-btn" id="btn-backup" onclick="baixarBackup(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar backup</button>
                 </div>
             </div>
+            <!-- ── PREÇOS DO CAMARÃO ──────────────────────────────────────
+                 Publicados aqui e lidos por TODOS os clientes na faixa do alto
+                 do app. Escreve direto na tabela precos_camarao: a política do
+                 banco só deixa quem tem perfis.role = 'admin' gravar, a mesma
+                 checagem que o admin_ajustar_vencimento já usa.
+                 O rótulo é livre ("12 g", "10-12 g", "60 peças") porque cada
+                 região nomeia o tamanho do seu jeito. -->
+            <div class="sec-tit">Preços do camarão</div>
+            <div class="pc-card">
+                <p class="pc-aviso">
+                    Aparece na faixa do topo do app, para todos os clientes.
+                    <b>A faixa some sozinha depois de 10 dias sem atualização</b> — preço velho é pior que preço nenhum.
+                </p>
+                <div id="pc-lista"></div>
+                <div class="pc-acoes">
+                    <button class="pc-btn-sec" onclick="pcAdicionar()">+ Adicionar tamanho</button>
+                    <button class="pc-btn" id="pc-salvar" onclick="pcSalvar(this)">Publicar preços</button>
+                </div>
+                <div id="pc-msg" class="pc-msg"></div>
+            </div>
+
             <div class="sec-tit">Clientes</div>
             <input type="search" class="adm-busca" id="adm-busca" placeholder="Buscar por nome ou e-mail…" oninput="renderLista()">
             <div class="filtros" id="adm-filtros"></div>
@@ -460,6 +500,7 @@
             // aparecia antes.
             renderDashboard();
             renderLista();
+            pcCarregar();
         }
 
         // Nome e WhatsApp vêm da tabela "contatos", lida DIRETO daqui. Existe uma
@@ -616,6 +657,103 @@
                 // Fallback: mostra pra copiar na mão
                 prompt("Copie os e-mails:", txt);
             }
+        }
+
+        /* ═══ PREÇOS DO CAMARÃO ═══════════════════════════════════════════
+           Publicados aqui, lidos por todos os clientes na faixa do topo do app.
+           Grava direto na tabela: a política do banco só deixa quem tem
+           perfis.role = 'admin' escrever.                                   */
+        let pcLinhas = [];
+
+        async function pcCarregar() {
+            const { data, error } = await sb.from("precos_camarao")
+                .select("id, rotulo, preco, preco_anterior, ordem")
+                .order("ordem", { ascending: true });
+            if (error) {
+                // 42P01: a tabela ainda não foi criada neste banco.
+                pcMsg(error.code === "42P01"
+                    ? 'Tabela ainda não existe. Rode banco/precos-camarao.sql no Supabase.'
+                    : "Erro ao carregar: " + error.message, "erro");
+                pcLinhas = [];
+            } else {
+                pcLinhas = (data || []).map(l => ({ ...l, preco: Number(l.preco) }));
+            }
+            pcRender();
+        }
+
+        function pcRender() {
+            const el = document.getElementById("pc-lista");
+            if (!el) return;
+            if (!pcLinhas.length) {
+                el.innerHTML = '<p class="pc-vazio">Nenhum preço publicado. Toque em "Adicionar tamanho".</p>';
+                return;
+            }
+            el.innerHTML = pcLinhas.map((l, i) => `
+                <div class="pc-linha">
+                    <input class="pc-rot" value="${(l.rotulo || "").replace(/"/g, "&quot;")}"
+                           placeholder="Tamanho (ex.: 12 g)" oninput="pcLinhas[${i}].rotulo = this.value">
+                    <input class="pc-preco" inputmode="decimal" value="${l.preco || ""}"
+                           placeholder="R$" oninput="pcLinhas[${i}].preco = this.value.replace(',', '.')">
+                    <span class="pc-ant">${l.preco_anterior ? "antes R$ " + Number(l.preco_anterior).toFixed(2) : "—"}</span>
+                    <button class="pc-x" title="Remover" onclick="pcRemover(${i})">×</button>
+                </div>`).join("");
+        }
+
+        function pcAdicionar() {
+            pcLinhas.push({ id: null, rotulo: "", preco: "", preco_anterior: null, ordem: pcLinhas.length + 1 });
+            pcRender();
+        }
+
+        async function pcRemover(i) {
+            const linha = pcLinhas[i];
+            if (linha && linha.id) {
+                const { error } = await sb.from("precos_camarao").delete().eq("id", linha.id);
+                if (error) { pcMsg("Erro ao remover: " + error.message, "erro"); return; }
+            }
+            pcLinhas.splice(i, 1);
+            pcRender();
+            pcMsg("Removido.", "ok");
+        }
+
+        function pcMsg(txt, classe) {
+            const m = document.getElementById("pc-msg");
+            if (!m) return;
+            m.textContent = txt || "";
+            m.className = "pc-msg " + (classe || "");
+        }
+
+        async function pcSalvar(botao) {
+            const limpas = pcLinhas
+                .map(l => ({ ...l, rotulo: String(l.rotulo || "").trim(), preco: Number(l.preco) }))
+                .filter(l => l.rotulo && l.preco > 0);
+            if (!limpas.length) { pcMsg("Preencha pelo menos um tamanho com preço.", "erro"); return; }
+
+            botao.disabled = true;
+            const textoAntes = botao.textContent;
+            botao.textContent = "Publicando...";
+            pcMsg("");
+
+            let erro = null;
+            for (let i = 0; i < limpas.length; i++) {
+                const l = limpas[i];
+                // O preço de agora vira o "anterior" só quando MUDA: republicar o
+                // mesmo valor não pode zerar a setinha de alta/baixa.
+                const antigo = pcLinhas.find(x => x.id && x.id === l.id);
+                const anterior = (antigo && Number(antigo.preco) !== l.preco)
+                    ? Number(antigo.preco)
+                    : (l.preco_anterior ?? null);
+                const corpo = { rotulo: l.rotulo, preco: l.preco, preco_anterior: anterior, ordem: i + 1 };
+                const r = l.id
+                    ? await sb.from("precos_camarao").update(corpo).eq("id", l.id)
+                    : await sb.from("precos_camarao").insert([corpo]);
+                if (r.error) { erro = r.error; break; }
+            }
+
+            botao.disabled = false;
+            botao.textContent = textoAntes;
+            if (erro) { pcMsg("Erro ao publicar: " + erro.message, "erro"); return; }
+            pcMsg("Publicado. Os clientes já veem na próxima abertura do app.", "ok");
+            pcCarregar();
         }
 
         function renderLista() {

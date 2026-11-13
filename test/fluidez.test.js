@@ -412,3 +412,44 @@ test("painel: fazenda vazia devolve zeros, sem quebrar",()=>{
     assert.equal(a.run('__r.pesoMedio'), 0, lista);
   }
 });
+
+// ── Faixa de preços do camarão ──────────────────────────────────────────────
+// A regra que importa: PREÇO VELHO É PIOR QUE PREÇO NENHUM. Um produtor que
+// negocia com número de três semanas atrás e se dá mal culpa o app, com razão.
+// Por isso a validade é testada: é a única coisa aqui que falha em silêncio,
+// porque uma faixa com preço velho parece perfeitamente normal.
+const PRECO = (r, p, ant, dia) => ({ rotulo: r, preco: p, preco_anterior: ant, ordem: 1, atualizado_em: dia });
+
+test("preços: dentro do prazo, a faixa mostra",()=>{
+  const a=load();
+  a.run(`__l = [${JSON.stringify(PRECO('12 g', 22, 21, '2026-11-13'))}];`);
+  assert.equal(a.run(`_precosFrescos(__l, '2026-11-13').itens.length`), 1);
+  assert.equal(a.run(`_precosFrescos(__l, '2026-11-23').itens.length`), 1);   // 10 dias: ainda vale
+});
+test("preços: passou do prazo, a faixa some — não mostra velho",()=>{
+  const a=load();
+  a.run(`__l = [${JSON.stringify(PRECO('12 g', 22, 21, '2026-11-13'))}];`);
+  assert.equal(a.run(`_precosFrescos(__l, '2026-11-24').itens.length`), 0);   // 11 dias
+  assert.equal(a.run(`_precosFrescos(__l, '2026-12-20').itens.length`), 0);
+});
+test("preços: a validade conta pelo lançamento mais recente",()=>{
+  const a=load();
+  // um tamanho antigo e outro corrigido hoje: corrigir um não pode envelhecer os outros
+  a.run(`__l = [${JSON.stringify(PRECO('10 g', 18, null, '2026-10-01'))},
+                ${JSON.stringify(PRECO('12 g', 22, 21, '2026-11-13'))}];`);
+  assert.equal(a.run(`_precosFrescos(__l, '2026-11-13').itens.length`), 2);
+});
+test("preços: lista vazia ou suja não quebra",()=>{
+  const a=load();
+  for (const l of ['[]', 'null', '[{}]', '[{rotulo:"", preco:0}]', '[{rotulo:"12 g", preco:-5}]']) {
+    a.run(`__r = _precosFrescos(${l}, '2026-11-13');`);
+    assert.equal(a.run('__r.itens.length'), 0, l);
+  }
+});
+test("preços: sem preço anterior não inventa variação",()=>{
+  const a=load();
+  assert.equal(a.run(`_variacaoPreco({preco: 22, preco_anterior: null})`), null);
+  assert.equal(a.run(`_variacaoPreco({preco: 22, preco_anterior: 22})`), null);  // igual: sem seta
+  assert.equal(a.run(`_variacaoPreco({preco: 22, preco_anterior: 21})`), 1);
+  assert.ok(a.run(`_variacaoPreco({preco: 20, preco_anterior: 21})`) < 0);
+});

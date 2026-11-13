@@ -21,7 +21,10 @@ body {
        barra verde cresce pra cobrir essa faixa, e o conteúdo dela continua
        exatamente onde estava. Fora do iPhone instalado o env() vale zero e isto
        é o mesmo 14px de sempre. Depende do viewport-fit=cover no index.html. */
-    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 18px;
+    /* Cabeçalho enxuto: ele gastava um quarto da tela com o nome do app e uma
+       frase de propaganda para quem já é cliente. Com a saudação no lugar, cabe
+       em bem menos. */
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 12px;
     width: 100%;
     box-sizing: border-box;
     position: relative;
@@ -43,8 +46,10 @@ body {
 }
 
 .logo-circulo {
-  width: 65px;
-  height: 65px;
+  /* 48px, não 65: o cabeçalho encolheu junto com a frase que saiu. A logo da
+     tela de entrada não é afetada — .login-logo manda 74px com !important. */
+  width: 48px;
+  height: 48px;
   border-radius: 10%;
   overflow: hidden;
 
@@ -66,7 +71,14 @@ body {
     flex-shrink: 0;
 }
 
+.topo-texto { min-width: 0; }
+
+/* Uma linha só. Nome comprido ("Olá, Sebastião") quebrava em duas, engordava a
+   barra e o avatar vinha parar em cima da faixa de preços. */
 .topo-texto h1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 17px;
     font-weight: 800;
     color: white;
@@ -1509,4 +1521,48 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
     line-height: 1;
     padding: 2px 4px;
     cursor: pointer;
+}
+
+/* ── Faixa de preços do camarão, logo abaixo do cabeçalho ────────────────────
+   Uma tira que passa, tipo painel de bolsa. Fica DENTRO do .topo, então herda
+   o verde e não cria mais um bloco na tela. O conteúdo é duplicado no HTML e o
+   trilho desliza a largura de uma cópia: a emenda não aparece e a fita parece
+   não ter fim. */
+#fita-precos:empty { display: none; }
+
+.fp-fita {
+    margin: 10px -18px -12px;        /* vaza a largura toda, rente ao rodapé do topo */
+    padding: 7px 0;
+    overflow: hidden;
+    background: rgba(0,0,0,.17);
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+.fp-trilho {
+    display: flex;
+    width: max-content;
+    gap: 26px;
+    padding-left: 18px;
+    white-space: nowrap;
+}
+.fp-item { display: inline-flex; align-items: baseline; gap: 6px; font-size: 12.5px; }
+.fp-tam { color: rgba(214,247,241,.62); font-weight: 700; }
+.fp-val { color: #fff; font-weight: 800; }
+.fp-sobe { color: #6ee7a8; font-weight: 800; font-size: 11px; }
+.fp-desce { color: #ffa4a4; font-weight: 800; font-size: 11px; }
+.fp-fonte { color: rgba(214,247,241,.45); font-size: 11px; font-weight: 600; }
+
+/* Metade do trilho é a segunda cópia: deslizar -50% e recomeçar é o que faz o
+   laço ser invisível. */
+@media (prefers-reduced-motion: no-preference) {
+    .fp-trilho { animation: fp-passa 26s linear infinite; }
+}
+@keyframes fp-passa {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+/* Quem desligou animação no aparelho lê parado, arrastando com o dedo. */
+@media (prefers-reduced-motion: reduce) {
+    .fp-fita { overflow-x: auto; }
+    .fp-trilho { animation: none; }
 }
