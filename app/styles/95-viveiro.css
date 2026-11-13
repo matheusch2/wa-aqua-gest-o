@@ -23,38 +23,50 @@
 /* ---------------------------------------------------------------------------
    Cabeçalho do viveiro
 
-   Cheguei a fazer verde-escuro, igual ao painel "Sua fazenda hoje" da tela
-   inicial. O dono olhou e pediu mais claro, e tinha razão: lá o painel escuro
-   é o único bloco pesado de uma tela curta; aqui ele abria uma tela que desce
-   por mil e duzentos pixels de cartão branco, e o contraste virava um tapa no
-   começo em vez de um cabeçalho.
+   Este cabeçalho mudou de cor três vezes, e as três estão certas na ordem em
+   que aconteceram.
 
-   Verde-água claro, então, com o texto no verde da casa. Continua sendo o
-   bloco que diz onde você está, sem ser o mais pesado da tela.
+   Primeiro foi verde-escuro chapado, igual ao painel da tela inicial. O dono
+   pediu mais claro e tinha razão: um retângulo escuro chapado abrindo uma
+   tela que desce por mil e duzentos pixels de cartão branco é um tapa, não um
+   cabeçalho. Virou verde-água claro.
+
+   Depois ele mandou a referência de um cartão escuro com uma BOLHA DE LUZ no
+   canto — e pediu esse fundo aqui. Não é voltar atrás: o que pesava não era
+   o escuro, era o chapado. Com o círculo claro atravessando o canto de cima à
+   direita, o bloco passa a parecer iluminado em vez de pintado, e aí ele
+   aguenta ser escuro sem virar peso.
+
+   Mesma luz dos outros dois painéis escuros do app (ver 92-home e 93-custos):
+   é o mesmo componente em telas diferentes, e um com luz e o outro sem seria
+   a diferença que ninguém lembra de arrumar depois.
    --------------------------------------------------------------------------- */
 .painel-viveiro .vv-header {
     gap: 12px;
     padding: 14px 15px;
     margin-bottom: 14px;
     border-radius: 16px;
-    background: linear-gradient(160deg, #e9f5f2 0%, #dcefeb 100%);
-    border: 1px solid #cfe5e0;
+    /* Radial POR CIMA do linear: invertido, o linear opaco tampa a luz. */
+    background:
+        radial-gradient(62% 118% at 93% 26%, rgba(176, 255, 236, .20) 0%, rgba(176, 255, 236, .15) 52%, rgba(176, 255, 236, .05) 72%, transparent 84%),
+        linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
+    border: none;
 }
 .painel-viveiro .vv-header-ico {
     width: 44px; height: 44px; border-radius: 13px;
-    background: #fff;
+    background: rgba(255,255,255,.13);
 }
-.painel-viveiro .vv-header-ico svg { width: 22px; height: 22px; stroke: #0f766e; }
+.painel-viveiro .vv-header-ico svg { width: 22px; height: 22px; stroke: #9fe3d2; }
 
 .painel-viveiro .vv-titulo {
-    font-size: 19px; font-weight: 800; color: #0f5f57; letter-spacing: -.01em;
+    font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.01em;
 }
 .painel-viveiro .vv-badge {
-    background: #fff; color: #1d8a5e; border: none;
+    background: rgba(110,231,168,.18); color: #8ff0bb; border: none;
 }
-.painel-viveiro .vv-badge-dot { background: #22a06b; }
+.painel-viveiro .vv-badge-dot { background: #6ee7a8; }
 .painel-viveiro .vv-pls {
-    background: #fff; color: #0f766e; border: none;
+    background: rgba(255,255,255,.13); color: #e2f4ef; border: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -210,14 +222,10 @@
    Tema escuro
    --------------------------------------------------------------------------- */
 body.tema-escuro .painel-viveiro .vv-header {
-    background: linear-gradient(160deg, #22313f 0%, #1b2834 100%);
-    border-color: #374151;
+    background:
+        radial-gradient(62% 118% at 93% 26%, rgba(176, 255, 236, .13) 0%, rgba(176, 255, 236, .09) 52%, transparent 84%),
+        linear-gradient(160deg, #15323a 0%, #0f2630 100%);
 }
-body.tema-escuro .painel-viveiro .vv-header-ico { background: #1f2937; }
-body.tema-escuro .painel-viveiro .vv-header-ico svg { stroke: #6ee7a8; }
-body.tema-escuro .painel-viveiro .vv-titulo { color: #6ee7a8; }
-body.tema-escuro .painel-viveiro .vv-badge { background: #1f2937; color: #6ee7a8; }
-body.tema-escuro .painel-viveiro .vv-pls { background: #1f2937; color: #9fd8cc; }
 body.tema-escuro .painel-viveiro .info-box { background: #1f2937; border-color: #374151; }
 body.tema-escuro .painel-viveiro .info-box-icone { background: #273445; }
 body.tema-escuro .painel-viveiro .info-box small { color: #6b7280; }
