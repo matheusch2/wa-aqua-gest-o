@@ -638,28 +638,10 @@ body.tema-escuro .form-nota svg { stroke: #fbbf24; }
     background: #e5e7eb;
 }
 
-.msg-sucesso-lancamento {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f0fdf4;
-    border: 1.5px solid #86efac;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 12px;
-}
-
-.msg-sucesso-lancamento .msg-emoji {
-    font-size: 20px;
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-.msg-sucesso-lancamento .msg-texto {
-    font-size: 14px;
-    font-weight: 700;
-    color: #16a34a;
-}
+/* O aviso de sucesso EMBUTIDO saiu daqui. Ele entrava no formulário e empurrava
+   o botão de salvar para baixo; lançando ração em sequência, o botão trocava de
+   lugar entre um toque e o outro. Agora os quatro lançamentos (ração, biometria,
+   despesca, produto) usam o _toastSucesso(), que flutua e não ocupa espaço. */
 
 .toast-sucesso {
     display: flex;

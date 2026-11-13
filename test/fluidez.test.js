@@ -158,15 +158,20 @@ test("feedback: restauração antiga não libera uma nova operação",()=>{
 test("salvamento real de ração: sucesso só depois do retorno do banco simulado",async()=>{
   const a=load();seed(a);
   a.get('dataRacao').value='2026-09-21';a.get('consumoRacao').value='10';a.get('tipoRacaoSelect').value='0';
-  a.get('msg-racao-sucesso').style.display='none';a.get('racao-ultimo-chip').innerHTML='<button>etiqueta</button>';
+  a.get('racao-ultimo-chip').innerHTML='<button>etiqueta</button>';
+  // O aviso de sucesso agora e flutuante (_toastSucesso), fora do formulario.
+  // Captura as chamadas pra poder afirmar QUANDO ele aparece.
+  a.run(`__sucessos=[]; _toastSucesso = m => __sucessos.push(m);`);
   a.run(`pegarUsuarioLogado=async()=>({id:'usuario-teste'});
     supabaseClient.from=()=>({insert:()=>({select:()=>new Promise(r=>globalThis.__gravar=r)})});`);
   const pending=a.run('_executarSalvamento(__button,()=>salvarLancamentoRacao(0))');
   await Promise.resolve();await Promise.resolve();
-  assert.equal(a.button.disabled,true);assert.equal(a.get('msg-racao-sucesso').style.display,'none');
+  assert.equal(a.button.disabled,true);
+  assert.equal(a.run('__sucessos.length'),0,'avisou sucesso antes de o banco responder');
   assert.equal(a.get('consumoRacao').value,'10');
   a.run('__gravar({data:[{id:"racao-nova"}],error:null})');await pending;
-  assert.equal(a.button.disabled,false);assert.equal(a.get('msg-racao-sucesso').style.display,'flex');
+  assert.equal(a.button.disabled,false);
+  assert.match(a.run('__sucessos[0]'),/Ração lançada no Viveiro 1/);   // com o nome do viveiro
   // A quantidade PERMANECE após salvar (pra repetir no dia seguinte); a data avança.
   assert.equal(a.get('consumoRacao').value,'10');assert.equal(a.get('dataRacao').value,'2026-09-22');
   assert.equal(a.get('racao-ultimo-chip').innerHTML,''); // etiqueta some ao lançar
@@ -175,13 +180,14 @@ test("salvamento real de ração: sucesso só depois do retorno do banco simulad
 test("salvamento real de ração: rejeição de rede não apaga o formulário",async()=>{
   const a=load();seed(a);
   a.get('dataRacao').value='2026-09-21';a.get('consumoRacao').value='10';a.get('tipoRacaoSelect').value='0';
-  a.get('msg-racao-sucesso').style.display='none';
+  a.run(`__sucessos=[]; _toastSucesso = m => __sucessos.push(m);`);
   a.run(`pegarUsuarioLogado=async()=>({id:'usuario-teste'});
     supabaseClient.from=()=>({insert:()=>({select:()=>Promise.reject(Error('rede'))})});`);
   await a.run('_executarSalvamento(__button,()=>salvarLancamentoRacao(0))');
   assert.equal(a.button.disabled,false);assert.equal(a.get('consumoRacao').value,'10');
   assert.equal(a.get('tipoRacaoSelect').value,'0');assert.equal(a.get('dataRacao').value,'2026-09-21');
-  assert.equal(a.get('msg-racao-sucesso').style.display,'none');assert.equal(a.errors.length,1);
+  assert.equal(a.run('__sucessos.length'),0,'avisou sucesso mesmo com a rede falhando');
+  assert.equal(a.errors.length,1);
 });
 test("retorno: restaura rolagem do celular e do painel desktop",()=>{
   const a=load();a.win.scrollY=460;a.get('area-gestao').scrollTop=210;a.run('salvarScroll()');
@@ -335,4 +341,19 @@ test("ciclo encerrado: o custo marcado com o ciclo antigo não entra no atual",(
   assert.equal(a.run(`_custosManuaisDoCiclo(__v.custos,"c-01","2026-03-27","2026-07-19").map(c=>c.id).join()`), "x1");
   // e a tela do viveiro em cultivo continua vendo só o dela
   assert.equal(a.run(`_custosDoEscopoPares(__v).map(p=>p.c.id).join()`), "x2");
+});
+
+// ── O aviso de sucesso não pode voltar a ser embutido ───────────────────────
+// Media no navegador: com o aviso dentro do formulário, o "Salvar lançamento"
+// descia 50px ao aparecer e subia de volta 2,5s depois, quando ele sumia. Quem
+// lança ração em sequência tocava num alvo que se mexia nos dois sentidos.
+// Agora é _toastSucesso(), que flutua. Este teste existe porque a tentação de
+// pôr "um avisinho ali no formulário" volta sempre.
+test("lançamento: nenhum formulário traz aviso de sucesso embutido",()=>{
+  const a=load();seed(a);
+  a.run('mostrarLancamentoRacao(0)');
+  const html = a.get('area-gestao').innerHTML;
+  assert.equal(html.includes("msg-sucesso-lancamento"), false,
+    "o aviso voltou a ser embutido — ele empurra o botão de salvar");
+  assert.equal(html.includes("msg-racao-sucesso"), false);
 });
