@@ -55,7 +55,7 @@
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
     <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
-    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261103a">
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261113c">
     <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20261113a">
     <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20261026a">
     <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261028a">
@@ -69,7 +69,7 @@
 
     <!-- Enfeite de dezembro. O CSS vem o ano inteiro e não pinta nada fora do
          mês; quem liga é o natal.js, pelo relógio do aparelho. -->
-    <link rel="stylesheet" href="styles/91-natal.css?v=20261103a">
+    <link rel="stylesheet" href="styles/91-natal.css?v=20261113c">
     <link rel="stylesheet" href="styles/92-home.css?v=20261113b">
     <script defer src="natal.js?v=20261031f"></script>
 
@@ -230,9 +230,13 @@
                   <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua" class="logo-img">
                 </div>
                 <div class="topo-divisor"></div>
+                <!-- Saudação no lugar de "WA AQUA GESTÃO / Gestão inteligente do
+                     seu cultivo": a frase era propaganda para quem já é cliente,
+                     já pagou e já está logado. O nome entra pelo
+                     atualizarSaudacaoTopo(); a logo ao lado continua dizendo em
+                     que app a pessoa está. -->
                 <div class="topo-texto">
-                    <h1>WA AQUA GESTÃO</h1>
-                    <p>Gestão inteligente do seu cultivo</p>
+                    <h1 id="topo-saudacao">Olá</h1>
                 </div>
             </div>
             <div class="topo-direita">
@@ -245,7 +249,16 @@
                     </button>
                 </div>
             </div>
+
         </div>
+
+        <!-- Faixa de preços do camarão, publicada pelo administrador. Fica
+             IRMÃ do .topo-conteudo, não dentro dele: aquele é flex, e lá
+             dentro a faixa virava mais uma coluna, grudada no avatar.
+             Preenchida por _fitaPrecos(); fica vazia quando não há tabela ou
+             quando ela está velha — preço desatualizado é pior que preço
+             nenhum. -->
+        <div id="fita-precos"></div>
     </div>
 
     <div id="card-gestao" class="card">
@@ -366,7 +379,7 @@
 
     </div>
 
-    <script src="script.js?v=20261113b"></script>
+    <script src="script.js?v=20261113c"></script>
 
 </body>
 </html>

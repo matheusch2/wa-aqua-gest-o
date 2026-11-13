@@ -340,6 +340,108 @@ function _fmtDataISO(iso) {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+/*
+ * "Olá, Fulano" no lugar de "WA AQUA GESTÃO / Gestão inteligente do seu
+ * cultivo". A frase era propaganda para quem já é cliente, já pagou e já está
+ * logado — ocupava um quarto da tela sem dizer nada.
+ *
+ * Só o primeiro nome: "Olá, José Carlos da Silva Neto" estoura a linha num
+ * celular estreito e empurra o avatar.
+ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   FAIXA DE PREÇOS DO CAMARÃO
+
+   Uma tira que passa no alto da tela, tipo painel de bolsa, com o preço por
+   tamanho. Não existe índice público semanal do camarão cultivado no Brasil,
+   então quem publica é o administrador, pelo painel ADM (tabela
+   precos_camarao; ver banco/precos-camarao.sql).
+
+   A regra que manda aqui é uma só: PREÇO VELHO É PIOR QUE PREÇO NENHUM. Um
+   produtor que negocia com número de três semanas atrás e se dá mal vai culpar
+   o app, com razão. Por isso a faixa some sozinha depois do prazo, em vez de
+   continuar mostrando o que tem.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let precosCamarao = [];
+
+// Dias que a tabela continua valendo. O combinado é atualizar toda semana;
+// dez dias dá folga para um atraso sem deixar passar preço de quinze dias.
+const PRECOS_VALIDADE_DIAS = 10;
+
+// Decide o que a faixa pode mostrar. Função pura -> tem teste.
+function _precosFrescos(linhas, hojeYmd, validadeDias = PRECOS_VALIDADE_DIAS) {
+  const lista = (linhas || []).filter(l => l && l.rotulo && Number(l.preco) > 0);
+  if (!lista.length) return { itens: [], atualizado: null, dias: null };
+
+  // A data da tabela é a do lançamento MAIS RECENTE: o admin pode corrigir um
+  // tamanho só, e isso não envelhece os outros.
+  let maisNova = "";
+  lista.forEach(l => {
+    const d = String(l.atualizado_em || "").substring(0, 10);
+    if (d > maisNova) maisNova = d;
+  });
+  if (!maisNova) return { itens: [], atualizado: null, dias: null };
+
+  const dias = _diasDesde(maisNova, hojeYmd);
+  if (dias === null || dias > validadeDias) return { itens: [], atualizado: maisNova, dias };
+
+  const itens = lista.slice().sort((a, b) =>
+    (Number(a.ordem) || 0) - (Number(b.ordem) || 0) || String(a.rotulo).localeCompare(String(b.rotulo)));
+  return { itens, atualizado: maisNova, dias };
+}
+
+// Variação para a setinha. Sem preço anterior não inventa zero: devolve null e
+// a faixa simplesmente não mostra seta naquele tamanho.
+function _variacaoPreco(linha) {
+  const atual = Number(linha?.preco);
+  const antes = Number(linha?.preco_anterior);
+  if (!(atual > 0) || !(antes > 0) || atual === antes) return null;
+  return atual - antes;
+}
+
+async function carregarPrecosCamarao() {
+  const { data, error } = await supabaseClient
+    .from("precos_camarao")
+    .select("rotulo, preco, preco_anterior, ordem, atualizado_em")
+    .order("ordem", { ascending: true });
+  // 42P01 = tabela ainda não existe no banco deste cliente. Segue sem faixa,
+  // como já é feito com assinaturas: recurso novo não pode impedir o app de abrir.
+  if (error) { if (error.code !== "42P01") console.log("preços:", error); precosCamarao = []; return; }
+  precosCamarao = data || [];
+}
+
+function _fitaPrecos() {
+  const alvo = document.getElementById("fita-precos");
+  if (!alvo) return;
+  const { itens, dias } = _precosFrescos(precosCamarao, _hojeLocal());
+  if (!itens.length) { alvo.innerHTML = ""; return; }
+
+  const pedaco = (l) => {
+    const v = _variacaoPreco(l);
+    const seta = v === null ? ""
+      : `<span class="fp-${v > 0 ? "sobe" : "desce"}">${v > 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(v), 2)}</span>`;
+    return `<span class="fp-item"><span class="fp-tam">${_esc(l.rotulo)}</span>` +
+           `<span class="fp-val">R$ ${formatarNumeroBR(Number(l.preco), 2)}</span>${seta}</span>`;
+  };
+
+  const quando = dias === 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
+  const corpo = itens.map(pedaco).join("") +
+    `<span class="fp-item fp-fonte">atualizado ${quando}</span>`;
+  // O conteúdo entra DUAS vezes: o trilho desliza a largura de uma cópia e
+  // volta ao começo, então a emenda não aparece e a fita parece sem fim.
+  alvo.innerHTML = `<div class="fp-fita"><div class="fp-trilho">${corpo}${corpo}</div></div>`;
+}
+
+async function atualizarSaudacaoTopo() {
+  const alvo = document.getElementById("topo-saudacao");
+  if (!alvo) return;
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "";
+  const primeiro = String(nome).trim().split(/\s+/)[0] || "";
+  // textContent já escapa — nome é texto do cliente.
+  alvo.textContent = primeiro ? `Olá, ${primeiro}` : "Olá";
+}
+
 async function atualizarAvatarTopo() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return;
@@ -545,6 +647,7 @@ async function salvarFazenda(botao) {
     _toastSucesso("Alterações salvas!");
   }
   atualizarAvatarTopo();
+  atualizarSaudacaoTopo();
   abrirConfiguracoes();
 }
 
@@ -13470,6 +13573,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       verificarVencimentoPlano();
       _armarVerificacaoDeVersao();
       _registrarAcesso(session.user);
+      atualizarSaudacaoTopo();
+      // A faixa não segura a abertura do app: carrega e se desenha sozinha.
+      carregarPrecosCamarao().then(_fitaPrecos).catch(() => {});
       if (window.innerWidth >= 900) {
         mostrarListaViveiros();
       } else {
