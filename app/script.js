@@ -1534,9 +1534,10 @@ function mostrarCadastroViveiro() {
           <input type="text" id="nomeViveiro" placeholder="Ex: Viveiro 1">
         </div>
 
-        <div class="cad-modo-toggle">
+        <div class="cad-modo-toggle cad-modo-3">
           <button type="button" class="cad-modo-btn ativo" id="cadBtnPrep" onclick="_cadModo('prep')">Em preparação</button>
           <button type="button" class="cad-modo-btn" id="cadBtnCultivo" onclick="_cadModo('cultivo')">Cultivo iniciado</button>
+          <button type="button" class="cad-modo-btn" id="cadBtnEspera" onclick="_cadModo('espera')">Esperando despesca</button>
         </div>
         <input type="hidden" id="cadModo" value="prep">
 
@@ -1574,6 +1575,18 @@ function mostrarCadastroViveiro() {
           </div>
         </div>
 
+        <div id="cad-espera" style="display:none">
+          <p class="cad-espera-nota">Para o viveiro que <b>já estava povoado</b> antes de você começar a usar o WA Aqua. Ele entra na divisão dos custos fixos — o funcionário trabalha nele —, mas não vai ter ração, biometria nem estimativa, porque esse histórico não existe. O acompanhamento completo começa no próximo ciclo.</p>
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <label>Povoado desde (aproximado)</label>
+            </div>
+            <input type="date" id="dataEspera" value="${_hojeLocal()}">
+            <p class="rc-print-dica">É a partir desta data que ele passa a dividir o custo fixo. Na dúvida, deixe hoje: aí ele divide daqui pra frente.</p>
+          </div>
+        </div>
+
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -1599,10 +1612,12 @@ function mostrarCadastroViveiro() {
 
 function _cadModo(modo) {
   document.getElementById("cadModo").value = modo;
-  document.getElementById("cadBtnPrep").classList.toggle("ativo", modo === "prep");
-  document.getElementById("cadBtnCultivo").classList.toggle("ativo", modo === "cultivo");
-  document.getElementById("cad-prep").style.display = modo === "prep" ? "block" : "none";
-  document.getElementById("cad-cultivo").style.display = modo === "cultivo" ? "block" : "none";
+  for (const [m, btn, bloco] of [["prep", "cadBtnPrep", "cad-prep"],
+                                 ["cultivo", "cadBtnCultivo", "cad-cultivo"],
+                                 ["espera", "cadBtnEspera", "cad-espera"]]) {
+    document.getElementById(btn).classList.toggle("ativo", modo === m);
+    document.getElementById(bloco).style.display = modo === m ? "block" : "none";
+  }
 }
 
 async function salvarViveiro() {
@@ -1641,6 +1656,14 @@ async function salvarViveiro() {
     const dataPrep = document.getElementById("dataPreparacao").value;
     if (!dataPrep) { mostrarErroViveiro("Informe a data de início da preparação."); return; }
     novoViveiro = { nome, tamanho, ativo: true, data_preparacao: dataPrep, data_povoamento: null, total_povoado: null, laboratorio: null };
+  } else if (modo === "espera") {
+    // Já estava povoado antes do sistema. Conta no rateio do custo fixo a
+    // partir desta data, e só: sem total povoado, sem laboratório, sem
+    // histórico pra inventar FCA e sobrevivência em cima.
+    const data = document.getElementById("dataEspera").value;
+    if (!data) { mostrarErroViveiro("Informe desde quando ele está povoado."); return; }
+    novoViveiro = { nome, tamanho, ativo: true, data_povoamento: data, total_povoado: null,
+                    laboratorio: null, data_preparacao: null, sem_historico: true };
   } else {
     const data = document.getElementById("dataPovoamento").value;
     const total = document.getElementById("totalPovoadoGestao").value.replace(/\D/g, "");
@@ -1940,8 +1963,12 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       <div class="sv-cab">
         <div class="sv-cab-txt">
           <h3>${_esc(viveiro.nome)}</h3>
-          <span class="sv-estado${emCultivoV ? "" : " sv-estado-vazio"}">
-            ${emCultivoV
+          <span class="sv-estado${(emCultivoV && !viveiro.semHistorico && !_viveiroPausadoHoje(viveiro)) ? "" : " sv-estado-vazio"}">
+            ${viveiro.semHistorico
+              ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Esperando despesca`
+              : _viveiroPausadoHoje(viveiro)
+              ? `<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Parado para reforma`
+              : emCultivoV
               ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.7 9.6"/></svg>Em cultivo`
               : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Vazio`}
           </span>
@@ -1997,7 +2024,10 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     // O conceito dizia "Consultar informações" em toda linha fechada. É texto
     // que não informa: repetido viveiro a viveiro, ocupa a linha e não diz
     // nada que a seta já não diga. No lugar vai o estado de cada um.
-    const sub = emCultivoV ? `Em cultivo · ${dias} ${dias === 1 ? "dia" : "dias"}` : "Vazio";
+    const sub = viveiro.semHistorico
+      ? `Esperando despesca · ${dias} ${dias === 1 ? "dia" : "dias"}`
+      : _viveiroPausadoHoje(viveiro) ? "Parado para reforma"
+      : emCultivoV ? `Em cultivo · ${dias} ${dias === 1 ? "dia" : "dias"}` : "Vazio";
     return `
     <button class="sv-linha" onclick="_vvAbrir(${i})" id="viveiro-card-${i}" data-vv-nome="${_esc(viveiro.nome)}">
       <span class="sv-linha-ico">${svg("agua")}</span>
@@ -2080,6 +2110,18 @@ function editarNomeViveiro(index) {
             <label>Nome do viveiro</label>
           </div>
           <input type="text" id="editNomeViveiro" value="${(v.nome || "").replace(/"/g, "&quot;")}" placeholder="Ex: Viveiro - 2">
+        </div>
+
+        <div id="cad-espera" style="display:none">
+          <p class="cad-espera-nota">Para o viveiro que <b>já estava povoado</b> antes de você começar a usar o WA Aqua. Ele entra na divisão dos custos fixos — o funcionário trabalha nele —, mas não vai ter ração, biometria nem estimativa, porque esse histórico não existe. O acompanhamento completo começa no próximo ciclo.</p>
+          <div class="campo-form">
+            <div class="campo-label">
+              <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <label>Povoado desde (aproximado)</label>
+            </div>
+            <input type="date" id="dataEspera" value="${_hojeLocal()}">
+            <p class="rc-print-dica">É a partir desta data que ele passa a dividir o custo fixo. Na dúvida, deixe hoje: aí ele divide daqui pra frente.</p>
+          </div>
         </div>
 
         <div class="campo-form">
@@ -2188,9 +2230,91 @@ async function salvarNomeViveiro(index, botao) {
   mostrarListaViveiros(_posicaoViveiro(index));
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   VIVEIRO ESPERANDO DESPESCA
+
+   O viveiro que já estava povoado quando o produtor começou a usar o sistema.
+   Ele não tem ração, biometria nem despesca lançadas, e nunca vai ter — esse
+   histórico não existe em lugar nenhum.
+
+   Por isso ele não abre a tela normal do viveiro. Aquela tela mostra doze
+   números: FCA, sobrevivência estimada, biomassa, custo por quilo. Com zero
+   lançamento por trás, todos saem "--" ou, pior, saem com um número calculado
+   em cima de nada. Uma tela que mente é pior que uma tela curta.
+
+   O que ele tem de verdade é uma coisa só: a parte dele no custo fixo. O
+   funcionário trabalha nele todo dia, e isso é dinheiro real. É isso que esta
+   tela mostra.
+
+   Pra ENCERRAR ele usa o mesmo fluxo de sempre (abrirEncerrarCiclo), e não um
+   atalho que só limpasse as datas. O motivo é o de sempre nesta parte do
+   sistema: o rateio é recalculado do zero, dia a dia. Limpar a data de
+   povoamento tiraria o viveiro do divisor em TODOS os dias passados, e o
+   custo fixo dos outros viveiros subiria sozinho, retroativo. Encerrando, o
+   período vira um ciclo finalizado e cada dia do passado continua sabendo que
+   ele estava lá.
+   ─────────────────────────────────────────────────────────────────────────── */
+function mostrarViveiroEsperandoDespesca(index) {
+  const viveiro = viveiros[index];
+  const area = document.getElementById("area-gestao");
+  const desde = viveiro.dataPovoamento;
+  const dias = desde ? calcularDiasCultivo(desde) : 0;
+  const rateio = _custoFixoRateado(desde, _hojeLocal(), viveiro);
+  const itens = _custoFixoRateadoPorItem(desde, _hojeLocal(), viveiro);
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="ed-cab">
+        <div class="ed-cab-ico">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        </div>
+        <div class="ed-cab-txt">
+          <h2>${_esc(viveiro.nome)}</h2>
+          <span>Esperando despesca${dias ? ` · ${dias} ${dias === 1 ? "dia" : "dias"}` : ""}</span>
+        </div>
+      </div>
+
+      <p class="ed-nota">Este viveiro já estava povoado quando você começou a usar o WA Aqua, então ele não tem ração, biometria nem estimativas — esse histórico não existe. O que ele tem é a parte dele no custo fixo, porque o funcionário trabalha nele todo dia.</p>
+
+      <div class="cx-topo">
+        <span class="cx-topo-lbl">Custos rateados</span>
+        <span class="cx-topo-val">R$ ${formatarNumeroBR(rateio, 2)}</span>
+      </div>
+
+      ${itens.length ? `<div class="cx-cartao cx-geral">${itens.map(it => `
+        <div class="cx-linha">
+          ${(() => { const k = _cxCategoriaChave({ categoria: it.categoria, nomeProduto: it.nome });
+             return `<div class="cx-ico cx-ico-${k}"><svg viewBox="0 0 24 24">${_CX_ICONES[k]}</svg></div>`; })()}
+          <div class="cx-texto">
+            <span class="cx-nome">${_esc(it.nome)}</span>
+            <span class="cx-sub">${_esc(it.categoria)}</span>
+          </div>
+          <span class="cx-valor">R$ ${formatarNumeroBR(it.valor, 2)}</span>
+          <span class="cx-auto">auto</span>
+        </div>`).join("")}</div>`
+        : `<p class="ed-sem-custo">Nenhum custo fixo cadastrado ainda. Quando você cadastrar o funcionário em Financeiro, a parte deste viveiro aparece aqui.</p>`}
+
+      <button class="botao-salvar" onclick="abrirEncerrarCiclo(${index})" style="margin-top:14px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Encerrar ciclo
+      </button>
+      <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})" style="margin-top:8px">Lançar custo neste viveiro</button>
+      <button class="botao-voltar-form" onclick="mostrarListaViveiros(posicaoNaLista(${index}))" style="margin-top:8px">Voltar</button>
+    </div>
+  `;
+}
+
 function abrirViveiro(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
+
+  // Esperando despesca: tela curta, com o que ele tem de verdade. A tela
+  // normal mostraria FCA, sobrevivência e biomassa calculados em cima de zero
+  // lançamento — e uma tela que mente é pior que uma tela curta.
+  if (viveiro.semHistorico) {
+    mostrarViveiroEsperandoDespesca(index);
+    return;
+  }
 
   // Se o viveiro não tem ciclo ativo, mostra tela de novo ciclo
   if (!viveiro.dataPovoamento) {
@@ -10182,6 +10306,17 @@ async function salvarEncerramentoCiclo(index) {
   viveiro.totalPovoado = null;
   viveiro.laboratorio = null;
   viveiro.dataPreparacao = dataEncerramento;
+  // Despescou: o "esperando despesca" acabou. Daqui pra frente este viveiro é
+  // um viveiro normal, com histórico desde o próximo povoamento. A RPC
+  // encerrar_ciclo não conhece esta coluna, então a limpeza vem num update à
+  // parte — se ele falhar, o ciclo já está encerrado do mesmo jeito e o pior
+  // que acontece é a tela curta aparecer de novo até o próximo carregamento.
+  if (viveiro.semHistorico) {
+    viveiro.semHistorico = false;
+    supabaseClient.from("viveiros").update({ sem_historico: false })
+      .eq("id", viveiro.id).eq("user_id", usuario.id)
+      .then(({ error }) => { if (error) console.log("limpar sem_historico:", error); });
+  }
   // Adota o id de preparação que a RPC confirma ter gravado. Numa repetição
   // após resposta perdida, o banco pode ter guardado o id da PRIMEIRA tentativa;
   // usar o id local (gerado de novo agora) desalinharia o viveiro e faria custos
