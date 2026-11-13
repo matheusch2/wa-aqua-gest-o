@@ -270,6 +270,13 @@
                 Lançar ração
             </button>
 
+            <!-- Aviso de boletos: logo abaixo da ação do dia, não no rodapé.
+                 Caía no #area-gestao, que nesta tela vem DEPOIS de tudo, e um
+                 aviso de dinheiro vencido terminava no fim da página, onde
+                 ninguém rola. Aqui ele é a segunda coisa que o produtor vê.
+                 É só a âncora; quem preenche é verificarBoletosVencendo(). -->
+            <div id="aviso-boletos"></div>
+
             <div class="hm-lbl">Atalhos</div>
             <div class="hm-grade">
                 <button class="hm-btn" onclick="mostrarListaViveiros()">
@@ -318,14 +325,6 @@
                 </button>
             </div>
 
-            <!-- Aviso de boletos, no PÉ da tela. Tentei subir ele pra logo
-                 abaixo da ação do dia e ficou feio: um bloco colorido
-                 empurrando os cartões pra baixo, sem botão de fechar, todo dia
-                 na cara de quem só quer lançar ração. No pé ele é o fecho da
-                 página — quem rola até o fim está justamente olhando o que tem
-                 pra resolver.
-                 É só a âncora; quem preenche é verificarBoletosVencendo(). -->
-            <div id="aviso-boletos"></div>
         </div>
 
         <div id="menuGestao" class="botoes-gestao">
@@ -384,7 +383,7 @@
 
     </div>
 
-    <script src="script.js?v=20261113k"></script>
+    <script src="script.js?v=20261113l"></script>
 
 </body>
 </html>
