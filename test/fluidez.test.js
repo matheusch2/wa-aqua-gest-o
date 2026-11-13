@@ -357,3 +357,58 @@ test("lançamento: nenhum formulário traz aviso de sucesso embutido",()=>{
     "o aviso voltou a ser embutido — ele empurra o botão de salvar");
   assert.equal(html.includes("msg-racao-sucesso"), false);
 });
+
+// ── Painel "Sua fazenda hoje" ───────────────────────────────────────────────
+// Número errado na tela inicial ninguém desconfia: não tem com o que comparar
+// ali. Por isso a conta é separada do desenho e testada aqui.
+function fazendaDeTeste() {
+  // Dois viveiros bem diferentes de tamanho, pra média ponderada aparecer.
+  return [
+    { id: 'g', nome: 'Grande', dataPovoamento: '2026-08-01', dataPreparacao: '2026-07-25',
+      totalPovoado: 200000, cicloId: 'cg', custos: [{ id: 'c1', data: '2026-09-01', valor: 5000, cicloId: 'cg' }],
+      biometrias: [{ data: '2026-10-01', gramatura: 10 }],
+      racoes: [{ data: '2026-11-01', racao: 36 }] },
+    { id: 'p', nome: 'Pequeno', dataPovoamento: '2026-09-01', dataPreparacao: '2026-08-25',
+      totalPovoado: 20000, cicloId: 'cp', custos: [{ id: 'c2', data: '2026-09-10', valor: 500, cicloId: 'cp' }],
+      biometrias: [{ data: '2026-10-20', gramatura: 5 }],
+      racoes: [{ data: '2026-11-13', racao: 5.5 }] },
+    { id: 'v', nome: 'Vazio', dataPreparacao: '2026-11-01', custos: [], biometrias: [], racoes: [] },
+  ];
+}
+
+test("painel: conta só os viveiros em cultivo",()=>{
+  const a=load();
+  a.run(`__f = (${fazendaDeTeste.toString()})(); __r = _resumoFazenda(__f, '2026-11-13');`);
+  assert.equal(a.run('__r.emCultivo'), 2);          // o "Vazio" ficou de fora
+});
+test("painel: peso médio é ponderado pela biomassa, não média simples",()=>{
+  const a=load();
+  a.run(`__f = (${fazendaDeTeste.toString()})(); __r = _resumoFazenda(__f, '2026-11-13');`);
+  const medio = a.run('__r.pesoMedio');
+  // Média simples de 10 g e 5 g daria 7,5. Ponderada tem que puxar pro grande.
+  assert.ok(medio > 9, `esperava perto de 10, veio ${medio} (parece média simples)`);
+  assert.ok(medio <= 10, `não pode passar do maior peso: ${medio}`);
+});
+test("painel: soma o investido de todos os ciclos abertos",()=>{
+  const a=load();
+  a.run(`__f = (${fazendaDeTeste.toString()})(); __r = _resumoFazenda(__f, '2026-11-13');`);
+  assert.ok(a.run('__r.investido') >= 5500, 'tinha que somar os 5.000 + 500 lançados');
+});
+test("painel: conta quantos estão sem ração HOJE",()=>{
+  const a=load();
+  // só o "Pequeno" tem ração de 13/11
+  a.run(`__f = (${fazendaDeTeste.toString()})(); __r = _resumoFazenda(__f, '2026-11-13');`);
+  assert.equal(a.run('__r.semRacao'), 1);
+  // noutro dia, os dois estão sem
+  a.run(`__r2 = _resumoFazenda(__f, '2026-11-14');`);
+  assert.equal(a.run('__r2.semRacao'), 2);
+});
+test("painel: fazenda vazia devolve zeros, sem quebrar",()=>{
+  const a=load();
+  for (const lista of ['[]', 'null', '[{}]', '[{dataPovoamento:null}]']) {
+    a.run(`__r = _resumoFazenda(${lista}, '2026-11-13');`);
+    assert.equal(a.run('__r.emCultivo'), 0, lista);
+    assert.equal(a.run('__r.biomassa'), 0, lista);
+    assert.equal(a.run('__r.pesoMedio'), 0, lista);
+  }
+});

@@ -1166,8 +1166,107 @@ function posicaoNaLista(index) {
   return Math.max(0, ordenados.findIndex(v => v.id === viveiros[index].id));
 }
 
+/*
+ * Mostra ou esconde a tela inicial do celular.
+ *
+ * São dois elementos, de propósito: #home-mobile é a casa do celular, e
+ * #menuGestao é a MESMA lista que no computador vira a barra lateral de 220px
+ * (ver 90-desktop.css). Por isso o celular esconde o menu e mostra a home, e o
+ * computador faz o contrário. Um helper só, para os três pontos que
+ * alternavam isso não saírem de sincronia.
+ */
+function _mostrarHomeCelular(mostrar) {
+  const menu = document.getElementById("menuGestao");
+  const home = document.getElementById("home-mobile");
+  const desktop = window.innerWidth >= 900;
+  if (menu) menu.style.display = mostrar && desktop ? "grid" : (mostrar ? "none" : "none");
+  if (home) home.classList.toggle("ativo", !!mostrar && !desktop);
+  if (mostrar && !desktop) _painelFazenda();
+}
+
+/*
+ * Painel "Sua fazenda hoje", na tela inicial do celular.
+ *
+ * SOMA, não lista: são sempre quatro números, tenha o produtor 3 viveiros ou
+ * 30. Uma versão anterior listava viveiro por viveiro e ficava impraticável
+ * em fazenda grande.
+ *
+ * Os números saem das MESMAS funções que as telas de dentro usam
+ * (_calcularBiomassa, _consumoUltimoDia, _custosCicloAtivo). Se divergissem, a
+ * tela inicial e a do viveiro mostrariam contas diferentes para o mesmo
+ * cultivo, e o produtor não saberia em qual acreditar.
+ *
+ * O cálculo é separado do desenho (_resumoFazenda) porque número errado aqui
+ * ninguém desconfia — e separado dá para testar.
+ */
+function _resumoFazenda(lista, hojeYmd) {
+  const r = { emCultivo: 0, semRacao: 0, biomassa: 0, investido: 0, pesoMedio: 0 };
+  let pesoPonderado = 0;
+  (lista || []).forEach((v) => {
+    if (!v || !v.dataPovoamento) return;
+    r.emCultivo++;
+    if (!(v.racoes || []).some(x => String(x.data).substring(0, 10) === hojeYmd)) r.semRacao++;
+
+    const bios = (v.biometrias || []).slice()
+      .sort((a, b) => String(a.data).localeCompare(String(b.data)));
+    const ultBio = bios.length ? Number(bios[bios.length - 1].gramatura) : 0;
+    const racoes = (v.racoes || []).slice()
+      .sort((a, b) => String(a.data).localeCompare(String(b.data)));
+    const consumo = _consumoUltimoDia(racoes);
+    if (ultBio > 0 && consumo && consumo.total > 0 && Number(v.totalPovoado) > 0) {
+      const b = _calcularBiomassa(Number(v.totalPovoado), consumo.total, ultBio);
+      if (b && b.biomassa > 0) { r.biomassa += b.biomassa; pesoPonderado += ultBio * b.biomassa; }
+    }
+    // Pelo ciclo aberto, com a mesma função do card "Custo parcial".
+    const cc = _custosCicloAtivo(v, v.cicloId, v.dataPreparacao || v.dataPovoamento, hojeYmd);
+    r.investido += cc.total;
+  });
+  // Média PONDERADA pela biomassa: na simples, um viveirinho pequeno puxava o
+  // número da fazenda inteira.
+  r.pesoMedio = r.biomassa > 0 ? pesoPonderado / r.biomassa : 0;
+  return r;
+}
+
+function _painelFazenda() {
+  const alvo = document.getElementById("painel-fazenda");
+  if (!alvo) return;
+  const hoje = _hojeLocal();
+  const r = _resumoFazenda(viveiros, hoje);
+
+  // Sem viveiro em cultivo não há o que resumir: painel zerado não informa,
+  // só ocupa a tela do cliente novo.
+  if (r.emCultivo === 0) { alvo.innerHTML = ""; return; }
+
+  const reais = (n) => n >= 1000
+    ? "R$ " + formatarNumeroBR(n / 1000, 1) + " mil"
+    : "R$ " + formatarNumeroBR(n, 0);
+
+  alvo.innerHTML = `
+    <div class="hm-painel">
+      <div class="hm-painel-topo">
+        <span class="hm-painel-titulo">Sua fazenda hoje</span>
+        <span class="hm-painel-data">${formatarData(hoje)}</span>
+      </div>
+      <div class="hm-heroi">
+        <small>Biomassa estimada</small>
+        <b>${formatarNumeroBR(r.biomassa, 0)}<i>kg</i></b>
+      </div>
+      <div class="hm-risco"></div>
+      <div class="hm-nums">
+        <div class="hm-num"><small>Em cultivo</small><b>${r.emCultivo}<i>viv.</i></b></div>
+        <div class="hm-num"><small>Peso médio</small><b>${formatarNumeroBR(r.pesoMedio, 1)}<i>g</i></b></div>
+        <div class="hm-num"><small>Investido</small><b>${reais(r.investido)}</b></div>
+      </div>
+      ${r.semRacao > 0 ? `<div class="hm-alerta">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        ${r.semRacao} viveiro${r.semRacao !== 1 ? "s" : ""} sem ração lançada hoje
+      </div>` : ""}
+    </div>`;
+}
+
 function esconderMenu() {
   document.getElementById("menuGestao").style.display = "none";
+  document.getElementById("home-mobile")?.classList.remove("ativo");
   _armarVoltarNavegador();
   _toggleVoltarTopo(true);
 }
@@ -1215,7 +1314,7 @@ function voltarMenuGestao() {
     mostrarListaViveiros();
     return;
   }
-  document.getElementById("menuGestao").style.display = "grid";
+  _mostrarHomeCelular(true);
   limparAreaGestao();
   verificarBoletosVencendo();
   verificarVencimentoPlano();
@@ -13375,7 +13474,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         mostrarListaViveiros();
       } else {
         document.getElementById("area-gestao").innerHTML = "";
-        document.getElementById("menuGestao").style.display = "grid";
+        _mostrarHomeCelular(true);
         _mostrarBannerLeitura();
       }
       _talvezPedirContato();
