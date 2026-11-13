@@ -97,24 +97,15 @@ html:not(.natal) .wa-luzes { display: none; }
 /* ---------------------------------------------------------------------------
    Onde o gorro não cabe
 
-   Dois lugares apertam, por motivos diferentes, e nos dois a saída é a mesma:
-   dar folga em cima. Encolher o gorro não serve — ele tem que cobrir o logo
-   inteiro, que é o ponto do desenho.
+   Sobrou só a tela de ENTRADA. A barra de cima do app não tem mais logo: ela
+   virou foto do produtor + nome, e a logo do WA saiu dali. Sem logo, não há
+   onde pendurar o gorro — as regras do .topo foram embora junto.
 
-   .topo   — a barra encosta no topo da tela do aparelho, e o pompom era
-             cortado pela borda.
-   .login-wrapper — tem overflow:hidden pra segurar o camarão de marca d'água
-             no canto (ver .login-wrapper::after no 01-base-e-painel.css).
-             Liberar o overflow soltaria o camarão; então é folga mesmo.
-
-   As contas: o gorro sobe 57% da altura da caixa da logo. Na barra isso dá
-   ~37px sobre 65px de logo, e na entrada ~42px sobre 74px. A folga abaixo
-   cobre os dois com uma sobra pequena.
+   .login-wrapper tem overflow:hidden pra segurar o camarão de marca d'água
+   (ver .login-wrapper::after no 01-base-e-painel.css). Liberar o overflow
+   soltaria o camarão; então é folga mesmo. O gorro sobe 57% da altura da
+   caixa da logo, ~42px sobre os 74px da entrada.
    --------------------------------------------------------------------------- */
-/* 34px, não 44px: o cabeçalho encolheu e a logo caiu de 65 para 48px, então o
-   gorro, que é dimensionado em % dela, subiu menos. Medido no navegador: com
-   44px sobrava um vão; com 34px o pompom fica inteiro, rente à borda. */
-html.natal .topo { padding-top: calc(34px + env(safe-area-inset-top, 0px)); }
 html.natal .login-wrapper { padding-top: 58px; }
 
 /* O defs do SVG mora uma vez só na página, invisível, e todos os gorros

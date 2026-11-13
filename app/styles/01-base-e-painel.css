@@ -71,7 +71,35 @@ body {
     flex-shrink: 0;
 }
 
+/* ── Perfil: a foto da fazenda é o botão de configurações ────────────────────
+   Fica à ESQUERDA, no lugar onde antes ficava a logo do app. O círculo da
+   direita com a engrenagem saiu: fazia a mesma coisa. */
+.topo-perfil {
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,.32);
+    background: rgba(255,255,255,.16);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; overflow: hidden;
+    transition: transform .12s ease, background-color .12s ease;
+}
+.topo-perfil:active { transform: scale(.94); background: rgba(255,255,255,.26); }
+.topo-perfil img { width: 100%; height: 100%; object-fit: cover; }
+.topo-perfil .topo-svg { width: 22px; height: 22px; }
+.topo-perfil-iniciais { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: .02em; }
+
 .topo-texto { min-width: 0; }
+
+/* Nome da fazenda, embaixo da saudação. Uma linha só: nome comprido quebrava
+   a barra em duas e o perfil subia junto. */
+.topo-texto p {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: rgba(214,247,241,.72);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 /* Uma linha só. Nome comprido ("Olá, Sebastião") quebrava em duas, engordava a
    barra e o avatar vinha parar em cima da faixa de preços. */

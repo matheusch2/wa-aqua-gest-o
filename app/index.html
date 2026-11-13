@@ -55,7 +55,7 @@
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
     <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
-    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261113c">
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261113d">
     <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20261113a">
     <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20261026a">
     <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261028a">
@@ -69,9 +69,9 @@
 
     <!-- Enfeite de dezembro. O CSS vem o ano inteiro e não pinta nada fora do
          mês; quem liga é o natal.js, pelo relógio do aparelho. -->
-    <link rel="stylesheet" href="styles/91-natal.css?v=20261113c">
+    <link rel="stylesheet" href="styles/91-natal.css?v=20261113d">
     <link rel="stylesheet" href="styles/92-home.css?v=20261113b">
-    <script defer src="natal.js?v=20261031f"></script>
+    <script defer src="natal.js?v=20261113d"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -223,42 +223,28 @@
                 <button id="btn-voltar-topo" class="topo-voltar" style="display:none" title="Voltar" aria-label="Voltar" onclick="event.stopPropagation(); irParaTelaAnterior()">
                     <svg viewBox="0 0 24 24" class="topo-svg"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
-                <!-- Logo servida do próprio site. Antes vinha de um hospedeiro
-                     de imagens grátis (postimg): se ele cai, apaga o arquivo ou
-                     bloqueia link externo, a logo do produto some do app. -->
-                <div class="logo-circulo">
-                  <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua" class="logo-img">
-                </div>
-                <div class="topo-divisor"></div>
-                <!-- Saudação no lugar de "WA AQUA GESTÃO / Gestão inteligente do
-                     seu cultivo": a frase era propaganda para quem já é cliente,
-                     já pagou e já está logado. O nome entra pelo
-                     atualizarSaudacaoTopo(); a logo ao lado continua dizendo em
-                     que app a pessoa está. -->
+
+                <!-- A foto da fazenda (ou as iniciais) É o botão de configurações.
+                     Antes havia um segundo círculo com engrenagem do lado direito
+                     fazendo a mesma coisa; dois lugares para a mesma função é um
+                     a mais. O stopPropagation existe porque a faixa inteira leva
+                     para a tela inicial — sem ele, tocar na foto fazia as duas
+                     coisas e a de configurações perdia. -->
+                <button id="avatar-topo" class="topo-perfil" title="Configurações"
+                        onclick="event.stopPropagation(); abrirConfiguracoes()">
+                    <svg viewBox="0 0 24 24" class="topo-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </button>
+
+                <!-- Quem é a pessoa, e de qual fazenda. Os dois campos já existem
+                     em Configurações > Fazenda: "nome" guarda a FAZENDA e
+                     "proprietario" a pessoa. Preenchidos por
+                     atualizarSaudacaoTopo(). -->
                 <div class="topo-texto">
                     <h1 id="topo-saudacao">Olá</h1>
+                    <p id="topo-fazenda"></p>
                 </div>
             </div>
-            <div class="topo-direita">
-                <div class="topo-usuario-wrap">
-                    <button class="topo-icone topo-usuario-btn" onclick="abrirConfiguracoes()" title="Configurações">
-                        <div id="avatar-topo" class="avatar-topo-circle">
-                            <svg viewBox="0 0 24 24" class="topo-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <svg viewBox="0 0 24 24" class="topo-svg topo-chevron"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    </button>
-                </div>
-            </div>
-
         </div>
-
-        <!-- Faixa de preços do camarão, publicada pelo administrador. Fica
-             IRMÃ do .topo-conteudo, não dentro dele: aquele é flex, e lá
-             dentro a faixa virava mais uma coluna, grudada no avatar.
-             Preenchida por _fitaPrecos(); fica vazia quando não há tabela ou
-             quando ela está velha — preço desatualizado é pior que preço
-             nenhum. -->
-        <div id="fita-precos"></div>
     </div>
 
     <div id="card-gestao" class="card">
@@ -379,7 +365,7 @@
 
     </div>
 
-    <script src="script.js?v=20261113c"></script>
+    <script src="script.js?v=20261113d"></script>
 
 </body>
 </html>

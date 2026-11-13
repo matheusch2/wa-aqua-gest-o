@@ -340,14 +340,12 @@ function _fmtDataISO(iso) {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
-/*
- * "Olá, Fulano" no lugar de "WA AQUA GESTÃO / Gestão inteligente do seu
- * cultivo". A frase era propaganda para quem já é cliente, já pagou e já está
- * logado — ocupava um quarto da tela sem dizer nada.
- *
- * Só o primeiro nome: "Olá, José Carlos da Silva Neto" estoura a linha num
- * celular estreito e empurra o avatar.
- */
+/* DESLIGADA POR ORA — o acesso à tabela de preços está com os sócios e ainda
+   não chegou. Este bloco, o banco/precos-camarao.sql e a tela do painel ADM
+   continuam prontos; para religar, descomente a chamada na abertura do app e
+   devolva o <div id="fita-precos"> ao cabeçalho. Guardado inteiro de
+   propósito: refazer depois custaria o mesmo trabalho de novo. */
+
 /* ═══════════════════════════════════════════════════════════════════════════
    FAIXA DE PREÇOS DO CAMARÃO
 
@@ -432,29 +430,53 @@ function _fitaPrecos() {
   alvo.innerHTML = `<div class="fp-fita"><div class="fp-trilho">${corpo}${corpo}</div></div>`;
 }
 
+/*
+ * Cabeçalho: quem é a pessoa, e de qual fazenda.
+ *
+ * Os dois campos já existiam em Configurações > Fazenda, e eu tinha usado o
+ * errado: "nome" guarda a FAZENDA e "proprietario" guarda a pessoa. Saudar
+ * pelo "nome" dava "Olá, Fazenda Santa Luzia".
+ *
+ * Só o primeiro nome na saudação: "Olá, José Carlos da Silva Neto" estoura a
+ * linha num celular estreito.
+ */
 async function atualizarSaudacaoTopo() {
-  const alvo = document.getElementById("topo-saudacao");
-  if (!alvo) return;
+  const elOla = document.getElementById("topo-saudacao");
+  const elFaz = document.getElementById("topo-fazenda");
+  if (!elOla) return;
   const { data: { user } } = await supabaseClient.auth.getUser();
-  const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "";
-  const primeiro = String(nome).trim().split(/\s+/)[0] || "";
-  // textContent já escapa — nome é texto do cliente.
-  alvo.textContent = primeiro ? `Olá, ${primeiro}` : "Olá";
+  const fazenda = user?.user_metadata?.nome || "";
+  const dono = user?.user_metadata?.proprietario || "";
+  const primeiro = String(dono).trim().split(/\s+/)[0] || "";
+
+  // textContent já escapa — os dois são texto do cliente.
+  elOla.textContent = primeiro ? `Olá, ${primeiro}` : "Olá";
+  if (elFaz) {
+    elFaz.textContent = fazenda;
+    // Sem fazenda cadastrada a linha some, em vez de abrir um vão vazio.
+    elFaz.style.display = fazenda ? "" : "none";
+  }
 }
 
+/*
+ * A foto da fazenda (ou as iniciais) é o botão de configurações, à esquerda.
+ * Antes havia um segundo círculo com engrenagem do lado direito fazendo a
+ * mesma coisa — dois lugares para a mesma função é um a mais.
+ */
 async function atualizarAvatarTopo() {
+  const alvo = document.getElementById("avatar-topo");
+  if (!alvo) return;
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return;
   const fotoUrl = user.user_metadata?.avatar_url;
-  const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "?";
-  const avatarTopo = document.getElementById("avatar-topo");
-  if (!avatarTopo) return;
   if (fotoUrl) {
-    avatarTopo.innerHTML = `<img src="${_attr(fotoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  } else {
-    const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-    avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${_esc(ini)}</span>`;
+    alvo.innerHTML = `<img src="${_attr(fotoUrl)}" alt="">`;
+    return;
   }
+  // Iniciais do PROPRIETÁRIO; sem ele, as da fazenda; sem as duas, o e-mail.
+  const base = user.user_metadata?.proprietario || user.user_metadata?.nome || user.email || "?";
+  const ini = String(base).split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+  alvo.innerHTML = `<span class="topo-perfil-iniciais">${_esc(ini)}</span>`;
 }
 
 // ─── Hub de Configurações ──────────────────────────────────────────────────
@@ -13574,8 +13596,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       _armarVerificacaoDeVersao();
       _registrarAcesso(session.user);
       atualizarSaudacaoTopo();
-      // A faixa não segura a abertura do app: carrega e se desenha sozinha.
-      carregarPrecosCamarao().then(_fitaPrecos).catch(() => {});
+      // FAIXA DE PREÇOS DESLIGADA: o acesso à tabela de preços está com os
+      // sócios e ainda não chegou. O código, o SQL e a tela do ADM continuam
+      // prontos — para religar, basta descomentar a linha abaixo e pôr o
+      // <div id="fita-precos"> de volta no cabeçalho.
+      // carregarPrecosCamarao().then(_fitaPrecos).catch(() => {});
       if (window.innerWidth >= 900) {
         mostrarListaViveiros();
       } else {
