@@ -1714,6 +1714,8 @@ async function salvarViveiro() {
     cicloId: it.ciclo_id || null,
     racoes: [], biometrias: [], despescas: [], ciclosFinalizados: [], custos: [],
     protocolos: Array.isArray(it.protocolos) ? it.protocolos : [],
+    pausas: Array.isArray(it.pausas) ? it.pausas : [],
+    semHistorico: !!it.sem_historico,
   });
   viveiros.sort(_compararViveirosPorNome);
 
@@ -10078,7 +10080,7 @@ async function salvarEncerramentoCiclo(index) {
     producao_total: producaoTotal,
     peso_final: pesoFinal,
     racao_consumida: racaoConsumida,
-    custo_fixo_rateado: _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, dataEncerramento),
+    custo_fixo_rateado: _custoFixoRateado(viveiro.dataPreparacao || viveiro.dataPovoamento, dataEncerramento, viveiro),
     fca: fca,
     sobrevivencia: sobrevivencia,
     observacoes: observacoes,
@@ -10197,6 +10199,95 @@ async function salvarEncerramentoCiclo(index) {
   mostrarRelatorioCiclo(index, cicloFinalizado, "viveiro");
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   PARAR E RETOMAR UM VIVEIRO (reforma)
+
+   Só vale para viveiro em PREPARAÇÃO. Viveiro em cultivo não se pausa: tem
+   camarão dentro, o funcionário continua indo lá todo dia, e tirá-lo do rateio
+   seria mentir. Viveiro vazio já não entra no rateio, então não há o que
+   parar.
+
+   Guardado como período, nunca como interruptor — ver _viveiroPausadoEm.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+// Dia em que a pausa em aberto começou (ou null se não há).
+function _pausaAbertaDe(v) {
+  const ps = (v && v.pausas) || [];
+  for (let i = ps.length - 1; i >= 0; i--) {
+    if (ps[i] && ps[i].de && !ps[i].ate) return ps[i].de;
+  }
+  return null;
+}
+
+// Dias de preparação DESCONTANDO o que ficou parado. Sem isto, um viveiro
+// parado há dois meses apareceria como "90 dias em preparação" — número que
+// não quer dizer nada e assusta quem olha.
+function _diasEmPreparacao(v) {
+  if (!v || !v.dataPreparacao) return 0;
+  const hoje = _hojeLocal();
+  let dias = 0, cur = v.dataPreparacao, guard = 0;
+  while (cur <= hoje && guard < 5000) {
+    if (!_viveiroPausadoEm(v, cur)) dias++;
+    cur = _maAddDias(cur, 1);
+    guard++;
+  }
+  return dias;
+}
+
+async function _gravarPausas(index, pausas) {
+  const v = viveiros[index];
+  const usuario = await pegarUsuarioLogado();
+  if (!usuario) return false;
+  const { error } = await supabaseClient.from("viveiros")
+    .update({ pausas })
+    .eq("id", v.id).eq("user_id", usuario.id);
+  if (error) {
+    console.log(error);
+    _toastErro("Erro ao salvar. Tente de novo.");
+    return false;
+  }
+  v.pausas = pausas;
+  return true;
+}
+
+// Abre e fecha o painel de confirmação, no mesmo padrão do resto do app
+// (ver confirmarExcluirViveiro e _maConfirmDesfazer).
+function _confirmarPausa(index) {
+  const painel = document.getElementById(`prep-confirm-pausa-${index}`);
+  if (painel) painel.style.display = painel.style.display === "none" ? "block" : "none";
+}
+
+async function _pausarViveiro(index) {
+  const v = viveiros[index];
+  if (_bloqueioViveiro(index)) return;
+  const pausas = [...(v.pausas || []), { de: _hojeLocal(), ate: null }];
+  if (await _gravarPausas(index, pausas)) {
+    _toastSucesso(`${v.nome} parado para reforma.`);
+    mostrarViveiroSemCiclo(index);
+  }
+}
+
+async function _retomarViveiro(index) {
+  const v = viveiros[index];
+  if (_bloqueioViveiro(index)) return;
+  // Fecha a pausa em aberto ONTEM, não hoje: hoje o viveiro já voltou a
+  // trabalhar, então hoje já conta pro rateio.
+  //
+  // E se ela começou HOJE, some com ela: parar e retomar no mesmo dia é uma
+  // pausa de zero dia, ou seja, não houve pausa. Fechando-a em si mesma o dia
+  // de hoje ficava marcado como parado e a tela continuava dizendo "parado
+  // para reforma" depois de retomar.
+  const hoje = _hojeLocal();
+  const ontem = _maAddDias(hoje, -1);
+  const pausas = (v.pausas || [])
+    .filter(p => !(p && p.de && !p.ate && p.de >= hoje))
+    .map(p => (p && p.de && !p.ate) ? { de: p.de, ate: ontem } : p);
+  if (await _gravarPausas(index, pausas)) {
+    _toastSucesso(`${v.nome} voltou para a preparação.`);
+    mostrarViveiroSemCiclo(index);
+  }
+}
+
 function mostrarViveiroSemCiclo(index) {
   const viveiro = viveiros[index];
   const area = document.getElementById("area-gestao");
@@ -10211,10 +10302,21 @@ function mostrarViveiroSemCiclo(index) {
         <span class="form-caption">${viveiro.tamanho ? _fmtHa(viveiro.tamanho) + " ha" : ""}</span>
         <h2 class="form-titulo">${_esc(viveiro.nome)}</h2>
       </div>
-      ${viveiro.dataPreparacao ? `
+      ${viveiro.dataPreparacao ? (_viveiroPausadoHoje(viveiro) ? `
+      <div class="prep-status prep-status-pausado">
+        <div class="prep-status-ico"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></div>
+        <span class="prep-status-txt"><strong>Parado</strong> para reforma</span>
+        <small class="prep-status-desde">desde ${formatarData(_pausaAbertaDe(viveiro))}</small>
+      </div>
+      <p class="prep-pausa-nota">Enquanto estiver parado, este viveiro não entra na divisão dos custos fixos — nem recebe, nem divide com os outros.</p>
+      <button class="botao-salvar" onclick="_executarSalvamento(this, () => _retomarViveiro(${index}))" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        Retomar preparação
+      </button>
+      ` : `
       <div class="prep-status">
         <div class="prep-status-ico"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg></div>
-        <span class="prep-status-txt"><strong>${calcularDiasCultivo(viveiro.dataPreparacao)} dias</strong> em preparação</span>
+        <span class="prep-status-txt"><strong>${_diasEmPreparacao(viveiro)} dias</strong> em preparação</span>
         <small class="prep-status-desde">desde ${formatarData(viveiro.dataPreparacao)}</small>
       </div>
 
@@ -10230,7 +10332,18 @@ function mostrarViveiroSemCiclo(index) {
         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:rgb(6,107,99);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Ver custo de preparação
       </button>
-      ` : `
+      <button class="botao-voltar-form prep-btn-pausar" onclick="_confirmarPausa(${index})" style="margin-top:8px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:5px"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        Parar para reforma
+      </button>
+      <div id="prep-confirm-pausa-${index}" class="prep-confirm-pausa" style="display:none">
+        <span>Enquanto estiver parado, este viveiro <b>não entra na divisão dos custos fixos</b> — nem recebe a parte dele, nem divide com os outros. Os dias parados também não contam como preparação.</span>
+        <div class="prep-confirm-btns">
+          <button class="prep-confirm-nao" onclick="_confirmarPausa(${index})">Cancelar</button>
+          <button class="prep-confirm-sim" onclick="_executarSalvamento(this, () => _pausarViveiro(${index}))">Parar</button>
+        </div>
+      </div>
+      `) : `
       <div class="viveiro-sem-ciclo-msg">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span>Nenhum ciclo ativo. Inicie um novo ciclo para começar os lançamentos.</span>
@@ -10629,7 +10742,7 @@ function gerarRelatorioImpressao() {
   );
   const custoFixoRateado = (ciclo.custoFixoRateado != null && !isNaN(Number(ciclo.custoFixoRateado)))
     ? Number(ciclo.custoFixoRateado)
-    : _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento);
+    : _custoFixoRateado(ciclo.dataPreparacao || ciclo.dataPovoamento, ciclo.dataEncerramento, viveiros[index]);
   const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFixoRateado;
 
   // Agrupa por nome normalizado: sem isso, "Análise de água" e "Analise de
@@ -10922,10 +11035,40 @@ function _custoFixoDiaTotalNaData(ymd) {
   return _custoFixoMensalNaData(ymd) / _diasNoMes(ymd);
 }
 
+/*
+ * PAUSA DE VIVEIRO (reforma)
+ *
+ * Guardado como PERÍODOS, não como um interruptor, e a diferença não é
+ * preciosismo: o rateio do custo fixo não é gravado em lugar nenhum — ele é
+ * recalculado do zero, dia a dia, toda vez que alguém abre a tela. Com um
+ * campo "pausado: sim", pausar hoje apagaria o viveiro de TODOS os dias
+ * anteriores, e o custo de ciclos já encerrados (já impressos, já mostrados ao
+ * cliente) mudaria sozinho. Com [{de, ate}], cada dia do passado continua
+ * sabendo se o viveiro estava parado NAQUELE dia.
+ *
+ * "ate" nulo = pausa em aberto, vale até hoje.
+ */
+function _viveiroPausadoEm(v, ymd) {
+  const ps = (v && v.pausas) || [];
+  for (const p of ps) {
+    if (!p || !p.de || p.de > ymd) continue;
+    if (!p.ate || ymd <= p.ate) return true;
+  }
+  return false;
+}
+
+function _viveiroPausadoHoje(v) {
+  return _viveiroPausadoEm(v, _hojeLocal());
+}
+
 // Quantos viveiros estavam ativos (preparação ou cultivo) numa data (YYYY-MM-DD)
 function _viveirosAtivosNaData(ymd, hojeYmd) {
   let n = 0;
   for (const v of viveiros) {
+    // Parado naquele dia (reforma): não recebe rateio e, principalmente, não
+    // entra no divisor. Se entrasse, ele barateava o custo fixo de quem estava
+    // produzindo — e ninguém veria, porque não dá erro, só dá número errado.
+    if (_viveiroPausadoEm(v, ymd)) continue;
     // Ciclo atual em andamento (preparação ou cultivo)
     const ini = v.dataPreparacao || v.dataPovoamento;
     if (ini && ini <= ymd && ymd <= hojeYmd) { n++; continue; }
@@ -10939,15 +11082,24 @@ function _viveirosAtivosNaData(ymd, hojeYmd) {
   return n;
 }
 
-// Custo fixo rateado acumulado para um viveiro no período [iniYmd, fimYmd] (inclusive)
-function _custoFixoRateado(iniYmd, fimYmd) {
+/*
+ * Custo fixo rateado acumulado para UM viveiro no período [iniYmd, fimYmd].
+ *
+ * O `viveiro` não é enfeite: sem ele, um viveiro parado para reforma saía do
+ * DIVISOR (não barateava mais o custo dos outros) mas continuava RECEBENDO a
+ * parte dele, porque a função só conhecia a janela de datas. Os dias em que
+ * ESTE viveiro esteve parado valem zero para ele.
+ *
+ * Sem o parâmetro a conta é a de antes — nenhum dia é pulado.
+ */
+function _custoFixoRateado(iniYmd, fimYmd, viveiro) {
   if (!iniYmd || !fimYmd || iniYmd > fimYmd) return 0;
   if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return 0;
   const hoje = _hojeLocal();
   let total = 0, cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
     const mensalNoDia = _custoFixoMensalNaData(cur); // soma dos custos que já valiam nesse dia
-    if (mensalNoDia > 0) {
+    if (mensalNoDia > 0 && !(viveiro && _viveiroPausadoEm(viveiro, cur))) {
       total += _rateioFixoDia(mensalNoDia, cur, _viveirosAtivosNaData(cur, hoje));
     }
     cur = _maAddDias(cur, 1);
@@ -10961,7 +11113,7 @@ function _custoFixoRateado(iniYmd, fimYmd) {
 // Como cada parcela é valorMensal/dias/ativos, a soma dos itens bate exatamente
 // com o total do _custoFixoRateado. Devolve [{ nome, categoria, valor }] ordenado
 // do maior para o menor.
-function _custoFixoRateadoPorItem(iniYmd, fimYmd) {
+function _custoFixoRateadoPorItem(iniYmd, fimYmd, viveiro) {
   if (!iniYmd || !fimYmd || iniYmd > fimYmd) return [];
   if (!custosFixos.some(c => c.dataFim || c.ativo !== false)) return [];
   const hoje = _hojeLocal();
@@ -10969,7 +11121,7 @@ function _custoFixoRateadoPorItem(iniYmd, fimYmd) {
   let cur = iniYmd, guard = 0;
   while (cur <= fimYmd && guard < 5000) {
     const nAtivos = _viveirosAtivosNaData(cur, hoje);
-    if (nAtivos > 0) {
+    if (nAtivos > 0 && !(viveiro && _viveiroPausadoEm(viveiro, cur))) {
       for (const cf of custosFixos) {
         if (!_custoFixoValeNaData(cf, cur)) continue;
         const parcela = _rateioFixoDia(cf.valorMensal, cur, nAtivos);
@@ -11019,7 +11171,7 @@ function _custosCicloAtivo(viveiro, cicloId, iniYmd, fimYmd, rateioCongelado) {
   const totalManuais = totalProdutos + totalOutros;
   const rateioFixo = (rateioCongelado !== null && rateioCongelado !== undefined && !isNaN(Number(rateioCongelado)))
     ? Number(rateioCongelado)
-    : _custoFixoRateado(iniYmd, fimYmd);
+    : _custoFixoRateado(iniYmd, fimYmd, viveiro);
   return { manuais, totalProdutos, totalOutros, totalManuais, rateioFixo, total: totalManuais + rateioFixo };
 }
 
@@ -13009,8 +13161,8 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
   // rateioItens: o mesmo rateio SEPARADO por item, para listar um card por custo
   // (funcionário, energia, limpeza…) em vez de um monte só. A soma bate.
   const _iniCustos = viveiro.dataPreparacao || viveiro.dataPovoamento;
-  const rateioFixo = _custoFixoRateado(_iniCustos, _hojeLocal());
-  const rateioItens = _custoFixoRateadoPorItem(_iniCustos, _hojeLocal());
+  const rateioFixo = _custoFixoRateado(_iniCustos, _hojeLocal(), viveiro);
+  const rateioItens = _custoFixoRateadoPorItem(_iniCustos, _hojeLocal(), viveiro);
   const totalCustos = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome — soma quantidade e valor (sem datas)
@@ -13535,8 +13687,8 @@ function imprimirCustos(viveiroIndex) {
   const viveiro = viveiros[viveiroIndex];
   const custos = _custosDoEscopo(viveiro);
   const _iniImp = viveiro.dataPreparacao || viveiro.dataPovoamento;
-  const rateioFixo = _custoFixoRateado(_iniImp, _hojeLocal());
-  const rateioItens = _custoFixoRateadoPorItem(_iniImp, _hojeLocal());
+  const rateioFixo = _custoFixoRateado(_iniImp, _hojeLocal(), viveiro);
+  const rateioItens = _custoFixoRateadoPorItem(_iniImp, _hojeLocal(), viveiro);
   const total = custos.reduce((s, c) => s + Number(c.valor), 0) + rateioFixo;
 
   // Agrupa por produto/nome (igual à tela): uma linha por item
@@ -13832,6 +13984,8 @@ async function carregarViveiros(usuarioConhecido) {
       })),
 
     protocolos: Array.isArray(item.protocolos) ? item.protocolos : [],
+    pausas: Array.isArray(item.pausas) ? item.pausas : [],
+    semHistorico: !!item.sem_historico,
   }));
 
   viveiros.sort(_compararViveirosPorNome);
@@ -13862,17 +14016,19 @@ async function _congelarRateioCiclosAntigos() {
   const pendentes = [];
   for (const v of viveiros) {
     for (const c of (v.ciclosFinalizados || [])) {
-      if (c.id && (c.custoFixoRateado === null || c.custoFixoRateado === undefined)) pendentes.push(c);
+      // Leva o viveiro junto: o rateio precisa dele pra pular os dias em que
+      // ESTE viveiro esteve parado (ver _custoFixoRateado).
+      if (c.id && (c.custoFixoRateado === null || c.custoFixoRateado === undefined)) pendentes.push({ v, c });
     }
   }
   if (!pendentes.length) return; // nada a migrar
   const usuario = await pegarUsuarioLogado();
   if (!usuario) return;
 
-  for (const c of pendentes) {
+  for (const { v, c } of pendentes) {
     const ini = c.dataPreparacao || c.dataPovoamento;
     if (!ini || !c.dataEncerramento) continue;
-    const valor = _custoFixoRateado(ini, c.dataEncerramento);
+    const valor = _custoFixoRateado(ini, c.dataEncerramento, v);
     const { data, error } = await supabaseClient.from("ciclos")
       .update({ custo_fixo_rateado: valor })
       .eq("id", c.id).eq("user_id", usuario.id)

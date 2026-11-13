@@ -638,3 +638,140 @@ test("custos: categoria desconhecida ou vazia cai em 'outro', nunca sem ícone",
   assert.equal(a.run(`['racao','larva','probio','calcario','aditivo','energia','operacao','outro']
                       .filter(k => !_CX_ICONES[k]).length`), 0);
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RATEIO DO CUSTO FIXO × VIVEIRO PAUSADO
+
+   Esta é a conta do dinheiro, e ela erra em silêncio: ninguém reclama de um
+   custo por quilo 30% abaixo do real, porque não existe o número certo na
+   tela do lado pra comparar. Por isso o teste principal aqui não é "o número
+   bateu com X" — é a PROPRIEDADE: o que os viveiros recebem, somado, tem que
+   dar exatamente o custo fixo do período. Nem sobra (dinheiro que ninguém
+   pagou) nem falta (dinheiro que sumiu).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// Novembro de 2026 tem 30 dias. R$ 3.000/mês = R$ 100/dia.
+function semearRateio(a, pausas = []) {
+  a.run(`
+    custosFixos = [{ id:'f1', nome:'Funcionário', categoria:'mao_de_obra',
+                     valorMensal:3000, dataInicio:'2026-11-01', dataFim:null, ativo:true }];
+    _custosFixosOk = true;
+    viveiros = [
+      { id:'v1', nome:'V1', dataPovoamento:'2026-11-01', dataPreparacao:null, ciclosFinalizados:[], custos:[], pausas:[] },
+      { id:'v2', nome:'V2', dataPovoamento:'2026-11-01', dataPreparacao:null, ciclosFinalizados:[], custos:[], pausas:[] },
+      { id:'v3', nome:'V3', dataPovoamento:'2026-11-01', dataPreparacao:null, ciclosFinalizados:[], custos:[], pausas:${JSON.stringify(pausas)} },
+    ];
+    Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,30,12); } };
+  `);
+}
+const rateioDe = (a, i) =>
+  a.run(`_custoFixoRateado('2026-11-01','2026-11-30', viveiros[${i}])`);
+
+test("rateio: sem pausa, os três dividem igual e a soma fecha o mês",()=>{
+  const a=load(); semearRateio(a);
+  const v = [0,1,2].map(i => rateioDe(a, i));
+  for (const x of v) assert.ok(Math.abs(x - 1000) < 0.001, String(x));
+  assert.ok(Math.abs(v.reduce((s,x)=>s+x,0) - 3000) < 0.001);
+});
+
+test("rateio: viveiro parado o mês inteiro nao recebe, e os outros dois pagam tudo",()=>{
+  const a=load(); semearRateio(a, [{ de:'2026-11-01', ate:'2026-11-30' }]);
+  const v = [0,1,2].map(i => rateioDe(a, i));
+  assert.equal(Math.round(v[2]), 0, "o parado nao pode receber nada");
+  // Dividido por DOIS, não por três: o parado sai do divisor. Se continuasse
+  // nele, V1 e V2 pagariam 1.000 cada e R$ 1.000 sumiriam do mês.
+  assert.ok(Math.abs(v[0] - 1500) < 0.001, String(v[0]));
+  assert.ok(Math.abs(v.reduce((s,x)=>s+x,0) - 3000) < 0.001, "a soma tem que fechar o mes");
+});
+
+test("rateio: pausa no meio do mes cobra so os dias de fora",()=>{
+  const a=load(); semearRateio(a, [{ de:'2026-11-11', ate:'2026-11-20' }]);  // 10 dias parado
+  const v = [0,1,2].map(i => rateioDe(a, i));
+  // 20 dias ÷3 (R$ 33,33/dia) + 10 dias ÷2 (R$ 50/dia) para quem ficou
+  assert.ok(Math.abs(v[2] - (20 * 100/3)) < 0.01, String(v[2]));
+  assert.ok(Math.abs(v[0] - (20 * 100/3 + 10 * 50)) < 0.01, String(v[0]));
+  assert.ok(Math.abs(v.reduce((s,x)=>s+x,0) - 3000) < 0.001, "a soma tem que fechar o mes");
+});
+
+test("rateio: pausa em aberto (sem 'ate') vale de la pra frente, e so",()=>{
+  const a=load(); semearRateio(a, [{ de:'2026-11-21', ate:null }]);
+  const v = [0,1,2].map(i => rateioDe(a, i));
+  assert.ok(Math.abs(v[2] - (20 * 100/3)) < 0.01, String(v[2]));
+  assert.ok(Math.abs(v.reduce((s,x)=>s+x,0) - 3000) < 0.001);
+});
+
+test("rateio: o passado NAO muda quando alguem pausa hoje",()=>{
+  // É por isto que a pausa guarda períodos e não um booleano: o rateio é
+  // recalculado do zero a cada leitura, então um interruptor reescreveria
+  // todos os dias anteriores — e o custo de ciclos já encerrados, já
+  // impressos e já mostrados ao cliente, mudaria sozinho.
+  const antes = load(); semearRateio(antes);
+  const outubroAntes = antes.run(`_custoFixoRateado('2026-11-01','2026-11-10', viveiros[0])`);
+
+  const depois = load(); semearRateio(depois, [{ de:'2026-11-21', ate:null }]);
+  const outubroDepois = depois.run(`_custoFixoRateado('2026-11-01','2026-11-10', viveiros[0])`);
+
+  assert.ok(Math.abs(outubroAntes - outubroDepois) < 0.000001,
+    `1 a 10 de novembro mudou: ${outubroAntes} -> ${outubroDepois}`);
+});
+
+test("rateio: a soma dos itens bate com o total, tambem com pausa",()=>{
+  const a=load(); semearRateio(a, [{ de:'2026-11-11', ate:'2026-11-20' }]);
+  for (const i of [0, 2]) {
+    const total = rateioDe(a, i);
+    const soma = a.run(`_custoFixoRateadoPorItem('2026-11-01','2026-11-30', viveiros[${i}])
+                        .reduce((s,x)=>s+x.valor,0)`);
+    assert.ok(Math.abs(total - soma) < 0.001, `viveiro ${i}: ${total} vs ${soma}`);
+  }
+});
+
+test("rateio: pausa suja nao quebra a conta",()=>{
+  for (const p of ['[]', '[{}]', '[{de:null,ate:null}]', '[{ate:"2026-11-10"}]']) {
+    const a=load();
+    a.run(`custosFixos=[{id:'f1',nome:'F',categoria:'mao_de_obra',valorMensal:3000,dataInicio:'2026-11-01',dataFim:null,ativo:true}];
+           viveiros=[{id:'v1',nome:'V1',dataPovoamento:'2026-11-01',ciclosFinalizados:[],custos:[],pausas:${p}}];
+           Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,30,12); } };`);
+    const v = a.run(`_custoFixoRateado('2026-11-01','2026-11-30', viveiros[0])`);
+    assert.ok(Math.abs(v - 3000) < 0.001, `${p} deu ${v}`);
+  }
+});
+
+test("pausa: parar e retomar no mesmo dia nao deixa pausa nenhuma",()=>{
+  // Uma pausa de zero dia não é pausa. Fechando-a em si mesma, o dia de hoje
+  // ficava marcado como parado e a tela continuava dizendo "parado para
+  // reforma" DEPOIS de retomar — o botão parecia não funcionar.
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __v = { pausas: [{ de:'2026-11-13', ate:null }] };
+         __hoje = _hojeLocal();
+         __ontem = _maAddDias(__hoje, -1);
+         __novas = __v.pausas
+           .filter(p => !(p && p.de && !p.ate && p.de >= __hoje))
+           .map(p => (p && p.de && !p.ate) ? { de: p.de, ate: __ontem } : p);`);
+  assert.equal(a.run('__novas.length'), 0);
+});
+
+test("pausa: retomar depois de dias fecha o periodo ONTEM",()=>{
+  // Ontem, e não hoje: hoje o viveiro já voltou a trabalhar, então hoje já
+  // conta pro rateio.
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,13,12); } };
+         __hoje = _hojeLocal(); __ontem = _maAddDias(__hoje, -1);
+         __novas = [{ de:'2026-11-01', ate:null }]
+           .filter(p => !(p && p.de && !p.ate && p.de >= __hoje))
+           .map(p => (p && p.de && !p.ate) ? { de: p.de, ate: __ontem } : p);
+         __v = { pausas: __novas };`);
+  assert.equal(a.run('__novas[0].ate'), '2026-11-12');
+  assert.equal(a.run('_viveiroPausadoEm(__v, "2026-11-12")'), true);
+  assert.equal(a.run('_viveiroPausadoEm(__v, "2026-11-13")'), false, "hoje ja voltou a contar");
+});
+
+test("pausa: dias em preparacao descontam o que ficou parado",()=>{
+  const a=load();
+  a.run(`Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,30,12); } };
+         __v = { dataPreparacao:'2026-11-01', pausas:[{ de:'2026-11-11', ate:'2026-11-20' }] };`);
+  // 30 dias de novembro menos os 10 parados
+  assert.equal(a.run('_diasEmPreparacao(__v)'), 20);
+  a.run(`__v2 = { dataPreparacao:'2026-11-01', pausas:[] };`);
+  assert.equal(a.run('_diasEmPreparacao(__v2)'), 30);
+});
