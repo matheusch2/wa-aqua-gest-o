@@ -1,0 +1,75 @@
+/* ============================================================================
+   94-viveiros.css — a lista de viveiros
+
+   O problema daquela tela não era enfeite, era o formato: ela mostrava UM
+   viveiro por vez. Tinha uma tira de números em cima, "Anterior/Próximo"
+   embaixo, um contador "1 / 3" e swipe. Com três viveiros já era um folheto
+   virado página por página; com vinte, o produtor tocava dezenove vezes para
+   chegar no último. E para comparar dois, tinha que decorar o primeiro.
+
+   Agora é lista: todos na tela, um cartão cada, rolando.
+
+   O CARTÃO NÃO MUDOU, de propósito. Cheguei a desenhar um no lugar dele,
+   achatado, três números em colunas, sem o camarão e sem o selo "Em cultivo".
+   O dono olhou e disse "horrível" — e estava certo: ele gosta daquele cartão,
+   o que não servia mais era a navegação. Então só a navegação saiu. Este
+   arquivo é o pouco que a lista precisou: um cabeçalho e o espaçamento entre
+   os cartões. Tudo que desenha o cartão continua no 06-viveiro-e-relatorios.
+
+   Carregado por: app/index.html.
+   ========================================================================== */
+
+/* Mesmo desenho do cabeçalho dos Custos (ver 93-custos.css): título à
+   esquerda, pastilha à direita. São duas telas de lista; se o cabeçalho de
+   uma for diferente do da outra, é só porque alguém esqueceu. */
+.lv-cab {
+    display: flex; align-items: center; gap: 9px;
+    margin: 0 2px 12px;
+}
+.lv-cab h3 {
+    flex: 0 0 auto; min-width: 0; margin: 0;
+    font-size: 21px; font-weight: 800; letter-spacing: -.02em;
+    color: #0f5f57; text-align: left;
+}
+.lv-cab-conta {
+    flex: 0 1 auto; min-width: 0; margin-left: auto;
+    font-size: 12px; font-weight: 800;
+    color: #0f766e; background: #e3f0ee;
+    border-radius: 999px; padding: 5px 11px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* O gap faz o trabalho que a margem de cada cartão fazia sozinha, e some o
+   espaço duplicado entre o último cartão e o botão Voltar. */
+.lv-lista { display: flex; flex-direction: column; gap: 12px; margin: 0 0 12px; }
+
+body.tema-escuro .lv-cab h3 { color: #6ee7a8; }
+body.tema-escuro .lv-cab-conta { background: #273445; color: #9fd8cc; }
+
+/* ---------------------------------------------------------------------------
+   Computador
+
+   A regra do 90-desktop.css dá ao cartão max-width 760px e margem automática.
+   Fazia sentido quando havia UM cartão na tela: ele ficava centrado. Numa
+   lista, vira uma coluna estreita no meio de uma tela larga, com metade do
+   espaço vazio dos dois lados.
+
+   Aqui a lista vira grade de duas colunas e o cartão ocupa a coluna inteira.
+   O align-items: start é o que impede a praga das grades: sem ele, todos os
+   cartões de uma linha esticam até a altura do mais alto, e um viveiro vazio
+   ao lado de um em cultivo ganharia um vão branco no meio.
+   --------------------------------------------------------------------------- */
+@media (min-width: 900px) {
+    .lv-lista {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 14px;
+        max-width: 1000px;
+    }
+    #area-gestao .lv-lista .viveiro-card {
+        max-width: none; margin-left: 0; margin-right: 0;
+        padding: 20px !important;
+    }
+    .lv-cab { max-width: 1000px; }
+}

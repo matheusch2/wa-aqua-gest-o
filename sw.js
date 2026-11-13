@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261113p";
+const CACHE = "waaqua-20261113q";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -58,6 +58,7 @@ const ESSENCIAIS = [
   "/app/natal.js",              // do caminho sozinho fora do mês
   "/app/styles/92-home.css",    // tela inicial do celular
   "/app/styles/93-custos.css",  // as duas telas de Custos
+  "/app/styles/94-viveiros.css",// a lista de viveiros
   "/app/script.js",   // o cérebro do app: sem ele no precache, a PRIMEIRA
                       // abertura offline carregava a casca sem funcionar.
                       // Continua rede-primeiro; isto é só a reserva offline.

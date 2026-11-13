@@ -257,7 +257,6 @@ body.tema-escuro #area-gestao .pnl-stat {
 }
 
 /* Na tela grande cabe tudo: a tira quebra em linhas em vez de rolar. */
-#area-gestao .vv-seletor { max-width: 760px; margin-left: auto; margin-right: auto; flex-wrap: wrap; overflow-x: visible; justify-content: center; }
 #area-gestao .botao-voltar-form { max-width: 760px; margin-left: auto; margin-right: auto; font-size: 15px !important; }
 /* Cartões de configuração/menus internos um pouco maiores */
 #area-gestao .cfg-item-titulo { font-size: 15px !important; }

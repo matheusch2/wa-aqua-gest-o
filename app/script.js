@@ -1711,17 +1711,23 @@ async function salvarViveiro() {
   mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${_esc(nome.trim())} cadastrado com sucesso!`);
 }
 
-// Rótulo curto para a tira de seleção. Quase todo mundo nomeia como
-// "Viveiro - 12", então tirar essa palavra deixa só o número — que é como o
-// produtor chama o viveiro na fazenda. Nome sem número (ex: "Berçário") entra
-// abreviado, e o nome inteiro fica no title para não haver dúvida.
-function _rotuloCurtoViveiro(nome) {
-  const limpo = String(nome || "").trim();
-  const semPrefixo = limpo.replace(/^viveiro\s*[-–—:]?\s*/i, "").trim();
-  const escolhido = semPrefixo || limpo || "?";
-  return _esc(escolhido.length > 7 ? escolhido.slice(0, 6) + "…" : escolhido);
-}
-
+/*
+ * LISTA DE VIVEIROS
+ *
+ * Mostra TODOS, um cartão cada, rolando. Até aqui ela mostrava um viveiro por
+ * vez: tira de números em cima, "Anterior/Próximo" embaixo, contador "1 / 3" e
+ * swipe. Com três viveiros já era um folheto virado página por página; com
+ * vinte, o produtor tocava dezenove vezes pra chegar no último — e pra
+ * comparar dois, tinha que decorar o primeiro.
+ *
+ * O cartão é o MESMO, de propósito. O dono gosta dele: o camarão, o selo "Em
+ * cultivo", a etiqueta de PLs, as pastilhas coloridas. O que não servia mais
+ * era a navegação, não o desenho — então só a navegação saiu.
+ *
+ * `posicao` continua na assinatura porque meia dúzia de telas voltam pra cá
+ * apontando um viveiro ("volta e me mostra o que eu acabei de renomear").
+ * Antes isso escolhia qual único cartão desenhar; agora rola até ele.
+ */
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -1735,51 +1741,18 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   }
 
   const viveirosOrdenados = [...viveiros].sort(_compararViveirosPorNome);
+  const emCultivo = viveirosOrdenados.filter(v => v.dataPovoamento).length;
 
-  const total = viveirosOrdenados.length;
-  const viveiro = viveirosOrdenados[posicao];
-  const indexOriginal = viveiros.indexOf(viveiro);
+  const cartao = (viveiro) => {
+    const indexOriginal = viveiros.indexOf(viveiro);
+    // O que interessa no dia a dia — dias de cultivo e o último peso — no
+    // lugar de data de povoamento e laboratório.
+    const _diasCultivoVv = viveiro.dataPovoamento ? calcularDiasCultivo(viveiro.dataPovoamento) + " dias" : "--";
+    const _biosVv = [...(viveiro.biometrias || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
+    const _ultBioVv = _biosVv.length ? fmtG(_biosVv[_biosVv.length - 1].gramatura) + " g" : "--";
 
-  // Card da lista: mostra o que interessa no dia a dia — dias de cultivo e o
-  // último peso — no lugar de data de povoamento e laboratório.
-  const _diasCultivoVv = viveiro.dataPovoamento ? calcularDiasCultivo(viveiro.dataPovoamento) + " dias" : "--";
-  const _biosVv = [...(viveiro.biometrias || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
-  const _ultBioVv = _biosVv.length ? fmtG(_biosVv[_biosVv.length - 1].gramatura) + " g" : "--";
-
-  // Sempre renderiza 3 elementos para o contador ficar sempre centrado
-  const navAnterior = posicao > 0
-    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao - 1}, 'anterior')">Anterior</button>`
-    : `<span class="botao-nav-viveiro" style="visibility:hidden">Anterior</span>`;
-
-  const navProximo = posicao < total - 1
-    ? `<button class="botao-nav-viveiro" onclick="mostrarListaViveiros(${posicao + 1}, 'proximo')">Próximo</button>`
-    : `<span class="botao-nav-viveiro" style="visibility:hidden">Próximo</span>`;
-
-  // Tira de seleção: com 3 viveiros, "Próximo" resolve; com 20, o produtor
-  // tocava 17 vezes para chegar no último. Aqui ele toca uma vez no que quer.
-  const seletor = total < 2 ? "" : `
-    <div class="vv-seletor" role="tablist" aria-label="Escolher viveiro">
-      ${viveirosOrdenados.map((v, i) => {
-        const iOriginal = viveiros.indexOf(v);
-        const classes = ["vv-chip"];
-        if (i === posicao) classes.push("ativo");
-        if (v.dataPovoamento) classes.push("cultivo");
-        if (_viveiroForaDoLimite(iOriginal)) classes.push("bloqueado");
-        const situacao = _viveiroForaDoLimite(iOriginal) ? " (fora do plano)"
-                       : v.dataPovoamento ? " (em cultivo)" : " (vazio)";
-        return `<button type="button" class="${classes.join(" ")}" role="tab"
-          aria-selected="${i === posicao}"
-          title="${String(v.nome || "").replace(/"/g, "&quot;")}${situacao}"
-          onclick="mostrarListaViveiros(${i}, '${i > posicao ? "proximo" : i < posicao ? "anterior" : ""}')"
-        >${_rotuloCurtoViveiro(v.nome)}</button>`;
-      }).join("")}
-    </div>`;
-
-  area.innerHTML = `
-    <h2 class="titulo-secao">Viveiros</h2>
-    ${seletor}
-
-    <div class="viveiro-card">
+    return `
+    <div class="viveiro-card" id="viveiro-card-${indexOriginal}">
 
       <div class="vc-topo">
         <div class="vc-icone-box">🦐</div>
@@ -1835,15 +1808,16 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         Abrir viveiro
       </button>
 
-    </div>
+    </div>`;
+  };
 
-    <div class="nav-viveiros">
-      ${navAnterior}
-      <span class="nav-viveiros-contador">${posicao + 1} / ${total}</span>
-      ${navProximo}
+  area.innerHTML = `
+    <div class="lv-cab">
+      <h3>Viveiros</h3>
+      ${emCultivo ? `<span class="lv-cab-conta">${emCultivo} em cultivo</span>` : ""}
     </div>
-
-    <button class="botao-voltar-form" style="margin-top:4px" onclick="voltarMenuGestao()">Voltar</button>
+    <div class="lv-lista">${viveirosOrdenados.map(cartao).join("")}</div>
+    <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
   `;
 
   // Mensagem de sucesso (ex: após excluir viveiro)
@@ -1855,44 +1829,18 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     setTimeout(() => toast.remove(), 3000);
   }
 
-  // Swipe para navegar entre viveiros — cancela listeners anteriores antes de registrar novos
+  // O swipe trocava de viveiro. Sem páginas pra trocar, ele não tem mais o que
+  // fazer — mas o abort continua, senão os ouvintes da última vez que a tela
+  // abriu ficariam pendurados na área, trocando de "página" numa tela que não
+  // tem página.
   if (_swipeViveirosAbort) _swipeViveirosAbort.abort();
-  _swipeViveirosAbort = new AbortController();
-  const _swipeSig = _swipeViveirosAbort.signal;
-  let touchStartX = 0;
-  let touchNaTira = false;
-  area.addEventListener("touchstart", e => {
-    touchStartX = e.touches?.[0]?.clientX ?? 0;
-    // Arrastar a tira de seleção é rolagem dela, não troca de viveiro. Sem isto,
-    // procurar o viveiro 18 na tira faria o card pular junto a cada arrasto.
-    touchNaTira = !!(e.target && e.target.closest && e.target.closest(".vv-seletor"));
-  }, { passive: true, signal: _swipeSig });
-  area.addEventListener("touchend", e => {
-    // Só swipa se ainda estiver na tela de lista de viveiros
-    if (!area.querySelector(".viveiro-card")) return;
-    if (touchNaTira) return;
-    const endX = e.changedTouches?.[0]?.clientX;
-    if (endX == null) return;
-    const diff = touchStartX - endX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0 && posicao < total - 1) mostrarListaViveiros(posicao + 1, "proximo");
-      if (diff < 0 && posicao > 0) mostrarListaViveiros(posicao - 1, "anterior");
-    }
-  }, { passive: true, signal: _swipeSig });
+  _swipeViveirosAbort = null;
 
-  // Deixa o viveiro atual visível no meio da tira. scrollLeft na mão em vez de
-  // scrollIntoView de propósito: o scrollIntoView também rolaria a PÁGINA para
-  // achar a tira, jogando o card para fora da tela a cada troca.
-  const tira = area.querySelector(".vv-seletor");
-  if (tira) {
-    const ativo = tira.querySelector(".vv-chip.ativo");
-    if (ativo) tira.scrollLeft = ativo.offsetLeft - (tira.clientWidth - ativo.offsetWidth) / 2;
-  }
-
-  // Animação de entrada
-  const card = area.querySelector(".viveiro-card");
-  if (card && direcao) {
-    card.classList.add(direcao === "proximo" ? "slide-in-direita" : "slide-in-esquerda");
+  // Quem voltou apontando um viveiro ("mostra o que eu acabei de renomear")
+  // rola até ele. Sem o pedido, a lista abre no começo, como qualquer lista.
+  if (posicao > 0 && viveirosOrdenados[posicao]) {
+    const alvo = document.getElementById("viveiro-card-" + viveiros.indexOf(viveirosOrdenados[posicao]));
+    if (alvo) alvo.scrollIntoView({ block: "center", behavior: "auto" });
   }
 }
 

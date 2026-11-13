@@ -136,12 +136,6 @@ test("_melhorRotulo: entre grafias iguais, mostra a ACENTUADA", () => {
   assert.equal(app._melhorRotulo(null, "Novo"), "Novo");
 });
 
-test("_rotuloCurtoViveiro: tira o 'Viveiro -' e encurta nomes longos", () => {
-  assert.equal(app._rotuloCurtoViveiro("Viveiro - 12"), "12");
-  assert.equal(app._rotuloCurtoViveiro("Berçário"), "Berçár…");
-  assert.equal(app._rotuloCurtoViveiro(""), "?");
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 // _custosManuaisDoCiclo / _custosCicloAtivo — custos do ciclo + rateio fixo
 // ─────────────────────────────────────────────────────────────────────────────
