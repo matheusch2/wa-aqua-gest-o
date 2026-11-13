@@ -1,75 +1,277 @@
 /* ============================================================================
-   94-viveiros.css — a lista de viveiros
+   94-viveiros.css — a lista de viveiros ("Seus viveiros")
 
-   O problema daquela tela não era enfeite, era o formato: ela mostrava UM
-   viveiro por vez. Tinha uma tira de números em cima, "Anterior/Próximo"
-   embaixo, um contador "1 / 3" e swipe. Com três viveiros já era um folheto
-   virado página por página; com vinte, o produtor tocava dezenove vezes para
-   chegar no último. E para comparar dois, tinha que decorar o primeiro.
+   O problema da tela antiga não era enfeite, era o formato: ela mostrava UM
+   viveiro por vez. Tira de números em cima, "Anterior/Próximo" embaixo,
+   contador "1 / 3" e swipe. Com três viveiros já era um folheto virado página
+   por página; com vinte, o produtor tocava dezenove vezes pra chegar no
+   último — e pra comparar dois, tinha que decorar o primeiro.
 
-   Agora é lista: todos na tela, um cartão cada, rolando.
+   O desenho daqui veio de um conceito que o próprio dono mandou, e ele resolve
+   a briga entre "quero ver o detalhe" e "quero ver todos": UM viveiro aberto,
+   com tudo; os outros em linha fina, a um toque de abrir. A lista inteira cabe
+   na tela e o detalhe fica onde a pessoa escolheu.
 
-   O CARTÃO NÃO MUDOU, de propósito. Cheguei a desenhar um no lugar dele,
-   achatado, três números em colunas, sem o camarão e sem o selo "Em cultivo".
-   O dono olhou e disse "horrível" — e estava certo: ele gosta daquele cartão,
-   o que não servia mais era a navegação. Então só a navegação saiu. Este
-   arquivo é o pouco que a lista precisou: um cabeçalho e o espaçamento entre
-   os cartões. Tudo que desenha o cartão continua no 06-viveiro-e-relatorios.
+   ARMADILHA DESTA CASA: o 01-base-e-painel.css dá `width: 100%` a TODO
+   <button>. Qualquer botãozinho aqui — o lápis, a linha fechada — precisa de
+   largura própria, senão engole a linha inteira. Foi exatamente o que
+   aconteceu na primeira versão: o lápis virou um botão de 321px e empurrou o
+   nome do viveiro pra fora da tela.
 
    Carregado por: app/index.html.
    ========================================================================== */
 
-/* Mesmo desenho do cabeçalho dos Custos (ver 93-custos.css): título à
-   esquerda, pastilha à direita. São duas telas de lista; se o cabeçalho de
-   uma for diferente do da outra, é só porque alguém esqueceu. */
-.lv-cab {
-    display: flex; align-items: center; gap: 9px;
-    margin: 0 2px 12px;
-}
-.lv-cab h3 {
-    flex: 0 0 auto; min-width: 0; margin: 0;
-    font-size: 21px; font-weight: 800; letter-spacing: -.02em;
+/* ---------------------------------------------------------------------------
+   Cabeçalho da seção
+   --------------------------------------------------------------------------- */
+.sv-topo { margin: 0 2px 14px; }
+.sv-topo h2 {
+    margin: 0;
+    font-size: 22px; font-weight: 800; letter-spacing: -.02em;
     color: #0f5f57; text-align: left;
 }
-.lv-cab-conta {
-    flex: 0 1 auto; min-width: 0; margin-left: auto;
-    font-size: 12px; font-weight: 800;
-    color: #0f766e; background: #e3f0ee;
-    border-radius: 999px; padding: 5px 11px;
+.sv-topo p {
+    margin: 3px 0 0;
+    font-size: 12.5px; color: #8a9a97; text-align: left;
+}
+
+.sv-lista { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
+
+/* ---------------------------------------------------------------------------
+   O viveiro aberto
+   --------------------------------------------------------------------------- */
+.sv-card {
+    background: #fff;
+    border: 1px solid #dde8e6;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(6,107,99,.08);
+    padding: 14px 15px 13px;
+}
+
+.sv-cab { display: flex; align-items: flex-start; gap: 8px; }
+.sv-cab-txt { flex: 1; min-width: 0; }
+.sv-cab h3 {
+    margin: 0;
+    font-size: 18px; font-weight: 800; color: #10322f; text-align: left;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* O gap faz o trabalho que a margem de cada cartão fazia sozinha, e some o
-   espaço duplicado entre o último cartão e o botão Voltar. */
-.lv-lista { display: flex; flex-direction: column; gap: 12px; margin: 0 0 12px; }
+.sv-estado {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 4px;
+    font-size: 12.5px; font-weight: 700; color: #1d8a5e;
+}
+.sv-estado svg {
+    width: 14px; height: 14px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.sv-estado-vazio { color: #94a3a0; }
 
-body.tema-escuro .lv-cab h3 { color: #6ee7a8; }
-body.tema-escuro .lv-cab-conta { background: #273445; color: #9fd8cc; }
+/* Largura e altura explícitas: ver a armadilha do <button> lá em cima. */
+.sv-lapis {
+    width: 30px; height: 30px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; margin: 0;
+    background: #f3f7f6; border: none; border-radius: 9px;
+    color: #8a9a97; cursor: pointer;
+}
+.sv-lapis svg {
+    width: 14px; height: 14px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------------------------
+   A barra do ciclo
+
+   Responde "quanto falta pra despesca", que é a pergunta que o camarão faz
+   sozinho e que nenhum número da tela antiga respondia.
+
+   Só aparece quando há de onde tirar o "de ~quantos dias" (ver
+   _cicloReferencia no script.js): a referência sai da mediana dos ciclos já
+   encerrados da própria fazenda. Sem nenhum ciclo encerrado não há referência,
+   e barra chutada é pior que barra nenhuma — aí o cartão mostra só os dias.
+   --------------------------------------------------------------------------- */
+.sv-ciclo { margin-top: 13px; }
+.sv-barra {
+    height: 8px; border-radius: 99px; background: #eef3f2; overflow: hidden;
+}
+.sv-barra i {
+    display: block; height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, #2f8f82, #22a06b);
+}
+.sv-marcos {
+    display: flex; justify-content: space-between; gap: 8px;
+    margin-top: 6px;
+    font-size: 10.5px; font-weight: 700; color: #93a5a2;
+}
+
+/* ---------------------------------------------------------------------------
+   Os quatro números
+
+   Duas colunas, rótulo pequeno em cima e valor embaixo, com o ícone de
+   contorno à esquerda. Os emojis (🗓️ ⚖️ 📐) saíram: mudam de desenho em cada
+   aparelho, não aceitam cor e vinham em escalas diferentes entre si — a
+   balança azul ao lado do esquadro amarelo não era paleta, era sorte.
+   --------------------------------------------------------------------------- */
+.sv-grade {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px 10px;
+    margin-top: 14px; padding-top: 13px;
+    border-top: 1px solid #eef3f2;
+}
+.sv-item { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.sv-item-ico {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: #eef5f3; color: #0f766e;
+}
+.sv-item-ico svg {
+    width: 15px; height: 15px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.sv-item-txt { min-width: 0; }
+.sv-item-txt small {
+    display: block;
+    font-size: 10.5px; font-weight: 700; color: #93a5a2;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sv-item-txt b {
+    display: block;
+    font-size: 14.5px; font-weight: 800; color: #10322f; line-height: 1.2;
+    margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Avisos
+
+   Só aparecem quando há o que avisar — o de ração some assim que a ração é
+   lançada. Aviso que está sempre lá vira moldura e ninguém lê.
+
+   O âmbar e o vermelho aqui são os MESMOS da casa (#d97706 vencendo, #dc2626
+   perigo), porque querem dizer a mesma coisa: algo pendente e algo travado.
+   É por isso que essas duas cores não entram como enfeite em lugar nenhum.
+   --------------------------------------------------------------------------- */
+.sv-aviso {
+    display: flex; align-items: center; gap: 6px;
+    width: 100%; box-sizing: border-box;
+    margin: 12px 0 0; padding: 0;
+    background: none; border: none; text-align: left;
+    font-family: inherit; font-size: 11.5px; font-weight: 700;
+}
+.sv-aviso svg {
+    width: 13px; height: 13px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.sv-aviso-racao    { color: #b4761a; }
+.sv-aviso-bloqueio { color: #c33434; cursor: pointer; }
+
+/* ---------------------------------------------------------------------------
+   "Abrir detalhes do viveiro"
+
+   Cinza claro, e não o verde cheio de antes. O verde forte é do botão que a
+   pessoa veio apertar — "Lançar ração" na tela inicial, "Salvar" num
+   formulário. Aqui ele estava repetido em cada viveiro, e três botões verdes
+   descendo a tela não destacam nada: só gritam juntos.
+   --------------------------------------------------------------------------- */
+.sv-abrir {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; box-sizing: border-box;
+    margin: 13px 0 0; padding: 11px 14px;
+    background: #f1f6f5; border: none; border-radius: 11px;
+    font-family: inherit; font-size: 13.5px; font-weight: 800; color: #0f5f57;
+    cursor: pointer;
+}
+.sv-abrir svg {
+    width: 14px; height: 14px;
+    fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------------------------
+   Os viveiros fechados
+
+   O conceito escrevia "Consultar informações" embaixo de cada nome. É texto
+   que não informa: repetido viveiro a viveiro, ocupa a linha e não diz nada
+   que a seta já não diga. No lugar vai o estado de cada um — "Em cultivo ·
+   46 dias" ou "Vazio" —, que é justamente o que faz escolher qual abrir.
+   --------------------------------------------------------------------------- */
+.sv-linha {
+    display: flex; align-items: center; gap: 11px;
+    width: 100%; box-sizing: border-box;
+    margin: 0; padding: 11px 13px;
+    background: #fff; border: 1px solid #e4edec; border-radius: 14px;
+    text-align: left; font-family: inherit; cursor: pointer;
+    box-shadow: 0 1px 4px rgba(6,107,99,.05);
+}
+.sv-linha:active { transform: scale(.985); }
+.sv-linha-ico {
+    width: 36px; height: 36px; flex-shrink: 0; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    background: #eef5f3; color: #4d8e85;
+}
+.sv-linha-ico svg {
+    width: 17px; height: 17px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.sv-linha-txt { flex: 1; min-width: 0; }
+.sv-linha-txt b {
+    display: block;
+    font-size: 14.5px; font-weight: 800; color: #10322f;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sv-linha-txt small {
+    display: block;
+    font-size: 11.5px; color: #8a9a97; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sv-linha-seta { color: #b6c4c2; font-size: 19px; line-height: 1; flex-shrink: 0; }
 
 /* ---------------------------------------------------------------------------
    Computador
 
-   A regra do 90-desktop.css dá ao cartão max-width 760px e margem automática.
-   Fazia sentido quando havia UM cartão na tela: ele ficava centrado. Numa
-   lista, vira uma coluna estreita no meio de uma tela larga, com metade do
-   espaço vazio dos dois lados.
-
-   Aqui a lista vira grade de duas colunas e o cartão ocupa a coluna inteira.
-   O align-items: start é o que impede a praga das grades: sem ele, todos os
-   cartões de uma linha esticam até a altura do mais alto, e um viveiro vazio
-   ao lado de um em cultivo ganharia um vão branco no meio.
+   O cartão aberto em cima, ocupando a largura; os fechados em duas colunas
+   embaixo. Numa tela larga, uma linha fina de 900px pra dizer "Viveiro 02 ·
+   Vazio" desperdiça dois terços da linha.
    --------------------------------------------------------------------------- */
 @media (min-width: 900px) {
-    .lv-lista {
+    .sv-topo, .sv-lista { max-width: 920px; }
+    .sv-lista {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
-        gap: 14px;
-        max-width: 1000px;
+        gap: 12px;
     }
-    #area-gestao .lv-lista .viveiro-card {
-        max-width: none; margin-left: 0; margin-right: 0;
-        padding: 20px !important;
-    }
-    .lv-cab { max-width: 1000px; }
+    .sv-card { grid-column: 1 / -1; }
+    .sv-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* ---------------------------------------------------------------------------
+   Tema escuro
+   --------------------------------------------------------------------------- */
+body.tema-escuro .sv-topo h2 { color: #6ee7a8; }
+body.tema-escuro .sv-topo p { color: #6b7280; }
+body.tema-escuro .sv-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sv-cab h3 { color: #e5e7eb; }
+body.tema-escuro .sv-estado { color: #6ee7a8; }
+body.tema-escuro .sv-estado-vazio { color: #6b7280; }
+body.tema-escuro .sv-lapis { background: #273445; color: #8d9aa8; }
+body.tema-escuro .sv-barra { background: #2b3747; }
+body.tema-escuro .sv-marcos { color: #6b7280; }
+body.tema-escuro .sv-grade { border-top-color: #2b3747; }
+body.tema-escuro .sv-item-ico { background: #273445; color: #6ee7a8; }
+body.tema-escuro .sv-item-txt small { color: #6b7280; }
+body.tema-escuro .sv-item-txt b { color: #e5e7eb; }
+body.tema-escuro .sv-aviso-racao { color: #e3b341; }
+body.tema-escuro .sv-aviso-bloqueio { color: #fca5a5; }
+body.tema-escuro .sv-abrir { background: #273445; color: #6ee7a8; }
+body.tema-escuro .sv-linha { background: #1f2937; border-color: #374151; box-shadow: none; }
+body.tema-escuro .sv-linha-ico { background: #273445; color: #7fb8ae; }
+body.tema-escuro .sv-linha-txt b { color: #e5e7eb; }
+body.tema-escuro .sv-linha-txt small { color: #9ca3af; }
+body.tema-escuro .sv-linha-seta { color: #6b7280; }

@@ -43,6 +43,9 @@ let assinatura = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
 let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalhado"
+// Qual viveiro está aberto na lista (índice em `viveiros`). A lista mostra um
+// aberto e os outros em linha fina; null = abre o primeiro em cultivo.
+let _vvAberto = null;
 let _outroCustoModo = "um"; // "Outro custo" pelo menu: "um" viveiro ou "ratear" entre vários
 let _boletosFiltro = "todos";
 let _boletosFornecedor = "";
@@ -1399,6 +1402,16 @@ function _resumoFazenda(lista, hojeYmd) {
   return r;
 }
 
+// "R$ 22,5 mil" em vez de "R$ 22.481,00". Nasceu dentro do painel da tela
+// inicial; saiu de lá quando a lista de viveiros passou a mostrar o mesmo
+// número — duas cópias da mesma regra é como "22,5 mil" numa tela vira
+// "22.481" na outra.
+function _reaisCurto(n) {
+  return n >= 1000
+    ? "R$ " + formatarNumeroBR(n / 1000, 1) + " mil"
+    : "R$ " + formatarNumeroBR(n, 0);
+}
+
 function _painelFazenda() {
   const alvo = document.getElementById("painel-fazenda");
   if (!alvo) return;
@@ -1408,10 +1421,6 @@ function _painelFazenda() {
   // Sem viveiro em cultivo não há o que resumir: painel zerado não informa,
   // só ocupa a tela do cliente novo.
   if (r.emCultivo === 0) { alvo.innerHTML = ""; return; }
-
-  const reais = (n) => n >= 1000
-    ? "R$ " + formatarNumeroBR(n / 1000, 1) + " mil"
-    : "R$ " + formatarNumeroBR(n, 0);
 
   alvo.innerHTML = `
     <div class="hm-painel">
@@ -1426,14 +1435,14 @@ function _painelFazenda() {
         </div>
         <div class="hm-heroi hm-heroi-lucro">
           <small>Lucro ${String(hoje).substring(0, 4)}</small>
-          <b>${r.ciclosAno > 0 ? reais(r.lucroAno) : "—"}</b>
+          <b>${r.ciclosAno > 0 ? _reaisCurto(r.lucroAno) : "—"}</b>
         </div>
       </div>
       <div class="hm-risco"></div>
       <div class="hm-nums">
         <div class="hm-num"><small>Em cultivo</small><b>${r.emCultivo}<i>viv.</i></b></div>
         <div class="hm-num"><small>Peso médio</small><b>${formatarNumeroBR(r.pesoMedio, 1)}<i>g</i></b></div>
-        <div class="hm-num"><small>Investido</small><b>${reais(r.investido)}</b></div>
+        <div class="hm-num"><small>Investido</small><b>${_reaisCurto(r.investido)}</b></div>
       </div>
       ${r.semRacao > 0 ? `<div class="hm-alerta">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -1711,6 +1720,52 @@ async function salvarViveiro() {
   mostrarListaViveiros(pos >= 0 ? pos : 0, "", `${_esc(nome.trim())} cadastrado com sucesso!`);
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   QUANTO FALTA PRA DESPESCA
+
+   A barra de progresso do cartão de viveiro precisa de um "ciclo de
+   referência": dia 18 DE QUANTOS. Esse número não pode ser chutado. Ciclo de
+   camarão varia com densidade, temperatura, ração e com o peso que o produtor
+   quer vender — 120 dias numa fazenda é 95 noutra, e uma barra que mente é
+   pior que barra nenhuma.
+
+   Então ele sai do histórico da PRÓPRIA fazenda: a mediana da duração dos
+   ciclos já encerrados daquele viveiro. Sem histórico no viveiro, usa o da
+   fazenda inteira. Sem nenhum ciclo encerrado — cliente novo —, não há
+   referência e a barra simplesmente não aparece; o cartão mostra os dias de
+   cultivo e pronto.
+
+   Mediana, e não média: um ciclo interrompido aos 40 dias por mortalidade
+   puxaria a média da fazenda inteira pra baixo e encurtaria a barra de todo
+   mundo. A mediana ignora o caso solto.
+   ─────────────────────────────────────────────────────────────────────────── */
+function _duracoesCiclos(v) {
+  return (((v && v.ciclosFinalizados) || []))
+    .map(c => {
+      if (!c || !c.dataPovoamento || !c.dataEncerramento) return 0;
+      return calcularDiasCultivo(c.dataPovoamento, c.dataEncerramento);
+    })
+    // Fora dessa faixa é ciclo abortado ou data digitada errada, e os dois
+    // estragariam a referência de todos os viveiros.
+    .filter(d => d >= 30 && d <= 365);
+}
+
+function _cicloReferencia(viveiro, lista) {
+  let d = _duracoesCiclos(viveiro);
+  let origem = "viveiro";
+  if (!d.length) {
+    d = (lista || []).reduce((acc, v) => acc.concat(_duracoesCiclos(v)), []);
+    origem = "fazenda";
+  }
+  if (!d.length) return null;
+  const ord = d.slice().sort((a, b) => a - b);
+  const meio = Math.floor(ord.length / 2);
+  const mediana = ord.length % 2
+    ? ord[meio]
+    : Math.round((ord[meio - 1] + ord[meio]) / 2);
+  return { dias: mediana, n: ord.length, origem };
+}
+
 /*
  * LISTA DE VIVEIROS
  *
@@ -1728,6 +1783,16 @@ async function salvarViveiro() {
  * apontando um viveiro ("volta e me mostra o que eu acabei de renomear").
  * Antes isso escolhia qual único cartão desenhar; agora rola até ele.
  */
+// Troca qual viveiro está aberto na lista. Guardado em módulo, e não no
+// elemento: redesenhar a tela (lançar ração, voltar de outra tela) tem que
+// reabrir o mesmo, senão a pessoa perde o lugar a cada ida e volta.
+function _vvAbrir(index) {
+  _vvAberto = index;
+  mostrarListaViveiros();
+  const alvo = document.getElementById("viveiro-card-" + index);
+  if (alvo) alvo.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -1743,80 +1808,131 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   const viveirosOrdenados = [...viveiros].sort(_compararViveirosPorNome);
   const emCultivo = viveirosOrdenados.filter(v => v.dataPovoamento).length;
 
-  const cartao = (viveiro) => {
-    const indexOriginal = viveiros.indexOf(viveiro);
-    // O que interessa no dia a dia — dias de cultivo e o último peso — no
-    // lugar de data de povoamento e laboratório.
-    const _diasCultivoVv = viveiro.dataPovoamento ? calcularDiasCultivo(viveiro.dataPovoamento) + " dias" : "--";
-    const _biosVv = [...(viveiro.biometrias || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
-    const _ultBioVv = _biosVv.length ? fmtG(_biosVv[_biosVv.length - 1].gramatura) + " g" : "--";
+  // Meia dúzia de telas voltam pra cá apontando um viveiro ("mostra o que eu
+  // acabei de renomear"). Antes isso escolhia qual único cartão desenhar;
+  // agora escolhe qual fica ABERTO.
+  if (posicao > 0 && viveirosOrdenados[posicao]) {
+    _vvAberto = viveiros.indexOf(viveirosOrdenados[posicao]);
+  }
+
+  const hojeYmd = _hojeLocal();
+
+  // Um viveiro aberto, os outros em linha fina. É o que resolve a briga entre
+  // "quero ver o detalhe" e "quero ver todos": a lista inteira cabe na tela, e
+  // o detalhe fica no que a pessoa escolheu — sem Anterior/Próximo e sem
+  // repetir quatro números vezes vinte viveiros.
+  let aberto = viveiros[_vvAberto] && viveirosOrdenados.includes(viveiros[_vvAberto])
+    ? viveiros[_vvAberto]
+    : (viveirosOrdenados.find(v => v.dataPovoamento) || viveirosOrdenados[0]);
+
+  const ICO = {
+    cultivo:    `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
+    // Três pontinhos = um punhado de pós-larva, igual ao dos Custos. Tentei
+    // desenhar um camarão e a 15px ele vira rabisco; círculo continua círculo
+    // em qualquer tamanho.
+    povoamento: `<circle cx="9" cy="9" r="2.4"/><circle cx="15.5" cy="11" r="2.4"/><circle cx="11" cy="15.5" r="2.4"/>`,
+    // Um talhão visto de cima, não uma régua: a régua inclinada a 15px lia
+    // como losango.
+    area:       `<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="12" y1="3.5" x2="12" y2="20.5"/>`,
+    biometria:  `<path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 14h6z"/><path d="M19 7l-3 7h6z"/>`,
+    agua:       `<path d="M3 8c2.5-2 4.5 2 7 0s4.5-2 7 0"/><path d="M3 13c2.5-2 4.5 2 7 0s4.5-2 7 0"/><path d="M3 18c2.5-2 4.5 2 7 0s4.5-2 7 0"/>`,
+  };
+  const svg = (k) => `<svg viewBox="0 0 24 24">${ICO[k]}</svg>`;
+
+  const cartaoAberto = (viveiro) => {
+    const i = viveiros.indexOf(viveiro);
+    const emCultivoV = !!viveiro.dataPovoamento;
+    const dias = emCultivoV ? calcularDiasCultivo(viveiro.dataPovoamento) : 0;
+    const ref = emCultivoV ? _cicloReferencia(viveiro, viveiros) : null;
+    const pct = ref ? Math.min(100, Math.round(dias / ref.dias * 100)) : 0;
+
+    const bios = [...(viveiro.biometrias || [])].sort((a, b) => String(a.data).localeCompare(String(b.data)));
+    const peso = bios.length ? fmtG(bios[bios.length - 1].gramatura) + " g" : "Sem registro";
+
+    const pls = Number(String(viveiro.totalPovoado || "").replace(/\./g, ""));
+    const plsTxt = pls > 0
+      ? (pls >= 1000 ? formatarNumeroBR(pls / 1000, 0) + " mil PLs" : formatarNumeroBR(pls, 0) + " PLs")
+      : "--";
+
+    const semRacao = emCultivoV && !(viveiro.racoes || []).some(x => String(x.data).substring(0, 10) === hojeYmd);
+    const bloqueado = _viveiroForaDoLimite(i);
+
+    const item = (ico, rot, val) => `<div class="sv-item">
+      <span class="sv-item-ico">${svg(ico)}</span>
+      <span class="sv-item-txt"><small>${rot}</small><b>${val}</b></span>
+    </div>`;
 
     return `
-    <div class="viveiro-card" id="viveiro-card-${indexOriginal}">
-
-      <div class="vc-topo">
-        <div class="vc-icone-box">🦐</div>
-        <div class="vc-titulo-area">
-          <h3 class="vc-nome-viveiro">${_esc(viveiro.nome)}<button class="vc-editar-nome" onclick="editarNomeViveiro(${indexOriginal})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></h3>
-          ${viveiro.dataPovoamento
-            ? `<span class="vc-badge-cultivo">● Em cultivo</span>`
-            : `<span class="vc-badge-vazio">● Vazio</span>`}
-
+    <div class="sv-card sv-card-aberto" id="viveiro-card-${i}">
+      <div class="sv-cab">
+        <div class="sv-cab-txt">
+          <h3>${_esc(viveiro.nome)}</h3>
+          <span class="sv-estado${emCultivoV ? "" : " sv-estado-vazio"}">
+            ${emCultivoV
+              ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.7 9.6"/></svg>Em cultivo`
+              : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Vazio`}
+          </span>
         </div>
-        <div class="vc-pls-badge">
-          🦐 ${viveiro.totalPovoado ? Number(String(viveiro.totalPovoado).replace(/\./g, "")).toLocaleString("pt-BR") : "--"} PLs
-        </div>
+        <button class="sv-lapis" onclick="event.stopPropagation(); editarNomeViveiro(${i})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>
 
-      ${_viveiroForaDoLimite(indexOriginal) ? `
-      <button class="vc-aviso-bloqueado" onclick="abrirAssinatura()">
-        <span class="vc-ab-ico"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-        <span class="vc-ab-txt">
-          <b>Fora do plano</b>
-          <small>Só leitura — toque para ver os planos</small>
-        </span>
-        <span class="vc-ab-seta">›</span>
-      </button>` : ""}
+      ${emCultivoV && ref ? `
+      <div class="sv-ciclo">
+        <div class="sv-barra"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
+        <div class="sv-marcos"><span>dia ${dias}</span><span>${pct}% do ciclo</span><span>~${ref.dias} dias</span></div>
+      </div>` : ""}
 
-      <hr class="vc-separador">
-
-      <div class="vc-info-lista">
-        <div class="vc-info-item">
-          <div class="vc-info-icone verde">🗓️</div>
-          <div>
-            <strong>Dias de cultivo</strong>
-            <p>${_diasCultivoVv}</p>
-          </div>
-        </div>
-        <div class="vc-info-item">
-          <div class="vc-info-icone azul">⚖️</div>
-          <div>
-            <strong>Última biometria</strong>
-            <p>${_ultBioVv}</p>
-          </div>
-        </div>
-        <div class="vc-info-item">
-          <div class="vc-info-icone roxo">📐</div>
-          <div>
-            <strong>Tamanho</strong>
-            <p>${_fmtHa(viveiro.tamanho)} ha</p>
-          </div>
-        </div>
+      <div class="sv-grade">
+        ${item("cultivo", "Cultivo", emCultivoV ? `${dias} ${dias === 1 ? "dia" : "dias"}` : "--")}
+        ${item("povoamento", "Povoamento", plsTxt)}
+        ${item("area", "Área", _fmtHa(viveiro.tamanho) + " ha")}
+        ${item("biometria", "Biometria", peso)}
       </div>
 
-      <button class="botao-abrir" onclick="abrirViveiro(${indexOriginal})">
-        Abrir viveiro
+      ${bloqueado ? `
+      <button class="sv-aviso sv-aviso-bloqueio" onclick="event.stopPropagation(); abrirAssinatura()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Fora do plano — toque para ver os planos
+      </button>`
+      : semRacao ? `
+      <div class="sv-aviso sv-aviso-racao">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        Sem ração lançada hoje
+      </div>` : ""}
+
+      <button class="sv-abrir" onclick="abrirViveiro(${i})">
+        Abrir detalhes do viveiro
+        <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg>
       </button>
-
     </div>`;
   };
 
+  const linhaFechada = (viveiro) => {
+    const i = viveiros.indexOf(viveiro);
+    const emCultivoV = !!viveiro.dataPovoamento;
+    const dias = emCultivoV ? calcularDiasCultivo(viveiro.dataPovoamento) : 0;
+    // O conceito dizia "Consultar informações" em toda linha fechada. É texto
+    // que não informa: repetido viveiro a viveiro, ocupa a linha e não diz
+    // nada que a seta já não diga. No lugar vai o estado de cada um.
+    const sub = emCultivoV ? `Em cultivo · ${dias} ${dias === 1 ? "dia" : "dias"}` : "Vazio";
+    return `
+    <button class="sv-linha" onclick="_vvAbrir(${i})" id="viveiro-card-${i}">
+      <span class="sv-linha-ico">${svg("agua")}</span>
+      <span class="sv-linha-txt"><b>${_esc(viveiro.nome)}</b><small>${sub}</small></span>
+      <span class="sv-linha-seta">›</span>
+    </button>`;
+  };
+
   area.innerHTML = `
-    <div class="lv-cab">
-      <h3>Viveiros</h3>
-      ${emCultivo ? `<span class="lv-cab-conta">${emCultivo} em cultivo</span>` : ""}
+    <div class="sv-topo">
+      <div class="sv-topo-txt">
+        <h2>Seus viveiros</h2>
+        <p>${viveirosOrdenados.length} ${viveirosOrdenados.length === 1 ? "viveiro" : "viveiros"}${emCultivo ? ` · ${emCultivo} em cultivo` : ""}</p>
+      </div>
     </div>
-    <div class="lv-lista">${viveirosOrdenados.map(cartao).join("")}</div>
+    <div class="sv-lista">
+      ${viveirosOrdenados.map(v => v === aberto ? cartaoAberto(v) : linhaFechada(v)).join("")}
+    </div>
     <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
   `;
 
