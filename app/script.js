@@ -431,11 +431,50 @@ function _fitaPrecos() {
 }
 
 /*
+ * Nome tirado do e-mail, quando não há cadastro nenhum.
+ * "matheus.vitalo@gmail.com" -> "Matheus Vitalo".
+ *
+ * Corta nos separadores comuns e nos números, porque "joao.silva82@" não deve
+ * virar "Joao Silva82". No máximo dois nomes: o resto do endereço costuma ser
+ * provedor, apelido ou sobra. Função pura -> tem teste.
+ */
+function _nomeDoEmail(email) {
+  const prefixo = String(email || "").split("@")[0] || "";
+  return prefixo
+    .split(/[._\-+\d]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/*
+ * Quem é o produtor, na ordem em que o app tem a informação:
+ *
+ *   1. "Nome do proprietário", em Configurações > Fazenda
+ *   2. o nome do cadastro que pede o WhatsApp (tabela contatos)
+ *   3. o e-mail, como último recurso
+ *
+ * Fonte ÚNICA de propósito: a saudação e as iniciais da foto saem daqui. Se
+ * cada uma tivesse sua própria regra, daria para o cabeçalho dizer "Olá,
+ * Matheus" com a foto marcada "FS".
+ *
+ * Função pura -> tem teste.
+ */
+function _nomeDoProdutor(user, contatoAtual) {
+  const doCadastro = String(user?.user_metadata?.proprietario || "").trim();
+  if (doCadastro) return doCadastro;
+  const doWhats = String(contatoAtual?.nome || "").trim();
+  if (doWhats) return doWhats;
+  return _nomeDoEmail(user?.email);
+}
+
+/*
  * Cabeçalho: quem é a pessoa, e de qual fazenda.
  *
- * Os dois campos já existiam em Configurações > Fazenda, e eu tinha usado o
- * errado: "nome" guarda a FAZENDA e "proprietario" guarda a pessoa. Saudar
- * pelo "nome" dava "Olá, Fazenda Santa Luzia".
+ * Os dois campos de Configurações > Fazenda são fáceis de trocar: "nome"
+ * guarda a FAZENDA e "proprietario" guarda a pessoa. Saudar pelo "nome" dava
+ * "Olá, Fazenda Santa Luzia".
  *
  * Só o primeiro nome na saudação: "Olá, José Carlos da Silva Neto" estoura a
  * linha num celular estreito.
@@ -446,8 +485,7 @@ async function atualizarSaudacaoTopo() {
   if (!elOla) return;
   const { data: { user } } = await supabaseClient.auth.getUser();
   const fazenda = user?.user_metadata?.nome || "";
-  const dono = user?.user_metadata?.proprietario || "";
-  const primeiro = String(dono).trim().split(/\s+/)[0] || "";
+  const primeiro = _nomeDoProdutor(user, contato).split(/\s+/)[0] || "";
 
   // textContent já escapa — os dois são texto do cliente.
   elOla.textContent = primeiro ? `Olá, ${primeiro}` : "Olá";
@@ -473,9 +511,10 @@ async function atualizarAvatarTopo() {
     alvo.innerHTML = `<img src="${_attr(fotoUrl)}" alt="">`;
     return;
   }
-  // Iniciais do PROPRIETÁRIO; sem ele, as da fazenda; sem as duas, o e-mail.
-  const base = user.user_metadata?.proprietario || user.user_metadata?.nome || user.email || "?";
-  const ini = String(base).split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+  // Mesma fonte da saudação, senão daria para o topo dizer "Olá, Matheus" com
+  // a foto marcada "FS".
+  const base = _nomeDoProdutor(user, contato) || user.email || "?";
+  const ini = String(base).split(/\s+/).filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
   alvo.innerHTML = `<span class="topo-perfil-iniciais">${_esc(ini)}</span>`;
 }
 
@@ -13566,20 +13605,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // O avatar sai da sessão que já temos em mãos — pedir o usuário de novo
-      // ao servidor era mais uma ida e volta só para desenhar um círculo.
-      const user = session.user;
-      if (user) {
-        const fotoUrl = user.user_metadata?.avatar_url;
-        const nome = user.user_metadata?.nome || user.email?.split("@")[0] || "?";
-        const avatarTopo = document.getElementById("avatar-topo");
-        if (fotoUrl) {
-          avatarTopo.innerHTML = `<img src="${_attr(fotoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-        } else {
-          const iniciais = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
-          avatarTopo.innerHTML = `<span class="avatar-topo-iniciais">${_esc(iniciais || "?")}</span>`;
-        }
-      }
+      // Topo desenhado agora, DEPOIS de carregarViveiros: é aqui que a tabela
+      // de contatos já chegou, e ela é o segundo nome da fila quando não há
+      // proprietário cadastrado.
+      //
+      // Havia uma segunda implementação do avatar escrita à mão neste ponto, e
+      // ela tirava as iniciais do campo "nome" — que é a FAZENDA, não a pessoa.
+      // Duas regras para a mesma coisa deixavam o topo dizer "Olá, Matheus" com
+      // a foto marcada "FS". Agora os dois saem de _nomeDoProdutor().
+      atualizarAvatarTopo();
+      atualizarSaudacaoTopo();
 
       // Manutenção (migração de ciclo_id e lançamentos automáticos em atraso)
       // não precisa segurar a tela: roda depois que o app já está utilizável.
