@@ -605,3 +605,36 @@ test("boletos: lista vazia ou suja não quebra",()=>{
     assert.equal(a.run('__r.total'), 0, l);
   }
 });
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Pastilha de categoria das telas de Custos
+
+   Isto falha calado: a tela monta, nada dá erro no console, e o custo só sai
+   com o desenho errado. Foi o que aconteceu com "Operação", que TERMINA em
+   "racao" e saía com a tigela de ração. Por isso tem teste.
+   ─────────────────────────────────────────────────────────────────────────── */
+test("custos: a pastilha vem da categoria, e 'Operação' não é ração",()=>{
+  const a=load();
+  const chave = (cat, nome) => a.run(`_cxCategoriaChave(${JSON.stringify({ categoria: cat, nomeProduto: nome || cat })})`);
+  assert.equal(chave('Ração'), 'racao');
+  assert.equal(chave('Operação'), 'operacao');      // o bug: terminava em "racao"
+  assert.equal(chave('Probiótico'), 'probio');
+  assert.equal(chave('Calcário'), 'calcario');      // com acento
+  assert.equal(chave('Outros', 'Dolomita (P)'), 'calcario');
+  assert.equal(chave('Outros', 'Óxido de cálcio'), 'calcario');
+  assert.equal(chave('Aditivo'), 'aditivo');
+  assert.equal(chave('Povoamento'), 'larva');
+  assert.equal(chave('Outros', 'Pós larva'), 'larva');
+  assert.equal(chave('energia'), 'energia');
+  assert.equal(chave('funcionario'), 'operacao');
+});
+test("custos: categoria desconhecida ou vazia cai em 'outro', nunca sem ícone",()=>{
+  const a=load();
+  for (const arg of ['null', 'undefined', '{}', '{categoria:""}', '{categoria:"Xyz"}']) {
+    assert.equal(a.run(`_cxCategoriaChave(${arg})`), 'outro', arg);
+  }
+  // Toda chave devolvida precisa ter desenho, senão a pastilha sai vazia.
+  assert.equal(a.run(`Object.keys(_CX_ICONES).filter(k => !_CX_ICONES[k]).length`), 0);
+  assert.equal(a.run(`['racao','larva','probio','calcario','aditivo','energia','operacao','outro']
+                      .filter(k => !_CX_ICONES[k]).length`), 0);
+});
