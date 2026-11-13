@@ -90,7 +90,16 @@
    si e nenhum ganhava o olho. */
 .hm-painel {
     margin-top: 18px; border-radius: 16px; padding: 15px 16px 14px; color: #fff;
-    background: linear-gradient(150deg, #0c4f49, #073a36);
+    /* A bolha de luz: um círculo claro grande, metade pra fora do cartão, no
+       canto de cima à direita. É o que faz o bloco escuro parecer iluminado em
+       vez de pintado — sem ela, o gradiente linear sozinho dá um retângulo
+       chapado. Veio de uma referência que o dono mandou (um cartão azul de
+       app de banco); aqui ela vai com o verde da casa.
+       Dois gradientes na mesma propriedade: o radial POR CIMA, o linear por
+       baixo. A ordem importa — invertida, o linear opaco tampa a luz. */
+    background:
+        radial-gradient(62% 118% at 93% 26%, rgba(176, 255, 236, .20) 0%, rgba(176, 255, 236, .15) 52%, rgba(176, 255, 236, .05) 72%, transparent 84%),
+        linear-gradient(150deg, #0c4f49, #073a36);
 }
 .hm-painel-topo {
     display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 13px;
