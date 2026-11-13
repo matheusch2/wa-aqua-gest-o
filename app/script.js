@@ -1364,7 +1364,8 @@ function _mostrarHomeCelular(mostrar) {
  * ninguém desconfia — e separado dá para testar.
  */
 function _resumoFazenda(lista, hojeYmd) {
-  const r = { emCultivo: 0, semRacao: 0, biomassa: 0, investido: 0, pesoMedio: 0 };
+  const r = { emCultivo: 0, semRacao: 0, biomassa: 0, investido: 0, pesoMedio: 0,
+              lucroAno: 0, ciclosAno: 0 };
   let pesoPonderado = 0;
   (lista || []).forEach((v) => {
     if (!v || !v.dataPovoamento) return;
@@ -1388,6 +1389,13 @@ function _resumoFazenda(lista, hojeYmd) {
   // Média PONDERADA pela biomassa: na simples, um viveirinho pequeno puxava o
   // número da fazenda inteira.
   r.pesoMedio = r.biomassa > 0 ? pesoPonderado / r.biomassa : 0;
+
+  // Lucro do ano: só ciclos ENCERRADOS neste ano. Cultivo em andamento ainda
+  // não vendeu, e contar estimativa como lucro realizado seria mentir para
+  // quem decide com base nesse número.
+  const ano = _lucroDoAno(lista, String(hojeYmd || "").substring(0, 4));
+  r.lucroAno = ano.total;
+  r.ciclosAno = ano.ciclos;
   return r;
 }
 
@@ -1419,7 +1427,9 @@ function _painelFazenda() {
       <div class="hm-nums">
         <div class="hm-num"><small>Em cultivo</small><b>${r.emCultivo}<i>viv.</i></b></div>
         <div class="hm-num"><small>Peso médio</small><b>${formatarNumeroBR(r.pesoMedio, 1)}<i>g</i></b></div>
-        <div class="hm-num"><small>Investido</small><b>${reais(r.investido)}</b></div>
+        <div class="hm-num"><small>Lucro ${String(hoje).substring(0, 4)}</small><b>${
+          r.ciclosAno > 0 ? reais(r.lucroAno) : "—"
+        }</b></div>
       </div>
       ${r.semRacao > 0 ? `<div class="hm-alerta">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -5761,13 +5771,9 @@ function _rgCiclosEncerrados() {
   const linhas = [];
   viveiros.forEach(v => {
     ((v && v.ciclosFinalizados) || []).forEach(c => {
-      const ini = c.dataPreparacao || c.dataPovoamento;
-      const cc = _custosCicloAtivo(v, c.cicloId, ini, c.dataEncerramento, c.custoFixoRateado);
-      const precoFinal = Number(c.precoVenda) || 0;
-      const receita = (c.despescas || []).reduce((s, d) => {
-        const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal;
-        return s + (Number(d.quantidadeKg) || 0) * p;
-      }, 0) + (Number(c.producaoFinal) || 0) * precoFinal;
+      // Receita, custo e lucro pela fonte única — a mesma que o relatório do
+      // ciclo usa, para o ranking nunca discordar dele.
+      const r = _lucroDoCiclo(v, c);
       linhas.push({
         viveiro: (c.nomeViveiro || v.nome || "Viveiro").trim(),
         lab: (c.laboratorio || "").trim() || "Sem laboratório",
@@ -5779,7 +5785,7 @@ function _rgCiclosEncerrados() {
         // Sem preço de venda não há lucro — null, não zero. Zero entraria na
         // média e puxaria o ranking para baixo como se o ciclo tivesse
         // empatado, quando na verdade ele só não foi precificado.
-        lucro: receita > 0 ? receita - cc.total : null,
+        lucro: r.lucro,
         sobr: Number(c.sobrevivencia) > 0 ? Number(c.sobrevivencia) : null,
         fca: Number(c.fca) > 0 ? Number(c.fca) : null,
         cresc: _crescSemanalCiclo(c),
@@ -10086,16 +10092,9 @@ function _renderRelatorioCiclo(index, ciclo, origem = "historico") {
   const producaoTotal = Number(ciclo.producaoTotal) || 0;
   const precoFinal = Number(ciclo.precoVenda) || 0; // preço da despesca final
   const _despRel = ciclo.despescas || [];
-  const receitaParciais = _despRel.reduce((s, d) => {
-    // Fallback SÓ para registros antigos. Desde 28/08/2026 o preço é
-    // obrigatório ao lançar e ao editar uma despesca parcial, então despesca
-    // nova nunca cai aqui. Continua valendo para não zerar a receita de ciclos
-    // que já estão fechados — apagar esse fallback mudaria relatório antigo.
-    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal;
-    return s + (Number(d.quantidadeKg) || 0) * p;
-  }, 0);
-  const receitaFinal = (Number(ciclo.producaoFinal) || 0) * precoFinal;
-  const receitaBruta = receitaParciais + receitaFinal;
+  // Receita pela fonte única — a mesma que o ranking e a tela inicial usam.
+  // O fallback para registros antigos mora lá dentro.
+  const receitaBruta = _receitaDoCiclo(ciclo);
   const temPreco = receitaBruta > 0;
   const precoMedio = producaoTotal > 0 ? receitaBruta / producaoTotal : 0;
   const lucro = receitaBruta - custoTotal;
@@ -12665,6 +12664,75 @@ async function _excluirCustoDoCicloEncerrado(index, custoId, cicloId, origem, bo
   viveiros[index].custos = (viveiros[index].custos || []).filter(c => c.id !== custoId);
   _toastSucesso("Custo excluído.");
   abrirCustosDoCicloEncerrado(index, cicloId, origem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RECEITA E LUCRO DE UM CICLO ENCERRADO — fonte única
+
+   Esta conta existia copiada em dois lugares: no relatório do ciclo e no
+   ranking do relatório geral. Idênticas hoje, mas duas cópias divergem na
+   primeira correção que alguém fizer em uma só, e aí o mesmo cultivo passa a
+   valer dois números diferentes dependendo da tela. Com a tela inicial
+   somando o lucro do ano, viraria a terceira cópia.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Receita bruta: as despescas parciais pelo preço de cada uma, mais a despesca
+ * final pelo preço de venda do ciclo.
+ *
+ * O fallback para o preço final vale SÓ para registros antigos. Desde
+ * 28/08/2026 o preço é obrigatório ao lançar e ao editar uma despesca parcial,
+ * então despesca nova nunca cai nele. Continua aqui para não zerar a receita
+ * de ciclos já fechados — tirá-lo mudaria relatório antigo que já foi impresso.
+ *
+ * Função pura -> tem teste.
+ */
+function _receitaDoCiclo(ciclo) {
+  const precoFinal = Number(ciclo?.precoVenda) || 0;
+  const parciais = (ciclo?.despescas || []).reduce((s, d) => {
+    const p = Number(d.precoKg) > 0 ? Number(d.precoKg) : precoFinal;
+    return s + (Number(d.quantidadeKg) || 0) * p;
+  }, 0);
+  return parciais + (Number(ciclo?.producaoFinal) || 0) * precoFinal;
+}
+
+/*
+ * Receita, custo e lucro de um ciclo encerrado.
+ *
+ * lucro vem null, não zero, quando não há preço de venda lançado: zero entraria
+ * nas somas e nas médias como se o produtor tivesse trabalhado de graça.
+ */
+function _lucroDoCiclo(viveiro, ciclo) {
+  const ini = ciclo?.dataPreparacao || ciclo?.dataPovoamento;
+  const cc = _custosCicloAtivo(viveiro || { custos: [] }, ciclo?.cicloId, ini,
+                               ciclo?.dataEncerramento, ciclo?.custoFixoRateado);
+  const receita = _receitaDoCiclo(ciclo);
+  return { receita, custo: cc.total, cc, lucro: receita > 0 ? receita - cc.total : null };
+}
+
+/*
+ * Lucro somado dos ciclos ENCERRADOS no ano. É o que a tela inicial mostra.
+ *
+ * Só ciclo fechado entra: cultivo em andamento ainda não vendeu nada, e contar
+ * uma estimativa como lucro realizado seria mentir para quem está decidindo
+ * com base nesse número. Em janeiro, portanto, começa zerado — e tem que ser
+ * assim mesmo.
+ *
+ * Função pura -> tem teste.
+ */
+function _lucroDoAno(lista, ano) {
+  const alvo = String(ano);
+  let total = 0, ciclos = 0;
+  (lista || []).forEach((v) => {
+    (v?.ciclosFinalizados || []).forEach((c) => {
+      if (String(c?.dataEncerramento || "").substring(0, 4) !== alvo) return;
+      const r = _lucroDoCiclo(v, c);
+      if (r.lucro === null) return;   // sem preço lançado não entra na soma
+      total += r.lucro;
+      ciclos++;
+    });
+  });
+  return { total, ciclos };
 }
 
 function _custosDoEscopoPares(viveiro) {
