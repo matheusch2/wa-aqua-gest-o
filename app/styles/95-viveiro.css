@@ -340,3 +340,38 @@ body.tema-escuro .painel-viveiro .vv-admin-vermelho svg { stroke: #fca5a5; }
     line-height: 1.25;
     text-align: center;
 }
+
+/* ---------------------------------------------------------------------------
+   As cores dos lançamentos, de volta
+
+   Eu tinha tirado a cor por ação quando os quatro foram pra uma linha, com o
+   argumento de que quatro pastilhas coloridas de 80px lado a lado viram
+   confete. O dono viu sem cor e pediu de volta — e a chamada é dele, que abre
+   essa tela todo dia: ele reconhece o botão pela cor antes de ler o rótulo, e
+   foi justamente isso que eu tirei.
+
+   A pastilha volta, e com ela o cartão branco: pastilha âmbar clara sobre
+   fundo verde-claro ficava embaçada, sem contraste pra cor dizer o que veio
+   dizer. Branco atrás, cor na pastilha.
+
+   nth-child porque os quatro não têm classe própria no HTML, e a ordem deles
+   é fixa: ração, biometria, despesca, custo.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-manejo-btn {
+    background: #fff;
+    border: 1px solid #dde8e6;
+    box-shadow: 0 2px 7px rgba(6,107,99,.07);
+    color: #10322f;
+}
+.painel-viveiro .vv-manejo-btn svg {
+    width: 17px; height: 17px; padding: 8px;
+    border-radius: 11px; box-sizing: content-box;
+}
+.painel-viveiro .vv-manejo-btn:nth-child(1) svg { background: #fdf3df; stroke: #a97714; }
+.painel-viveiro .vv-manejo-btn:nth-child(2) svg { background: #e6edfd; stroke: #2d4fa8; }
+.painel-viveiro .vv-manejo-btn:nth-child(3) svg { background: #e0f2f6; stroke: #0e7490; }
+.painel-viveiro .vv-manejo-btn:nth-child(4) svg { background: #f6eee6; stroke: #9a5b2d; }
+
+body.tema-escuro .painel-viveiro .vv-manejo-btn {
+    background: #1f2937; border-color: #374151; color: #e5e7eb;
+}
