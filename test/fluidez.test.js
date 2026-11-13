@@ -453,3 +453,41 @@ test("preços: sem preço anterior não inventa variação",()=>{
   assert.equal(a.run(`_variacaoPreco({preco: 22, preco_anterior: 21})`), 1);
   assert.ok(a.run(`_variacaoPreco({preco: 20, preco_anterior: 21})`) < 0);
 });
+
+// ── De onde sai o nome do produtor ──────────────────────────────────────────
+// Três fontes, em ordem. Errar a ordem não quebra nada: o app saúda pelo nome
+// errado e segue como se nada fosse — foi assim que nasceu o "Olá, Fazenda
+// Santa Luzia", saudando pelo campo da FAZENDA.
+const U = (meta, email) => ({ user_metadata: meta || {}, email: email || "" });
+
+test("nome: o proprietário cadastrado vem primeiro",()=>{
+  const a=load();
+  a.run(`__u = ${JSON.stringify(U({ proprietario: 'Matheus Vitalo', nome: 'Fazenda Santa Luzia' }, 'outro@x.com'))};`);
+  assert.equal(a.run(`_nomeDoProdutor(__u, {nome:'Zé do Contato'})`), 'Matheus Vitalo');
+});
+test("nome: sem proprietário, usa o do cadastro do WhatsApp",()=>{
+  const a=load();
+  a.run(`__u = ${JSON.stringify(U({ nome: 'Fazenda Santa Luzia' }, 'matheus.vitalo@x.com'))};`);
+  assert.equal(a.run(`_nomeDoProdutor(__u, {nome:'José Carlos'})`), 'José Carlos');
+  // o nome da FAZENDA nunca pode ser usado como nome da pessoa
+  assert.notEqual(a.run(`_nomeDoProdutor(__u, {nome:'José Carlos'})`), 'Fazenda Santa Luzia');
+});
+test("nome: sem os dois, tira do e-mail",()=>{
+  const a=load();
+  a.run(`__u = ${JSON.stringify(U({ nome: 'Fazenda X' }, 'matheus.vitalo@gmail.com'))};`);
+  assert.equal(a.run(`_nomeDoProdutor(__u, null)`), 'Matheus Vitalo');
+});
+test("nome do e-mail: separa, capitaliza e para em dois nomes",()=>{
+  const a=load();
+  assert.equal(a.run(`_nomeDoEmail('matheus.vitalo@gmail.com')`), 'Matheus Vitalo');
+  assert.equal(a.run(`_nomeDoEmail('joao_silva_pereira@x.com')`), 'Joao Silva');   // para em dois
+  assert.equal(a.run(`_nomeDoEmail('JOAO.SILVA82@x.com')`), 'Joao Silva');          // número fora
+  assert.equal(a.run(`_nomeDoEmail('matheus@x.com')`), 'Matheus');
+  assert.equal(a.run(`_nomeDoEmail('')`), '');
+  assert.equal(a.run(`_nomeDoEmail(null)`), '');
+});
+test("nome: cadastro em branco ou só espaço não conta como preenchido",()=>{
+  const a=load();
+  a.run(`__u = ${JSON.stringify(U({ proprietario: '   ' }, 'ana.paula@x.com'))};`);
+  assert.equal(a.run(`_nomeDoProdutor(__u, {nome:'  '})`), 'Ana Paula');
+});
