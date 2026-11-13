@@ -47,7 +47,7 @@
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
     <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
-    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261113f">
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261113u">
     <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20261113q">
     <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20261113q">
     <!-- Era 04-desktop-e-configuracoes.css, que deixou de existir quando o CSS
@@ -284,8 +284,9 @@
         // replace() não deixa entrada de login navegável no histórico.
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (_ehRecuperacao) { mostrarDefinirNovaSenha(); return; }
-            if (session) _irPorPerfil();
-            else mostrarLogin();
+            if (session) { _irPorPerfil(); return; }
+            const ultimo = _lerUltimoAcesso();
+            if (ultimo) mostrarVolta(ultimo); else mostrarLogin();
         });
 
         // Restaura o formulário de login se o Safari devolver a página do bfcache
@@ -329,6 +330,100 @@
                 input.type = "password";
                 botao.innerHTML = svgOlho;
             }
+        }
+
+
+        /* ───────────────────────────────────────────────────────────────────
+           QUEM ENTROU POR ÚLTIMO NESTE APARELHO
+
+           A sessão do Supabase já fica salva: quem entrou não vê mais o login,
+           vai direto pro app. Esta tela é pro caso em que a sessão caiu (saiu
+           da conta, token expirou, limpou os dados) mas o APARELHO continua
+           sendo o mesmo — e aí pedir e-mail de novo é pedir o que já sabemos.
+
+           Guardado no aparelho da pessoa, só o que a tela mostra: nome, e-mail
+           e a foto do perfil. Nada de senha e nada de token — quem cuida de
+           token é o Supabase, e isso não muda aqui.
+           ─────────────────────────────────────────────────────────────────── */
+        const _ULTIMO_KEY = "wa_ultimo_acesso";
+
+        function _salvarUltimoAcesso(user) {
+            if (!user) return;
+            try {
+                localStorage.setItem(_ULTIMO_KEY, JSON.stringify({
+                    email: user.email || "",
+                    nome: String(user.user_metadata?.proprietario || "").trim(),
+                    foto: user.user_metadata?.avatar_url || "",
+                }));
+            } catch (e) {}
+        }
+        function _lerUltimoAcesso() {
+            try {
+                const u = JSON.parse(localStorage.getItem(_ULTIMO_KEY));
+                return u && u.email ? u : null;
+            } catch (e) { return null; }
+        }
+        function _esquecerUltimoAcesso() {
+            try { localStorage.removeItem(_ULTIMO_KEY); } catch (e) {}
+            mostrarLogin();
+        }
+
+        // "matheus@gmail.com" → "ma•••@gmail.com". O e-mail inteiro na tela de
+        // um aparelho que pode estar na mão de outra pessoa é informação dada
+        // de graça; os dois primeiros bastam pra reconhecer a própria conta.
+        function _emailMascarado(email) {
+            const [antes, dominio] = String(email || "").split("@");
+            if (!dominio) return email || "";
+            const visivel = antes.slice(0, 2);
+            return visivel + "•••@" + dominio;
+        }
+
+        function _iniciaisDe(txt) {
+            return String(txt || "?").split(/\s+/).filter(Boolean)
+                .map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+        }
+
+        function mostrarVolta(u) {
+            _esconderSplash();
+            const nome = u.nome || String(u.email || "").split("@")[0];
+            document.getElementById("area-login").innerHTML = `
+                <div class="login-wrapper">
+                    <div class="login-topo">
+                        <div class="logo-circulo login-logo">
+                            <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua Gestão" class="login-logo-img">
+                        </div>
+                    </div>
+                    <div class="login-form-card volta-card">
+                        <div class="volta-avatar">${u.foto
+                            ? `<img src="${String(u.foto).replace(/"/g, "&quot;")}" alt="">`
+                            : `<span>${_iniciaisDe(nome)}</span>`}</div>
+                        <h1 class="volta-nome">${nome.replace(/</g, "&lt;")}</h1>
+                        <p class="volta-email">${_emailMascarado(u.email)}</p>
+
+                        <input type="hidden" id="emailLogin" value="${String(u.email).replace(/"/g, "&quot;")}">
+                        <div class="input-com-icone">
+                            <svg class="input-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="password" id="senhaLogin" placeholder="Digite sua senha" autocomplete="current-password"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();entrarUsuario(document.querySelector('.botao-entrar'));}">
+                            <button class="botao-olho" type="button" onclick="toggleSenha('senhaLogin', this)">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
+                        <button class="botao-entrar" onclick="entrarUsuario(this)">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                            Entrar
+                        </button>
+                        <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
+                        <button class="link-esqueci" onclick="mostrarRecuperarSenha()">Esqueci minha senha</button>
+                        <button class="link-trocar-conta" onclick="_esquecerUltimoAcesso()">Entrar com outra conta</button>
+                    </div>
+                </div>
+            `;
+            _verificarLockLogin();
+            const campo = document.getElementById("senhaLogin");
+            // Sem focar sozinho: no iPhone o teclado subindo antes da pessoa
+            // tocar empurra o cartão e esconde o próprio botão de Entrar.
+            if (campo) campo.value = "";
         }
 
         function mostrarLogin() {
@@ -503,7 +598,7 @@
             const senha = document.getElementById("senhaLogin").value;
             if (!email || !senha) { msgLogin("Preencha e-mail e senha."); return; }
             const restaurar = _travarBtnLogin(botao, "Entrando...");
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
             if (error) {
                 restaurar();
                 const s = _lockState();
@@ -520,6 +615,7 @@
                 return;
             }
             _lockClear();
+            _salvarUltimoAcesso(data?.user);
             // replace() evita que o botão "Voltar" reabra a tela de login "Entrando..."
             _irPorPerfil();
         }
