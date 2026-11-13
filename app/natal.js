@@ -121,11 +121,10 @@
   }
 
   function passada() {
-    cada(".splash-wa-logo-card", 14, 8);               // abertura, 110px
-    cada(".login-logo", 12, 6);                        // entrada, 74px
-    cada(".logo-circulo:not(.login-logo)", 11, 5);     // barra de cima, 65px
-    // O :not() importa: na entrada a logo tem as DUAS classes, e sem ele a
-    // mesma caixa seria enfeitada duas vezes com tamanhos diferentes.
+    cada(".splash-wa-logo-card", 14, 8);   // abertura, 110px
+    cada(".login-logo", 12, 6);            // entrada, 74px
+    // A barra de cima saiu da lista: ela não tem mais logo do WA. Virou foto do
+    // produtor + nome dele e da fazenda, e sem logo não há onde pôr o gorro.
   }
 
   /* Uma passada só não basta. As telas da entrada (login, cadastro, recuperar
