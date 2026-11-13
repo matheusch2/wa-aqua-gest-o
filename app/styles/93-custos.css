@@ -29,13 +29,12 @@
 
    Eram três blocos centralizados em cima: "Custos — V1" grande, duas linhas
    de legenda cinza e dois botões gordos de 56px. Mais de 180px antes do
-   primeiro número — e a legenda repetia palavra por palavra o que o cartão
-   de total diz logo abaixo ("cultivo atual, desde tal dia").
+   primeiro número.
 
-   Agora: título à esquerda, viveiro numa pastilha ao lado, e nada repetido.
-   Texto centralizado é bonito num cartaz e ruim numa tela de lista: o olho
-   que vai descer por uma coluna de valores alinhados à esquerda tem que
-   voltar ao meio só pra ler o título.
+   Agora: título à esquerda e o viveiro numa pastilha ao lado. Texto
+   centralizado é bonito num cartaz e ruim numa tela de lista: o olho que vai
+   descer por uma coluna de valores alinhados à esquerda tem que voltar ao
+   meio só pra ler o título.
    --------------------------------------------------------------------------- */
 .cx-cab {
     display: flex; align-items: center; gap: 9px;
@@ -93,11 +92,19 @@
    Mas "quanto já gastei neste cultivo" é justamente a pergunta que faz o
    produtor abrir esta tela — ela se responde primeiro, e o detalhe vem depois
    pra quem quiser conferir.
+
+   Rótulo e número, e nada mais. Teve um dia em que este cartão levava duas
+   legendas embaixo: a data de início com a contagem de lançamentos, e o aviso
+   de que ciclos anteriores ficam no relatório de cada ciclo. O dono viu no
+   telefone e mandou tirar — "informações desnecessárias, esse monte de texto
+   aí embaixo". Estava certo: a data de início e a contagem a própria lista
+   dá, e o aviso virava parede de texto debaixo do número justamente onde o
+   olho vai primeiro. Se um dia precisar voltar, que seja no pé da lista.
    --------------------------------------------------------------------------- */
 .cx-topo {
     background: linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
     border-radius: 16px;
-    padding: 14px 16px 15px;
+    padding: 13px 16px 14px;   /* sem as legendas, o cartão aperta um pouco */
     margin: 0 0 14px;
     color: #fff;
 }
@@ -110,17 +117,6 @@
     display: block;
     font-size: 27px; font-weight: 800; letter-spacing: -.02em;
     line-height: 1.15; margin-top: 2px;
-}
-.cx-topo-sub {
-    display: block;
-    font-size: 12px; color: #a9c9c4; margin-top: 5px; line-height: 1.35;
-}
-/* O aviso de escopo ("ciclos anteriores ficam no relatório de cada ciclo")
-   é o que explica por que o cultivo passado não aparece aqui. Importante,
-   mas não é a primeira leitura: fica na terceira linha, mais apagado. */
-.cx-topo-nota {
-    display: block;
-    font-size: 11px; color: #8ab5ae; margin-top: 4px; line-height: 1.3;
 }
 
 /* ---------------------------------------------------------------------------
