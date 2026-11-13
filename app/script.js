@@ -6296,7 +6296,9 @@ function verificarBoletosVencendo() {
   const r = _resumoBoletos(boletos, _hojeLocal());
   if (!r.n) return;
 
-  const area = document.getElementById("area-gestao");
+  // Na tela inicial do celular o aviso tem lugar próprio, logo abaixo da ação
+  // do dia. Fora dela (computador, outras telas) cai no #area-gestao, como era.
+  const area = document.getElementById("aviso-boletos") || document.getElementById("area-gestao");
   const existente = document.getElementById("banner-boletos-alerta");
   if (existente) existente.remove();
 
@@ -6307,13 +6309,18 @@ function verificarBoletosVencendo() {
       (r.nVencendo ? ` e ${r.nVencendo} vencendo` : "")
     : `${r.nVencendo} boleto${r.nVencendo > 1 ? "s" : ""} vencendo`;
 
+  // No máximo DUAS informações na legenda, em ordem de quem decide primeiro:
+  // quanto, há quanto tempo, de quem. Com as três o texto quebrava em duas
+  // linhas e o aviso ficava mais alto que os cartões ao redor — era isso que
+  // deixava ele desproporcional na tela.
   const partes = [];
   if (r.total > 0) partes.push(`R$ ${formatarNumeroBR(r.total, 2)}`);
   if (r.maisAtrasado > 0) {
     partes.push(r.maisAtrasado === 1 ? "o mais antigo há 1 dia" : `o mais antigo há ${r.maisAtrasado} dias`);
   }
   const forn = _fornecedoresBoletos(r.nomes);
-  if (forn) partes.push(forn);
+  if (forn && partes.length < 2) partes.push(forn);
+  partes.length = Math.min(partes.length, 2);
 
   const div = document.createElement("div");
   div.id = "banner-boletos-alerta";

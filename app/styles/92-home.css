@@ -165,3 +165,51 @@ body.tema-escuro .hm-btn-peq { border-color: #374151; color: #9ca3af; }
 body.tema-escuro .hm-btn:active,
 body.tema-escuro .hm-btn-peq:active { background: #273445; }
 body.tema-escuro .hm-lbl { color: #6b7280; }
+
+/* ── Aviso de boletos, na língua dos cartões ─────────────────────────────────
+   Ele era o único bloco da tela ainda com a cara antiga: fundo saturado de
+   ponta a ponta, borda grossa, ícone grande, duas linhas folgadas. Ficava
+   desproporcional no meio de cartões brancos e finos.
+
+   Agora é um cartão igual aos outros — branco, mesma borda, mesmo raio, mesma
+   sombra — e a cor fica só na pastilha do ícone e numa faixa fina à esquerda.
+   Continua gritando o suficiente para ser visto, sem dominar a tela. */
+#aviso-boletos:empty { display: none; }
+
+#aviso-boletos .boleto-banner {
+    position: relative;
+    gap: 11px;
+    background: #fff;
+    border: 1px solid #d3e1de;
+    border-left: 4px solid #e8a33d;        /* vencendo */
+    border-radius: 14px;
+    padding: 11px 12px;
+    margin: 14px 0 0;
+    box-shadow: 0 2px 7px rgba(6,107,99,.10);
+    overflow: hidden;
+}
+#aviso-boletos .boleto-banner-vencido { border-left-color: #dc2626; }
+
+#aviso-boletos .boleto-banner-icone {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    background: #fdf1dc; display: flex; align-items: center; justify-content: center;
+}
+#aviso-boletos .boleto-banner-icone svg { width: 17px; height: 17px; stroke: #b4761a; }
+#aviso-boletos .boleto-banner-vencido .boleto-banner-icone { background: #fde8e8; }
+#aviso-boletos .boleto-banner-vencido .boleto-banner-icone svg { stroke: #dc2626; }
+
+#aviso-boletos .boleto-banner-texto strong {
+    font-size: 13.5px; font-weight: 800; color: #10322f; line-height: 1.25;
+}
+#aviso-boletos .boleto-banner-texto span {
+    font-size: 12px; color: #6b7c7a; line-height: 1.35; margin-top: 1px;
+}
+#aviso-boletos .boleto-banner-vencido .boleto-banner-texto strong { color: #8d1c1c; }
+#aviso-boletos .boleto-banner-seta { color: #9fb0ad; font-size: 20px; }
+
+#aviso-boletos .boleto-banner:active { transform: scale(.975); }
+
+body.tema-escuro #aviso-boletos .boleto-banner { background: #1f2937; border-color: #374151; }
+body.tema-escuro #aviso-boletos .boleto-banner-texto strong { color: #e5e7eb; }
+body.tema-escuro #aviso-boletos .boleto-banner-texto span { color: #9ca3af; }
+body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto strong { color: #fca5a5; }
