@@ -6296,7 +6296,8 @@ function verificarBoletosVencendo() {
   const r = _resumoBoletos(boletos, _hojeLocal());
   if (!r.n) return;
 
-  // Na tela inicial do celular o aviso tem âncora própria, no pé da tela.
+  // Na tela inicial do celular o aviso tem âncora própria, logo abaixo da
+  // ação do dia.
   // O ".ativo" no seletor não é zelo à toa: #home-mobile existe no HTML
   // sempre, mas só aparece nessa tela e nunca no computador (lá o espaço é da
   // barra lateral). Sem ele, o aviso seria enfiado num elemento escondido e
