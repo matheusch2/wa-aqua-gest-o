@@ -314,3 +314,29 @@ body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(3) svg,
 body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(4) svg { stroke: #6ee7a8; }
 body.tema-escuro .painel-viveiro .vv-admin-vermelho { background: #3a1d1d; color: #fca5a5; }
 body.tema-escuro .painel-viveiro .vv-admin-vermelho svg { stroke: #fca5a5; }
+
+/* ---------------------------------------------------------------------------
+   Os quatro lançamentos, alinhados de verdade
+
+   "Ração tá todo torto." Estava: três rótulos cabem em uma linha e
+   "Despesca parcial" precisa de duas, então o texto de cada botão começava na
+   mesma altura mas TERMINAVA em alturas diferentes — e com a grade esticando
+   todos pra altura do mais alto, os três curtos ficavam com o rótulo colado
+   no ícone e um vão embaixo. De lado a lado, torto.
+
+   A correção é reservar as duas linhas pra todos: o rótulo ocupa sempre a
+   mesma caixa, caiba ele em uma linha ou em duas. Os quatro passam a ter
+   ícone na mesma altura, texto na mesma altura e base na mesma altura.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .vv-manejo-btn {
+    justify-content: flex-start;
+    align-items: center;
+}
+.painel-viveiro .vv-manejo-btn span {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 2.5em;      /* duas linhas de 1.25 */
+    line-height: 1.25;
+    text-align: center;
+}
