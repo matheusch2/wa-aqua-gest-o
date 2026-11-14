@@ -1,0 +1,117 @@
+/* ============================================================================
+   96-cadastro-viveiro.css — a tela de cadastrar viveiro
+
+   Tudo aqui está preso a .cad-viveiro, de propósito. O .form-lancamento, o
+   .form-topo e o .campo-label são a casca de DEZENAS de formulários do app —
+   lançar ração, biometria, despesca, custo, editar nome. Mexer neles por fora
+   pra arrumar esta tela mudaria todas as outras sem ninguém pedir.
+
+   O que estava errado:
+
+   - O cabeçalho gastava um terço da tela com um círculo de 72px e um título
+     centralizado, antes do primeiro campo.
+   - Os três modos tinham rótulos de uma e de duas linhas na mesma fila
+     ("Preparação" numa, "Cultivo iniciado" em duas), então as pastilhas
+     ficavam de alturas diferentes e o texto desalinhado — o mesmo "torto" dos
+     botões de lançamento, pela mesma causa.
+   - A explicação do modo "esperando despesca" eram seis linhas de cinza no
+     meio do formulário.
+
+   Carregado por: app/index.html.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Cabeçalho: à esquerda, como o resto do app
+
+   Mesmo desenho de "Seus viveiros" e dos Custos. Texto centralizado é bom num
+   cartaz e ruim num formulário, onde tudo que vem depois está alinhado à
+   esquerda e o olho já está desse lado.
+   --------------------------------------------------------------------------- */
+.cad-viveiro .cadv-cab { margin: 0 2px 14px; }
+.cad-viveiro .cadv-cab h2 {
+    margin: 0; text-align: left;
+    font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #0f5f57;
+}
+.cad-viveiro .cadv-cab p {
+    margin: 3px 0 0; text-align: left;
+    font-size: 12.5px; color: #8a9a97;
+}
+
+/* ---------------------------------------------------------------------------
+   Os três modos
+
+   Trilho cinza com pastilha branca por cima do escolhido, igual ao seletor
+   dos Custos. E a altura dos rótulos é RESERVADA em duas linhas pra todos:
+   um cabe em uma linha, outro precisa de duas, e sem a reserva as três
+   pastilhas saem de alturas diferentes.
+   --------------------------------------------------------------------------- */
+.cad-viveiro .cad-modo-toggle {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px; padding: 3px; margin: 0 0 14px;
+    background: #eef3f2; border-radius: 12px;
+}
+.cad-viveiro .cad-modo-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; min-height: 2.6em; margin: 0;
+    padding: 9px 4px; border: none; border-radius: 10px;
+    background: none; color: #7b8b89;
+    font-family: inherit; font-size: 12.5px; font-weight: 700; line-height: 1.25;
+    text-align: center; cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+.cad-viveiro .cad-modo-btn.ativo {
+    background: #fff; color: #0f5f57;
+    box-shadow: 0 1px 3px rgba(6,107,99,.14);
+}
+
+/* ---------------------------------------------------------------------------
+   Nota do modo "esperando despesca"
+
+   De seis linhas de cinza solto para três, com o ícone de informação: assim
+   ela se lê como nota, e não como mais um campo do formulário.
+   --------------------------------------------------------------------------- */
+.cad-viveiro .cad-espera-nota {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 0 2px 16px;
+    font-size: 12px; color: #8a9a97; line-height: 1.45;
+}
+.cad-viveiro .cad-espera-nota svg {
+    width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px;
+    fill: none; stroke: #b0bfbc; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.cad-viveiro .cad-espera-nota b { color: #52635f; }
+
+/* ---------------------------------------------------------------------------
+   Campos um pouco mais leves
+
+   Só dentro desta tela. O rótulo em 16px competia com o que a pessoa digita.
+   --------------------------------------------------------------------------- */
+.cad-viveiro .campo-form { margin-bottom: 14px; }
+.cad-viveiro .campo-label label { font-size: 13.5px; }
+.cad-viveiro .campo-icone { width: 16px; height: 16px; }
+
+/* O "ou" entre Salvar e Voltar sugeria duas opções do mesmo peso. Salvar é a
+   ação; Voltar é desistir. */
+.cad-viveiro .separador-ou { display: none; }
+.cad-viveiro .botao-voltar-form { margin-top: 10px; }
+
+body.tema-escuro .cad-viveiro .cadv-cab h2 { color: #6ee7a8; }
+body.tema-escuro .cad-viveiro .cadv-cab p { color: #6b7280; }
+body.tema-escuro .cad-viveiro .cad-modo-toggle { background: #1a2433; }
+body.tema-escuro .cad-viveiro .cad-modo-btn { color: #8d9aa8; }
+body.tema-escuro .cad-viveiro .cad-modo-btn.ativo { background: #2b3747; color: #6ee7a8; box-shadow: none; }
+body.tema-escuro .cad-viveiro .cad-espera-nota { color: #9ca3af; }
+body.tema-escuro .cad-viveiro .cad-espera-nota b { color: #d1d5db; }
+body.tema-escuro .cad-viveiro .cad-espera-nota svg { stroke: #6b7280; }
+
+/* O .form-corpo é uma caixa cinza com borda, e os campos dentro dela são
+   caixas brancas com borda: caixa dentro de caixa dentro do cartão branco da
+   tela. Aqui ela some e os campos respiram direto no cartão. */
+.cad-viveiro .form-corpo {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+.cad-viveiro .rc-print-dica { margin-top: 7px; line-height: 1.45; }
