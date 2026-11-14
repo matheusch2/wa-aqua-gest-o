@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261114l";
+const CACHE = "waaqua-20261114m";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -63,6 +63,7 @@ const ESSENCIAIS = [
   "/app/styles/95-viveiro.css", // a tela de um viveiro
   "/app/styles/96-cadastro-viveiro.css", // cadastrar viveiro
   "/app/styles/97-boletos.css",  // a tela de boletos
+  "/app/styles/98-grafico.css", // a curva de crescimento
   "/app/script.js",   // o cérebro do app: sem ele no precache, a PRIMEIRA
                       // abertura offline carregava a casca sem funcionar.
                       // Continua rede-primeiro; isto é só a reserva offline.

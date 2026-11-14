@@ -1,0 +1,45 @@
+/* ============================================================================
+   98-grafico.css — a curva de crescimento
+
+   O que mudou, e por quê. Cada item veio de uma regra, não de gosto.
+
+   UMA COR, DOIS TRAÇOS. O medido era verde e a projeção era laranja. Mas peso
+   médio medido e peso médio projetado são a MESMA grandeza — duas cores dizem
+   "duas coisas diferentes". Agora quem separa é o traço: cheio para o que
+   alguém foi lá pesar, tracejado para o que é conta.
+
+   E a laranja que estava ali (#f59e0b) é exatamente a cor que o app usa para
+   "boleto vencendo". Cor de estado não serve de cor de série: o dia em que
+   alguém puser um alerta âmbar nesta tela, os dois vão querer dizer coisas
+   diferentes com a mesma tinta.
+
+   A COR NOVA FOI VALIDADA, não escolhida no olho. O rgb(6,107,99) da marca
+   tem croma baixo demais: num traço fino sobre fundo claro ele lê como cinza
+   (reprovou no teste de croma). O #0e8a78 passa nos seis testes — faixa de
+   luminosidade, croma, separação para daltonismo e contraste — no tema claro
+   E no escuro. O #a3570d do alvo idem, e a dupla se separa com ΔE 20 na visão
+   normal e 11,7 em deuteranopia.
+
+   PONTO SÓ NO ALVO. A projeção tinha um ponto a cada passo, do mesmo tamanho
+   dos pontos de biometria: precisão falsa, porque dava a cada passo da conta
+   a cara de uma pesagem que aconteceu.
+
+   O TÍTULO DE DENTRO SAIU. A seção logo acima já diz "Curva de crescimento";
+   repetir "Evolução do crescimento" dentro do cartão é a mesma frase duas
+   vezes em quinze centímetros de tela.
+
+   Carregado por: app/index.html.
+   ========================================================================== */
+
+/* Traço de legenda, não bolinha: agora o que distingue as duas séries é o
+   ESTILO da linha, então a legenda precisa mostrar linha. */
+.grafico-legenda { gap: 16px; margin-bottom: 10px; }
+.g-tra { width: 20px; height: 0; flex-shrink: 0; }
+.g-tra-cheio {
+    border-top: 3px solid #0e8a78;
+    border-radius: 99px;
+}
+.g-tra-tracejado { border-top: 2.5px dashed rgba(14,138,120,.75); }
+
+body.tema-escuro .g-tra-cheio { border-top-color: #2bb39c; }
+body.tema-escuro .g-tra-tracejado { border-top-color: rgba(43,179,156,.75); }

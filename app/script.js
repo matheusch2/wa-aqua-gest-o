@@ -4302,10 +4302,9 @@ function verCurvaCrescimento(index, direto, pesoAlvo, gSemSimulado) {
       </div>
     </div>
     <div class="grafico-container">
-      <h4 class="grafico-titulo">Evolução do crescimento</h4>
       <div class="grafico-legenda">
-        <span class="grafico-leg-item"><span class="grafico-leg-dot leg-verde"></span>Biometrias realizadas</span>
-        <span class="grafico-leg-item"><span class="grafico-leg-dot leg-laranja"></span>Projeção de crescimento</span>
+        <span class="grafico-leg-item"><i class="g-tra g-tra-cheio"></i>Medido</span>
+        <span class="grafico-leg-item"><i class="g-tra g-tra-tracejado"></i>Projeção</span>
       </div>
       <div class="grafico-canvas-wrap">
         <canvas id="canvas-crescimento"></canvas>
@@ -4381,13 +4380,17 @@ function verCurvaCrescimento(index, direto, pesoAlvo, gSemSimulado) {
         c.moveTo(x, top);
         c.lineTo(x, bottom);
         c.lineWidth = 1.5;
-        c.strokeStyle = "rgba(245,158,11,0.65)";
+        c.strokeStyle = "rgba(163,87,13,0.5)";
         c.stroke();
         c.setLineDash([]);
-        c.fillStyle = "#f59e0b";
+        c.fillStyle = "#a3570d";
         c.font = "700 10px Arial";
-        c.textAlign = x > xScale.right - 30 ? "right" : "center";
-        c.fillText("Despesca", x, top - 5);
+        // Encostado na borda direita, o rótulo caía em cima do próprio ponto
+        // do alvo (os dois ficam no canto de cima). Alinhado à direita, ele
+        // recua 12px e passa a ficar ao LADO do ponto, não por cima.
+        const naBorda = x > xScale.right - 30;
+        c.textAlign = naBorda ? "right" : "center";
+        c.fillText("Alvo", naBorda ? x - 12 : x, top - 5);
         c.restore();
       }
     };
@@ -4401,9 +4404,12 @@ function verCurvaCrescimento(index, direto, pesoAlvo, gSemSimulado) {
           {
             label: "Peso real",
             data: realData,
-            borderColor: "rgb(6,107,99)",
-            backgroundColor: "rgba(6,107,99,0.08)",
-            pointBackgroundColor: ctx2 => actualBioIndices.has(ctx2.dataIndex) ? "rgb(6,107,99)" : "rgba(6,107,99,0.55)",
+            // #0e8a78 e não o rgb(6,107,99) da marca: aquele tem croma baixo
+            // demais e, num traço fino sobre fundo claro, lê como cinza. Este
+            // passa nos seis testes do validador, no tema claro e no escuro.
+            borderColor: "#0e8a78",
+            backgroundColor: "rgba(14,138,120,0.09)",
+            pointBackgroundColor: "#0e8a78",
             pointRadius: ctx2 => {
               if (ctx2.dataIndex > junctionIndex) return 0;
               return actualBioIndices.has(ctx2.dataIndex) ? 5 : 3;
@@ -4418,24 +4424,21 @@ function verCurvaCrescimento(index, direto, pesoAlvo, gSemSimulado) {
           {
             label: "Projeção",
             data: projData,
-            borderColor: "#f59e0b",
+            // MESMA cor da série medida, de propósito. Peso médio medido e
+            // peso médio projetado são a MESMA grandeza, não duas: duas cores
+            // dizem "duas coisas diferentes". Quem separa é o traço — cheio
+            // para o que foi pesado, tracejado para o que é conta. E a laranja
+            // que estava aqui é a cor que o app usa para "boleto vencendo";
+            // cor de estado não serve de cor de série.
+            borderColor: "rgba(14,138,120,0.55)",
             backgroundColor: "transparent",
-            pointBackgroundColor: ctx2 => {
-              if (projData[ctx2.dataIndex] === null) return "transparent";
-              if (ctx2.dataIndex === pesos.length - 1) return "transparent";
-              return "#f59e0b";
-            },
-            pointBorderColor: ctx2 => {
-              if (projData[ctx2.dataIndex] === null) return "transparent";
-              if (ctx2.dataIndex === pesos.length - 1) return "transparent";
-              return "#f59e0b";
-            },
-            pointRadius: ctx2 => {
-              if (projData[ctx2.dataIndex] === null) return 0;
-              if (ctx2.dataIndex === junctionIndex) return 0;
-              if (ctx2.dataIndex === projData.length - 1) return 7;
-              return 4;
-            },
+            // Ponto SÓ no alvo. Os pontos no meio da projeção eram precisão
+            // falsa: davam a cada passo da conta a mesma cara de uma biometria
+            // que alguém foi lá pesar.
+            pointBackgroundColor: "#a3570d",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2,
+            pointRadius: ctx2 => (ctx2.dataIndex === projData.length - 1 && projData[ctx2.dataIndex] !== null) ? 7 : 0,
             pointHoverRadius: 8,
             pointHitRadius: 14,
             borderDash: [5, 5],
@@ -4474,17 +4477,24 @@ function verCurvaCrescimento(index, direto, pesoAlvo, gSemSimulado) {
         },
         scales: {
           x: {
-            title: { display: true, text: "Dia de cultivo", color: "#6b7280", font: { size: 12 } },
-            grid: { color: "rgba(0,0,0,0.05)" },
-            ticks: { color: "#6b7280", font: { size: 11 }, maxTicksLimit: 6, autoSkip: true, maxRotation: 0 }
+            title: { display: true, text: "Dia de cultivo", color: "#93a5a2", font: { size: 11 } },
+            // Sem grade vertical: numa linha no tempo quem ajuda a ler o VALOR
+            // é a grade horizontal. A vertical só picota o desenho.
+            grid: { display: false },
+            border: { color: "rgba(0,0,0,0.08)" },
+            ticks: { color: "#93a5a2", font: { size: 10.5 }, maxTicksLimit: 5, autoSkip: true, maxRotation: 0 }
           },
           y: {
-            title: { display: true, text: "Peso (g)", color: "#6b7280", font: { size: 12 } },
-            grid: { color: "rgba(0,0,0,0.05)" },
+            // Sem título: os próprios valores já dizem "g". "Peso (g)" de pé
+            // na lateral gastava largura do desenho pra repetir a unidade.
+            grid: { color: "rgba(0,0,0,0.055)", drawTicks: false },
+            border: { display: false },
             min: Math.max(0, Math.floor(Math.min(...pesos) * 0.8)),
             ticks: {
-              color: "#6b7280",
-              font: { size: 11 },
+              color: "#93a5a2",
+              font: { size: 10.5 },
+              maxTicksLimit: 5,
+              padding: 6,
               callback: v => fmtG(v) + " g"
             },
           }
