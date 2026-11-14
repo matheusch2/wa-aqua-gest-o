@@ -775,3 +775,67 @@ test("pausa: dias em preparacao descontam o que ficou parado",()=>{
   a.run(`__v2 = { dataPreparacao:'2026-11-01', pausas:[] };`);
   assert.equal(a.run('_diasEmPreparacao(__v2)'), 30);
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EDITAR UM VIVEIRO ESPERANDO DESPESCA
+
+   Bug relatado pelo dono: ele batizou um viveiro com um emoji no nome sem
+   querer e não conseguia mais corrigir. O formulário de edição pedia "Total
+   povoado" e "Laboratório" — dois campos que um viveiro esperando despesca
+   NUNCA vai ter, porque ele é justamente o que não tem histórico. A validação
+   barrava o salvamento e o cliente ficava trancado do lado de fora do próprio
+   cadastro, sem saída pela interface.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function telaEditar(a, viveiro) {
+  a.run(`viveiros = [${JSON.stringify(viveiro)}];
+         assinatura = { plano: 'pro', ativo: true };
+         editarNomeViveiro(0);`);
+  return a.get("area-gestao").innerHTML;
+}
+
+test("editar: viveiro esperando despesca nao pede total povoado nem laboratorio",()=>{
+  const a=load();
+  const html = telaEditar(a, { id:'v1', nome:'Viveiro - 6', tamanho:0.9,
+    dataPovoamento:'2026-11-12', dataPreparacao:null, totalPovoado:null, laboratorio:null,
+    semHistorico:true, pausas:[], custos:[], racoes:[], biometrias:[], ciclosFinalizados:[] });
+  assert.ok(html.includes('id="editNomeViveiro"'), "tem que dar pra corrigir o nome");
+  assert.ok(html.includes('id="editTamanhoViveiro"'));
+  assert.ok(html.includes('id="editDataEspera"'), "e a data em que a espera comecou");
+  assert.ok(!html.includes('id="editTotalPovoado"'), "total povoado NAO pode aparecer");
+  assert.ok(!html.includes('id="editLaboratorio"'), "laboratorio NAO pode aparecer");
+});
+
+test("editar: viveiro em cultivo normal continua pedindo os tres campos",()=>{
+  const a=load();
+  const html = telaEditar(a, { id:'v1', nome:'Viveiro 1', tamanho:1.2,
+    dataPovoamento:'2026-08-24', dataPreparacao:null, totalPovoado:'140000', laboratorio:'Aquatec',
+    semHistorico:false, pausas:[], custos:[], racoes:[], biometrias:[], ciclosFinalizados:[] });
+  assert.ok(html.includes('id="editDataPovoamento"'));
+  assert.ok(html.includes('id="editTotalPovoado"'));
+  assert.ok(html.includes('id="editLaboratorio"'));
+  assert.ok(!html.includes('id="editDataEspera"'));
+});
+
+test("editar: viveiro em preparacao continua pedindo so a data de preparacao",()=>{
+  const a=load();
+  const html = telaEditar(a, { id:'v1', nome:'Viveiro 3', tamanho:1.5,
+    dataPovoamento:null, dataPreparacao:'2026-10-01', totalPovoado:null, laboratorio:null,
+    semHistorico:false, pausas:[], custos:[], racoes:[], biometrias:[], ciclosFinalizados:[] });
+  assert.ok(html.includes('id="editDataPreparacao"'));
+  assert.ok(!html.includes('id="editTotalPovoado"'));
+  assert.ok(!html.includes('id="editDataEspera"'));
+});
+
+test("editar: a tela de editar nao carrega o bloco do CADASTRO",()=>{
+  // Eu injetei o bloco "esperando despesca" do cadastro usando como âncora um
+  // trecho que existe nas DUAS telas, e ele foi parar na de editar também —
+  // escondido, mas com id duplicado e pronto pra confundir a próxima pessoa.
+  const a=load();
+  for (const sem of [true, false]) {
+    const html = telaEditar(a, { id:'v1', nome:'V', tamanho:1, dataPovoamento:'2026-11-12',
+      dataPreparacao:null, totalPovoado:'1', laboratorio:'L', semHistorico:sem,
+      pausas:[], custos:[], racoes:[], biometrias:[], ciclosFinalizados:[] });
+    assert.ok(!html.includes('id="cad-espera"'), `semHistorico=${sem}`);
+    assert.ok(!html.includes('id="dataEspera"'), `semHistorico=${sem}`);
+  }
+});

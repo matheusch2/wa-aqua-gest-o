@@ -2113,21 +2113,6 @@ function editarNomeViveiro(index) {
           <input type="text" id="editNomeViveiro" value="${(v.nome || "").replace(/"/g, "&quot;")}" placeholder="Ex: Viveiro - 2">
         </div>
 
-        <div id="cad-espera" style="display:none">
-          <p class="cad-espera-nota">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>Para o que <b>já estava povoado</b> antes do WA Aqua. Ele divide o custo fixo, mas não vai ter ração nem biometria — o acompanhamento completo começa no próximo ciclo.</span>
-          </p>
-          <div class="campo-form">
-            <div class="campo-label">
-              <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <label>Povoado desde (aproximado)</label>
-            </div>
-            <input type="date" id="dataEspera" value="${_hojeLocal()}">
-            <p class="rc-print-dica">É a partir desta data que ele passa a dividir o custo fixo. Na dúvida, deixe hoje: aí ele divide daqui pra frente.</p>
-          </div>
-        </div>
-
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -2139,7 +2124,16 @@ function editarNomeViveiro(index) {
           </div>
         </div>
 
-        ${v.dataPovoamento ? `
+        ${v.semHistorico ? `
+        <div class="campo-form">
+          <div class="campo-label">
+            <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <label>Povoado desde (aproximado)</label>
+          </div>
+          <input type="date" id="editDataEspera" value="${v.dataPovoamento || ""}">
+          <p class="rc-print-dica">É a partir desta data que ele divide o custo fixo com os outros viveiros.</p>
+        </div>
+        ` : v.dataPovoamento ? `
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -2207,7 +2201,16 @@ async function salvarNomeViveiro(index, botao) {
   const dados = { nome: novo, tamanho };
   const mem = { nome: novo, tamanho };
 
-  if (v.dataPovoamento) {
+  if (v.semHistorico) {
+    // Esperando despesca: total povoado e laboratório NÃO existem neste
+    // viveiro, e exigi-los aqui trancava o cliente do lado de fora — ele não
+    // conseguia nem corrigir o nome que digitou errado, porque o formulário
+    // pedia dois campos que nunca vai ter.
+    const dataEsp = document.getElementById("editDataEspera")?.value || "";
+    if (!dataEsp) { erro("Informe desde quando ele está povoado."); return; }
+    dados.data_povoamento = dataEsp;
+    mem.dataPovoamento = dataEsp;
+  } else if (v.dataPovoamento) {
     const dataPov = document.getElementById("editDataPovoamento")?.value || "";
     const total = (document.getElementById("editTotalPovoado")?.value || "").replace(/\D/g, "");
     const laboratorio = (document.getElementById("editLaboratorio")?.value || "").trim();
