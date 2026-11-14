@@ -10465,13 +10465,15 @@ function mostrarViveiroSemCiclo(index) {
   const temCicloAnterior = viveiro.ciclosFinalizados && viveiro.ciclosFinalizados.length > 0;
 
   area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="form-topo">
-        <div class="form-icone-circulo" style="background:rgba(6,107,99,0.07);border-color:rgba(6,107,99,0.15)">
+    <div class="form-lancamento vsc-tela">
+      <div class="vsc-cab">
+        <div class="vsc-cab-ico">
           <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         </div>
-        <span class="form-caption">${viveiro.tamanho ? _fmtHa(viveiro.tamanho) + " ha" : ""}</span>
-        <h2 class="form-titulo">${_esc(viveiro.nome)}</h2>
+        <div class="vsc-cab-txt">
+          <h2>${_esc(viveiro.nome)}</h2>
+          ${viveiro.tamanho ? `<span>${_fmtHa(viveiro.tamanho)} ha</span>` : ""}
+        </div>
       </div>
       ${viveiro.dataPreparacao ? (_viveiroPausadoHoje(viveiro) ? `
       <div class="prep-status prep-status-pausado">
@@ -10527,7 +10529,7 @@ function mostrarViveiroSemCiclo(index) {
       `}
 
       <button class="botao-voltar-form botao-perigo-outline" onclick="mostrarConfirmExcluirViveiro(${index})" style="margin-top:8px">
-        🗑️ Excluir viveiro
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Excluir viveiro
       </button>
 
       <div id="confirm-excluir-viveiro-${index}" style="display:none;margin-top:10px;padding:9px 11px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
