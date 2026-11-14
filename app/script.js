@@ -8735,12 +8735,19 @@ function abrirBoletos(filtro) {
               ${b.pago ? "" : `<span class="bt-badge bt-badge-${st.tipo}">${st.label}</span>`}
             </div>
           </div>
-          <div class="bt-card-forn">${_esc(b.fornecedor || "—")}</div>
+          ${(() => {
+            // "AGROMAR" em cima e "AGROMAR" embaixo era o caso comum: quem
+            // cadastra costuma pôr o fornecedor como nome do boleto. Repetir
+            // a palavra não informa, só ocupa linha.
+            const f = (b.fornecedor || "").trim();
+            const mesmo = f.toLowerCase() === String(b.nome || "").trim().toLowerCase();
+            return (f && !mesmo) ? `<div class="bt-card-forn">${_esc(f)}</div>` : "";
+          })()}
           ${b.valor ? `<div class="bt-card-saldo${b.pago ? " quit" : ""}"><b>${_rs(saldoVal)}</b><small>${saldoLbl}</small></div>` : ""}
           ${parcial ? `<div class="bt-card-aux">Valor original: ${_rs(b.valor)} · Pago: ${_rs(b.valorPago || 0)}</div>` : ""}
           <div class="bt-card-foot">
             <span class="bt-card-venc">Vence ${vencFmt}</span>
-            <span class="bt-card-verdet">Ver detalhes ›</span>
+            <span class="bt-card-verdet" aria-hidden="true">›</span>
           </div>
         </div>
         <div class="bt-menu-wrap" onclick="event.stopPropagation()">
@@ -8763,7 +8770,7 @@ function abrirBoletos(filtro) {
   }).join("");
 
   area.innerHTML = `
-    <div class="fin-topo-acoes">
+    <div class="fin-topo-acoes bt-topo">
       <h3 class="titulo-secao" style="margin:0">Boletos</h3>
       <div class="bt-topo-btns">
         <button class="fin-novo-btn fin-novo-btn-sec" onclick="imprimirBoletos()"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:5px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
@@ -8771,34 +8778,33 @@ function abrirBoletos(filtro) {
       </div>
     </div>
     <div class="cfg-wrap">
+      <!-- Os quatro números SÃO as abas. Antes eram duas filas dizendo a mesma
+           coisa: quatro cartões (Ativos, Vencendo, Vencidos, Pagos) e, logo
+           abaixo, quatro abas com os mesmos nomes. Os cartões mostravam a
+           contagem e não faziam nada; as abas filtravam e não mostravam nada.
+           Juntos, cada um faz as duas coisas e some uma fila da tela. -->
       <div class="bt-chips">
-        <div class="bt-chip">
+        <button class="bt-chip${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">
           <div class="bt-chip-val">${naoPagos.length}</div>
-          <div class="bt-chip-lbl">Ativos</div>
+          <div class="bt-chip-lbl">A pagar</div>
           <div class="bt-chip-sub">R$ ${formatarNumeroBR(valorTotal, 2)}</div>
-        </div>
-        <div class="bt-chip bt-chip-warn">
+        </button>
+        <button class="bt-chip bt-chip-warn${_boletosFiltro === "vencendo" ? " ativa" : ""}" onclick="abrirBoletos('vencendo')">
           <div class="bt-chip-val">${qtdVencendo}</div>
           <div class="bt-chip-lbl">Vencendo</div>
-        </div>
-        <div class="bt-chip bt-chip-danger">
+        </button>
+        <button class="bt-chip bt-chip-danger${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">
           <div class="bt-chip-val">${qtdVencidos}</div>
           <div class="bt-chip-lbl">Vencidos</div>
-        </div>
-        <div class="bt-chip bt-chip-ok">
+        </button>
+        <button class="bt-chip bt-chip-ok${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">
           <div class="bt-chip-val">${qtdPagos}</div>
           <div class="bt-chip-lbl">Pagos</div>
-        </div>
+        </button>
       </div>
       <div class="bt-busca">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" value="${_attr(_boletosBusca)}" placeholder="Buscar por nome ou fornecedor..." oninput="_filtrarBoletosBusca(this.value)">
-      </div>
-      <div class="bt-abas">
-        <button class="bt-aba${_boletosFiltro === "todos" ? " ativa" : ""}" onclick="abrirBoletos('todos')">A pagar</button>
-        <button class="bt-aba${_boletosFiltro === "vencendo" ? " ativa" : ""}" onclick="abrirBoletos('vencendo')">Vencendo</button>
-        <button class="bt-aba${_boletosFiltro === "vencidos" ? " ativa" : ""}" onclick="abrirBoletos('vencidos')">Vencidos</button>
-        <button class="bt-aba${_boletosFiltro === "pagos" ? " ativa" : ""}" onclick="abrirBoletos('pagos')">Pagos</button>
       </div>
       ${fornecedores.length ? `<div class="bt-forn-filtro">
         <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
