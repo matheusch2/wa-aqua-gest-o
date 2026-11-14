@@ -1,0 +1,112 @@
+/* ============================================================================
+   97-boletos.css — a tela de boletos
+
+   Duas coisas estavam repetidas, e repetição é o que fazia a tela parecer
+   cheia sem estar informando mais:
+
+   1. QUATRO CARTÕES E QUATRO ABAS dizendo o mesmo. Em cima, Ativos/Vencendo/
+      Vencidos/Pagos como cartões que mostravam a contagem e não faziam nada.
+      Logo abaixo, A pagar/Vencendo/Vencidos/Pagos como abas que filtravam e
+      não mostravam nada. Agora os cartões SÃO as abas: cada um faz as duas
+      coisas e uma fila inteira saiu da tela.
+
+   2. O NOME DO FORNECEDOR DUAS VEZES em cada cartão ("AGROMAR" em cima,
+      "AGROMAR" embaixo). Quem cadastra costuma pôr o fornecedor como nome do
+      boleto, então o caso comum era a palavra repetida. Agora o fornecedor só
+      aparece quando ele é diferente do nome (ver abrirBoletos no script).
+
+   E o "Ver detalhes ›" escrito em todo cartão virou só a seta: o cartão
+   inteiro já é clicável, e o texto era a mesma frase vinte vezes na coluna.
+
+   Carregado por: app/index.html.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Os quatro números, que agora filtram
+
+   Como viraram botão, precisam parecer tocáveis e dizer qual está escolhido.
+   O escolhido ganha a borda cheia e um fundo mais firme; os outros ficam
+   pálidos. Sem isso a pessoa não sabe qual lista está vendo — e com as abas
+   fora da tela, não há mais nada dizendo isso.
+   --------------------------------------------------------------------------- */
+.bt-chip {
+    width: auto; margin: 0;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.bt-chip:active { transform: scale(.97); }
+
+.bt-chip.ativa {
+    box-shadow: inset 0 0 0 2px currentColor;
+}
+/* O inset usa currentColor pra cada um manter a sua cor: verde no "A pagar",
+   âmbar no "Vencendo", vermelho no "Vencidos". Uma regra, quatro cores. */
+.bt-chip-warn.ativa   { background: #fdf6e7; }
+.bt-chip-danger.ativa { background: #fdeaea; }
+.bt-chip-ok.ativa     { background: #eaf8ef; }
+.bt-chip.ativa:not(.bt-chip-warn):not(.bt-chip-danger):not(.bt-chip-ok) { background: #e3f0ee; }
+
+.bt-chip-lbl { font-size: 11px; font-weight: 700; }
+
+/* ---------------------------------------------------------------------------
+   O cartão de um boleto
+   --------------------------------------------------------------------------- */
+.bt-card {
+    border: 1px solid #dde8e6;
+    border-radius: 14px;
+    box-shadow: 0 2px 7px rgba(6,107,99,.07);
+    margin-bottom: 9px;
+}
+.bt-card-nome { font-size: 14.5px; }
+/* A seta no lugar de "Ver detalhes ›": a frase inteira, repetida em cada
+   cartão, virava uma coluna de texto igual descendo a tela. */
+.bt-card-verdet {
+    font-size: 19px; line-height: 1; color: #b6c4c2; font-weight: 400;
+}
+
+body.tema-escuro .bt-card { border-color: #374151; }
+body.tema-escuro .bt-chip.ativa:not(.bt-chip-warn):not(.bt-chip-danger):not(.bt-chip-ok) { background: #273445; }
+body.tema-escuro .bt-chip-warn.ativa { background: #2a2000; }
+body.tema-escuro .bt-chip-danger.ativa { background: #3a1d1d; }
+body.tema-escuro .bt-chip-ok.ativa { background: #052e2b; }
+body.tema-escuro .bt-card-verdet { color: #6b7280; }
+
+/* ---------------------------------------------------------------------------
+   Cabeçalho
+
+   "BOLETOS" em caixa alta à esquerda com dois botões empilhados à direita: o
+   título ficava pequeno ao lado de uma torre de botões, e a linha inteira
+   desalinhada. Agora o título é uma linha própria, em caixa normal como o
+   resto do app, e os dois botões vêm embaixo lado a lado.
+
+   O .fin-topo-acoes e o .titulo-secao são compartilhados com as outras telas
+   do Financeiro — por isso tudo aqui está preso a .bt-topo.
+   --------------------------------------------------------------------------- */
+.bt-topo { display: block; margin-bottom: 14px; }
+.bt-topo .titulo-secao {
+    text-transform: none;
+    text-align: left;
+    font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    margin: 0 2px 10px !important;
+}
+.bt-topo .bt-topo-btns { display: flex; gap: 9px; }
+.bt-topo .fin-novo-btn {
+    flex: 1; width: auto; margin: 0;
+    padding: 10px 12px; border-radius: 11px;
+    font-size: 13.5px; font-weight: 800;
+}
+
+/* O filtro de fornecedor era uma faixa da altura de um campo pra dizer
+   "Todos os fornecedores" — ou seja, pra dizer que não há filtro. Encolheu:
+   ele só precisa de peso quando está filtrando alguma coisa. */
+.bt-forn-filtro {
+    padding: 7px 11px !important;
+    border-radius: 11px !important;
+    margin-bottom: 10px !important;
+}
+.bt-forn-filtro select { font-size: 13px !important; }
+.bt-forn-filtro svg { width: 15px !important; height: 15px !important; }
+/* O <select> global carrega altura mínima de campo de formulário (44px), e
+   era ela que mantinha a faixa alta mesmo com o padding reduzido. */
+.bt-forn-filtro select { min-height: 0 !important; height: auto !important; padding: 2px 0 !important; }
