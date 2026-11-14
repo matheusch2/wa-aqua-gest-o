@@ -402,11 +402,51 @@ body.tema-escuro .sv-ver-todos { background: #273445; color: #6ee7a8; }
 }
 .ed-cab-txt span { font-size: 12.5px; font-weight: 700; color: #a97714; }
 
-.ed-nota, .ed-sem-custo {
-    margin: 0 2px 14px;
+/* A explicação era um parágrafo de cinco linhas cinzas ABRINDO a tela — a
+   primeira coisa que se via era uma parede de texto. Agora ela desceu pra
+   depois do número, encolheu, e ganhou o ícone de informação: assim ela se
+   lê como nota de rodapé, que é o que ela é. */
+.ed-nota {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 14px 2px 16px;
+    font-size: 12px; color: #8a9a97; line-height: 1.45;
+}
+.ed-nota svg {
+    width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px;
+    fill: none; stroke: #b0bfbc; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Estado vazio: no lugar do cartão escuro gritando "R$ 0,00", um cartão que
+   diz o que fazer pra ele deixar de ser zero. */
+.ed-vazio {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    background: #fff; border: 1px solid #dde8e6; border-radius: 16px;
+    box-shadow: 0 2px 7px rgba(6,107,99,.07);
+    padding: 24px 20px 20px;
+}
+.ed-vazio-ico {
+    width: 48px; height: 48px; border-radius: 15px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: #eef5f3; color: #4d8e85;
+}
+.ed-vazio-ico svg {
+    width: 23px; height: 23px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.ed-vazio b { font-size: 15px; font-weight: 800; color: #10322f; }
+.ed-vazio small {
+    display: block; max-width: 270px;
+    margin: 6px 0 16px;
     font-size: 12.5px; color: #8a9a97; line-height: 1.5;
 }
-.ed-sem-custo { text-align: center; padding: 18px 10px; }
+.ed-vazio-btn {
+    width: auto; margin: 0; padding: 10px 18px;
+    background: #e9f4f0; border: none; border-radius: 11px;
+    font-family: inherit; font-size: 13.5px; font-weight: 800; color: #0f5f57;
+    cursor: pointer;
+}
 
 /* Três opções não cabem lado a lado em 390px com o texto inteiro. */
 .cad-modo-3 { flex-wrap: wrap; }
@@ -421,5 +461,10 @@ body.tema-escuro .ed-cab-ico { background: #2a2000; color: #e3b341; }
 body.tema-escuro .ed-cab-txt h2 { color: #e5e7eb; }
 body.tema-escuro .ed-cab-txt span { color: #e3b341; }
 body.tema-escuro .ed-nota,
-body.tema-escuro .ed-sem-custo,
 body.tema-escuro .cad-espera-nota { color: #9ca3af; }
+body.tema-escuro .ed-nota svg { stroke: #6b7280; }
+body.tema-escuro .ed-vazio { background: #1f2937; border-color: #374151; }
+body.tema-escuro .ed-vazio-ico { background: #273445; color: #7fb8ae; }
+body.tema-escuro .ed-vazio b { color: #e5e7eb; }
+body.tema-escuro .ed-vazio small { color: #9ca3af; }
+body.tema-escuro .ed-vazio-btn { background: #273445; color: #6ee7a8; }

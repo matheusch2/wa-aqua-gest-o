@@ -2261,9 +2261,14 @@ function mostrarViveiroEsperandoDespesca(index) {
   const dias = desde ? calcularDiasCultivo(desde) : 0;
   const rateio = _custoFixoRateado(desde, _hojeLocal(), viveiro);
   const itens = _custoFixoRateadoPorItem(desde, _hojeLocal(), viveiro);
+  // Sem custo fixo cadastrado, o cartão escuro anunciava "R$ 0,00" em letra
+  // garrafal. Zero não merece o bloco mais pesado da tela: no lugar dele vai
+  // um estado vazio que diz o que fazer pra ele deixar de ser zero.
+  const temCusto = rateio > 0.005;
 
   area.innerHTML = `
     <div class="form-lancamento">
+
       <div class="ed-cab">
         <div class="ed-cab-ico">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
@@ -2274,29 +2279,37 @@ function mostrarViveiroEsperandoDespesca(index) {
         </div>
       </div>
 
-      <p class="ed-nota">Este viveiro já estava povoado quando você começou a usar o WA Aqua, então ele não tem ração, biometria nem estimativas — esse histórico não existe. O que ele tem é a parte dele no custo fixo, porque o funcionário trabalha nele todo dia.</p>
-
+      ${temCusto ? `
       <div class="cx-topo">
         <span class="cx-topo-lbl">Custos rateados</span>
         <span class="cx-topo-val">R$ ${formatarNumeroBR(rateio, 2)}</span>
       </div>
-
-      ${itens.length ? `<div class="cx-cartao cx-geral">${itens.map(it => `
-        <div class="cx-linha">
-          ${(() => { const k = _cxCategoriaChave({ categoria: it.categoria, nomeProduto: it.nome });
-             return `<div class="cx-ico cx-ico-${k}"><svg viewBox="0 0 24 24">${_CX_ICONES[k]}</svg></div>`; })()}
+      <div class="cx-cartao cx-geral">${itens.map(it => {
+        const k = _cxCategoriaChave({ categoria: it.categoria, nomeProduto: it.nome });
+        return `<div class="cx-linha">
+          <div class="cx-ico cx-ico-${k}"><svg viewBox="0 0 24 24">${_CX_ICONES[k]}</svg></div>
           <div class="cx-texto">
             <span class="cx-nome">${_esc(it.nome)}</span>
             <span class="cx-sub">${_esc(it.categoria)}</span>
           </div>
           <span class="cx-valor">R$ ${formatarNumeroBR(it.valor, 2)}</span>
           <span class="cx-auto">auto</span>
-        </div>`).join("")}</div>`
-        : `<p class="ed-sem-custo">Nenhum custo fixo cadastrado ainda. Quando você cadastrar o funcionário em Financeiro, a parte deste viveiro aparece aqui.</p>`}
+        </div>`; }).join("")}</div>` : `
+      <div class="ed-vazio">
+        <span class="ed-vazio-ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+        <b>Sem custo fixo ainda</b>
+        <small>Cadastre o funcionário, a energia e o que mais se repete todo mês. A parte deste viveiro aparece aqui sozinha.</small>
+        <button class="ed-vazio-btn" onclick="abrirCustosFixos()">Cadastrar custo fixo</button>
+      </div>`}
 
-      <button class="botao-salvar" onclick="abrirEncerrarCiclo(${index})" style="margin-top:14px">
+      <p class="ed-nota">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Já estava povoado antes de você usar o WA Aqua: divide o custo fixo com os outros, mas não tem ração, biometria nem estimativa. O acompanhamento completo começa no próximo ciclo.</span>
+      </p>
+
+      <button class="botao-salvar" onclick="abrirEncerrarCiclo(${index})">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        Encerrar ciclo
+        Despescar e encerrar
       </button>
       <button class="botao-voltar-form" onclick="abrirLancarCusto(${index})" style="margin-top:8px">Lançar custo neste viveiro</button>
       <button class="botao-voltar-form" onclick="mostrarListaViveiros(posicaoNaLista(${index}))" style="margin-top:8px">Voltar</button>
