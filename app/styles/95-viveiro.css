@@ -63,11 +63,20 @@
     position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
     background: #16a34a;
 }
+/* Desenho do viveiro, desenhado pelo dono, no lugar do ícone de traço. Ele
+   já vem com o próprio fundo arredondado, então a pastilha fica sem fundo —
+   senão seriam dois quadrados verdes, um dentro do outro.
+   O overflow+raio recortam a imagem no mesmo arredondamento do resto do app,
+   caso o da arte não bata exatamente. */
 .painel-viveiro .vv-header-ico {
     width: 42px; height: 42px; border-radius: 12px;
-    background: #e1f7ea;
+    background: none;
+    overflow: hidden;
+    padding: 0;
 }
-.painel-viveiro .vv-header-ico svg { width: 21px; height: 21px; stroke: #15834f; }
+.painel-viveiro .vv-header-ico img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
 
 /* text-align: left, e esse era o desalinhamento que incomodava: as duas
    caixas — a do nome e a do selo "Em cultivo" — já começavam no mesmo x, mas
