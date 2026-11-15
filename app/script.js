@@ -1990,6 +1990,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         </div>
       </div>` : ""}
 
+      <div class="sv-baixo">
       <div class="sv-grade">
         <div class="sv-item">
           <span class="sv-item-ico sv-item-ico-camarao">🦐</span>
@@ -2015,6 +2016,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         Abrir detalhes do viveiro
         <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg>
       </button>
+      </div>
     </div>`;
   };
 

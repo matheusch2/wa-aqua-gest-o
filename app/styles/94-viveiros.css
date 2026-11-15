@@ -64,11 +64,32 @@
 /* ---------------------------------------------------------------------------
    O viveiro aberto
    --------------------------------------------------------------------------- */
+/* O cartão em duas faixas, como o cartão do app de banco que o dono usou de
+   referência: branco em cima, cinza embaixo.
+
+   A divisão não é só enfeite — ela separa duas naturezas. Em cima fica QUEM
+   ele é e EM QUE PÉ ele está (nome, estado, a barra do ciclo); embaixo, os
+   NÚMEROS e o que fazer com eles. Antes era um fio de 1px tentando dizer
+   isso sozinho.
+
+   O padding saiu do cartão e foi pras duas faixas: é o que deixa o cinza
+   encostar nas bordas em vez de flutuar com uma moldura branca em volta. */
 .sv-card {
     background: #fff;
     border: 1px solid #dde8e6;
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(6,107,99,.08);
+    padding: 0;
+    overflow: hidden;
+}
+.sv-card > .sv-cab,
+.sv-card > .sv-ciclo { margin-left: 15px; margin-right: 15px; }
+.sv-card > .sv-cab { padding-top: 14px; }
+.sv-card > .sv-ciclo { padding-bottom: 14px; }
+
+.sv-baixo {
+    background: #f3f6f5;
+    border-top: 1px solid #e8efed;
     padding: 14px 15px 13px;
 }
 
@@ -139,17 +160,18 @@
    aparelho, não aceitam cor e vinham em escalas diferentes entre si — a
    balança azul ao lado do esquadro amarelo não era paleta, era sorte.
    --------------------------------------------------------------------------- */
+/* Sem margem nem fio próprios: quem separa agora é a faixa cinza. */
 .sv-grade {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 13px 10px;
-    margin-top: 14px; padding-top: 13px;
-    border-top: 1px solid #eef3f2;
 }
 .sv-item { display: flex; align-items: center; gap: 9px; min-width: 0; }
+/* Branca, e não o #eef5f3 de antes: sobre a faixa cinza aquele tom sumia —
+   cinza claro sobre cinza claro. No branco ela volta a ser pastilha. */
 .sv-item-ico {
     width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
-    background: #eef5f3; color: #0f766e;
+    background: #fff; color: #0f766e;
 }
 .sv-item-ico svg {
     width: 15px; height: 15px;
@@ -202,14 +224,20 @@
    formulário. Aqui ele estava repetido em cada viveiro, e três botões verdes
    descendo a tela não destacam nada: só gritam juntos.
    --------------------------------------------------------------------------- */
+/* Verde claro com texto quase preto, a pedido do dono. Não é só gosto: sobre
+   a faixa cinza, o #f1f6f5 de antes era cinza-claro sobre cinza-claro e o
+   botão desaparecia. O verde o traz de volta sem precisar do verde-escuro
+   cheio, que nesta tela compete com "Lançar ração" lá da tela inicial.
+   Contraste do texto sobre ele: 9,7 — bem acima dos 4,5 que texto pede. */
 .sv-abrir {
     display: flex; align-items: center; justify-content: center; gap: 7px;
     width: 100%; box-sizing: border-box;
-    margin: 13px 0 0; padding: 11px 14px;
-    background: #f1f6f5; border: none; border-radius: 11px;
-    font-family: inherit; font-size: 13.5px; font-weight: 800; color: #0f5f57;
+    margin: 13px 0 0; padding: 12px 14px;
+    background: #b4e3cb; border: none; border-radius: 11px;
+    font-family: inherit; font-size: 14px; font-weight: 800; color: #10322f;
     cursor: pointer;
 }
+.sv-abrir:active { background: #a3dcbf; }
 .sv-abrir svg {
     width: 14px; height: 14px;
     fill: none; stroke: currentColor; stroke-width: 2.2;
@@ -280,6 +308,9 @@
    --------------------------------------------------------------------------- */
 body.tema-escuro .sv-topo h2 { color: #f1f5f4; }
 body.tema-escuro .sv-card { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sv-baixo { background: #182230; border-top-color: #2b3747; }
+body.tema-escuro .sv-item-ico { background: #1f2937; }
+body.tema-escuro .sv-abrir { background: #1d5c3c; color: #d9f5e6; }
 body.tema-escuro .sv-cab h3 { color: #e5e7eb; }
 body.tema-escuro .sv-estado { color: #6ee7a8; }
 body.tema-escuro .sv-estado-vazio { color: #6b7280; }
@@ -287,12 +318,11 @@ body.tema-escuro .sv-lapis { background: #273445; color: #8d9aa8; }
 body.tema-escuro .sv-barra { background: #2b3747; }
 body.tema-escuro .sv-marcos { color: #6b7280; }
 body.tema-escuro .sv-grade { border-top-color: #2b3747; }
-body.tema-escuro .sv-item-ico { background: #273445; color: #6ee7a8; }
+body.tema-escuro .sv-item-ico { color: #6ee7a8; }
 body.tema-escuro .sv-item-txt small { color: #6b7280; }
 body.tema-escuro .sv-item-txt b { color: #e5e7eb; }
 body.tema-escuro .sv-aviso-racao { color: #e3b341; }
 body.tema-escuro .sv-aviso-bloqueio { color: #fca5a5; }
-body.tema-escuro .sv-abrir { background: #273445; color: #6ee7a8; }
 body.tema-escuro .sv-linha { background: #1f2937; border-color: #374151; box-shadow: none; }
 body.tema-escuro .sv-linha-ico { background: #273445; color: #7fb8ae; }
 body.tema-escuro .sv-linha-txt b { color: #e5e7eb; }
