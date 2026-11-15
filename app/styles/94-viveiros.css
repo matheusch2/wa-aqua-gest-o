@@ -51,8 +51,31 @@
     margin: 5px auto 0;
     font-size: 13px; color: #5f706e; text-align: center; line-height: 1.5;
 }
+/* Cada estado na SUA cor, a mesma das linhas logo abaixo — a frase passa a
+   ser o retrato da fazenda em vez de uma legenda cinza. O separador fica
+   fora da cor, pálido: ele é pontuação, não informação.
+
+   Os tons aqui são os mesmos que o nome do viveiro usa em cada linha (os
+   mais escuros dos três), porque isto também é texto e texto precisa de
+   contraste, não de cor. */
 .sv-resumo-item { white-space: nowrap; }
-.sv-resumo-sep { color: #b6c4c2; margin: 0 5px; }
+.sv-resumo-sep { color: #c3cfcd; margin: 0 3px; font-weight: 400; }
+
+.sv-r-tudo    { color: #10322f; font-weight: 800; }
+.sv-r-cultivo { color: #15834f; font-weight: 700; }
+/* #8d610f e não o #a97714 das pastilhas: aquele dá contraste 3,9 contra o
+   branco, e texto pede 4,5. Numa pastilha, com fundo próprio atrás, ele
+   passa; solto sobre o branco, não. Mesma cor, tom mais escuro. */
+.sv-r-espera  { color: #8d610f; font-weight: 700; }
+.sv-r-parado  { color: #7a6a44; font-weight: 700; }
+.sv-r-vazio   { color: #5f706e; font-weight: 600; }
+
+body.tema-escuro .sv-r-tudo    { color: #e5e7eb; }
+body.tema-escuro .sv-r-cultivo { color: #4cc98a; }
+body.tema-escuro .sv-r-espera  { color: #e3b341; }
+body.tema-escuro .sv-r-parado  { color: #bdae89; }
+body.tema-escuro .sv-r-vazio   { color: #9ca3af; }
+body.tema-escuro .sv-resumo-sep { color: #4b5563; }
 
 .sv-lista { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
 
