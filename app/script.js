@@ -1826,6 +1826,49 @@ const _VV_LIMITE = 4;
  * esteja na décima posição — esconder justamente o que a pessoa acabou de
  * abrir seria o pior jeito de obedecer a regra.
  */
+/*
+ * A linha de resumo do topo: "8 viveiros · 3 em cultivo · 2 esperando
+ * despesca · 1 parado".
+ *
+ * Só entra o estado que EXISTE. Escrever "0 parados" numa fazenda que não tem
+ * nenhum parado é gastar a linha pra dizer que não há nada pra dizer — e com
+ * os quatro estados fixos a frase passava de duas linhas em qualquer fazenda.
+ *
+ * A ordem não é alfabética nem a da lista: é a de quem pede atenção primeiro.
+ * Em cultivo é o que está correndo; esperando despesca é o que vai sair;
+ * parado é o que está fora da conta; vazio é o que não pede nada.
+ */
+function _svResumoEstados(lista) {
+  const n = { cultivo: 0, espera: 0, parado: 0, vazio: 0 };
+  for (const v of (lista || [])) {
+    if (v.semHistorico) n.espera++;
+    else if (_viveiroPausadoHoje(v)) n.parado++;
+    else if (v.dataPovoamento) n.cultivo++;
+    else n.vazio++;
+  }
+  const total = (lista || []).length;
+  const partes = [`${total} ${total === 1 ? "viveiro" : "viveiros"}`];
+  if (n.cultivo) partes.push(`${n.cultivo} em cultivo`);
+  if (n.espera) partes.push(`${n.espera} esperando despesca`);
+  if (n.parado) partes.push(`${n.parado} ${n.parado === 1 ? "parado" : "parados"}`);
+  if (n.vazio) partes.push(`${n.vazio} ${n.vazio === 1 ? "vazio" : "vazios"}`);
+  // Cada pedaço num <span> que não quebra: sem isso a frase partia entre o
+  // número e a palavra dele ("… · 1" / "parado · 2 vazios"), que é o jeito
+  // mais fácil de uma linha de resumo ficar difícil de ler. Assim a quebra
+  // só acontece ENTRE os pedaços.
+  // Duas coisas aqui, as duas descobertas olhando a tela:
+  //
+  // 1. Os espaços entre os pedaços são de VERDADE. O navegador só quebra a
+  //    linha onde há espaço; com as tags coladas (</span><span>) a frase
+  //    inteira virava uma palavra só e vazava pela direita em vez de quebrar.
+  //
+  // 2. O separador vai DENTRO do pedaço que vem antes. Separando-o, a quebra
+  //    caía antes dele e a segunda linha começava com um "·" solto. Assim a
+  //    linha termina no "·", que é como se lê "continua".
+  return partes.map((t, i) => `<span class="sv-resumo-item">${t}${
+    i < partes.length - 1 ? ' <span class="sv-resumo-sep">·</span>' : ""}</span>`).join(" ");
+}
+
 function _vvAtualizarVisiveis() {
   const lista = document.getElementById("sv-lista");
   if (!lista) return;
@@ -2046,7 +2089,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     <div class="sv-topo">
       <div class="sv-topo-txt">
         <h2>Seus viveiros</h2>
-        <p>${viveirosOrdenados.length} ${viveirosOrdenados.length === 1 ? "viveiro" : "viveiros"}${emCultivo ? ` · ${emCultivo} em cultivo` : ""}</p>
+        <p>${_svResumoEstados(viveirosOrdenados)}</p>
       </div>
     </div>
     ${viveirosOrdenados.length >= _VV_BUSCA_A_PARTIR_DE ? `
