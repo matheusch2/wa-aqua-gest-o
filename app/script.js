@@ -1571,7 +1571,7 @@ function _insightAgendarAuto() {
       return;
     }
     _insightTrocar();
-  }, 6000);
+  }, 1500);
 }
 
 function _insightTrocar() {
