@@ -37,6 +37,7 @@ body.tema-escuro {
 
 body.tema-escuro .card {
     background: #1f2937;
+    border-color: #374151;
 }
 
 body.tema-escuro .botao-gestao {

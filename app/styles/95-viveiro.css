@@ -469,3 +469,48 @@ body.tema-escuro .prep-confirm-nao { background: #1f2937; color: #e3b341; }
 body.tema-escuro .vsc-tela .vsc-cab-ico { background: #273445; color: #6ee7a8; }
 body.tema-escuro .vsc-tela .vsc-cab-txt h2 { color: #6ee7a8; }
 body.tema-escuro .vsc-tela .vsc-cab-txt span { color: #9ca3af; }
+
+/* ---------------------------------------------------------------------------
+   O cinza, aqui também
+
+   Mesmo #f3f6f5 da faixa de baixo do cartão da lista. A tela era doze
+   cartões brancos dentro de um cartão branco: nada separava um nível do
+   outro, e o conjunto parecia uma folha em branco com texto espalhado.
+
+   Trocar o fundo obriga a mexer em três coisas que viviam do branco, e cada
+   uma foi medida contra o cinza novo:
+
+   1. O RÓTULO (POVOAMENTO, LABORATÓRIO…) era #93a5a2 — contraste 2,4 sobre
+      este cinza, quando texto pede 4,5. Ele literalmente se esconderia atrás
+      do fundo, que foi o que o dono previu. Virou #52635f: 5,8.
+
+   2. A PASTILHA DO ÍCONE era #eef5f3, quase a cor da faixa. Virou branca, e
+      é ela que agora dá o respiro: pastilha branca sobre cartão cinza dentro
+      de cartão branco.
+
+   3. O ÍCONE ganhou tom mais fechado (#0f766e) pra se segurar dentro da
+      pastilha branca: 5,5 de contraste, contra os 3 que ícone pede.
+   --------------------------------------------------------------------------- */
+.painel-viveiro .info-box {
+    background: #f3f6f5;
+    border-color: #e2eae8;
+    box-shadow: none;
+}
+.painel-viveiro .info-box small { color: #52635f; }
+.painel-viveiro .info-box-icone { background: #fff; }
+.painel-viveiro .info-box-icone svg { stroke: #0f766e; }
+
+/* Os de "Consultas e manejo" eram brancos e sumiam no cartão branco. Mesmo
+   cinza, pelo mesmo motivo. Os de Lançamentos ficam brancos de propósito: a
+   cor deles está na pastilha, e sobre cinza as pastilhas claras embaçam. */
+.painel-viveiro .vv-consulta-btn {
+    background: #f3f6f5;
+    border-color: #e2eae8;
+    box-shadow: none;
+}
+
+body.tema-escuro .painel-viveiro .info-box { background: #182230; border-color: #2b3747; }
+body.tema-escuro .painel-viveiro .info-box small { color: #9ca3af; }
+body.tema-escuro .painel-viveiro .info-box-icone { background: #1f2937; }
+body.tema-escuro .painel-viveiro .info-box-icone svg { stroke: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-consulta-btn { background: #182230; border-color: #2b3747; }
