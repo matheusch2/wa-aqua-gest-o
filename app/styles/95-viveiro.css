@@ -299,12 +299,20 @@ body.tema-escuro .painel-viveiro .vv-consulta-btn { background: #1f2937; border-
    o dedo em vez de segurar. Claro, ele continua dizendo "perigo" e para de
    chamar.
    --------------------------------------------------------------------------- */
+/* Vermelho CHEIO, a pedido do dono: o claro de antes "estava muito apagado".
+   Eu tinha ido no claro de propósito, com medo de o botão mais destrutivo da
+   tela virar o mais chamativo — mas o guarda-costas aqui não é a cor, é a
+   confirmação que já existe atrás dele ("Excluir 'Viveiro 1'?"). Com ela no
+   caminho, a cor forte só torna o botão visível, não perigoso.
+
+   #dc2626 e não o #ef4444 original: aquele dá contraste 3,8 com o texto
+   branco, abaixo dos 4,5 que texto pede. Este dá 4,8 — mais vivo E legível. */
 .painel-viveiro .vv-admin-vermelho {
-    background: #fdeaea;
-    color: #c33434;
-    box-shadow: none;
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
 }
-.painel-viveiro .vv-admin-vermelho svg { stroke: #c33434; background: none; }
+.painel-viveiro .vv-admin-vermelho svg { stroke: #fff; background: none; }
 
 body.tema-escuro .painel-viveiro .vv-manejo-btn { background: #22313f; color: #9fd8cc; }
 body.tema-escuro .painel-viveiro .vv-manejo-btn svg,
@@ -312,8 +320,8 @@ body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(1) svg,
 body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(2) svg,
 body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(3) svg,
 body.tema-escuro .painel-viveiro .vv-manejo-btn:nth-child(4) svg { stroke: #6ee7a8; }
-body.tema-escuro .painel-viveiro .vv-admin-vermelho { background: #3a1d1d; color: #fca5a5; }
-body.tema-escuro .painel-viveiro .vv-admin-vermelho svg { stroke: #fca5a5; }
+body.tema-escuro .painel-viveiro .vv-admin-vermelho { background: #b91c1c; color: #fff; border-color: #b91c1c; }
+body.tema-escuro .painel-viveiro .vv-admin-vermelho svg { stroke: #fff; }
 
 /* ---------------------------------------------------------------------------
    Os quatro lançamentos, alinhados de verdade
