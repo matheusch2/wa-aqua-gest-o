@@ -685,33 +685,34 @@ body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
 }
 .cfg-hub-titulo {
     margin: 0 -14px;
-    padding: 18px 20px 0;
-    background: #086b63;
-    color: #fff;
+    padding: 15px 20px 12px;
+    background: transparent;
+    color: #253c34;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: .06em;
 }
 .cfg-hub .cfg-header {
-    margin: 0 -14px 18px;
-    padding: 16px 20px 22px;
-    border: 0;
-    border-radius: 0 0 22px 22px;
-    background: #086b63;
-    gap: 12px;
+    margin: 0 0 14px;
+    padding: 11px 12px;
+    border: 1px solid #dce8e2;
+    border-left: 4px solid #159b65;
+    border-radius: 16px;
+    background: #fff;
+    gap: 10px;
 }
 .cfg-hub .cfg-header-avatar {
-    width: 48px; height: 48px;
+    width: 40px; height: 40px;
     background: #e0f1ec;
     color: #086b63;
-    border: 2px solid #87c9b9;
+    border: 0;
     box-sizing: border-box;
     font-size: 18px;
 }
 .cfg-hub .cfg-header-info { flex: 1; }
-.cfg-hub .cfg-header-nome { color: #fff; font-size: 17px; font-weight: 650; }
-.cfg-hub .cfg-header-email { color: #d0e8e2; font-size: 12px; }
-.cfg-hub .cfg-header-online { color: #a9ebca; font-size: 10px; font-weight: 500; }
+.cfg-hub .cfg-header-nome { color: #173d32; font-size: 16px; font-weight: 650; }
+.cfg-hub .cfg-header-email { color: #667a71; font-size: 12px; }
+.cfg-hub .cfg-header-online { color: #188252; font-size: 10px; font-weight: 500; }
 .cfg-hub .cfg-lista { gap: 9px; margin-bottom: 9px; }
 .cfg-hub .cfg-item {
     min-height: 52px;
@@ -744,8 +745,11 @@ body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
 .cfg-hub .cfg-perigo { text-align: center; margin-top: 16px; }
 .cfg-hub .cfg-excluir-link { font-size: 12px; }
 body.tema-escuro .cfg-hub { background: #111e1b; }
-body.tema-escuro .cfg-hub-titulo,
-body.tema-escuro .cfg-hub .cfg-header { background: #0b4e47; }
+body.tema-escuro .cfg-hub-titulo { background: transparent; color: #e8f1ec; }
+body.tema-escuro .cfg-hub .cfg-header { background: #1c2c27; border-color: #30433b; border-left-color: #46c08c; }
+body.tema-escuro .cfg-hub .cfg-header-nome { color: #e8f1ec; }
+body.tema-escuro .cfg-hub .cfg-header-email { color: #aec0b7; }
+body.tema-escuro .cfg-hub .cfg-header-online { color: #83dbad; }
 body.tema-escuro .cfg-hub .cfg-item { background: #1c2c27; border-color: #30433b; }
 body.tema-escuro .cfg-hub .cfg-item:hover { background: #263b32; }
 body.tema-escuro .cfg-hub .cfg-item-titulo { color: #e8f1ec; }
