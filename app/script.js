@@ -1547,15 +1547,40 @@ function _insightsFazenda(lista, hojeYmd, resumo) {
 // sozinho (voltar pra tela inicial, lançar ração) e perder o cartão escolhido a
 // cada redesenho faria o toque parecer que não funcionou.
 let _insightAtual = 0;
+let _insightTimer = null;
+
+function _insightPararAuto() {
+  clearTimeout(_insightTimer);
+  _insightTimer = null;
+}
+
+function _insightAgendarAuto() {
+  _insightPararAuto();
+  const home = document.getElementById("home-mobile");
+  if (!home?.classList.contains("ativo") ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  _insightTimer = setTimeout(() => {
+    _insightTimer = null;
+    const botao = document.querySelector("#painel-fazenda .hm-heroi-btn");
+    if (!home.classList.contains("ativo") || !botao) return;
+    // Não troca enquanto a aba está oculta ou a pessoa interage com o indicador.
+    if (document.hidden || botao.matches(":focus, :hover, :active")) {
+      _insightAgendarAuto();
+      return;
+    }
+    _insightTrocar();
+  }, 6000);
+}
 
 function _insightTrocar() {
   const n = _insightsFazenda(viveiros, _hojeLocal(), _resumoFazenda(viveiros, _hojeLocal())).length;
-  if (n <= 1) return;
+  if (n <= 1) { _insightPararAuto(); return; }
   _insightAtual = (_insightAtual + 1) % n;
   _painelFazenda();
 }
 
 function _painelFazenda() {
+  _insightPararAuto();
   const alvo = document.getElementById("painel-fazenda");
   if (!alvo) return;
   const hoje = _hojeLocal();
@@ -1602,9 +1627,11 @@ function _painelFazenda() {
         ${r.semRacao} viveiro${r.semRacao !== 1 ? "s" : ""} sem ração lançada hoje
       </div>` : ""}
     </div>`;
+  if (cards.length > 1) _insightAgendarAuto();
 }
 
 function esconderMenu() {
+  _insightPararAuto();
   document.getElementById("menuGestao").style.display = "none";
   document.getElementById("home-mobile")?.classList.remove("ativo");
   _armarVoltarNavegador();
