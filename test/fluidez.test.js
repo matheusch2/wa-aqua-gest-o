@@ -839,3 +839,81 @@ test("editar: a tela de editar nao carrega o bloco do CADASTRO",()=>{
     assert.ok(!html.includes('id="dataEspera"'), `semHistorico=${sem}`);
   }
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OS CARTÕES QUE RODAM NO PAINEL
+
+   O que estes testes guardam não é o visual: é a regra de que POUCO DADO NÃO
+   VIRA CONCLUSÃO. "Laboratório mais lucrativo" com dois ciclos de dois
+   laboratórios é cara ou coroa vestida de conclusão, e alguém troca de
+   fornecedor por causa disso. Cada cartão de comparação só entra no rodízio
+   com base suficiente — e é fácil alguém afrouxar isso sem perceber.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _semearPainel(ciclos) {
+  return `viveiros = [{ id:'v1', nome:'V1', dataPovoamento:'2026-09-01', dataPreparacao:null,
+    totalPovoado:'100000', pausas:[], semHistorico:false, custos:[], racoes:[], biometrias:[],
+    ciclosFinalizados: ${JSON.stringify(ciclos)} }];
+    custosFixos = []; _custosFixosOk = true;
+    Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,15,12); } };`;
+}
+const cicloBase = (over) => Object.assign({
+  id: "c" + Math.random(), nomeViveiro: "V1", laboratorio: "Aquatec", cicloId: null,
+  dataPovoamento: "2026-01-10", dataEncerramento: "2026-05-10", dataPreparacao: null,
+  producaoFinal: 1000, producaoTotal: 1000, precoVenda: 20, despescas: [],
+  fca: 1.4, sobrevivencia: 70, custoFixoRateado: 0,
+}, over);
+
+const cartoes = (a, ciclos) => {
+  a.run(_semearPainel(ciclos));
+  a.run(`__c = _insightsFazenda(viveiros, '2026-11-15', _resumoFazenda(viveiros, '2026-11-15'));`);
+  return a.run(`__c.map(x => x.rotulo).join(" | ")`);
+};
+
+test("painel: 'melhor laboratorio' NAO aparece com um laboratorio so",()=>{
+  const a=load();
+  const r = cartoes(a, [cicloBase({laboratorio:"Aquatec"}), cicloBase({laboratorio:"Aquatec"}),
+                        cicloBase({laboratorio:"Aquatec"})]);
+  assert.ok(!r.includes("Melhor laboratório"), r);
+});
+
+test("painel: 'melhor laboratorio' NAO aparece com menos de tres ciclos",()=>{
+  const a=load();
+  const r = cartoes(a, [cicloBase({laboratorio:"Aquatec"}), cicloBase({laboratorio:"Marés"})]);
+  assert.ok(!r.includes("Melhor laboratório"), "dois ciclos nao decidem laboratorio: " + r);
+});
+
+test("painel: com tres ciclos e dois laboratorios, ele aparece e escolhe o de maior media",()=>{
+  const a=load();
+  const r = cartoes(a, [
+    cicloBase({laboratorio:"Aquatec", producaoFinal:1000, producaoTotal:1000, precoVenda:20}),
+    cicloBase({laboratorio:"Aquatec", producaoFinal:1000, producaoTotal:1000, precoVenda:20}),
+    cicloBase({laboratorio:"Marés",   producaoFinal:100,  producaoTotal:100,  precoVenda:20}),
+  ]);
+  assert.ok(r.includes("Melhor laboratório"), r);
+  assert.equal(a.run(`__c.find(x => x.rotulo === "Melhor laboratório").valor`), "Aquatec");
+});
+
+test("painel: 'melhor ciclo' NAO aparece com um ciclo so",()=>{
+  const a=load();
+  const r = cartoes(a, [cicloBase({})]);
+  assert.ok(!r.includes("Melhor ciclo"), "com um ciclo, 'melhor' nao quer dizer nada: " + r);
+  assert.ok(cartoes(a, [cicloBase({}), cicloBase({})]).includes("Melhor ciclo"));
+});
+
+test("painel: fazenda sem ciclo encerrado mostra so o que nao depende de historico",()=>{
+  const a=load();
+  const r = cartoes(a, []);
+  for (const some of ["Melhor laboratório", "Melhor ciclo", "Melhor FCA", "Produção"])
+    assert.ok(!r.includes(some), `${some} nao devia aparecer: ${r}`);
+  assert.ok(r.includes("Lucro"), r);
+  assert.ok(r.includes("Próxima despesca"), r);
+});
+
+test("painel: todo cartao de comparacao diz de quantos ciclos saiu",()=>{
+  const a=load();
+  cartoes(a, [cicloBase({laboratorio:"Aquatec"}), cicloBase({laboratorio:"Aquatec"}),
+              cicloBase({laboratorio:"Marés"})]);
+  const semNota = a.run(`__c.filter(x => /laborat|ciclo 2026|FCA|Produção/i.test(x.rotulo))
+                              .filter(x => !/ciclo/.test(x.nota || "")).map(x => x.rotulo).join(",")`);
+  assert.equal(semNota, "", "estes cartoes precisam dizer a base: " + semNota);
+});

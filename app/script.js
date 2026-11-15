@@ -1414,6 +1414,141 @@ function _reaisCurto(n) {
     : "R$ " + formatarNumeroBR(n, 0);
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   OS CARTÕES QUE RODAM NO PAINEL
+
+   O lugar do "Lucro 2026" passou a receber vários números, um por vez, e a
+   pessoa troca tocando. A ideia é do dono: aquele espaço mostrava um dado só,
+   e a fazenda tem meia dúzia de perguntas que cabem ali.
+
+   DUAS REGRAS GOVERNAM A LISTA, e as duas existem pra não transformar pouco
+   dado em conclusão:
+
+   1. Cartão sem base suficiente NÃO ENTRA no rodízio. "Laboratório mais
+      lucrativo" com dois ciclos de laboratórios diferentes é cara ou coroa
+      vestida de conclusão — alguém troca de fornecedor por causa disso. Cada
+      cartão diz abaixo de quantos ciclos ele se cala.
+
+   2. Quem entra DIZ DE ONDE VEIO ("de 7 ciclos", "de 3 ciclos este ano"), em
+      letra miúda. Quem lê decide quanto confiar.
+
+   Toque pra trocar, e não troca sozinho no tempo: número que muda enquanto a
+   pessoa lê é a forma mais rápida de ela desistir de ler.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+// Todos os ciclos encerrados da fazenda, com o viveiro de origem junto.
+function _ciclosEncerrados(lista, ano) {
+  const out = [];
+  for (const v of (lista || [])) {
+    for (const c of (v?.ciclosFinalizados || [])) {
+      if (ano && String(c?.dataEncerramento || "").substring(0, 4) !== String(ano)) continue;
+      out.push({ v, c });
+    }
+  }
+  return out;
+}
+
+function _insightsFazenda(lista, hojeYmd, resumo) {
+  const ano = String(hojeYmd).substring(0, 4);
+  const doAno = _ciclosEncerrados(lista, ano);
+  const todos = _ciclosEncerrados(lista, null);
+  const cards = [];
+
+  // 1. LUCRO DO ANO — o que já estava ali.
+  cards.push({
+    rotulo: `Lucro ${ano}`,
+    valor: resumo.ciclosAno > 0 ? _reaisCurto(resumo.lucroAno) : "—",
+    nota: resumo.ciclosAno > 0 ? `de ${resumo.ciclosAno} ciclo${resumo.ciclosAno !== 1 ? "s" : ""}` : "nenhum ciclo fechado",
+    destaque: true,
+  });
+
+  // 2. MAIS PRÓXIMO DA DESPESCA — o único que fala do amanhã.
+  let alvoDespesca = null;
+  for (const v of (lista || [])) {
+    if (!v.dataPovoamento || v.semHistorico || _viveiroPausadoHoje(v)) continue;
+    const dias = calcularDiasCultivo(v.dataPovoamento);
+    if (!alvoDespesca || dias > alvoDespesca.dias) alvoDespesca = { v, dias };
+  }
+  if (alvoDespesca) {
+    const faltam = _CICLO_META_DIAS - alvoDespesca.dias;
+    cards.push({
+      rotulo: "Próxima despesca",
+      valor: faltam > 0 ? `${faltam} dia${faltam !== 1 ? "s" : ""}` : "no ponto",
+      nota: `${alvoDespesca.v.nome} · dia ${alvoDespesca.dias}`,
+    });
+  }
+
+  // 3. LABORATÓRIO MAIS LUCRATIVO — precisa de base: 3 ciclos e 2 laboratórios.
+  const porLab = new Map();
+  for (const { v, c } of todos) {
+    const lab = String(c.laboratorio || "").trim();
+    if (!lab) continue;
+    const r = _lucroDoCiclo(v, c);
+    if (r.lucro === null) continue;
+    const at = porLab.get(lab) || { lucro: 0, n: 0 };
+    at.lucro += r.lucro; at.n++;
+    porLab.set(lab, at);
+  }
+  const labs = [...porLab.entries()].map(([lab, x]) => ({ lab, media: x.lucro / x.n, n: x.n }));
+  const nCiclosComLab = labs.reduce((s, x) => s + x.n, 0);
+  if (labs.length >= 2 && nCiclosComLab >= 3) {
+    labs.sort((a, b) => b.media - a.media);
+    cards.push({
+      rotulo: "Melhor laboratório",
+      valor: labs[0].lab,
+      nota: `${_reaisCurto(labs[0].media)}/ciclo · de ${nCiclosComLab} ciclos`,
+    });
+  }
+
+  // 4. MELHOR FCA DO ANO — quanto menor, melhor.
+  const comFca = doAno.filter(({ c }) => Number(c.fca) > 0);
+  if (comFca.length) {
+    const melhor = comFca.reduce((a, b) => (Number(a.c.fca) <= Number(b.c.fca) ? a : b));
+    cards.push({
+      rotulo: `Melhor FCA ${ano}`,
+      valor: formatarNumeroBR(Number(melhor.c.fca), 2),
+      nota: `${melhor.c.nomeViveiro || melhor.v.nome} · de ${comFca.length} ciclo${comFca.length !== 1 ? "s" : ""}`,
+    });
+  }
+
+  // 5. PRODUÇÃO DO ANO — quilo pesado, sem nada de contábil.
+  const kg = doAno.reduce((s, { c }) => s + (Number(c.producaoTotal) || 0), 0);
+  if (kg > 0) {
+    cards.push({
+      rotulo: `Produção ${ano}`,
+      valor: kg >= 1000 ? `${formatarNumeroBR(kg / 1000, 1)}<i>t</i>` : `${formatarNumeroBR(kg, 0)}<i>kg</i>`,
+      nota: `de ${doAno.length} ciclo${doAno.length !== 1 ? "s" : ""}`,
+    });
+  }
+
+  // 6. MELHOR CICLO DO ANO — com UM ciclo só, "melhor" não quer dizer nada.
+  const comLucro = doAno.map(({ v, c }) => ({ v, c, l: _lucroDoCiclo(v, c).lucro }))
+                        .filter(x => x.l !== null);
+  if (comLucro.length >= 2) {
+    const top = comLucro.reduce((a, b) => (a.l >= b.l ? a : b));
+    cards.push({
+      rotulo: `Melhor ciclo ${ano}`,
+      valor: _reaisCurto(top.l),
+      nota: `${top.c.nomeViveiro || top.v.nome} · de ${comLucro.length} ciclos`,
+      destaque: true,
+    });
+  }
+
+  return cards;
+}
+
+// Qual cartão está à mostra. Em módulo, e não no elemento: o painel se redesenha
+// sozinho (voltar pra tela inicial, lançar ração) e perder o cartão escolhido a
+// cada redesenho faria o toque parecer que não funcionou.
+let _insightAtual = 0;
+
+function _insightTrocar() {
+  const n = _insightsFazenda(viveiros, _hojeLocal(), _resumoFazenda(viveiros, _hojeLocal())).length;
+  if (n <= 1) return;
+  _insightAtual = (_insightAtual + 1) % n;
+  _painelFazenda();
+}
+
 function _painelFazenda() {
   const alvo = document.getElementById("painel-fazenda");
   if (!alvo) return;
@@ -1423,6 +1558,12 @@ function _painelFazenda() {
   // Sem viveiro em cultivo não há o que resumir: painel zerado não informa,
   // só ocupa a tela do cliente novo.
   if (r.emCultivo === 0) { alvo.innerHTML = ""; return; }
+
+  // A lista muda de tamanho conforme a fazenda ganha histórico, então o índice
+  // guardado pode apontar pra um cartão que não existe mais.
+  const cards = _insightsFazenda(viveiros, hoje, r);
+  const idx = Math.min(_insightAtual, cards.length - 1);
+  const card = cards[idx];
 
   alvo.innerHTML = `
     <div class="hm-painel">
@@ -1435,10 +1576,14 @@ function _painelFazenda() {
           <small>Biomassa estimada</small>
           <b>${formatarNumeroBR(r.biomassa, 0)}<i>kg</i></b>
         </div>
-        <div class="hm-heroi hm-heroi-lucro">
-          <small>Lucro ${String(hoje).substring(0, 4)}</small>
-          <b>${r.ciclosAno > 0 ? _reaisCurto(r.lucroAno) : "—"}</b>
-        </div>
+        <button class="hm-heroi hm-heroi-lucro hm-heroi-btn" onclick="_insightTrocar()"
+                ${cards.length > 1 ? `aria-label="Tocar para ver outro número"` : ""}>
+          <small>${card.rotulo}</small>
+          <b${card.destaque ? "" : ' class="hm-heroi-neutro"'}>${card.valor}</b>
+          ${card.nota ? `<em>${_esc(card.nota)}</em>` : ""}
+          ${cards.length > 1 ? `<span class="hm-bolinhas">${cards.map((_, i) =>
+            `<i class="${i === idx ? "ativa" : ""}"></i>`).join("")}</span>` : ""}
+        </button>
       </div>
       <div class="hm-risco"></div>
       <div class="hm-nums">
