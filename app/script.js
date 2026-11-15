@@ -1847,11 +1847,14 @@ function _svResumoEstados(lista) {
     else n.vazio++;
   }
   const total = (lista || []).length;
-  const partes = [`${total} ${total === 1 ? "viveiro" : "viveiros"}`];
-  if (n.cultivo) partes.push(`${n.cultivo} em cultivo`);
-  if (n.espera) partes.push(`${n.espera} esperando despesca`);
-  if (n.parado) partes.push(`${n.parado} ${n.parado === 1 ? "parado" : "parados"}`);
-  if (n.vazio) partes.push(`${n.vazio} ${n.vazio === 1 ? "vazio" : "vazios"}`);
+  // Cada pedaço leva a classe do seu estado: é ela que dá a cor, a MESMA das
+  // linhas logo abaixo. O total vem em "tudo", mais escuro e mais pesado,
+  // porque ele é o número que resume os outros.
+  const partes = [["tudo", `${total} ${total === 1 ? "viveiro" : "viveiros"}`]];
+  if (n.cultivo) partes.push(["cultivo", `${n.cultivo} em cultivo`]);
+  if (n.espera) partes.push(["espera", `${n.espera} esperando despesca`]);
+  if (n.parado) partes.push(["parado", `${n.parado} ${n.parado === 1 ? "parado" : "parados"}`]);
+  if (n.vazio) partes.push(["vazio", `${n.vazio} ${n.vazio === 1 ? "vazio" : "vazios"}`]);
   // Cada pedaço num <span> que não quebra: sem isso a frase partia entre o
   // número e a palavra dele ("… · 1" / "parado · 2 vazios"), que é o jeito
   // mais fácil de uma linha de resumo ficar difícil de ler. Assim a quebra
@@ -1865,7 +1868,7 @@ function _svResumoEstados(lista) {
   // 2. O separador vai DENTRO do pedaço que vem antes. Separando-o, a quebra
   //    caía antes dele e a segunda linha começava com um "·" solto. Assim a
   //    linha termina no "·", que é como se lê "continua".
-  return partes.map((t, i) => `<span class="sv-resumo-item">${t}${
+  return partes.map(([classe, t], i) => `<span class="sv-resumo-item sv-r-${classe}">${t}${
     i < partes.length - 1 ? ' <span class="sv-resumo-sep">·</span>' : ""}</span>`).join(" ");
 }
 
