@@ -2025,12 +2025,17 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     // O conceito dizia "Consultar informações" em toda linha fechada. É texto
     // que não informa: repetido viveiro a viveiro, ocupa a linha e não diz
     // nada que a seta já não diga. No lugar vai o estado de cada um.
-    const sub = viveiro.semHistorico
-      ? `Esperando despesca · ${dias} ${dias === 1 ? "dia" : "dias"}`
-      : _viveiroPausadoHoje(viveiro) ? "Parado para reforma"
-      : emCultivoV ? `Em cultivo · ${dias} ${dias === 1 ? "dia" : "dias"}` : "Vazio";
+    // O estado vai pro HTML como atributo: é ele que o CSS usa pra pintar a
+    // faixa, a borda, a pastilha e o nome (ver 94-viveiros.css). Sem isso o
+    // CSS teria que adivinhar o estado lendo o texto da legenda.
+    const estado = viveiro.semHistorico ? "espera"
+      : _viveiroPausadoHoje(viveiro) ? "parado"
+      : emCultivoV ? "cultivo" : "vazio";
+    const sub = estado === "espera" ? `Esperando despesca · ${dias} ${dias === 1 ? "dia" : "dias"}`
+      : estado === "parado" ? "Parado para reforma"
+      : estado === "cultivo" ? `Em cultivo · ${dias} ${dias === 1 ? "dia" : "dias"}` : "Vazio";
     return `
-    <button class="sv-linha" onclick="_vvAbrir(${i})" id="viveiro-card-${i}" data-vv-nome="${_esc(viveiro.nome)}">
+    <button class="sv-linha" onclick="_vvAbrir(${i})" id="viveiro-card-${i}" data-vv-nome="${_esc(viveiro.nome)}" data-estado="${estado}">
       <span class="sv-linha-ico">${svg("agua")}</span>
       <span class="sv-linha-txt"><b>${_esc(viveiro.nome)}</b><small>${sub}</small></span>
       <span class="sv-linha-seta">›</span>

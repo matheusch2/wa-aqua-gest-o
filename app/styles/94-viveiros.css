@@ -468,3 +468,63 @@ body.tema-escuro .ed-vazio-ico { background: #273445; color: #7fb8ae; }
 body.tema-escuro .ed-vazio b { color: #e5e7eb; }
 body.tema-escuro .ed-vazio small { color: #9ca3af; }
 body.tema-escuro .ed-vazio-btn { background: #273445; color: #6ee7a8; }
+
+/* ---------------------------------------------------------------------------
+   A cor do estado, na linha inteira
+
+   As quatro linhas eram idênticas e o estado de cada viveiro era só uma
+   palavra cinza no meio de outras palavras cinzas. Agora a cor diz o estado
+   em quatro lugares ao mesmo tempo — faixa, borda, pastilha e nome — e dá pra
+   ler a fazenda inteira sem ler palavra nenhuma.
+
+   As cores NÃO são novas. São as mesmas que o app já usa: verde para "está
+   correndo", âmbar para "repare nisso" (o mesmo do boleto vencendo, do
+   viveiro parado e do ciclo que passou da meta). A lista não trouxe um código
+   de cores pra decorar; passou a usar o que já existia.
+
+   Três tons por estado, e cada um tem uma razão: a faixa é a mais saturada
+   (é um risco de 4px, precisa de força pra aparecer), a borda é média (ela
+   contorna o cartão inteiro e saturada demais vira moldura) e o nome é o mais
+   escuro dos três, porque é texto e texto precisa de contraste, não de cor.
+   --------------------------------------------------------------------------- */
+.sv-linha { position: relative; overflow: hidden; padding-left: 17px; }
+.sv-linha::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: #dde4e2;
+}
+
+.sv-linha[data-estado="cultivo"]::before { background: #16a34a; }
+.sv-linha[data-estado="cultivo"] { border-color: #a8dec0; }
+.sv-linha[data-estado="cultivo"] .sv-linha-ico { background: #e1f7ea; color: #15834f; }
+.sv-linha[data-estado="cultivo"] .sv-linha-txt b { color: #12694a; }
+.sv-linha[data-estado="cultivo"] .sv-linha-txt small { color: #15834f; font-weight: 700; }
+
+.sv-linha[data-estado="espera"]::before { background: #d9a23d; }
+.sv-linha[data-estado="espera"] { border-color: #ecd3a0; }
+.sv-linha[data-estado="espera"] .sv-linha-ico { background: #fdf3df; color: #a97714; }
+.sv-linha[data-estado="espera"] .sv-linha-txt b { color: #8d610f; }
+.sv-linha[data-estado="espera"] .sv-linha-txt small { color: #a97714; font-weight: 700; }
+
+.sv-linha[data-estado="parado"]::before { background: #b9ab8a; }
+.sv-linha[data-estado="parado"] { border-color: #ded6c3; }
+.sv-linha[data-estado="parado"] .sv-linha-ico { background: #f4f1e9; color: #8a7a54; }
+.sv-linha[data-estado="parado"] .sv-linha-txt b { color: #6f6140; }
+.sv-linha[data-estado="parado"] .sv-linha-txt small { color: #8a7a54; font-weight: 700; }
+
+/* Vazio fica cinza de propósito: não é estado que peça nada de ninguém, e
+   colorir os quatro seria o mesmo que não colorir nenhum. */
+.sv-linha[data-estado="vazio"] .sv-linha-ico { background: #eef1f0; color: #93a5a2; }
+
+body.tema-escuro .sv-linha[data-estado="cultivo"] { border-color: #1d5c3c; }
+body.tema-escuro .sv-linha[data-estado="cultivo"] .sv-linha-ico { background: #10301f; color: #6ee7a8; }
+body.tema-escuro .sv-linha[data-estado="cultivo"] .sv-linha-txt b { color: #6ee7a8; }
+body.tema-escuro .sv-linha[data-estado="cultivo"] .sv-linha-txt small { color: #4cc98a; }
+body.tema-escuro .sv-linha[data-estado="espera"] { border-color: #6b541c; }
+body.tema-escuro .sv-linha[data-estado="espera"] .sv-linha-ico { background: #2a2000; color: #e3b341; }
+body.tema-escuro .sv-linha[data-estado="espera"] .sv-linha-txt b { color: #e3b341; }
+body.tema-escuro .sv-linha[data-estado="espera"] .sv-linha-txt small { color: #c99a2e; }
+body.tema-escuro .sv-linha[data-estado="parado"] { border-color: #4a4433; }
+body.tema-escuro .sv-linha[data-estado="parado"] .sv-linha-ico { background: #26231a; color: #bdae89; }
+body.tema-escuro .sv-linha[data-estado="parado"] .sv-linha-txt b,
+body.tema-escuro .sv-linha[data-estado="parado"] .sv-linha-txt small { color: #bdae89; }
+body.tema-escuro .sv-linha[data-estado="vazio"] .sv-linha-ico { background: #273445; color: #7b8b89; }
