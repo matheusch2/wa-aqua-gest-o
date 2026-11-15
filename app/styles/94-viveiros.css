@@ -113,13 +113,19 @@
 }
 .sv-estado-vazio { color: #94a3a0; }
 
-/* Largura e altura explícitas: ver a armadilha do <button> lá em cima. */
+/* Largura e altura explícitas: ver a armadilha do <button> lá em cima.
+
+   AZUL porque azul é a cor de "editar" em praticamente todo aplicativo, e
+   porque ela estava livre: nesta casa o verde é "está correndo", o âmbar é
+   "repare nisso" e o vermelho é "apagar". O azul não tinha dono — só
+   aparecia como pastilha de categoria na biometria —, então dá pra adotá-lo
+   sem roubar o sentido de ninguém. */
 .sv-lapis {
     width: 30px; height: 30px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     padding: 0; margin: 0;
-    background: #f3f7f6; border: none; border-radius: 9px;
-    color: #8a9a97; cursor: pointer;
+    background: #e9eefb; border: none; border-radius: 9px;
+    color: #2d4fa8; cursor: pointer;
 }
 .sv-lapis svg {
     width: 14px; height: 14px;
@@ -314,7 +320,7 @@ body.tema-escuro .sv-abrir { background: #1d5c3c; color: #d9f5e6; }
 body.tema-escuro .sv-cab h3 { color: #e5e7eb; }
 body.tema-escuro .sv-estado { color: #6ee7a8; }
 body.tema-escuro .sv-estado-vazio { color: #6b7280; }
-body.tema-escuro .sv-lapis { background: #273445; color: #8d9aa8; }
+body.tema-escuro .sv-lapis { background: #1e2a45; color: #9db6ef; }
 body.tema-escuro .sv-barra { background: #2b3747; }
 body.tema-escuro .sv-marcos { color: #6b7280; }
 body.tema-escuro .sv-grade { border-top-color: #2b3747; }
@@ -389,13 +395,18 @@ body.tema-escuro .sv-sem-resultado { color: #9ca3af; }
 /* O X fecha o viveiro aberto e deixa a lista inteira em linha. Sem ele não
    havia como voltar à visão de lista: só trocando por outro, e sempre tinha
    um aberto ocupando meia tela.
-   Largura e altura explícitas — ver a armadilha do <button> no topo. */
+   Largura e altura explícitas — ver a armadilha do <button> no topo.
+
+   VERMELHO CLARO, não vermelho cheio, e a diferença importa: nesta casa o
+   vermelho cheio quer dizer APAGAR (é o do "Excluir viveiro"), e este X só
+   fecha o cartão. No tom claro ele fica distinto do lápis ao lado, que era o
+   que o dono queria, sem prometer uma destruição que não acontece. */
 .sv-fechar {
     width: 30px; height: 30px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     padding: 0; margin: 0;
-    background: #f3f7f6; border: none; border-radius: 9px;
-    color: #8a9a97; cursor: pointer;
+    background: #fdeaea; border: none; border-radius: 9px;
+    color: #c33434; cursor: pointer;
 }
 .sv-fechar svg {
     width: 15px; height: 15px;
@@ -409,7 +420,7 @@ body.tema-escuro .sv-sem-resultado { color: #9ca3af; }
 .sv-barra-passou i { background: linear-gradient(90deg, #c98a22, #e3a93d); }
 .sv-passou { color: #b4761a; }
 
-body.tema-escuro .sv-fechar { background: #273445; color: #8d9aa8; }
+body.tema-escuro .sv-fechar { background: #3a1d1d; color: #fca5a5; }
 body.tema-escuro .sv-passou { color: #e3b341; }
 
 /* ---------------------------------------------------------------------------
