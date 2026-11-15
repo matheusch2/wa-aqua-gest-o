@@ -182,14 +182,20 @@ body {
     gap: 4px;
 }
 
+/* O cartão branco que segura todas as telas.
+   Ganhou borda: antes era branco sobre #f5f5f5 com uma sombra fraca, e a
+   diferença entre o cartão e a página era quase nada — o conteúdo parecia
+   solto, sem moldura. A borda dá o contorno; a sombra, que agora é mais
+   curta e mais suave, dá só o descolamento. */
 .card {
     background: white;
     width: 90%;
     max-width: 380px;
     margin: 30px auto;
     padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 2px 6px rgba(33, 32, 32, 0.15);
+    border: 1px solid #cfdcd9;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(16, 50, 47, 0.07);
 }
 
 .card h2 {
@@ -498,13 +504,14 @@ body.tema-escuro .vc-editar-nome svg { stroke: #9ca3af; }
     letter-spacing: 0.3px;
 }
 
+/* Sem borda, sem sombra e sem fundo próprios: quem faz a moldura agora é o
+   .card que o contém. Com os dois, a tela ficava com duas molduras
+   arredondadas, uma dentro da outra a 30px de distância — e nenhuma das duas
+   separando coisa nenhuma, porque o fundo dos dois é branco. */
 .painel-viveiro {
-    background: white;
     border-radius: 18px;
-    padding: 20px;
-    margin-top: 20px;
-    border: 1px solid #ececec;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    padding: 0;
+    margin-top: 0;
 }
 
 /* ─── INFO BOXES ─────────────────────────────────────────────────────────── */
