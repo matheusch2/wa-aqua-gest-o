@@ -1462,19 +1462,19 @@ function _insightsFazenda(lista, hojeYmd, resumo) {
     destaque: true,
   });
 
-  // 2. MAIS PRÓXIMO DA DESPESCA — o único que fala do amanhã.
-  let alvoDespesca = null;
-  for (const v of (lista || [])) {
-    if (!v.dataPovoamento || v.semHistorico || _viveiroPausadoHoje(v)) continue;
-    const dias = calcularDiasCultivo(v.dataPovoamento);
-    if (!alvoDespesca || dias > alvoDespesca.dias) alvoDespesca = { v, dias };
-  }
-  if (alvoDespesca) {
-    const faltam = _CICLO_META_DIAS - alvoDespesca.dias;
+  // 2. ÚLTIMA BIOMETRIA — um viveiro diferente a cada volta dos indicadores.
+  const emCultivo = (lista || []).filter(v =>
+    v && v.dataPovoamento && !v.semHistorico && !_viveiroPausadoHoje(v));
+  if (emCultivo.length) {
+    const v = emCultivo[_insightVolta % emCultivo.length];
+    const bio = (v.biometrias || [])
+      .filter(b => b.data && String(b.data).substring(0, 10) >= String(v.dataPovoamento).substring(0, 10) &&
+        String(b.data).substring(0, 10) <= hojeYmd && Number(b.gramatura) > 0)
+      .slice().sort((a, b) => String(b.data).localeCompare(String(a.data)))[0];
     cards.push({
-      rotulo: "Próxima despesca",
-      valor: faltam > 0 ? `${faltam} dia${faltam !== 1 ? "s" : ""}` : "no ponto",
-      nota: `${alvoDespesca.v.nome} · dia ${alvoDespesca.dias}`,
+      rotulo: "Última biometria",
+      valor: bio ? `${formatarNumeroBR(Number(bio.gramatura), 1)}<i>g</i>` : "Sem registro",
+      nota: bio ? `${v.nome} · ${formatarData(bio.data)}` : v.nome,
     });
   }
 
@@ -1547,6 +1547,7 @@ function _insightsFazenda(lista, hojeYmd, resumo) {
 // sozinho (voltar pra tela inicial, lançar ração) e perder o cartão escolhido a
 // cada redesenho faria o toque parecer que não funcionou.
 let _insightAtual = 0;
+let _insightVolta = 0;
 let _insightTimer = null;
 
 function _insightPararAuto() {
@@ -1564,7 +1565,8 @@ function _insightAgendarAuto() {
     const botao = document.querySelector("#painel-fazenda .hm-heroi-btn");
     if (!home.classList.contains("ativo") || !botao) return;
     // Não troca enquanto a aba está oculta ou a pessoa interage com o indicador.
-    if (document.hidden || botao.matches(":focus, :hover, :active")) {
+    if (document.hidden || (botao.matches(":focus-visible, :active") ||
+        (window.matchMedia("(hover: hover)").matches && botao.matches(":hover")))) {
       _insightAgendarAuto();
       return;
     }
@@ -1575,7 +1577,8 @@ function _insightAgendarAuto() {
 function _insightTrocar() {
   const n = _insightsFazenda(viveiros, _hojeLocal(), _resumoFazenda(viveiros, _hojeLocal())).length;
   if (n <= 1) { _insightPararAuto(); return; }
-  _insightAtual = (_insightAtual + 1) % n;
+  _insightAtual = (Math.min(_insightAtual, n - 1) + 1) % n;
+  if (_insightAtual === 0) _insightVolta++;
   _painelFazenda();
 }
 
