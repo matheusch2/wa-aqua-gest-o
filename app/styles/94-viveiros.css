@@ -24,25 +24,35 @@
 /* ---------------------------------------------------------------------------
    Cabeçalho da seção
    --------------------------------------------------------------------------- */
-/* margin-left ZERO, e isso não é detalhe: o título ficava em 22px e o campo
-   de busca e as linhas em 20px. Dois pixels de diferença são pouco pra se
-   explicar e suficientes pra se notar — o dono olhou e disse "desalinhado"
-   sem saber por quê. Agora tudo começa na mesma vertical.
+/* CENTRALIZADO, a pedido do dono — e aqui centralizar não reabre o
+   "desalinhado" de antes. Aquilo era o título começando em 22px com a busca
+   em 20px: duas coisas quase alinhadas, que é o pior dos mundos. Um bloco
+   centralizado sobre uma lista alinhada à esquerda não é quase nada; é uma
+   decisão, e o olho lê como cabeçalho.
 
-   E menos ar em cima: eram 45px entre a borda do cartão e o título. */
+   Margem lateral zero mesmo assim: centrado dentro de uma caixa com 2px de
+   margem fica 1px fora do centro verdadeiro. */
 .sv-topo { margin: -8px 0 14px; }
 .sv-topo h2 {
     margin: 0;
-    font-size: 23px; font-weight: 800; letter-spacing: -.025em;
-    color: #0f5f57; text-align: left;
+    font-size: 26px; font-weight: 800; letter-spacing: -.03em;
+    color: #0f5f57; text-align: center;
 }
 /* #5f706e e não #8a9a97: o cinza de antes tinha contraste 2,9 contra o branco,
    abaixo do mínimo de 4,5 que texto pede. "Apagado" não era impressão, era
    medida. Este dá 5,2. */
+/* max-width + margem automática: a frase de resumo cresce com a fazenda
+   ("8 viveiros · 3 em cultivo · 2 esperando despesca · 1 parado"), e sem um
+   limite ela corre de ponta a ponta da tela, o que faz a segunda linha
+   começar longe de onde a primeira terminou. Com 300px ela quebra em duas
+   linhas curtas e centradas, que é como texto centralizado se lê bem. */
 .sv-topo p {
-    margin: 4px 0 0;
-    font-size: 13px; color: #5f706e; text-align: left;
+    max-width: 310px;
+    margin: 5px auto 0;
+    font-size: 13px; color: #5f706e; text-align: center; line-height: 1.5;
 }
+.sv-resumo-item { white-space: nowrap; }
+.sv-resumo-sep { color: #b6c4c2; margin: 0 5px; }
 
 .sv-lista { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
 
