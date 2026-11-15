@@ -220,3 +220,48 @@ body.tema-escuro #aviso-boletos .boleto-banner { background: #1f2937; border-col
 body.tema-escuro #aviso-boletos .boleto-banner-texto strong { color: #e5e7eb; }
 body.tema-escuro #aviso-boletos .boleto-banner-texto span { color: #9ca3af; }
 body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto strong { color: #fca5a5; }
+
+/* ---------------------------------------------------------------------------
+   O cartão que roda
+
+   O lugar do "Lucro 2026" virou um botão: toca e vem o próximo número. Ele
+   precisa parecer tocável sem virar outro botão na tela — por isso só ganha
+   o toque de fundo e as bolinhas, e não borda nem cor própria.
+
+   Troca SÓ ao toque. Número que muda sozinho enquanto a pessoa lê é a forma
+   mais rápida de ela desistir de ler — e aqui ela vai querer parar num e
+   olhar.
+   --------------------------------------------------------------------------- */
+/* min-height pra o painel NÃO pular de altura quando se troca de cartão. Um
+   rótulo ou uma nota que quebre em duas linhas empurra tudo o que vem abaixo,
+   e aí a tela inteira se mexe a cada toque.
+   A medida reserva DUAS linhas de nota pra todos, mesmo que só um precise. A
+   alternativa era encurtar a nota do laboratório até caber numa linha — mas o
+   que sobraria de fora era justamente "de quantos ciclos isso saiu", que é a
+   parte que diz quanto confiar no número. Dezesseis pixels é barato por isso. */
+.hm-heroi-btn {
+    min-height: 108px;
+    width: auto; margin: 0; padding: 6px 8px 5px;
+    background: none; border: none; border-radius: 11px;
+    text-align: left; font-family: inherit; cursor: pointer;
+    transition: background .15s ease;
+}
+.hm-heroi-btn:active { background: rgba(255,255,255,.07); }
+
+/* O valor de um cartão pode ser texto ("Aquatec") em vez de número, e aí o
+   verde-claro do lucro não cabe: ele quer dizer dinheiro. */
+.hm-heroi-btn b.hm-heroi-neutro { color: #fff; }
+
+.hm-heroi-btn em {
+    display: block;
+    margin-top: 3px;
+    font-size: 10.5px; font-style: normal; font-weight: 600;
+    color: rgba(255,255,255,.55); line-height: 1.3;
+}
+
+.hm-bolinhas { display: flex; gap: 4px; margin-top: 7px; }
+.hm-bolinhas i {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(255,255,255,.25);
+}
+.hm-bolinhas i.ativa { background: #6ee7a8; }
