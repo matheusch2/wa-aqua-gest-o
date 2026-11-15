@@ -69,8 +69,14 @@
 }
 .painel-viveiro .vv-header-ico svg { width: 21px; height: 21px; stroke: #15834f; }
 
+/* text-align: left, e esse era o desalinhamento que incomodava: as duas
+   caixas — a do nome e a do selo "Em cultivo" — já começavam no mesmo x, mas
+   o TEXTO do nome vinha centralizado dentro da sua. Então o nome flutuava no
+   meio enquanto o selo encostava na esquerda, e as duas linhas saíam de
+   pontos diferentes sem nada explicando por quê. */
 .painel-viveiro .vv-titulo {
     font-size: 19px; font-weight: 800; color: #10322f; letter-spacing: -.015em;
+    text-align: left;
 }
 .painel-viveiro .vv-badge {
     background: #e1f7ea; color: #15834f; border: none;
