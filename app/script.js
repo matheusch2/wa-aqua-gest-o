@@ -2464,7 +2464,7 @@ function abrirViveiro(index) {
 
       <div class="vv-header">
         <div class="vv-header-ico">
-          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+          <img src="/app/assets/viveiro.webp?v=20261115l" alt="" width="42" height="42">
         </div>
         <div class="vv-header-info">
           <h2 class="vv-titulo">${_esc(viveiro.nome)}</h2>

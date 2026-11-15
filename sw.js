@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261115k";
+const CACHE = "waaqua-20261115l";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -55,6 +55,7 @@ const ESSENCIAIS = [
   "/app/styles/07-planos-e-complementos.css",
   "/app/styles/90-desktop.css",
   "/app/assets/fundo-login.webp",  // arte de fundo da tela de entrada
+  "/app/assets/viveiro.webp",      // desenho do viveiro no cabecalho
   "/app/styles/91-natal.css",   // enfeite de dezembro; o par deles some
   "/app/natal.js",              // do caminho sozinho fora do mês
   "/app/styles/92-home.css",    // tela inicial do celular
