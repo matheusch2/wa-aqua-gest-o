@@ -589,10 +589,11 @@ async function abrirConfiguracoes() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     const user = session?.user;
-    const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Minha fazenda";
+    const nome = _nomeDoProdutor(user, contato) || "Meu perfil";
     const email = user?.email || "";
     const fotoUrl = user?.user_metadata?.avatar_url || null;
-    const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+    const partes = (nome.match(/\p{L}+/gu) || []).filter(n => !/^(de|da|do|das|dos|e)$/i.test(n));
+    const ini = partes.slice(0, 2).map(n => Array.from(n)[0]).join("").toLocaleUpperCase("pt-BR") || "P";
     const elAvatar = document.getElementById("cfg-avatar");
     const elNome = document.getElementById("cfg-nome");
     const elEmail = document.getElementById("cfg-email");
