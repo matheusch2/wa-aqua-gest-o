@@ -23,50 +23,63 @@
 /* ---------------------------------------------------------------------------
    Cabeçalho do viveiro
 
-   Este cabeçalho mudou de cor três vezes, e as três estão certas na ordem em
+   Este cabeçalho mudou quatro vezes, e as quatro fazem sentido na ordem em
    que aconteceram.
 
-   Primeiro foi verde-escuro chapado, igual ao painel da tela inicial. O dono
-   pediu mais claro e tinha razão: um retângulo escuro chapado abrindo uma
-   tela que desce por mil e duzentos pixels de cartão branco é um tapa, não um
-   cabeçalho. Virou verde-água claro.
+   1. Verde-escuro chapado, igual ao painel da tela inicial. O dono pediu mais
+      claro e tinha razão: um retângulo escuro chapado abrindo uma tela que
+      desce por mil e duzentos pixels é um tapa, não um cabeçalho.
+   2. Verde-água claro.
+   3. Escuro de novo, agora com a BOLHA DE LUZ de uma referência que ele
+      mandou. O que pesava não era o escuro, era o chapado.
+   4. Branco com faixa verde à esquerda — onde está agora.
 
-   Depois ele mandou a referência de um cartão escuro com uma BOLHA DE LUZ no
-   canto — e pediu esse fundo aqui. Não é voltar atrás: o que pesava não era
-   o escuro, era o chapado. Com o círculo claro atravessando o canto de cima à
-   direita, o bloco passa a parecer iluminado em vez de pintado, e aí ele
-   aguenta ser escuro sem virar peso.
+   A quarta não desfaz a terceira: o que mudou foi a TELA em volta. Quando a
+   bolha de luz entrou, os doze números ainda eram cartões brancos. Depois
+   eles viraram cinza, o cartão ganhou moldura, e aí o bloco escuro passou a
+   ser a única coisa escura da tela — lia como sobra da versão anterior, não
+   como cabeçalho.
 
-   Mesma luz dos outros dois painéis escuros do app (ver 92-home e 93-custos):
-   é o mesmo componente em telas diferentes, e um com luz e o outro sem seria
-   a diferença que ninguém lembra de arrumar depois.
+   A faixa à esquerda veio de um cartão de investimento que o dono mandou, e
+   ela ganha mais do que beleza: é o MESMO padrão das linhas da lista de
+   viveiros. Quem toca numa linha com faixa verde chega num cabeçalho com
+   faixa verde. A tela anterior e esta passam a falar a mesma língua.
    --------------------------------------------------------------------------- */
 .painel-viveiro .vv-header {
+    position: relative;
+    overflow: hidden;
     gap: 12px;
-    padding: 14px 15px;
+    padding: 15px 15px 15px 17px;
     margin-bottom: 14px;
     border-radius: 16px;
-    /* Radial POR CIMA do linear: invertido, o linear opaco tampa a luz. */
-    background:
-        radial-gradient(62% 118% at 93% 26%, rgba(176, 255, 236, .20) 0%, rgba(176, 255, 236, .15) 52%, rgba(176, 255, 236, .05) 72%, transparent 84%),
-        linear-gradient(160deg, #0f4f49 0%, #0a3b36 100%);
-    border: none;
+    background: #fff;
+    border: 1px solid #dde8e6;
+    box-shadow: 0 2px 7px rgba(6,107,99,.07);
+}
+/* A faixa. Verde fixo porque esta tela só abre para viveiro EM CULTIVO: o
+   esperando despesca tem tela própria e o parado está em preparação. */
+.painel-viveiro .vv-header::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: #16a34a;
 }
 .painel-viveiro .vv-header-ico {
-    width: 44px; height: 44px; border-radius: 13px;
-    background: rgba(255,255,255,.13);
+    width: 42px; height: 42px; border-radius: 12px;
+    background: #e1f7ea;
 }
-.painel-viveiro .vv-header-ico svg { width: 22px; height: 22px; stroke: #9fe3d2; }
+.painel-viveiro .vv-header-ico svg { width: 21px; height: 21px; stroke: #15834f; }
 
 .painel-viveiro .vv-titulo {
-    font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.01em;
+    font-size: 19px; font-weight: 800; color: #10322f; letter-spacing: -.015em;
 }
 .painel-viveiro .vv-badge {
-    background: rgba(110,231,168,.18); color: #8ff0bb; border: none;
+    background: #e1f7ea; color: #15834f; border: none;
 }
-.painel-viveiro .vv-badge-dot { background: #6ee7a8; }
+.painel-viveiro .vv-badge-dot { background: #16a34a; }
+/* Cinza, não verde: o verde aqui é do ESTADO, e as PLs não são estado. Com
+   os dois verdes lado a lado, a pastilha de PLs diria "em cultivo" também. */
 .painel-viveiro .vv-pls {
-    background: rgba(255,255,255,.13); color: #e2f4ef; border: none;
+    background: #f3f6f5; color: #52635f; border: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -221,11 +234,12 @@
 /* ---------------------------------------------------------------------------
    Tema escuro
    --------------------------------------------------------------------------- */
-body.tema-escuro .painel-viveiro .vv-header {
-    background:
-        radial-gradient(62% 118% at 93% 26%, rgba(176, 255, 236, .13) 0%, rgba(176, 255, 236, .09) 52%, transparent 84%),
-        linear-gradient(160deg, #15323a 0%, #0f2630 100%);
-}
+body.tema-escuro .painel-viveiro .vv-header { background: #1f2937; border-color: #374151; }
+body.tema-escuro .painel-viveiro .vv-header-ico { background: #10301f; }
+body.tema-escuro .painel-viveiro .vv-header-ico svg { stroke: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-titulo { color: #e5e7eb; }
+body.tema-escuro .painel-viveiro .vv-badge { background: #10301f; color: #6ee7a8; }
+body.tema-escuro .painel-viveiro .vv-pls { background: #273445; color: #9ca3af; }
 body.tema-escuro .painel-viveiro .info-box { background: #1f2937; border-color: #374151; }
 body.tema-escuro .painel-viveiro .info-box-icone { background: #273445; }
 body.tema-escuro .painel-viveiro .info-box small { color: #6b7280; }
