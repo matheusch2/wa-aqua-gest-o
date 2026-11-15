@@ -533,8 +533,8 @@ async function abrirConfiguracoes() {
   // o conteudo anterior. Os dados do usuario entram logo em seguida via
   // getSession() (leitura LOCAL, quase instantanea), preenchendo o cabecalho.
   area.innerHTML = `
-    <h3 class="titulo-secao">Configurações</h3>
-    <div class="cfg-wrap">
+    <div class="cfg-wrap cfg-hub">
+      <h3 class="cfg-hub-titulo">Configurações</h3>
       <div class="cfg-header">
         <div class="cfg-header-avatar" id="cfg-avatar"></div>
         <div class="cfg-header-info">
