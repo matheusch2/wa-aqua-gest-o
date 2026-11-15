@@ -24,58 +24,40 @@
 /* ---------------------------------------------------------------------------
    Cabeçalho da seção
    --------------------------------------------------------------------------- */
-/* CENTRALIZADO, a pedido do dono — e aqui centralizar não reabre o
-   "desalinhado" de antes. Aquilo era o título começando em 22px com a busca
-   em 20px: duas coisas quase alinhadas, que é o pior dos mundos. Um bloco
-   centralizado sobre uma lista alinhada à esquerda não é quase nada; é uma
-   decisão, e o olho lê como cabeçalho.
+/* ---------------------------------------------------------------------------
+   O título
 
-   Margem lateral zero mesmo assim: centrado dentro de uma caixa com 2px de
-   margem fica 1px fora do centro verdadeiro. */
-.sv-topo { margin: -8px 0 14px; }
+   Minúsculo, de propósito, e numa fonte que o app não usava. O dono mandou
+   uma referência — "Investimentos", de um app de banco — e pediu aquela cara:
+   letra toda minúscula, quase preta, centralizada e com ar em cima.
+
+   A FONTE É A DO APARELHO, não um arquivo baixado. No iPhone isso é a San
+   Francisco; no Android, a Roboto. Custa zero byte, já está instalada, e é
+   exatamente a letra daquela referência — porque a referência também é um app
+   de celular. Baixar uma fonte pra imitar a que o telefone já tem seria pagar
+   pedágio pra chegar onde já se está.
+
+   O resto do app segue em Arial. Trocar a fonte de tudo muda a largura de
+   todo texto de todas as telas, e isso precisa de uma varredura atrás de
+   corte e transbordo — não cabe de carona num ajuste de título.
+
+   E saiu a linha de resumo ("8 viveiros · 3 em cultivo · …"), que tinha
+   acabado de ganhar cor por estado: o dono olhou o conjunto e viu que a tela
+   respira melhor sem ela. A lista logo abaixo já diz o estado de cada
+   viveiro, nas mesmas cores. A função que montava a frase saiu junto, e com
+   ela as regras de cor que só ela usava.
+   --------------------------------------------------------------------------- */
+.sv-topo { margin: 10px 0 20px; }
 .sv-topo h2 {
     margin: 0;
-    font-size: 26px; font-weight: 800; letter-spacing: -.03em;
-    color: #0f5f57; text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    color: #1a1f1e;
+    text-align: center;
 }
-/* #5f706e e não #8a9a97: o cinza de antes tinha contraste 2,9 contra o branco,
-   abaixo do mínimo de 4,5 que texto pede. "Apagado" não era impressão, era
-   medida. Este dá 5,2. */
-/* max-width + margem automática: a frase de resumo cresce com a fazenda
-   ("8 viveiros · 3 em cultivo · 2 esperando despesca · 1 parado"), e sem um
-   limite ela corre de ponta a ponta da tela, o que faz a segunda linha
-   começar longe de onde a primeira terminou. Com 300px ela quebra em duas
-   linhas curtas e centradas, que é como texto centralizado se lê bem. */
-.sv-topo p {
-    max-width: 310px;
-    margin: 5px auto 0;
-    font-size: 13px; color: #5f706e; text-align: center; line-height: 1.5;
-}
-/* Cada estado na SUA cor, a mesma das linhas logo abaixo — a frase passa a
-   ser o retrato da fazenda em vez de uma legenda cinza. O separador fica
-   fora da cor, pálido: ele é pontuação, não informação.
-
-   Os tons aqui são os mesmos que o nome do viveiro usa em cada linha (os
-   mais escuros dos três), porque isto também é texto e texto precisa de
-   contraste, não de cor. */
-.sv-resumo-item { white-space: nowrap; }
-.sv-resumo-sep { color: #c3cfcd; margin: 0 3px; font-weight: 400; }
-
-.sv-r-tudo    { color: #10322f; font-weight: 800; }
-.sv-r-cultivo { color: #15834f; font-weight: 700; }
-/* #8d610f e não o #a97714 das pastilhas: aquele dá contraste 3,9 contra o
-   branco, e texto pede 4,5. Numa pastilha, com fundo próprio atrás, ele
-   passa; solto sobre o branco, não. Mesma cor, tom mais escuro. */
-.sv-r-espera  { color: #8d610f; font-weight: 700; }
-.sv-r-parado  { color: #7a6a44; font-weight: 700; }
-.sv-r-vazio   { color: #5f706e; font-weight: 600; }
-
-body.tema-escuro .sv-r-tudo    { color: #e5e7eb; }
-body.tema-escuro .sv-r-cultivo { color: #4cc98a; }
-body.tema-escuro .sv-r-espera  { color: #e3b341; }
-body.tema-escuro .sv-r-parado  { color: #bdae89; }
-body.tema-escuro .sv-r-vazio   { color: #9ca3af; }
-body.tema-escuro .sv-resumo-sep { color: #4b5563; }
 
 .sv-lista { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
 
@@ -296,8 +278,7 @@ body.tema-escuro .sv-resumo-sep { color: #4b5563; }
 /* ---------------------------------------------------------------------------
    Tema escuro
    --------------------------------------------------------------------------- */
-body.tema-escuro .sv-topo h2 { color: #6ee7a8; }
-body.tema-escuro .sv-topo p { color: #9ca3af; }
+body.tema-escuro .sv-topo h2 { color: #f1f5f4; }
 body.tema-escuro .sv-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .sv-cab h3 { color: #e5e7eb; }
 body.tema-escuro .sv-estado { color: #6ee7a8; }
