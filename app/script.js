@@ -1494,9 +1494,15 @@ function _insightsFazenda(lista, hojeYmd, resumo) {
   if (labs.length >= 2 && nCiclosComLab >= 3) {
     labs.sort((a, b) => b.media - a.media);
     cards.push({
-      rotulo: "Melhor laboratório",
+      // "Melhor lab." e não "Melhor laboratório": o rótulo inteiro quebra em
+      // duas linhas na coluna de 145px e faz o painel crescer 12px só nesse
+      // cartão. A alternativa era reservar duas linhas de rótulo em TODOS,
+      // o que engordaria os seis por causa de um.
+      rotulo: "Melhor lab.",
       valor: labs[0].lab,
-      nota: `${_reaisCurto(labs[0].media)}/ciclo · de ${nCiclosComLab} ciclos`,
+      // Sem o lucro médio: o dono pediu o nome do laboratório e mais nada,
+      // pra o cartão não crescer. A base continua, que é o que importa.
+      nota: `de ${nCiclosComLab} ciclos`,
     });
   }
 

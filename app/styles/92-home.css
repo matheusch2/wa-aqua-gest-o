@@ -235,12 +235,12 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
 /* min-height pra o painel NÃO pular de altura quando se troca de cartão. Um
    rótulo ou uma nota que quebre em duas linhas empurra tudo o que vem abaixo,
    e aí a tela inteira se mexe a cada toque.
-   A medida reserva DUAS linhas de nota pra todos, mesmo que só um precise. A
-   alternativa era encurtar a nota do laboratório até caber numa linha — mas o
-   que sobraria de fora era justamente "de quantos ciclos isso saiu", que é a
-   parte que diz quanto confiar no número. Dezesseis pixels é barato por isso. */
+   Uma linha de nota basta pra todos. Cheguei a reservar duas, porque a nota
+   do laboratório trazia o lucro médio e quebrava — o dono olhou e disse que
+   bastava o nome. Melhor assim: a reserva de duas linhas custava 16px em
+   todos os seis cartões por causa de um. */
 .hm-heroi-btn {
-    min-height: 108px;
+    min-height: 92px;
     width: auto; margin: 0; padding: 6px 8px 5px;
     background: none; border: none; border-radius: 11px;
     text-align: left; font-family: inherit; cursor: pointer;

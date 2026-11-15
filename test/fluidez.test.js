@@ -873,13 +873,13 @@ test("painel: 'melhor laboratorio' NAO aparece com um laboratorio so",()=>{
   const a=load();
   const r = cartoes(a, [cicloBase({laboratorio:"Aquatec"}), cicloBase({laboratorio:"Aquatec"}),
                         cicloBase({laboratorio:"Aquatec"})]);
-  assert.ok(!r.includes("Melhor laboratório"), r);
+  assert.ok(!r.includes("Melhor lab."), r);
 });
 
 test("painel: 'melhor laboratorio' NAO aparece com menos de tres ciclos",()=>{
   const a=load();
   const r = cartoes(a, [cicloBase({laboratorio:"Aquatec"}), cicloBase({laboratorio:"Marés"})]);
-  assert.ok(!r.includes("Melhor laboratório"), "dois ciclos nao decidem laboratorio: " + r);
+  assert.ok(!r.includes("Melhor lab."), "dois ciclos nao decidem laboratorio: " + r);
 });
 
 test("painel: com tres ciclos e dois laboratorios, ele aparece e escolhe o de maior media",()=>{
@@ -889,8 +889,8 @@ test("painel: com tres ciclos e dois laboratorios, ele aparece e escolhe o de ma
     cicloBase({laboratorio:"Aquatec", producaoFinal:1000, producaoTotal:1000, precoVenda:20}),
     cicloBase({laboratorio:"Marés",   producaoFinal:100,  producaoTotal:100,  precoVenda:20}),
   ]);
-  assert.ok(r.includes("Melhor laboratório"), r);
-  assert.equal(a.run(`__c.find(x => x.rotulo === "Melhor laboratório").valor`), "Aquatec");
+  assert.ok(r.includes("Melhor lab."), r);
+  assert.equal(a.run(`__c.find(x => x.rotulo === "Melhor lab.").valor`), "Aquatec");
 });
 
 test("painel: 'melhor ciclo' NAO aparece com um ciclo so",()=>{
@@ -903,7 +903,7 @@ test("painel: 'melhor ciclo' NAO aparece com um ciclo so",()=>{
 test("painel: fazenda sem ciclo encerrado mostra so o que nao depende de historico",()=>{
   const a=load();
   const r = cartoes(a, []);
-  for (const some of ["Melhor laboratório", "Melhor ciclo", "Melhor FCA", "Produção"])
+  for (const some of ["Melhor lab.", "Melhor ciclo", "Melhor FCA", "Produção"])
     assert.ok(!r.includes(some), `${some} nao devia aparecer: ${r}`);
   assert.ok(r.includes("Lucro"), r);
   assert.ok(r.includes("Próxima despesca"), r);
@@ -913,7 +913,7 @@ test("painel: todo cartao de comparacao diz de quantos ciclos saiu",()=>{
   const a=load();
   cartoes(a, [cicloBase({laboratorio:"Aquatec"}), cicloBase({laboratorio:"Aquatec"}),
               cicloBase({laboratorio:"Marés"})]);
-  const semNota = a.run(`__c.filter(x => /laborat|ciclo 2026|FCA|Produção/i.test(x.rotulo))
+  const semNota = a.run(`__c.filter(x => /lab\\.|ciclo 2026|FCA|Produção/i.test(x.rotulo))
                               .filter(x => !/ciclo/.test(x.nota || "")).map(x => x.rotulo).join(",")`);
   assert.equal(semNota, "", "estes cartoes precisam dizer a base: " + semNota);
 });
