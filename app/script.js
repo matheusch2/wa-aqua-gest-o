@@ -2053,7 +2053,7 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     <div class="sv-busca">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.2" y1="16.2" x2="21" y2="21"/></svg>
       <input type="search" inputmode="search" id="sv-busca-campo"
-             placeholder="Buscar viveiro pelo número ou nome"
+             placeholder="Buscar viveiro"
              aria-label="Buscar viveiro" oninput="_vvFiltrar()">
     </div>` : ""}
     <div class="sv-lista" id="sv-lista">

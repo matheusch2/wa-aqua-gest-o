@@ -24,15 +24,24 @@
 /* ---------------------------------------------------------------------------
    Cabeçalho da seção
    --------------------------------------------------------------------------- */
-.sv-topo { margin: 0 2px 14px; }
+/* margin-left ZERO, e isso não é detalhe: o título ficava em 22px e o campo
+   de busca e as linhas em 20px. Dois pixels de diferença são pouco pra se
+   explicar e suficientes pra se notar — o dono olhou e disse "desalinhado"
+   sem saber por quê. Agora tudo começa na mesma vertical.
+
+   E menos ar em cima: eram 45px entre a borda do cartão e o título. */
+.sv-topo { margin: -8px 0 14px; }
 .sv-topo h2 {
     margin: 0;
-    font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    font-size: 23px; font-weight: 800; letter-spacing: -.025em;
     color: #0f5f57; text-align: left;
 }
+/* #5f706e e não #8a9a97: o cinza de antes tinha contraste 2,9 contra o branco,
+   abaixo do mínimo de 4,5 que texto pede. "Apagado" não era impressão, era
+   medida. Este dá 5,2. */
 .sv-topo p {
-    margin: 3px 0 0;
-    font-size: 12.5px; color: #8a9a97; text-align: left;
+    margin: 4px 0 0;
+    font-size: 13px; color: #5f706e; text-align: left;
 }
 
 .sv-lista { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
@@ -255,7 +264,7 @@
    Tema escuro
    --------------------------------------------------------------------------- */
 body.tema-escuro .sv-topo h2 { color: #6ee7a8; }
-body.tema-escuro .sv-topo p { color: #6b7280; }
+body.tema-escuro .sv-topo p { color: #9ca3af; }
 body.tema-escuro .sv-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .sv-cab h3 { color: #e5e7eb; }
 body.tema-escuro .sv-estado { color: #6ee7a8; }
@@ -287,22 +296,29 @@ body.tema-escuro .sv-linha-seta { color: #6b7280; }
    <input>, e o campo recriado perde o foco: no celular isso fecha o teclado a
    cada letra digitada.
    --------------------------------------------------------------------------- */
+/* A borda era #e4edec, quase invisível: o campo não parecia campo. */
 .sv-busca {
     display: flex; align-items: center; gap: 9px;
     margin: 0 0 12px; padding: 0 13px;
-    background: #fff; border: 1px solid #e4edec; border-radius: 12px;
+    background: #fff; border: 1.5px solid #cfdedb; border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(6,107,99,.05);
+}
+.sv-busca:focus-within {
+    border-color: #0f766e;
+    box-shadow: 0 0 0 3px rgba(15,118,110,.10);
 }
 .sv-busca svg {
-    width: 16px; height: 16px; flex-shrink: 0;
-    fill: none; stroke: #93a5a2; stroke-width: 2;
+    width: 17px; height: 17px; flex-shrink: 0;
+    fill: none; stroke: #5f706e; stroke-width: 2.2;
     stroke-linecap: round; stroke-linejoin: round;
 }
 .sv-busca input {
     flex: 1; min-width: 0;
     margin: 0; padding: 11px 0;
     background: none; border: none; box-shadow: none;
-    font-family: inherit; font-size: 14px; color: #10322f;
+    font-family: inherit; font-size: 14.5px; color: #10322f;
 }
+.sv-busca input::placeholder { color: #7b8b89; }
 .sv-busca input:focus { outline: none; }
 /* O X nativo do type=search vem cinza-sistema e desalinhado; o campo já
    esvazia sozinho apagando. */
@@ -318,7 +334,10 @@ body.tema-escuro .sv-linha-seta { color: #6b7280; }
    emoji não aceita nenhum dos dois. */
 .sv-item-ico-camarao { font-size: 16px; line-height: 1; }
 
-body.tema-escuro .sv-busca { background: #1f2937; border-color: #374151; }
+body.tema-escuro .sv-busca { background: #1f2937; border-color: #4b5563; }
+body.tema-escuro .sv-busca:focus-within { border-color: #6ee7a8; box-shadow: 0 0 0 3px rgba(110,231,168,.12); }
+body.tema-escuro .sv-busca svg { stroke: #9ca3af; }
+body.tema-escuro .sv-busca input::placeholder { color: #8d9aa8; }
 body.tema-escuro .sv-busca input { color: #e5e7eb; }
 body.tema-escuro .sv-busca svg { stroke: #6b7280; }
 body.tema-escuro .sv-sem-resultado { color: #9ca3af; }
