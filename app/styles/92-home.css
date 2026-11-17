@@ -257,48 +257,49 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
 }
 .hm-heroi-btn:focus-visible { outline: 2px solid #7fd9c9; outline-offset: 3px; }
 
-/* ── A tira do ambiente: o tempo e a lua, alternando ─────────────────────────
+/* ── A tira do ambiente: o tempo de um lado, a lua do outro ──────────────────
    Fica no alto do painel "Sua fazenda hoje", acima dos números. Linha fina de
    propósito: é informação de contexto, não indicador da fazenda — o que manda
-   na tela continua sendo a biomassa e o cartão que roda. */
-.hm-amb {
+   na tela continua sendo a biomassa e o cartão que roda.
+
+   Os dois parados, lado a lado. Alternavam antes, e alternar cobra espera num
+   lugar onde a pessoa só passa o olho. Sem alternar também somem os pontinhos
+   e a seta, e sobra largura para o texto que importa. */
+.hm-amb { display: flex; gap: 7px; margin: 0 0 11px; }
+.hm-amb-item {
+    flex: 1;
+    min-width: 0;                 /* sem isto o texto empurra o irmão para fora */
     display: flex;
     align-items: center;
-    gap: 9px;
-    width: 100%;
-    margin: 0 0 11px;
-    padding: 7px 10px 7px 9px;
+    gap: 7px;
+    padding: 7px 9px;
     border: 1px solid #e3ecea;
     border-radius: 11px;
     background: #f7faf9;
     font: inherit;
     text-align: left;
     cursor: pointer;
+    overflow: hidden;
 }
-.hm-amb:active { background: #eef4f2; }
-.hm-amb-ico { font-size: 19px; line-height: 1; flex-shrink: 0; }
-/* min-width:0 para o nome da fase poder encolher em vez de empurrar os pontos
-   e a seta para fora da tira. "Minguante côncava" é o pior caso. */
+.hm-amb-item:active { background: #eef4f2; }
+.hm-amb-ico { font-size: 18px; line-height: 1; flex-shrink: 0; }
 .hm-amb-txt {
-    flex: 1; min-width: 0;
-    display: flex; align-items: baseline; gap: 6px;
-    overflow: hidden; white-space: nowrap;
+    min-width: 0;
+    display: flex; align-items: baseline; gap: 5px;
+    white-space: nowrap; overflow: hidden;
 }
+/* Quem cede é a DESCRIÇÃO, nunca o número. Estava ao contrário: com
+   "Trovoada com granizo" ao lado, a temperatura é que virava "32°…" — o dado
+   some e a adjetivação fica. O número e a contagem são curtos e limitados
+   ("32°C", "cheia amanhã" no pior caso), então não precisam encolher nunca. */
 .hm-amb-txt b {
+    flex-shrink: 0;
     font-size: 13.5px; font-weight: 800; color: #10322f;
+}
+.hm-amb-txt small {
+    min-width: 0;
     overflow: hidden; text-overflow: ellipsis;
-}
-.hm-amb-txt small { font-size: 11.5px; font-weight: 600; color: #5f6e6b; flex-shrink: 0; }
-.hm-amb-pontos { display: flex; gap: 4px; flex-shrink: 0; }
-.hm-amb-pontos i {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: #cbdbd7;
-}
-.hm-amb-pontos i.ativa { background: #0a7d62; }
-.hm-amb-seta {
-    width: 14px; height: 14px; flex-shrink: 0;
-    fill: none; stroke: #7a918c; stroke-width: 2.4;
-    stroke-linecap: round; stroke-linejoin: round;
+    font-size: 11.5px; font-weight: 600; color: #5f6e6b;
 }
 
 /* ── Tela do tempo e da lua ──────────────────────────────────────────────── */

@@ -1966,16 +1966,21 @@ let _insightAtual = 0;
 let _insightVolta = 0;
 let _insightTimer = null;
 
-/* A tira do ambiente, no alto do painel: o tempo e a lua, um de cada vez.
-   Vira sozinha a cada dois tiques do painel — seis segundos — e não a cada
-   três como o cartão de baixo. Duas coisas piscando no mesmo compasso o olho
-   aceita; em compassos diferentes a tela parece inquieta.
+/* A tira do ambiente, no alto do painel: o tempo de um lado, a lua do outro.
+   Os dois à vista, parados. Alternavam antes, e alternar cobra espera — até
+   seis segundos para ver a outra metade — num lugar onde a pessoa só passa o
+   olho. Movimento na tela inicial cobra atenção que ninguém ofereceu.
 
    A lua está SEMPRE aqui, porque é conta e não depende de nada. O tempo entra
-   quando chega; não chegando, a tira fica só com a lua e ninguém vê buraco. */
-let _ambienteAtual = 0;
-let _painelTiques = 0;
+   quando chega; não chegando, a lua ocupa a linha inteira e não sobra buraco.
 
+   NA LUA VAI A CONTAGEM, NÃO O NOME DA FASE. Dois motivos, e o segundo foi
+   medido: o emoji já É o estágio (🌓 diz quarto crescente sem gastar letra, e
+   escrever o nome ao lado é dizer a mesma coisa duas vezes); e dividindo a
+   linha com o tempo, "Quarto crescente" não cabe no celular — vira "Quarto
+   cresce…", e "Minguante côncava" corta igual. A contagem cabe inteira e é
+   ela que vira decisão: prazo até a muda, não estado. O nome por extenso
+   está a um toque, na tela de detalhe. */
 function _ambienteCards(ms) {
   const cards = [];
   if (_clima) {
@@ -1984,13 +1989,14 @@ function _ambienteCards(ms) {
   const f = _luaFase(ms);
   const dC = _luaDiasAte(ms, true), dN = _luaDiasAte(ms, false);
   // Mostra a que vier primeiro: é a próxima que muda alguma coisa no viveiro.
-  const perto = dC <= dN
-    ? { q: dC, nome: "lua cheia" }
-    : { q: dN, nome: "lua nova" };
-  const sub = perto.q === 0 ? `${perto.nome} hoje`
-            : perto.q === 1 ? `${perto.nome} amanhã`
-            : `${perto.nome} em ${perto.q}d`;
-  cards.push({ emoji: f.emoji, titulo: f.nome, sub });
+  const perto = dC <= dN ? { q: dC, nome: "cheia" } : { q: dN, nome: "nova" };
+  cards.push({
+    emoji: f.emoji,
+    titulo: perto.q === 0 ? `${perto.nome} hoje`
+          : perto.q === 1 ? `${perto.nome} amanhã`
+          : `${perto.nome} em ${perto.q}d`,
+    sub: "",
+  });
   return cards;
 }
 
@@ -2004,8 +2010,6 @@ function _insightAgendarAuto() {
   const home = document.getElementById("home-mobile");
   if (!home?.classList.contains("ativo") ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  // Quem desligou animação no aparelho não vê nada girar — nem a tira nem o
-  // cartão. Os dois continuam lá, parados no primeiro, e o toque funciona.
   _insightTimer = setTimeout(() => {
     _insightTimer = null;
     const botao = document.querySelector("#painel-fazenda .hm-heroi-btn");
@@ -2016,25 +2020,8 @@ function _insightAgendarAuto() {
       _insightAgendarAuto();
       return;
     }
-    _painelTique();
+    _insightTrocar();
   }, 3000);
-}
-
-/* O relógio do painel. O toque no cartão de baixo chama _insightTrocar() e
-   mexe só nele — quem tocou pediu OUTRO NÚMERO, não que a tira de cima
-   pulasse junto. */
-function _painelTique() {
-  _painelTiques++;
-  const amb = _ambienteCards(Date.now());
-  if (amb.length > 1 && _painelTiques % 2 === 0) {
-    _ambienteAtual = (_ambienteAtual + 1) % amb.length;
-  }
-  const n = _insightsFazenda(viveiros, _hojeLocal(), _resumoFazenda(viveiros, _hojeLocal())).length;
-  if (n > 1) {
-    _insightAtual = (Math.min(_insightAtual, n - 1) + 1) % n;
-    if (_insightAtual === 0) _insightVolta++;
-  }
-  _painelFazenda();
 }
 
 function _insightTrocar() {
@@ -2063,8 +2050,6 @@ function _painelFazenda() {
   const card = cards[idx];
 
   const amb = _ambienteCards(Date.now());
-  const iAmb = Math.min(_ambienteAtual, amb.length - 1);
-  const ambiente = amb[iAmb];
 
   alvo.innerHTML = `
     <div class="hm-painel">
@@ -2072,13 +2057,11 @@ function _painelFazenda() {
         <span class="hm-painel-titulo">Sua fazenda hoje</span>
         <span class="hm-painel-data">${formatarData(hoje)}</span>
       </div>
-      ${ambiente ? `<button class="hm-amb" onclick="mostrarClimaLua()" aria-label="Ver o tempo e a lua">
-        <span class="hm-amb-ico">${ambiente.emoji}</span>
-        <span class="hm-amb-txt"><b>${_esc(ambiente.titulo)}</b><small>${_esc(ambiente.sub)}</small></span>
-        ${amb.length > 1 ? `<span class="hm-amb-pontos">${amb.map((_, i) =>
-          `<i class="${i === iAmb ? "ativa" : ""}"></i>`).join("")}</span>` : ""}
-        <svg class="hm-amb-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>` : ""}
+      <div class="hm-amb">${amb.map(c => `
+        <button class="hm-amb-item" onclick="mostrarClimaLua()" aria-label="Ver o tempo e a lua">
+          <span class="hm-amb-ico">${c.emoji}</span>
+          <span class="hm-amb-txt"><b>${_esc(c.titulo)}</b>${c.sub ? `<small>${_esc(c.sub)}</small>` : ""}</span>
+        </button>`).join("")}</div>
       <div class="hm-herois">
         <div class="hm-heroi">
           <small>Biomassa estimada</small>
@@ -2104,7 +2087,7 @@ function _painelFazenda() {
         ${r.semRacao} viveiro${r.semRacao !== 1 ? "s" : ""} sem ração lançada hoje
       </div>` : ""}
     </div>`;
-  if (cards.length > 1 || amb.length > 1) _insightAgendarAuto();
+  if (cards.length > 1) _insightAgendarAuto();
 }
 
 function esconderMenu() {
