@@ -55,7 +55,7 @@
     <meta name="theme-color" content="#054f4b">
     <link rel="manifest" href="manifest.json?v=20260910b">
     <!-- A ordem destes arquivos preserva a cascata do CSS original. -->
-    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261115h">
+    <link rel="stylesheet" href="styles/01-base-e-painel.css?v=20261117a">
     <link rel="stylesheet" href="styles/02-viveiros-e-formularios.css?v=20261113q">
     <link rel="stylesheet" href="styles/03-tema-custos-e-crescimento.css?v=20261115h">
     <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261028a">
@@ -261,6 +261,12 @@
                 <img src="/logo-wa.jpg?v=20260822" alt="WA Aqua">
             </button>
         </div>
+
+        <!-- Faixa de preços do camarão, tipo painel de bolsa. Fica DENTRO do
+             .topo para herdar o verde em vez de criar mais um bloco na tela.
+             Preenchida por _fitaPrecos(); vazia enquanto o administrador não
+             publicar a tabela, e aí o :empty do CSS some com o espaço. -->
+        <div id="fita-precos"></div>
     </div>
 
     <div id="card-gestao" class="card">
@@ -389,7 +395,7 @@
 
     </div>
 
-    <script src="script.js?v=20261115n"></script>
+    <script src="script.js?v=20261117a"></script>
 
 </body>
 </html>

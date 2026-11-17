@@ -69,24 +69,40 @@
         .graf-legenda i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
 
         /* ── Busca + filtros ── */
-        /* ── Preços do camarão ── */
+        /* ── Preços do camarão ──────────────────────────────────────────────
+           A tabela já nasce inteira na tela, 8 a 35 g, e o trabalho é só
+           digitar o valor do quilo onde tem preço. A versão anterior pedia
+           para criar linha por linha e escrever o nome do tamanho antes do
+           número — três passos para cada preço, e nada impedia dois "12 g". */
         .pc-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-bottom:18px; }
-        .pc-aviso { margin:0 0 12px; font-size:12.5px; line-height:1.5; color:#6b7280; }
-        .pc-aviso b { color:#b45309; }
-        .pc-linha { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-        .pc-linha input { min-width:0; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font:inherit; font-size:13px; }
-        .pc-rot { flex:1; }
-        .pc-preco { width:110px; }
-        .pc-ant { font-size:11px; color:#9ca3af; width:92px; flex-shrink:0; }
-        .pc-x { border:none; background:#fee2e2; color:#b91c1c; border-radius:8px; width:30px; height:32px; cursor:pointer; font-weight:800; flex-shrink:0; }
-        .pc-acoes { display:flex; gap:8px; margin-top:12px; }
-        .pc-btn { flex:1; border:none; border-radius:9px; padding:10px; background:#066b63; color:#fff; font:inherit; font-weight:800; cursor:pointer; }
+        .pc-aviso { margin:0 0 4px; font-size:12.5px; line-height:1.5; color:#6b7280; }
+        .pc-aviso b { color:#1f2937; }
+        .pc-aviso .alerta { color:#b45309; font-weight:700; }
+        .pc-resumo { margin:0 0 12px; font-size:12px; font-weight:700; color:#52606d; }
+        .pc-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(104px,1fr)); gap:7px; }
+        /* A célula vazia fica cinza e a preenchida fica branca com borda verde:
+           dá para ver de longe quantos tamanhos têm preço, sem contar. */
+        .pc-cel { border:1px solid #e5e7eb; border-radius:10px; background:#f7f8f8; padding:6px 9px 7px; }
+        .pc-cel.tem { background:#fff; border-color:#8dcabf; }
+        .pc-cel:focus-within { border-color:#066b63; box-shadow:0 0 0 3px rgba(6,107,99,.13); }
+        .pc-cel-tam { font-size:11px; font-weight:800; color:#5c6670; letter-spacing:.2px; }
+        .pc-cel.tem .pc-cel-tam { color:#066b63; }
+        .pc-cel-campo { display:flex; align-items:baseline; gap:4px; }
+        .pc-rs { font-size:11.5px; font-weight:700; color:#636d78; flex-shrink:0; }
+        .pc-cel input { width:100%; min-width:0; border:none; background:transparent; outline:none;
+                        font:inherit; font-size:15px; font-weight:800; color:#111827; padding:1px 0; }
+        .pc-cel input::placeholder { font-weight:700; color:#848d99; }
+        /* A linha da variação existe sempre, mesmo vazia: sem altura reservada
+           as células pulam de tamanho conforme o preço anterior aparece. */
+        .pc-var { min-height:13px; font-size:10.5px; font-weight:700; color:#636d78; }
+        .pc-var.sobe { color:#15803d; }
+        .pc-var.desce { color:#b91c1c; }
+        .pc-acoes { display:flex; gap:8px; margin-top:14px; }
+        .pc-btn { flex:1; border:none; border-radius:9px; padding:11px; background:#066b63; color:#fff; font:inherit; font-weight:800; cursor:pointer; }
         .pc-btn:disabled { opacity:.55; cursor:default; }
-        .pc-btn-sec { border:1px solid #d1d5db; background:#fff; border-radius:9px; padding:10px 12px; font:inherit; font-weight:700; color:#374151; cursor:pointer; }
         .pc-msg { margin-top:10px; font-size:12.5px; font-weight:700; }
         .pc-msg.ok { color:#15803d; }
         .pc-msg.erro { color:#b91c1c; }
-        .pc-vazio { font-size:13px; color:#9ca3af; padding:10px 2px; }
 
         .adm-busca { width: 100%; border: 1.5px solid #dde5e3; border-radius: 13px; padding: 12px 14px; font-size: 15px; outline: none; margin-bottom: 10px; background: #fff; }
         .adm-busca:focus { border-color: var(--verde); }
@@ -235,17 +251,17 @@
                  do app. Escreve direto na tabela precos_camarao: a política do
                  banco só deixa quem tem perfis.role = 'admin' gravar, a mesma
                  checagem que o admin_ajustar_vencimento já usa.
-                 O rótulo é livre ("12 g", "10-12 g", "60 peças") porque cada
-                 região nomeia o tamanho do seu jeito. -->
+                 A grade é montada por pcRender(), de 8 a 35 g. -->
             <div class="sec-tit">Preços do camarão</div>
             <div class="pc-card">
                 <p class="pc-aviso">
-                    Aparece na faixa do topo do app, para todos os clientes.
-                    <b>A faixa some sozinha depois de 10 dias sem atualização</b> — preço velho é pior que preço nenhum.
+                    Valor do <b>quilo</b> por tamanho. Preencha só os tamanhos que têm preço —
+                    quem fica em branco não aparece para ninguém.
+                    <span class="alerta">A faixa some sozinha depois de 10 dias sem atualização</span>: preço velho é pior que preço nenhum.
                 </p>
-                <div id="pc-lista"></div>
+                <p class="pc-resumo" id="pc-resumo"></p>
+                <div class="pc-grade" id="pc-grade"></div>
                 <div class="pc-acoes">
-                    <button class="pc-btn-sec" onclick="pcAdicionar()">+ Adicionar tamanho</button>
                     <button class="pc-btn" id="pc-salvar" onclick="pcSalvar(this)">Publicar preços</button>
                 </div>
                 <div id="pc-msg" class="pc-msg"></div>
@@ -662,57 +678,139 @@
         /* ═══ PREÇOS DO CAMARÃO ═══════════════════════════════════════════
            Publicados aqui, lidos por todos os clientes na faixa do topo do app.
            Grava direto na tabela: a política do banco só deixa quem tem
-           perfis.role = 'admin' escrever.                                   */
-        let pcLinhas = [];
+           perfis.role = 'admin' escrever.
+
+           A grade é FIXA, de 8 a 35 g — a faixa de despesca que se negocia. O
+           administrador só digita o valor do quilo onde tem preço; tamanho em
+           branco não vai para o banco, e tamanho que ESTAVA publicado e ficou
+           em branco sai da faixa.
+
+           Publicar manda TODOS os preenchidos, inclusive os que não mudaram:
+           publicar significa "confirmo esta tabela hoje", e é esse carimbo que
+           segura a faixa viva pelos 10 dias. O preço anterior da setinha de
+           alta/baixa é calculado pelo gatilho do banco, não aqui.             */
+        const PC_MIN = 8, PC_MAX = 35;
+        let pcSalvos = {};   // gramas -> { preco, preco_anterior } que está no banco
+        let pcCampos = {};   // gramas -> texto como está na caixinha agora
 
         async function pcCarregar() {
             const { data, error } = await sb.from("precos_camarao")
-                .select("id, rotulo, preco, preco_anterior, ordem")
-                .order("ordem", { ascending: true });
+                .select("gramas, preco, preco_anterior, atualizado_em")
+                .order("gramas", { ascending: true });
             if (error) {
                 // 42P01: a tabela ainda não foi criada neste banco.
                 pcMsg(error.code === "42P01"
                     ? 'Tabela ainda não existe. Rode banco/precos-camarao.sql no Supabase.'
                     : "Erro ao carregar: " + error.message, "erro");
-                pcLinhas = [];
+                pcSalvos = {};
             } else {
-                pcLinhas = (data || []).map(l => ({ ...l, preco: Number(l.preco) }));
+                pcSalvos = {};
+                (data || []).forEach(l => { pcSalvos[Number(l.gramas)] = l; });
             }
+            pcCampos = {};
+            Object.keys(pcSalvos).forEach(g => { pcCampos[g] = pcMoeda(pcSalvos[g].preco); });
             pcRender();
+        }
+
+        // "22.5" -> "22,50". O campo nasce no formato em que o brasileiro digita.
+        function pcMoeda(n) {
+            return Number(n).toFixed(2).replace(".", ",");
+        }
+
+        /* Lê a caixinha. Aceita "22,50", "22.50" e "22" — com vírgula, o ponto
+           é separador de milhar; sem vírgula, o ponto é o decimal. Devolve 0
+           para vazio ou lixo, e 0 aqui significa "esse tamanho não tem preço". */
+        function pcValor(g) {
+            let t = String(pcCampos[g] ?? "").trim().replace(/[^\d.,]/g, "");
+            if (!t) return 0;
+            if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+            const n = Number(t);
+            return isFinite(n) && n > 0 ? n : 0;
         }
 
         function pcRender() {
-            const el = document.getElementById("pc-lista");
+            const el = document.getElementById("pc-grade");
             if (!el) return;
-            if (!pcLinhas.length) {
-                el.innerHTML = '<p class="pc-vazio">Nenhum preço publicado. Toque em "Adicionar tamanho".</p>';
-                return;
+            let html = "";
+            for (let g = PC_MIN; g <= PC_MAX; g++) {
+                const salvo = pcSalvos[g];
+                const txt = pcCampos[g] ?? "";
+                const ant = salvo && salvo.preco_anterior ? Number(salvo.preco_anterior) : null;
+                let var_ = "";
+                if (ant !== null && salvo) {
+                    const d = Number(salvo.preco) - ant;
+                    const cls = d > 0 ? "sobe" : d < 0 ? "desce" : "";
+                    var_ = `<div class="pc-var ${cls}">${d > 0 ? "▲" : d < 0 ? "▼" : ""} antes ${pcMoeda(ant)}</div>`;
+                }
+                html += `
+                <div class="pc-cel${pcValor(g) > 0 ? " tem" : ""}">
+                    <div class="pc-cel-tam">${g} g</div>
+                    <div class="pc-cel-campo">
+                        <span class="pc-rs">R$</span>
+                        <input id="pc-in-${g}" inputmode="decimal" placeholder="—" value="${txt}"
+                               onkeydown="pcTecla(event, ${g})" oninput="pcDigitou(${g}, this)" onblur="pcAjeitar(${g}, this)">
+                    </div>
+                    ${var_ || '<div class="pc-var"></div>'}
+                </div>`;
             }
-            el.innerHTML = pcLinhas.map((l, i) => `
-                <div class="pc-linha">
-                    <input class="pc-rot" value="${(l.rotulo || "").replace(/"/g, "&quot;")}"
-                           placeholder="Tamanho (ex.: 12 g)" oninput="pcLinhas[${i}].rotulo = this.value">
-                    <input class="pc-preco" inputmode="decimal" value="${l.preco || ""}"
-                           placeholder="R$" oninput="pcLinhas[${i}].preco = this.value.replace(',', '.')">
-                    <span class="pc-ant">${l.preco_anterior ? "antes R$ " + Number(l.preco_anterior).toFixed(2) : "—"}</span>
-                    <button class="pc-x" title="Remover" onclick="pcRemover(${i})">×</button>
-                </div>`).join("");
+            el.innerHTML = html;
+            pcContar();
         }
 
-        function pcAdicionar() {
-            pcLinhas.push({ id: null, rotulo: "", preco: "", preco_anterior: null, ordem: pcLinhas.length + 1 });
-            pcRender();
+        // Nem toque redesenha a grade: perder o cursor no meio da digitação é
+        // pior que a célula não trocar de cor na hora.
+        function pcDigitou(g, campo) {
+            pcCampos[g] = campo.value;
+            campo.closest(".pc-cel").classList.toggle("tem", pcValor(g) > 0);
+            pcContar();
         }
 
-        async function pcRemover(i) {
-            const linha = pcLinhas[i];
-            if (linha && linha.id) {
-                const { error } = await sb.from("precos_camarao").delete().eq("id", linha.id);
-                if (error) { pcMsg("Erro ao remover: " + error.message, "erro"); return; }
+        /* Ao sair do campo ele passa a mostrar o que REALMENTE vai ser
+           publicado: "22.5" vira "22,50" e "abc" some. Sem isso dava para a
+           caixinha dizer uma coisa e o banco receber outra. */
+        function pcAjeitar(g, campo) {
+            const v = pcValor(g);
+            pcCampos[g] = v > 0 ? pcMoeda(v) : "";
+            campo.value = pcCampos[g];
+        }
+
+        // Enter desce para o tamanho seguinte — são 28 caixinhas, e tirar a mão
+        // do teclado em cada uma é o que fazia essa tela ser chata.
+        function pcTecla(ev, g) {
+            if (ev.key !== "Enter") return;
+            ev.preventDefault();
+            const prox = document.getElementById("pc-in-" + (g + 1));
+            if (prox) prox.focus(); else document.getElementById("pc-salvar").focus();
+        }
+
+        function pcContar() {
+            const btn = document.getElementById("pc-salvar");
+            const res = document.getElementById("pc-resumo");
+            let n = 0;
+            for (let g = PC_MIN; g <= PC_MAX; g++) if (pcValor(g) > 0) n++;
+            if (btn && !btn.disabled) {
+                btn.textContent = n ? `Publicar ${n} ${n === 1 ? "preço" : "preços"}` : "Publicar preços";
             }
-            pcLinhas.splice(i, 1);
-            pcRender();
-            pcMsg("Removido.", "ok");
+            if (res) {
+                const dias = pcDiasDaTabela();
+                const noAr = Object.keys(pcSalvos).length;
+                res.textContent = noAr
+                    ? `${noAr} ${noAr === 1 ? "tamanho" : "tamanhos"} no ar, atualizado ${dias}.`
+                    : "Nenhum preço publicado ainda.";
+            }
+        }
+
+        function pcDiasDaTabela() {
+            let maisNova = "";
+            Object.values(pcSalvos).forEach(l => {
+                const d = String(l.atualizado_em || "").substring(0, 10);
+                if (d > maisNova) maisNova = d;
+            });
+            if (!maisNova) return "—";
+            const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+            const q = new Date(maisNova + "T00:00:00");
+            const dias = Math.round((hoje - q) / 86400000);
+            return dias <= 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
         }
 
         function pcMsg(txt, classe) {
@@ -723,10 +821,26 @@
         }
 
         async function pcSalvar(botao) {
-            const limpas = pcLinhas
-                .map(l => ({ ...l, rotulo: String(l.rotulo || "").trim(), preco: Number(l.preco) }))
-                .filter(l => l.rotulo && l.preco > 0);
-            if (!limpas.length) { pcMsg("Preencha pelo menos um tamanho com preço.", "erro"); return; }
+            const subir = [], tirar = [];
+            for (let g = PC_MIN; g <= PC_MAX; g++) {
+                const v = pcValor(g);
+                if (v > 0) subir.push({ gramas: g, preco: v });
+                else if (pcSalvos[g]) tirar.push(g);
+            }
+            if (!subir.length && !tirar.length) { pcMsg("Nenhum preço preenchido.", "erro"); return; }
+
+            /* Duas confirmações, porque isso vai para a tela de todo cliente.
+               O teto de R$ 500 do banco pega o erro grosseiro; estes dois pegam
+               o erro plausível — o dedo que esqueceu a vírgula, e a linha que
+               ficou em branco sem ninguém querer. */
+            const estranhos = subir.filter(l => l.preco < 5 || l.preco > 120);
+            if (estranhos.length && !confirm(
+                "Confere estes valores?\n\n" +
+                estranhos.map(l => `${l.gramas} g — R$ ${pcMoeda(l.preco)} o quilo`).join("\n") +
+                "\n\nEles vão aparecer para todos os clientes.")) return;
+            if (tirar.length && !confirm(
+                `${tirar.length} ${tirar.length === 1 ? "tamanho" : "tamanhos"} ficaram em branco e vão SAIR da faixa:\n\n` +
+                tirar.map(g => g + " g").join(", ") + "\n\nConfirma?")) return;
 
             botao.disabled = true;
             const textoAntes = botao.textContent;
@@ -734,25 +848,22 @@
             pcMsg("");
 
             let erro = null;
-            for (let i = 0; i < limpas.length; i++) {
-                const l = limpas[i];
-                // O preço de agora vira o "anterior" só quando MUDA: republicar o
-                // mesmo valor não pode zerar a setinha de alta/baixa.
-                const antigo = pcLinhas.find(x => x.id && x.id === l.id);
-                const anterior = (antigo && Number(antigo.preco) !== l.preco)
-                    ? Number(antigo.preco)
-                    : (l.preco_anterior ?? null);
-                const corpo = { rotulo: l.rotulo, preco: l.preco, preco_anterior: anterior, ordem: i + 1 };
-                const r = l.id
-                    ? await sb.from("precos_camarao").update(corpo).eq("id", l.id)
-                    : await sb.from("precos_camarao").insert([corpo]);
-                if (r.error) { erro = r.error; break; }
+            if (subir.length) {
+                const r = await sb.from("precos_camarao").upsert(subir, { onConflict: "gramas" });
+                if (r.error) erro = r.error;
+            }
+            if (!erro && tirar.length) {
+                const r = await sb.from("precos_camarao").delete().in("gramas", tirar);
+                if (r.error) erro = r.error;
             }
 
             botao.disabled = false;
             botao.textContent = textoAntes;
             if (erro) { pcMsg("Erro ao publicar: " + erro.message, "erro"); return; }
-            pcMsg("Publicado. Os clientes já veem na próxima abertura do app.", "ok");
+            pcMsg(
+                `${subir.length} ${subir.length === 1 ? "preço" : "preços"} no ar` +
+                (tirar.length ? ` · ${tirar.length} ${tirar.length === 1 ? "removido" : "removidos"}` : "") +
+                ". Os clientes veem na próxima abertura do app.", "ok");
             pcCarregar();
         }
 

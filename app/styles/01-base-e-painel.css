@@ -1612,7 +1612,11 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
 .fp-val { color: #fff; font-weight: 800; }
 .fp-sobe { color: #6ee7a8; font-weight: 800; font-size: 11px; }
 .fp-desce { color: #ffa4a4; font-weight: 800; font-size: 11px; }
-.fp-fonte { color: rgba(214,247,241,.45); font-size: 11px; font-weight: 600; }
+/* .45 media 3,2:1 contra o fundo REALMENTE pintado da faixa (rgb 4,69,64) —
+   medido, nao estimado. E justo o texto que diz se o preco ainda vale: ler
+   "atualizado ha 9 dias" e a diferenca entre negociar bem e negociar no
+   escuro. Subiu para .68, que da 5,0:1. */
+.fp-fonte { color: rgba(214,247,241,.68); font-size: 11px; font-weight: 600; }
 
 /* Metade do trilho é a segunda cópia: deslizar -50% e recomeçar é o que faz o
    laço ser invisível. */

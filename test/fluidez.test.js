@@ -418,30 +418,46 @@ test("painel: fazenda vazia devolve zeros, sem quebrar",()=>{
 // negocia com número de três semanas atrás e se dá mal culpa o app, com razão.
 // Por isso a validade é testada: é a única coisa aqui que falha em silêncio,
 // porque uma faixa com preço velho parece perfeitamente normal.
-const PRECO = (r, p, ant, dia) => ({ rotulo: r, preco: p, preco_anterior: ant, ordem: 1, atualizado_em: dia });
+const PRECO = (g, p, ant, dia) => ({ gramas: g, preco: p, preco_anterior: ant, atualizado_em: dia });
 
 test("preços: dentro do prazo, a faixa mostra",()=>{
   const a=load();
-  a.run(`__l = [${JSON.stringify(PRECO('12 g', 22, 21, '2026-11-13'))}];`);
+  a.run(`__l = [${JSON.stringify(PRECO(12, 22, 21, '2026-11-13'))}];`);
   assert.equal(a.run(`_precosFrescos(__l, '2026-11-13').itens.length`), 1);
   assert.equal(a.run(`_precosFrescos(__l, '2026-11-23').itens.length`), 1);   // 10 dias: ainda vale
 });
 test("preços: passou do prazo, a faixa some — não mostra velho",()=>{
   const a=load();
-  a.run(`__l = [${JSON.stringify(PRECO('12 g', 22, 21, '2026-11-13'))}];`);
+  a.run(`__l = [${JSON.stringify(PRECO(12, 22, 21, '2026-11-13'))}];`);
   assert.equal(a.run(`_precosFrescos(__l, '2026-11-24').itens.length`), 0);   // 11 dias
   assert.equal(a.run(`_precosFrescos(__l, '2026-12-20').itens.length`), 0);
 });
 test("preços: a validade conta pelo lançamento mais recente",()=>{
   const a=load();
   // um tamanho antigo e outro corrigido hoje: corrigir um não pode envelhecer os outros
-  a.run(`__l = [${JSON.stringify(PRECO('10 g', 18, null, '2026-10-01'))},
-                ${JSON.stringify(PRECO('12 g', 22, 21, '2026-11-13'))}];`);
+  a.run(`__l = [${JSON.stringify(PRECO(10, 18, null, '2026-10-01'))},
+                ${JSON.stringify(PRECO(12, 22, 21, '2026-11-13'))}];`);
   assert.equal(a.run(`_precosFrescos(__l, '2026-11-13').itens.length`), 2);
 });
+// A faixa é lida como régua de tamanho: 8, 10, 12... Fora de ordem ela deixa de
+// ser régua e vira lista, e aí o produtor tem de procurar o tamanho dele.
+test("preços: a faixa sai em ordem de tamanho, não na ordem do banco",()=>{
+  const a=load();
+  a.run(`__l = [${JSON.stringify(PRECO(14, 25, null, '2026-11-13'))},
+                ${JSON.stringify(PRECO(8,  15, null, '2026-11-13'))},
+                ${JSON.stringify(PRECO(30, 41, null, '2026-11-13'))},
+                ${JSON.stringify(PRECO(12, 22, null, '2026-11-13'))}];`);
+  assert.equal(a.run(`_precosFrescos(__l, '2026-11-13').itens.map(x => x.gramas).join(",")`), "8,12,14,30");
+});
+// A data VAI junto de propósito. Sem ela, a linha suja era descartada mais
+// adiante por falta de carimbo, e o teste passava mesmo com o filtro removido —
+// medi plantando o erro. Com data válida, só o filtro segura.
 test("preços: lista vazia ou suja não quebra",()=>{
   const a=load();
-  for (const l of ['[]', 'null', '[{}]', '[{rotulo:"", preco:0}]', '[{rotulo:"12 g", preco:-5}]']) {
+  const D = `atualizado_em:'2026-11-13'`;
+  for (const l of ['[]', 'null', '[{}]', `[{gramas:0, preco:22, ${D}}]`,
+                   `[{gramas:12, preco:0, ${D}}]`, `[{gramas:12, preco:-5, ${D}}]`,
+                   `[{preco:22, ${D}}]`, `[{gramas:12, ${D}}]`]) {
     a.run(`__r = _precosFrescos(${l}, '2026-11-13');`);
     assert.equal(a.run('__r.itens.length'), 0, l);
   }

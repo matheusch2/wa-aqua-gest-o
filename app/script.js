@@ -345,19 +345,17 @@ function _fmtDataISO(iso) {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
-/* DESLIGADA POR ORA — o acesso à tabela de preços está com os sócios e ainda
-   não chegou. Este bloco, o banco/precos-camarao.sql e a tela do painel ADM
-   continuam prontos; para religar, descomente a chamada na abertura do app e
-   devolva o <div id="fita-precos"> ao cabeçalho. Guardado inteiro de
-   propósito: refazer depois custaria o mesmo trabalho de novo. */
-
 /* ═══════════════════════════════════════════════════════════════════════════
    FAIXA DE PREÇOS DO CAMARÃO
 
-   Uma tira que passa no alto da tela, tipo painel de bolsa, com o preço por
-   tamanho. Não existe índice público semanal do camarão cultivado no Brasil,
-   então quem publica é o administrador, pelo painel ADM (tabela
+   Uma tira que passa no alto da tela, tipo painel de bolsa, com o preço do
+   quilo por tamanho. Não existe índice público semanal do camarão cultivado no
+   Brasil, então quem publica é o administrador, pelo painel ADM (tabela
    precos_camarao; ver banco/precos-camarao.sql).
+
+   Uma linha por tamanho em GRAMAS, de 8 a 35 — o tamanho é a chave da tabela,
+   e é dele que sai a ordem da faixa. Só os tamanhos que têm preço existem no
+   banco: o que o administrador deixa em branco não aparece para ninguém.
 
    A regra que manda aqui é uma só: PREÇO VELHO É PIOR QUE PREÇO NENHUM. Um
    produtor que negocia com número de três semanas atrás e se dá mal vai culpar
@@ -373,7 +371,7 @@ const PRECOS_VALIDADE_DIAS = 10;
 
 // Decide o que a faixa pode mostrar. Função pura -> tem teste.
 function _precosFrescos(linhas, hojeYmd, validadeDias = PRECOS_VALIDADE_DIAS) {
-  const lista = (linhas || []).filter(l => l && l.rotulo && Number(l.preco) > 0);
+  const lista = (linhas || []).filter(l => l && Number(l.gramas) > 0 && Number(l.preco) > 0);
   if (!lista.length) return { itens: [], atualizado: null, dias: null };
 
   // A data da tabela é a do lançamento MAIS RECENTE: o admin pode corrigir um
@@ -388,8 +386,7 @@ function _precosFrescos(linhas, hojeYmd, validadeDias = PRECOS_VALIDADE_DIAS) {
   const dias = _diasDesde(maisNova, hojeYmd);
   if (dias === null || dias > validadeDias) return { itens: [], atualizado: maisNova, dias };
 
-  const itens = lista.slice().sort((a, b) =>
-    (Number(a.ordem) || 0) - (Number(b.ordem) || 0) || String(a.rotulo).localeCompare(String(b.rotulo)));
+  const itens = lista.slice().sort((a, b) => Number(a.gramas) - Number(b.gramas));
   return { itens, atualizado: maisNova, dias };
 }
 
@@ -405,8 +402,8 @@ function _variacaoPreco(linha) {
 async function carregarPrecosCamarao() {
   const { data, error } = await supabaseClient
     .from("precos_camarao")
-    .select("rotulo, preco, preco_anterior, ordem, atualizado_em")
-    .order("ordem", { ascending: true });
+    .select("gramas, preco, preco_anterior, atualizado_em")
+    .order("gramas", { ascending: true });
   // 42P01 = tabela ainda não existe no banco deste cliente. Segue sem faixa,
   // como já é feito com assinaturas: recurso novo não pode impedir o app de abrir.
   if (error) { if (error.code !== "42P01") console.log("preços:", error); precosCamarao = []; return; }
@@ -423,7 +420,7 @@ function _fitaPrecos() {
     const v = _variacaoPreco(l);
     const seta = v === null ? ""
       : `<span class="fp-${v > 0 ? "sobe" : "desce"}">${v > 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(v), 2)}</span>`;
-    return `<span class="fp-item"><span class="fp-tam">${_esc(l.rotulo)}</span>` +
+    return `<span class="fp-item"><span class="fp-tam">${Number(l.gramas)} g</span>` +
            `<span class="fp-val">R$ ${formatarNumeroBR(Number(l.preco), 2)}</span>${seta}</span>`;
   };
 
@@ -14502,11 +14499,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       _armarVerificacaoDeVersao();
       _registrarAcesso(session.user);
       atualizarSaudacaoTopo();
-      // FAIXA DE PREÇOS DESLIGADA: o acesso à tabela de preços está com os
-      // sócios e ainda não chegou. O código, o SQL e a tela do ADM continuam
-      // prontos — para religar, basta descomentar a linha abaixo e pôr o
-      // <div id="fita-precos"> de volta no cabeçalho.
-      // carregarPrecosCamarao().then(_fitaPrecos).catch(() => {});
+      // A faixa de preços só aparece quando o administrador publica a tabela:
+      // sem linha no banco, _fitaPrecos() deixa o #fita-precos vazio e o CSS
+      // esconde o espaço. Não trava a entrada — roda solta, e se falhar o app
+      // abre sem faixa.
+      carregarPrecosCamarao().then(_fitaPrecos).catch(() => {});
       if (window.innerWidth >= 900) {
         mostrarListaViveiros();
       } else {
