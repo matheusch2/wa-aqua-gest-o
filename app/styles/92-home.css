@@ -273,15 +273,20 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
     align-items: center;
     gap: 7px;
     padding: 7px 9px;
-    border: 1px solid #e3ecea;
+    /* O MESMO verde do painel, não uma pastilha branca por cima: o resto do
+       painel — biomassa, biometria, os três números de baixo — está solto no
+       verde, e duas caixas brancas aqui em cima partiam a tela em duas.
+       Sobra a bordinha, que é o que ainda diz "dá para tocar"; sem ela a tira
+       vira texto e ninguém descobre a tela de detalhe. */
+    border: 1px solid rgba(255,255,255,.17);
     border-radius: 11px;
-    background: #f7faf9;
+    background: transparent;
     font: inherit;
     text-align: left;
     cursor: pointer;
     overflow: hidden;
 }
-.hm-amb-item:active { background: #eef4f2; }
+.hm-amb-item:active { background: rgba(255,255,255,.09); }
 .hm-amb-ico { font-size: 18px; line-height: 1; flex-shrink: 0; }
 .hm-amb-txt {
     min-width: 0;
@@ -294,12 +299,14 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
    ("32°C", "cheia amanhã" no pior caso), então não precisam encolher nunca. */
 .hm-amb-txt b {
     flex-shrink: 0;
-    font-size: 13.5px; font-weight: 800; color: #10322f;
+    font-size: 13.5px; font-weight: 800; color: #fff;
 }
 .hm-amb-txt small {
     min-width: 0;
     overflow: hidden; text-overflow: ellipsis;
-    font-size: 11.5px; font-weight: 600; color: #5f6e6b;
+    /* O mesmo tom dos rótulos do painel (BIOMASSA, EM CULTIVO), para a tira
+       pertencer ao bloco em vez de ser um enxerto. */
+    font-size: 11.5px; font-weight: 600; color: rgba(205,240,233,.72);
 }
 
 /* ── Tela do tempo e da lua ──────────────────────────────────────────────── */
