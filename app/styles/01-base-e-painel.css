@@ -1710,39 +1710,95 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
    quer O tamanho dele, e numa fita que anda ele espera a volta inteira. As
    linhas são finas de propósito — são vinte e tantas, e a tela é um índice,
    não um formulário. */
-/* text-align explícito: uma regra geral centraliza h2 dentro do
-   .form-lancamento, e o título saía centralizado com o subtítulo à esquerda.
-   O resto do app alinha os dois à esquerda — conferi no cadastro de viveiro. */
-.tp-cab { padding: 2px 2px 14px; text-align: left; }
-.tp-cab h2 { font-size: 21px; font-weight: 800; color: #10322f; margin: 0 0 2px; text-align: left; }
-.tp-cab span { font-size: 12.5px; font-weight: 600; color: #5f6e6b; }
+.tp-cab { padding: 6px 2px 16px; text-align: center; }
+.tp-cab h2 {
+    font-size: 25px;
+    font-weight: 800;
+    color: #10322f;
+    letter-spacing: -.4px;
+    margin: 0 0 7px;
+    text-align: center;
+}
+/* De onde vem e de quando é, numa linha só. A bolinha verde não é enfeite: é
+   o sinal de que a tabela está dentro do prazo — ela nem chega aqui velha,
+   mas o verde diz isso sem precisar de mais uma frase. */
+.tp-fonte {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: #eef4f2;
+    font-size: 12px;
+    font-weight: 700;
+    color: #46605b;
+}
+.tp-fonte i {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #15a06b;
+    box-shadow: 0 0 0 3px rgba(21,160,107,.18);
+}
 
 .tp-lista {
+    /* Teto de largura: no desktop a área do formulário tem 680px, e esticada
+       a linha abria um vão de meio palmo entre a pastilha do tamanho e o
+       preço — o olho perdia qual preço era de qual tamanho na volta. */
+    max-width: 430px;
+    margin: 0 auto;
     background: #fff;
-    border: 1px solid #cfdcd9;
-    border-radius: 14px;
+    border: 1px solid #e3ecea;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(2,44,40,.05);
     overflow: hidden;
 }
 .tp-linha {
     display: grid;
-    grid-template-columns: 58px 1fr 76px;
+    grid-template-columns: 52px 1fr 74px;
     align-items: center;
-    gap: 8px;
-    padding: 9px 13px;
-    border-bottom: 1px solid #eef3f2;
+    gap: 10px;
+    padding: 7px 12px;
+    position: relative;
 }
-.tp-linha:last-child { border-bottom: none; }
-.tp-tam { font-size: 14px; font-weight: 800; color: #111827; }
-.tp-val { font-size: 15px; font-weight: 800; color: #0a7d62; text-align: right; }
+/* Risco encostado só embaixo do conteúdo, não de parede a parede: lista de
+   celular moderna não desenha grade, desenha separação. */
+.tp-linha + .tp-linha::before {
+    content: "";
+    position: absolute;
+    left: 12px; right: 12px; top: 0;
+    height: 1px;
+    background: #f0f5f3;
+}
+/* O tamanho vira pastilha: é rótulo, não número de conta. Largura fixa para
+   "9 g" e "30 g" começarem no mesmo lugar. */
+.tp-tam {
+    display: inline-block;
+    padding: 4px 0;
+    border-radius: 8px;
+    background: #eef4f2;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #16423d;
+    text-align: center;
+}
+/* tabular-nums: sem isto o "1" é mais estreito que o "3" em muitas fontes, e
+   numa coluna de vinte e um preços as vírgulas saem desalinhadas. */
+.tp-val {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0a7d62;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
 .tp-val small { font-size: 10px; font-weight: 700; color: #5a6763; margin-left: 1px; }
 /* A coluna existe em toda linha, mesmo vazia: sem ela as colunas de preço
    dançavam conforme umas linhas tinham seta e outras não. */
 .tp-var {
     justify-self: end;
-    padding: 2px 7px;
+    padding: 2.5px 8px;
     border-radius: 999px;
     font-size: 10.5px;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
 }
 /* O traço não é enfeite: diz "este tamanho não tem com o que comparar ainda".
    No cinza anterior media 2,1:1 — invisível. Este dá 3,1:1. */
@@ -1750,7 +1806,7 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
 .tp-vazio { padding: 24px 4px; font-size: 14px; color: #5f6e6b; text-align: center; }
 .tp-nota {
     display: flex; gap: 8px; align-items: flex-start;
-    margin: 12px 2px 16px;
+    margin: 14px 2px 16px;
     font-size: 12px; line-height: 1.5; color: #5f6e6b;
 }
 .tp-nota svg {

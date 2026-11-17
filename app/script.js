@@ -489,7 +489,8 @@ function mostrarTabelaPrecos() {
   if (!itens.length) {
     area.innerHTML = `
       <div class="form-lancamento">
-        <div class="tp-cab"><h2>Preço referência</h2><span>${_esc(PRECOS_TITULO.split("·").pop().trim())}</span></div>
+        <div class="tp-cab"><h2>Preço referência</h2>
+          <span class="tp-fonte"><i></i>${_esc(PRECOS_TITULO.split("·").pop().trim())}</span></div>
         <p class="tp-vazio">Não há preço publicado no momento.</p>
         <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
       </div>`;
@@ -514,7 +515,7 @@ function mostrarTabelaPrecos() {
     <div class="form-lancamento">
       <div class="tp-cab">
         <h2>Preço referência</h2>
-        <span>${_esc(PRECOS_TITULO.split("·").pop().trim())} · atualizado ${quando}</span>
+        <span class="tp-fonte"><i></i>${_esc(PRECOS_TITULO.split("·").pop().trim())} · atualizado ${quando}</span>
       </div>
       <div class="tp-lista">${itens.map(linha).join("")}</div>
       <p class="tp-nota">
