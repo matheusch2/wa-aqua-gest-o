@@ -8042,18 +8042,12 @@ function abrirSimularVenda() {
   const area = document.getElementById("area-gestao");
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
-  /* Antes aqui havia um círculo de 110px com um cifrão e o título embaixo:
-     360px para escrever "Simular venda" numa tela aberta pelo botão "Simular
-     venda". No lugar vai o que a pessoa veio simular — a biomassa que está na
-     água agora. Sem ela, as três portas são perguntas sem contexto. */
-  const r = _resumoFazenda(viveiros, _hojeLocal());
-  const topo = `
-    <h3 class="titulo-secao" style="margin:8px 0 12px">Simular venda</h3>
-    ${r.emCultivo ? `<div class="simv-estado">
-      <div><small>Na água hoje</small><b>${formatarNumeroBR(r.biomassa, 0)}<i>kg</i></b></div>
-      <div><small>Viveiros</small><b>${r.emCultivo}<i>em cultivo</i></b></div>
-      <div><small>Peso médio</small><b>${formatarNumeroBR(r.pesoMedio, 1)}<i>g</i></b></div>
-    </div>` : ""}`;
+  /* Só o nome. Antes havia um círculo de 110px com um cifrão — 360px para
+     escrever "Simular venda" numa tela aberta pelo botão "Simular venda" — e
+     depois uma tira verde com a biomassa da fazenda. A tira saiu a pedido do
+     dono: a biomassa já está no painel da tela inicial, e repetida aqui ela
+     empurrava as três portas para baixo sem mudar nenhuma decisão. */
+  const topo = `<h3 class="titulo-secao simv-titulo">Simular venda</h3>`;
 
   if (!ativos.length) {
     area.innerHTML = topo + `
