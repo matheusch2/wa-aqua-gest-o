@@ -7412,27 +7412,87 @@ function abrirMenuCusto() {
   `;
 }
 
+/* Custo da fazenda inteira no mês corrente. Sai da MESMA função que monta o
+   relatório, e não de uma conta paralela: duas contas para o mesmo número é
+   como o "% do total" chegou a anunciar 1117%. */
+function _finCustoDoMes(hojeYmd) {
+  const mes = String(hojeYmd).substring(0, 7);
+  const dentro = (c) => String(c.data || "").substring(0, 7) === mes;
+  const lista = viveiros.flatMap(_finCustosDoViveiro).filter(dentro);
+  return {
+    total: lista.reduce((s, c) => s + Number(c.valor), 0),
+    n: lista.length,
+  };
+}
+
+/*
+ * O que a porta dos Boletos diz, e de que cor.
+ *
+ * VENCIDO MANDA. É o que já está custando multa, então ele vem primeiro e
+ * pinta a porta de vermelho mesmo que haja vencendo junto — "3 vencendo" em
+ * âmbar ao lado de um vencido esconderia a urgência atrás da cor mais calma.
+ *
+ * Separado do desenho porque é regra, não enfeite: a porta errada manda o
+ * produtor pagar multa, e isso falha calado.
+ */
+function _finPortaBoletos(lista, hojeYmd) {
+  if (!(lista || []).length) return { texto: "Nenhum boleto cadastrado", classe: "" };
+  const r = _resumoBoletos(lista, hojeYmd);
+  if (r.nVencidos) {
+    return {
+      texto: `${r.nVencidos} vencido${r.nVencidos !== 1 ? "s" : ""}`
+           + (r.nVencendo ? ` · ${r.nVencendo} vencendo` : "")
+           + ` · ${_reaisCurto(r.total)}`,
+      classe: " fin-porta-vencido",
+    };
+  }
+  if (r.nVencendo) {
+    return { texto: `${r.nVencendo} vencendo · ${_reaisCurto(r.total)}`, classe: " fin-porta-atencao" };
+  }
+  return { texto: "Nenhum boleto em aberto", classe: "" };
+}
+
+/*
+ * O menu do Financeiro.
+ *
+ * Tinha um cartão verde de 360px no topo para escrever "Financeiro" — palavra
+ * que já está no cabeçalho da tela e no botão que trouxe a pessoa até aqui —
+ * mais uma frase explicando o que é o financeiro para quem acabou de tocar em
+ * Financeiro. Era um terço da tela sem um número dentro.
+ *
+ * No lugar, as duas portas CARREGAM O ESTADO. Um menu que diz "R$ 4.200 neste
+ * mês" e "3 boletos vencendo" responde a pergunta antes de a pessoa entrar; o
+ * antigo só dizia que as portas existiam.
+ */
 function abrirMenuFinanceiro() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
+  const hoje = _hojeLocal();
+  const mes = _finCustoDoMes(hoje);
+  const rb = _resumoBoletos(boletos, hoje);
+
+  const mesNome = new Date(hoje + "T12:00:00").toLocaleDateString("pt-BR", { month: "long" });
+  const subCustos = mes.n
+    ? `${_reaisCurto(mes.total)} em ${mesNome} · ${mes.n} lançamento${mes.n !== 1 ? "s" : ""}`
+    : `Nenhum custo lançado em ${mesNome}`;
+
+  const pb = _finPortaBoletos(boletos, hoje);
+  const subBoletos = pb.texto;
+  const classeBoletos = pb.classe;
+
   area.innerHTML = `
     <h3 class="titulo-secao">Financeiro</h3>
     <div class="cfg-wrap">
-      <div class="cfg-hero">
-        <div class="cfg-hero-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <h4>Financeiro</h4>
-        <p>Acompanhe os custos do cultivo e gerencie suas contas a pagar.</p>
-      </div>
-      <div class="cfg-lista">
-        <button class="cfg-item" onclick="abrirFinanceiro()">
-          <div class="cfg-item-ico"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Relatório financeiro</span><span class="cfg-item-sub">Consulte os custos por viveiro ou geral</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <div class="fin-portas">
+        <button class="fin-porta" onclick="abrirFinanceiro()">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <span class="fin-porta-txt"><b>Relatório financeiro</b><small>${_esc(subCustos)}</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="cfg-item" onclick="abrirBoletos()">
-          <div class="cfg-item-ico cfg-item-ico-amber"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-          <div class="cfg-item-texto"><span class="cfg-item-titulo">Boletos</span><span class="cfg-item-sub">Veja e gerencie boletos e vencimentos</span></div>
-          <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <button class="fin-porta${classeBoletos}" onclick="abrirBoletos()">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+          <span class="fin-porta-txt"><b>Boletos</b><small>${_esc(subBoletos)}</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
@@ -10505,7 +10565,7 @@ function _finGruposCategoria(custos) {
 // lançamentos que estão somados nela — ex.: clicar em "Probiótico · 43
 // lançamentos" mostra os 43, com data e valor. O detalhe fica escondido até o
 // toque (só troca o display, sem redesenhar a tela toda).
-function _finGrupoLinhaHtml(g, idx, mostrarViveiro) {
+function _finGrupoLinhaHtml(g, idx, mostrarViveiro, total) {
   const subInfo = mostrarViveiro
     ? `${g.qtd} lançamento${g.qtd > 1 ? "s" : ""} · ${g.viveiros.size} viveiro${g.viveiros.size > 1 ? "s" : ""}`
     : `${g.qtd} lançamento${g.qtd > 1 ? "s" : ""}`;
@@ -10524,9 +10584,14 @@ function _finGrupoLinhaHtml(g, idx, mostrarViveiro) {
       <span class="fin-subitem-valor">R$ ${formatarNumeroBR(Number(c.valor), 2)}</span>
     </div>`;
   }).join("");
+  // A fatia de cada categoria no total. É o que o cartão "Maior categoria"
+  // dizia de uma só, e aqui diz de todas — sem gastar um cartão.
+  const fatia = total > 0 ? (g.total / total) * 100 : 0;
   return `<button type="button" class="fin-linha fin-linha-cat fin-grupo" id="fin-grupo-btn-${idx}" onclick="_finToggleGrupo(${idx})">
-      <span class="fin-linha-desc">${_esc(g.nome)}<small>${subInfo}</small></span>
-      <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}</span>
+      <span class="fin-linha-desc">${_esc(g.nome)}<small>${subInfo}</small>
+        <span class="fin-fatia"><i style="width:${Math.max(fatia, 2).toFixed(1)}%"></i></span>
+      </span>
+      <span class="fin-linha-valor">R$ ${formatarNumeroBR(g.total, 2)}<em>${formatarNumeroBR(fatia, 0)}%</em></span>
       <svg class="fin-grupo-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
     <div class="fin-grupo-det" id="fin-grupo-det-${idx}" style="display:none">${detalhe}</div>`;
@@ -10546,14 +10611,24 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
   // mostra um ciclo inteiro, não uma fatia do mês). Fora dele, mantém a conta
   // antiga: quanto este recorte representa do total geral no mesmo período.
   const modoCiclo = !!_finCicloWin;
-  let pct = 100;
-  if (!modoCiclo) {
-    let custosGeral = viveiros.flatMap(v => (v.custos || []));
+
+  /* O "% do total" só diz alguma coisa quando a tela mostra UM viveiro: aí ele
+     responde "quanto este viveiro pesou na fazenda neste período". Com "Todos
+     os viveiros" a resposta é 100% por definição, e 100% não é informação.
+
+     E o denominador estava errado. Ele lia v.custos cru, que NÃO tem ração — a
+     ração mora em v.racoes e entra pelo _finCustosDoViveiro. Como ração é o
+     maior gasto do ciclo, o total ficava maior que o "geral" e a tela
+     anunciava coisas como "1117% do total". Agora os dois lados saem da mesma
+     função, que é a única forma de a conta fechar. */
+  let pct = null;
+  if (!modoCiclo && porViveiro) {
+    let custosGeral = viveiros.flatMap(_finCustosDoViveiro);
     if (_finPeriodoIni) custosGeral = custosGeral.filter(c => c.data >= _finPeriodoIni);
     if (_finPeriodoFim) custosGeral = custosGeral.filter(c => c.data <= _finPeriodoFim);
     custosGeral = custosGeral.concat(_finItensRateioFixo(viveiros));
     const totalGeral = custosGeral.reduce((s, c) => s + Number(c.valor), 0);
-    pct = totalGeral > 0 ? Math.round((total / totalGeral) * 100) : 100;
+    if (totalGeral > 0) pct = Math.round((total / totalGeral) * 100);
   }
 
   // dias: no modo ciclo, os dias reais do ciclo (povoamento/preparação → fim);
@@ -10575,20 +10650,21 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
   // Histórico de custos) e passa a somar tudo o que foi gasto com cada produto,
   // igual à impressão. Assim um ciclo longo não vira uma lista sem fim na tela.
   const grupos = _finGruposCategoria(custos);
-  const maiorCat = grupos.length ? grupos[0] : null;
 
-  // 4º card: por viveiro mostra o maior lançamento; consolidado, a maior categoria
+  /* O 4º cartão era "Maior categoria" — e a maior categoria é, por definição,
+     a PRIMEIRA LINHA da lista logo abaixo. O mesmo número duas vezes na mesma
+     tela, a 200px de distância. Saiu; no lugar, cada linha da lista ganhou a
+     barra da sua fatia, que conta a mesma coisa e mais.
+
+     No modo "um viveiro" o cartão fica: ali a lista é por produto, e o maior
+     LANÇAMENTO é outro dado — a nota fiscal mais cara do período. */
   const cardMaiorHtml = porViveiro
     ? `<div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior lançamento</span></div>
         <strong>R$ ${formatarNumeroBR(Number(maior.valor), 2)}</strong>
         <small>${_esc(maior.nomeProduto || "—")} · ${formatarData(maior.data)}</small>
       </div>`
-    : `<div class="fin-card">
-        <div class="fin-card-top"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><span>Maior categoria</span></div>
-        <strong>R$ ${formatarNumeroBR(maiorCat ? maiorCat.total : 0, 2)}</strong>
-        <small>${_esc(maiorCat ? maiorCat.nome : "—")}</small>
-      </div>`;
+    : "";
 
   // Lista: por viveiro = lançamento a lançamento (com ordenação/paginação);
   // consolidado = um valor por categoria, somando todos os viveiros.
@@ -10598,14 +10674,14 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
         <small class="fin-lista-hint">Toque para ver os lançamentos</small>
       </div>
       <div class="fin-lista">
-        ${grupos.map((g, idx) => _finGrupoLinhaHtml(g, idx, false)).join("")}
+        ${grupos.map((g, idx) => _finGrupoLinhaHtml(g, idx, false, total)).join("")}
       </div>`
     : `<div class="fin-lista-head">
         <span>Custos por categoria</span>
         <small class="fin-lista-hint">Toque para ver os lançamentos</small>
       </div>
       <div class="fin-lista">
-        ${grupos.map((g, idx) => _finGrupoLinhaHtml(g, idx, true)).join("")}
+        ${grupos.map((g, idx) => _finGrupoLinhaHtml(g, idx, true, total)).join("")}
       </div>`;
 
   resultado.innerHTML = `
@@ -10613,7 +10689,9 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
       <div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Total de custos</span></div>
         <strong>R$ ${formatarNumeroBR(total, 2)}</strong>
-        <small>${modoCiclo ? "deste ciclo" : pct + "% do total"}</small>
+        <small>${modoCiclo ? "deste ciclo"
+          : pct !== null ? `${pct}% do custo da fazenda no período`
+          : `em ${dias} dia${dias !== 1 ? "s" : ""}`}</small>
       </div>
       <div class="fin-card">
         <div class="fin-card-top"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Lançamentos</span></div>
@@ -10629,14 +10707,10 @@ function _finRenderDetalhado(resultado, custos, total, porViveiro) {
     </div>
 
     ${listaBlocoHtml}
-    <div class="fin-total-geral">
-      <div class="fin-total-geral-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-      <div class="fin-total-geral-txt">
-        <span>${modoCiclo ? "Total do ciclo" : "Total geral no período"}</span>
-        <strong>R$ ${formatarNumeroBR(total, 2)}</strong>
-      </div>
-    </div>
   `;
+  /* O rodapé "Total geral no período" repetia, em letra menor, o mesmo número
+     do cartão escuro do topo. Duas vezes o mesmo valor na mesma tela não
+     confirma nada: só faz procurar a diferença entre os dois. */
 }
 
 function _finRenderPorTipo(resultado, custos, total) {

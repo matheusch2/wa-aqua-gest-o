@@ -189,7 +189,9 @@
   background:linear-gradient(135deg,#075e53,#07473f);
   border-color:#075e53;
 }
-#area-gestao:has(> .fin-topo-acoes) .fin-card:last-child {grid-column:1/-1;}
+/* So quando ha QUATRO cartoes. Na visao consolidada sao tres, e com a
+   regra solta o terceiro esticava sozinho na linha. */
+#area-gestao:has(> .fin-topo-acoes) .fin-card:nth-child(4):last-child {grid-column:1/-1;}
 #area-gestao:has(> .fin-topo-acoes) .fin-card-top {
   gap:7px;margin-bottom:5px;
 }
@@ -250,14 +252,6 @@
   border-left:3px solid #a4d3bf;
   background:#f7faf8;
 }
-#area-gestao:has(> .fin-topo-acoes) .fin-total-geral {
-  margin-top:15px;
-  border:1px solid #dcebe4;border-radius:13px;
-  background:#eef7f2;
-}
-#area-gestao:has(> .fin-topo-acoes) .fin-total-geral-txt strong {
-  font-variant-numeric:tabular-nums;
-}
 /* Por tipo: rosca e ranking com respiro consistente. */
 #area-gestao:has(> .fin-topo-acoes) .fin-pizza-wrap {
   padding:16px 12px;
@@ -311,7 +305,6 @@ body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo {
 }
 body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo.aberto {background:#224639;}
 body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-grupo-det {background:#20332b;border-left-color:#3d8166;}
-body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-total-geral,
 body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-pizza-wrap,
 body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
   background:#1d2d28;border-color:#344d43;
@@ -327,3 +320,63 @@ body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
 @media(prefers-reduced-motion:reduce){
   #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item {transition:none;}
 }
+
+/* ── A fatia de cada categoria ───────────────────────────────────────────────
+   Substitui o cartao "Maior categoria", que repetia a primeira linha desta
+   lista. A barra conta a mesma coisa de TODAS as categorias, de relance, e
+   sem gastar um cartao. */
+#area-gestao:has(> .fin-topo-acoes) .fin-fatia {
+  display:block;margin-top:6px;height:4px;border-radius:999px;
+  background:#e8efeb;overflow:hidden;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-fatia i {
+  display:block;height:100%;border-radius:999px;background:#11836a;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-linha-valor {
+  display:flex;flex-direction:column;align-items:flex-end;gap:1px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-linha-valor em {
+  font-style:normal;font-size:10.5px;font-weight:750;color:#64776e;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── As duas portas do Financeiro ────────────────────────────────────────────
+   Substituem o cartão-herói de 360px que escrevia "Financeiro" numa tela cujo
+   cabeçalho já diz "Financeiro". Agora cada porta carrega o estado: quanto se
+   gastou no mês, quantos boletos esperam. Um menu que responde antes de a
+   pessoa entrar. */
+.fin-portas { display:flex; flex-direction:column; gap:9px; }
+.fin-porta {
+  display:flex; align-items:center; gap:12px; width:100%;
+  padding:13px 13px 13px 12px;
+  border:1px solid #e1eae5; border-radius:15px; background:#fff;
+  box-shadow:0 2px 10px rgba(7,72,57,.045);
+  font:inherit; text-align:left; cursor:pointer;
+}
+.fin-porta:active { background:#f6faf8; }
+.fin-porta-ico {
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  width:40px; height:40px; border-radius:12px;
+  background:#e9f4ef;
+}
+.fin-porta-ico svg {
+  width:19px; height:19px;
+  fill:none; stroke:#0d6b55; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+}
+.fin-porta-txt { flex:1; min-width:0; }
+.fin-porta-txt b { display:block; font-size:15px; font-weight:800; color:#143b33; letter-spacing:-.01em; }
+/* O número do mês é o assunto da porta, então não é o cinza mais fraco que
+   couber: 5,3:1 contra o branco — medido. */
+.fin-porta-txt small { display:block; margin-top:2px; font-size:12px; font-weight:600; color:#5f6e6b; }
+.fin-porta-seta {
+  flex-shrink:0; width:16px; height:16px;
+  fill:none; stroke:#85988f; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round;
+}
+/* Boleto vencendo ou vencido muda a cor da porta, não um aviso à parte: a
+   informação chega junto do caminho que resolve o problema. */
+.fin-porta-atencao .fin-porta-ico { background:#fdf4e3; }
+.fin-porta-atencao .fin-porta-ico svg { stroke:#a26a09; }
+.fin-porta-atencao .fin-porta-txt small { color:#8a5c07; font-weight:750; }
+.fin-porta-vencido .fin-porta-ico { background:#fdeaea; }
+.fin-porta-vencido .fin-porta-ico svg { stroke:#b4231c; }
+.fin-porta-vencido .fin-porta-txt small { color:#a8211a; font-weight:750; }

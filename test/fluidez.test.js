@@ -463,6 +463,67 @@ test("preços: lista vazia ou suja não quebra",()=>{
   }
 });
 /* ═══════════════════════════════════════════════════════════════════════════
+   A PORTA DOS BOLETOS, NO MENU DO FINANCEIRO
+
+   A porta mostra o estado antes de a pessoa entrar. VENCIDO MANDA: e o que ja
+   custa multa, entao vem primeiro e pinta a porta de vermelho mesmo havendo
+   vencendo junto — o ambar ao lado de um vencido esconderia a urgencia atras
+   da cor mais calma.
+
+   Tem teste porque falha CALADO: escrevi a primeira versao lendo r.vencidos e
+   r.vencendo, e os campos chamam nVencidos e nVencendo. A porta nunca ficaria
+   vermelha, a tela montaria sem erro nenhum, e o produtor pagaria multa.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const _bol = (diasAtras, prazo, valor) => ({
+  nome: "F", valor, valorPago: 0, pago: false, prazoDias: prazo,
+  dataCompra: new Date(Date.UTC(2026, 10, 17) - diasAtras * 86400000).toISOString().substring(0, 10),
+});
+
+function _porta(a, lista) {
+  a.run(`__p = _finPortaBoletos(${JSON.stringify(lista)}, '2026-11-17');`);
+  return { texto: a.run('__p.texto'), classe: a.run('__p.classe').trim() };
+}
+
+test("boletos: sem boleto nenhum a porta fica neutra",()=>{
+  const a=load();
+  const r = _porta(a, []);
+  assert.equal(r.classe, "");
+  assert.match(r.texto, /cadastrado/);
+});
+
+test("boletos: tudo em dia nao pinta a porta",()=>{
+  const a=load();
+  const r = _porta(a, [_bol(2, 60, 500)]);   // vence daqui a 58 dias
+  assert.equal(r.classe, "");
+  assert.match(r.texto, /Nenhum boleto em aberto/);
+});
+
+test("boletos: so vencendo pinta de ambar",()=>{
+  const a=load();
+  const r = _porta(a, [_bol(25, 30, 900)]);  // vence em 5 dias
+  assert.equal(r.classe, "fin-porta-atencao");
+  assert.match(r.texto, /1 vencendo/);
+});
+
+/* O que pegou o erro dos campos: com um vencido, a porta TEM de ficar
+   vermelha. Com nVencidos escrito errado, ela caia no "em aberto" neutro. */
+test("boletos: vencido manda, mesmo com vencendo junto",()=>{
+  const a=load();
+  const r = _porta(a, [_bol(40, 30, 3200), _bol(25, 30, 900)]);
+  assert.equal(r.classe, "fin-porta-vencido");
+  assert.match(r.texto, /1 vencido/);
+  assert.match(r.texto, /1 vencendo/);
+});
+
+test("boletos: boleto pago sai da conta",()=>{
+  const a=load();
+  const pago = Object.assign(_bol(40, 30, 3200), { pago: true });
+  const r = _porta(a, [pago]);
+  assert.equal(r.classe, "");
+  assert.match(r.texto, /Nenhum boleto em aberto/);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
    A LUA
 
    O camarão muda de casca com a lua, e o produtor decide despesca olhando
