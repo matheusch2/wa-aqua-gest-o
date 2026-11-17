@@ -530,8 +530,8 @@ async function abrirConfiguracoes() {
   // o conteudo anterior. Os dados do usuario entram logo em seguida via
   // getSession() (leitura LOCAL, quase instantanea), preenchendo o cabecalho.
   area.innerHTML = `
-    <h3 class="titulo-secao">Configurações</h3>
-    <div class="cfg-wrap">
+    <div class="cfg-wrap cfg-hub">
+      <h3 class="cfg-hub-titulo">Configurações</h3>
       <div class="cfg-header">
         <div class="cfg-header-avatar" id="cfg-avatar"></div>
         <div class="cfg-header-info">
@@ -586,10 +586,11 @@ async function abrirConfiguracoes() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     const user = session?.user;
-    const nome = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Minha fazenda";
+    const nome = _nomeDoProdutor(user, contato) || "Meu perfil";
     const email = user?.email || "";
     const fotoUrl = user?.user_metadata?.avatar_url || null;
-    const ini = nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+    const partes = (nome.match(/\p{L}+/gu) || []).filter(n => !/^(de|da|do|das|dos|e)$/i.test(n));
+    const ini = partes.slice(0, 2).map(n => Array.from(n)[0]).join("").toLocaleUpperCase("pt-BR") || "P";
     const elAvatar = document.getElementById("cfg-avatar");
     const elNome = document.getElementById("cfg-nome");
     const elEmail = document.getElementById("cfg-email");
@@ -1459,19 +1460,19 @@ function _insightsFazenda(lista, hojeYmd, resumo) {
     destaque: true,
   });
 
-  // 2. MAIS PRÓXIMO DA DESPESCA — o único que fala do amanhã.
-  let alvoDespesca = null;
-  for (const v of (lista || [])) {
-    if (!v.dataPovoamento || v.semHistorico || _viveiroPausadoHoje(v)) continue;
-    const dias = calcularDiasCultivo(v.dataPovoamento);
-    if (!alvoDespesca || dias > alvoDespesca.dias) alvoDespesca = { v, dias };
-  }
-  if (alvoDespesca) {
-    const faltam = _CICLO_META_DIAS - alvoDespesca.dias;
+  // 2. ÚLTIMA BIOMETRIA — um viveiro diferente a cada volta dos indicadores.
+  const emCultivo = (lista || []).filter(v =>
+    v && v.dataPovoamento && !v.semHistorico && !_viveiroPausadoHoje(v));
+  if (emCultivo.length) {
+    const v = emCultivo[_insightVolta % emCultivo.length];
+    const bio = (v.biometrias || [])
+      .filter(b => b.data && String(b.data).substring(0, 10) >= String(v.dataPovoamento).substring(0, 10) &&
+        String(b.data).substring(0, 10) <= hojeYmd && Number(b.gramatura) > 0)
+      .slice().sort((a, b) => String(b.data).localeCompare(String(a.data)))[0];
     cards.push({
-      rotulo: "Próxima despesca",
-      valor: faltam > 0 ? `${faltam} dia${faltam !== 1 ? "s" : ""}` : "no ponto",
-      nota: `${alvoDespesca.v.nome} · dia ${alvoDespesca.dias}`,
+      rotulo: "Última biometria",
+      valor: bio ? `${formatarNumeroBR(Number(bio.gramatura), 1)}<i>g</i>` : "Sem registro",
+      nota: bio ? `${v.nome} · ${formatarData(bio.data)}` : v.nome,
     });
   }
 
@@ -1544,15 +1545,43 @@ function _insightsFazenda(lista, hojeYmd, resumo) {
 // sozinho (voltar pra tela inicial, lançar ração) e perder o cartão escolhido a
 // cada redesenho faria o toque parecer que não funcionou.
 let _insightAtual = 0;
+let _insightVolta = 0;
+let _insightTimer = null;
+
+function _insightPararAuto() {
+  clearTimeout(_insightTimer);
+  _insightTimer = null;
+}
+
+function _insightAgendarAuto() {
+  _insightPararAuto();
+  const home = document.getElementById("home-mobile");
+  if (!home?.classList.contains("ativo") ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  _insightTimer = setTimeout(() => {
+    _insightTimer = null;
+    const botao = document.querySelector("#painel-fazenda .hm-heroi-btn");
+    if (!home.classList.contains("ativo") || !botao) return;
+    // Não troca enquanto a aba está oculta ou a pessoa interage com o indicador.
+    if (document.hidden || (botao.matches(":focus-visible, :active") ||
+        (window.matchMedia("(hover: hover)").matches && botao.matches(":hover")))) {
+      _insightAgendarAuto();
+      return;
+    }
+    _insightTrocar();
+  }, 3000);
+}
 
 function _insightTrocar() {
   const n = _insightsFazenda(viveiros, _hojeLocal(), _resumoFazenda(viveiros, _hojeLocal())).length;
-  if (n <= 1) return;
-  _insightAtual = (_insightAtual + 1) % n;
+  if (n <= 1) { _insightPararAuto(); return; }
+  _insightAtual = (Math.min(_insightAtual, n - 1) + 1) % n;
+  if (_insightAtual === 0) _insightVolta++;
   _painelFazenda();
 }
 
 function _painelFazenda() {
+  _insightPararAuto();
   const alvo = document.getElementById("painel-fazenda");
   if (!alvo) return;
   const hoje = _hojeLocal();
@@ -1599,9 +1628,11 @@ function _painelFazenda() {
         ${r.semRacao} viveiro${r.semRacao !== 1 ? "s" : ""} sem ração lançada hoje
       </div>` : ""}
     </div>`;
+  if (cards.length > 1) _insightAgendarAuto();
 }
 
 function esconderMenu() {
+  _insightPararAuto();
   document.getElementById("menuGestao").style.display = "none";
   document.getElementById("home-mobile")?.classList.remove("ativo");
   _armarVoltarNavegador();
@@ -2031,6 +2062,13 @@ function _vvAbrir(index) {
   if (alvo) alvo.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
+function _svConfirmarExclusao(index, botao) {
+  const v = viveiros[index];
+  if (!v || _bloqueioEdicao()) return;
+  if (!window.confirm(`Excluir o viveiro "${v.nome}" da sua lista?`)) return;
+  return excluirViveiro(index, botao);
+}
+
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -2068,14 +2106,15 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         : (viveirosOrdenados.find(v => v.dataPovoamento) || viveirosOrdenados[0]));
 
   const ICO = {
-    biomassa:   `<path d="M5 8h14l1.4 11a2 2 0 0 1-2 2.3H5.6A2 2 0 0 1 3.6 19z"/><path d="M8.5 8V6.2A3.5 3.5 0 0 1 15.5 6.2V8"/>`,
+    povoamento: `<g transform="translate(-1 -3) scale(.78)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><path d="M46 31h12m-6-6v12M8 51q6-5 12 0t12 0t12 0t12 0M8 59q6-5 12 0t12 0t12 0t12 0"/>`,
+    biomassa: `<path d="M9 7h46v5a9 9 0 0 1-9 9H18a9 9 0 0 1-9-9ZM26 21v7m12-7v7M18 28h28l10 29H8Z"/><g transform="translate(19 28) scale(.43)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g>`,
     // Um talhão visto de cima, não uma régua: a régua inclinada a 15px lia
     // como losango.
-    area:       `<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="12" y1="3.5" x2="12" y2="20.5"/>`,
-    biometria:  `<path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 14h6z"/><path d="M19 7l-3 7h6z"/>`,
+    area: `<rect x="20" y="8" width="37" height="37" rx="5"/><path d="M27 22q4-4 8 0t8 0t7 0M27 33q4-4 8 0t8 0t7 0M8 9v36m-4-31 4-5 4 5M4 40l4 5 4-5M20 56h37m-32-4-5 4 5 4m27-8 5 4-5 4"/>`,
+    biometria: `<g transform="translate(3 -6) scale(.85)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><rect x="7" y="49" width="50" height="11" rx="2"/><path d="M17 49v6m10-6v4m10-4v6m10-6v4"/>`,
     agua:       `<path d="M3 8c2.5-2 4.5 2 7 0s4.5-2 7 0"/><path d="M3 13c2.5-2 4.5 2 7 0s4.5-2 7 0"/><path d="M3 18c2.5-2 4.5 2 7 0s4.5-2 7 0"/>`,
   };
-  const svg = (k) => `<svg viewBox="0 0 24 24">${ICO[k]}</svg>`;
+  const svg = (k) => `<svg viewBox="0 0 ${k === "agua" ? "24 24" : "64 64"}" class="${k === "agua" ? "" : "sv-icone-aqua"}" aria-hidden="true" focusable="false">${ICO[k]}</svg>`;
 
   const cartaoAberto = (viveiro) => {
     const i = viveiros.indexOf(viveiro);
@@ -2122,26 +2161,29 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
               : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Vazio`}
           </span>
         </div>
-        <button class="sv-fechar" onclick="event.stopPropagation(); _vvFecharTodos()" title="Fechar" aria-label="Fechar este viveiro"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
-        <button class="sv-lapis" onclick="event.stopPropagation(); editarNomeViveiro(${i})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <details class="sv-opcoes" onkeydown="if(event.key === 'Escape'){this.open=false;this.querySelector('summary').focus();}">
+          <summary aria-label="Opções do viveiro" title="Opções do viveiro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></summary>
+          <div class="sv-opcoes-lista">
+            <button type="button" onclick="this.closest('details').open=false; editarNomeViveiro(${i})">Editar viveiro</button>
+            <button type="button" onclick="_vvFecharTodos()">Recolher card</button>
+            <button type="button" class="sv-opcoes-excluir" onclick="_svConfirmarExclusao(${i}, this)">Excluir viveiro</button>
+          </div>
+        </details>
       </div>
 
       ${emCultivoV ? `
       <div class="sv-ciclo">
-        <div class="sv-barra${passou > 0 ? " sv-barra-passou" : ""}"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
-        <div class="sv-marcos">
-          <span>dia ${dias}</span>
-          <span${passou > 0 ? ` class="sv-passou"` : ""}>${passou > 0
-            ? `${passou} ${passou === 1 ? "dia" : "dias"} além da meta`
-            : `${pct}%`}</span>
-          <span>meta: ${meta} dias</span>
-        </div>
+        <div class="sv-ciclo-resumo"><strong>${dias} ${dias === 1 ? "dia" : "dias"} de cultivo</strong><span>Meta: ${meta} dias</span></div>
+        <div class="sv-barra${passou > 0 ? " sv-barra-passou" : ""}" aria-hidden="true"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
+        <div class="sv-ciclo-nota${passou > 0 ? " sv-passou" : ""}">${passou > 0
+          ? `${passou} ${passou === 1 ? "dia" : "dias"} além da meta`
+          : passou === 0 ? "Meta de cultivo atingida" : `${pct}% da meta de cultivo`}</div>
       </div>` : ""}
 
       <div class="sv-baixo">
       <div class="sv-grade">
         <div class="sv-item">
-          <span class="sv-item-ico sv-item-ico-camarao">🦐</span>
+          <span class="sv-item-ico">${svg("povoamento")}</span>
           <span class="sv-item-txt"><small>Povoamento</small><b>${plsTxt}</b></span>
         </div>
         ${item("biomassa", "Biomassa est.", biomassaTxt)}
@@ -2161,8 +2203,8 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       </div>` : ""}
 
       <button class="sv-abrir" onclick="abrirViveiro(${i})">
-        Abrir detalhes do viveiro
-        <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg>
+        Ver viveiro
+        <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
       </button>
       </div>
     </div>`;
@@ -2623,98 +2665,74 @@ function abrirViveiro(index) {
 
       <div class="painel-info">
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="povoamento" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><g transform="translate(-1 -3) scale(.78)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><path d="M46 31h12m-6-6v12M8 51q6-5 12 0t12 0t12 0t12 0M8 59q6-5 12 0t12 0t12 0t12 0"/></svg></div>
           <small>Povoamento</small>
           <strong>${formatarData(viveiro.dataPovoamento)}</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="laboratorio" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M24 7h16m-12 0v17L13 49q-5 8 5 8h28q10 0 5-8L36 24V7M20 37q6-5 12 0t12 0"/></svg></div>
           <small>Laboratório</small>
           <strong>${_esc(viveiro.laboratorio || "--")}</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="dias" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M30 54H12a5 5 0 0 1-5-5V16a5 5 0 0 1 5-5h34a5 5 0 0 1 5 5v11M18 5v12M40 5v12M7 24h44"/><path d="M18 34h3m10 0h3m-16 9h3"/><circle cx="46" cy="46" r="13"/><path d="M46 38v8l6 4"/></svg></div>
           <small>Dias de cultivo</small>
           <strong>${diasCultivo} dias</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="area" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="20" y="8" width="37" height="37" rx="5"/><path d="M27 22q4-4 8 0t8 0t7 0M27 33q4-4 8 0t8 0t7 0M8 9v36m-4-31 4-5 4 5M4 40l4 5 4-5M20 56h37m-32-4-5 4 5 4m27-8 5 4-5 4"/></svg></div>
           <small>Área do viveiro</small>
           <strong>${_fmtHa(viveiro.tamanho)} ha</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="racao" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m17 10 3 10c-5 11-7 24-5 33h34c2-9 0-22-5-33l3-10c-10 3-20 3-30 0Z"/><path d="M20 20h24"/><circle cx="32" cy="33" r="2" fill="currentColor"/><circle cx="26" cy="41" r="2" fill="currentColor"/><circle cx="38" cy="41" r="2" fill="currentColor"/></svg></div>
           <small>Ração consumida</small>
           <strong>${formatarNumeroBR(totalRacao, 1)} kg</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="custo" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M27 7a25 25 0 1 0 30 30M39 8a25 25 0 0 1 17 16M39 23h-9a6 6 0 0 0 0 12h4a6 6 0 0 1 0 12h-9m7-30v34"/></svg></div>
           <small>Custo parcial</small>
           <strong>${totalCustos > 0 ? "R$ " + formatarNumeroBR(totalCustos, 2) : "--"}</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="biometria" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><g transform="translate(3 -6) scale(.85)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><rect x="7" y="49" width="50" height="11" rx="2"/><path d="M17 49v6m10-6v4m10-4v6m10-6v4"/></svg></div>
           <small>Última biometria</small>
           <strong>${ultimaBiometria} g</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="crescimento" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m7 28 15-15 12 10L56 5M44 5h12v12"/><g transform="translate(14 21) scale(.7)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g></svg></div>
           <small>Média de crescimento</small>
           <strong>${mediaCrescimento}</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="sobrevivencia" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><g transform="translate(-1 -1) scale(.8)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><path d="M47 31c4 4 9 5 13 5v9c0 8-6 13-13 17-7-4-13-9-13-17v-9c4 0 9-1 13-5Z"/><path d="m41 46 4 4 8-9"/></svg></div>
           <small>Sobrevivência est.</small>
           <strong>${sobrevivenciaEstimada}</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="fca" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><g transform="translate(-3 13) scale(.55)"><path d="m17 10 3 10c-5 11-7 24-5 33h34c2-9 0-22-5-33l3-10c-10 3-20 3-30 0Z"/><path d="M20 20h24"/><circle cx="32" cy="33" r="2" fill="currentColor"/><circle cx="26" cy="41" r="2" fill="currentColor"/><circle cx="38" cy="41" r="2" fill="currentColor"/></g><g transform="translate(29 25) scale(.55)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><path d="M24 10q16-8 28 7m-1-9 1 9-9-1M39 55Q23 63 12 49m0 9v-9l9 1"/></svg></div>
           <small>FCA estimado</small>
           <strong>${fciEstimado}</strong>
           ${_fcaDataBio ? `<span class="info-box-nota">em ${formatarData(_fcaDataBio)}</span>` : ""}
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="biomassa" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M9 7h46v5a9 9 0 0 1-9 9H18a9 9 0 0 1-9-9ZM26 21v7m12-7v7M18 28h28l10 29H8Z"/><g transform="translate(19 28) scale(.43)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g></svg></div>
           <small>Biomassa estimada</small>
           <strong>${biomassaAtualStr}</strong>
         </div>
 
         <div class="info-box">
-          <div class="info-box-icone">
-            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-          </div>
+          <div class="info-box-icone info-box-icone-aqua" aria-hidden="true"><svg class="aqua-metrica" data-icone="custo-kg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M40 55H8l6-35h30l3 15M21 20v-7a8 8 0 0 1 16 0v7"/><path d="M20 29v14m0-6 7-6m-7 6 7 6m11-11h-3a4 4 0 0 0 0 8h3m0-8v12q0 4-6 3"/><g transform="translate(29 29) scale(.53)"><circle cx="32" cy="32" r="21"/><path d="M39 23h-9a6 6 0 0 0 0 12h4a6 6 0 0 1 0 12h-9m7-28v32"/></g></svg></div>
           <small>Custo por quilo</small>
           <strong>${custoKgProduzidoStr}</strong>
         </div>
@@ -13674,9 +13692,11 @@ function _cxLinha({ chip, nome, sub, valor, id, pct, acoes }) {
 
 // Desenhos das pastilhas. Traço fino, 24x24, como todo ícone da casa.
 const _CX_ICONES = {
-  racao:    `<path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/>`,
-  probio:   `<path d="M12 2.7S5.5 9.5 5.5 14a6.5 6.5 0 0 0 13 0c0-4.5-6.5-11.3-6.5-11.3z"/>`,
-  calcario: `<path d="M12 2.6 20.5 7v10L12 21.4 3.5 17V7z"/>`,
+  racao:    `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  probio:   `<image href="assets/icone-produto-bombona.svg" width="24" height="24"/>`,
+  calcario: `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  saco:     `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  balde:    `<ellipse cx="12" cy="5" rx="8" ry="2.5"/><path d="m4 5 2 15q6 3 12 0l2-15M5 7v3a7 7 0 0 0 14 0V7"/>`,
   aditivo:  `<path d="M9 2v6.3L3.8 17A2.4 2.4 0 0 0 5.9 21h12.2a2.4 2.4 0 0 0 2.1-4L15 8.3V2"/><line x1="8" y1="2" x2="16" y2="2"/>`,
   // Três pontinhos = um punhado de pós-larva. Qualquer desenho de camarão
   // vira rabisco a 16px; três círculos continuam legíveis.
@@ -13697,7 +13717,10 @@ function _cxCategoriaChave(c) {
   // com o padrão solto a Operação saía com a tigela de ração.
   if (/(^|[^a-z])racao/.test(t)) return "racao";
   if (/larva|povoament|semente/.test(t)) return "larva";
-  if (/probiot|bacter/.test(t)) return "probio";
+  // Embalagens conhecidas têm prioridade sobre a categoria genérica.
+  if (/melac|melass/.test(t)) return "balde";
+  if (/bactinil|acido.*organic|bokash|bocach|potass|cloreto|oxido|dolomit|calcar/.test(t)) return "saco";
+  if (/probiot|bacter|ponddetox|pond.?detox|bm\s*pro|protr/.test(t)) return "probio";
   if (/calcar|dolomit|calcio|cal /.test(t)) return "calcario";
   if (/aditiv|fertiliz|melac|quimic/.test(t)) return "aditivo";
   if (/energia|luz|combustiv|diesel|oleo/.test(t)) return "energia";

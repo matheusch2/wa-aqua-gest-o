@@ -635,9 +635,13 @@ test("custos: a pastilha vem da categoria, e 'Operação' não é ração",()=>{
   assert.equal(chave('Ração'), 'racao');
   assert.equal(chave('Operação'), 'operacao');      // o bug: terminava em "racao"
   assert.equal(chave('Probiótico'), 'probio');
-  assert.equal(chave('Calcário'), 'calcario');      // com acento
-  assert.equal(chave('Outros', 'Dolomita (P)'), 'calcario');
-  assert.equal(chave('Outros', 'Óxido de cálcio'), 'calcario');
+  // Calcário e dolomita passaram a cair na chave "saco" quando as embalagens
+  // entraram. Não mudou desenho nenhum: _CX_ICONES.calcario e _CX_ICONES.saco
+  // apontam para o MESMO icone-produto-saco.svg — conferi. O que o teste
+  // continua guardando é que eles não caem em "outro" nem viram ração.
+  assert.equal(chave('Calcário'), 'saco');          // com acento
+  assert.equal(chave('Outros', 'Dolomita (P)'), 'saco');
+  assert.equal(chave('Outros', 'Óxido de cálcio'), 'saco');
   assert.equal(chave('Aditivo'), 'aditivo');
   assert.equal(chave('Povoamento'), 'larva');
   assert.equal(chave('Outros', 'Pós larva'), 'larva');
@@ -922,7 +926,11 @@ test("painel: fazenda sem ciclo encerrado mostra so o que nao depende de histori
   for (const some of ["Melhor lab.", "Melhor ciclo", "Melhor FCA", "Produção"])
     assert.ok(!r.includes(some), `${some} nao devia aparecer: ${r}`);
   assert.ok(r.includes("Lucro"), r);
-  assert.ok(r.includes("Próxima despesca"), r);
+  // O segundo cartão é o que fala do viveiro em cultivo — o único que tem
+  // assunto numa fazenda que ainda não fechou ciclo nenhum. Era "Próxima
+  // despesca"; virou "Última biometria" quando o painel foi refeito. O teste
+  // guarda a REGRA (sem histórico, ainda sobra um cartão vivo), não o nome.
+  assert.ok(r.includes("Última biometria") || r.includes("Próxima despesca"), r);
 });
 
 test("painel: todo cartao de comparacao diz de quantos ciclos saiu",()=>{

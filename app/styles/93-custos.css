@@ -323,3 +323,9 @@ body.tema-escuro .cx-topo { background: linear-gradient(160deg, #15323a 0%, #0f2
     font-size: 13.5px;
     border-radius: 11px;
 }
+
+/* Imagens de embalagem fornecidas pelo produtor. */
+.cx-ico-racao, .cx-ico-probio, .cx-ico-calcario, .cx-ico-saco { background: transparent; overflow: hidden; }
+.cx-ico-racao svg, .cx-ico-probio svg, .cx-ico-calcario svg, .cx-ico-saco svg { width: 38px; height: 38px; max-width: none; flex-shrink: 0; stroke: none; }
+.cx-ico-balde { background: #e8f1ef; color: #08776a; }
+.cx-ico-balde svg { width: 21px; height: 21px; }

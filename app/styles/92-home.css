@@ -89,7 +89,7 @@
    Um número manda e três acompanham. Quatro do mesmo tamanho disputavam entre
    si e nenhum ganhava o olho. */
 .hm-painel {
-    margin-top: 18px; border-radius: 16px; padding: 15px 16px 14px; color: #fff;
+    margin-top: 18px; border-radius: 16px; padding: 12px 16px 11px; color: #fff;
     /* SEM a bolha de luz, de propósito. Ela está no cabeçalho do viveiro (ver
        95-viveiro.css), que foi onde o dono pediu. Aqui eu tinha posto por
        conta própria, pra os painéis escuros ficarem iguais — ele olhou e
@@ -100,7 +100,7 @@
     background: linear-gradient(150deg, #0c4f49, #073a36);
 }
 .hm-painel-topo {
-    display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 13px;
+    display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px;
 }
 .hm-painel-titulo {
     font-size: 11px; font-weight: 800; letter-spacing: .09em;
@@ -111,20 +111,21 @@
 /* Dois números grandes lado a lado: o que está na água e o que já virou
    dinheiro no ano. Eles fecham o painel em cima; os três pequenos explicam
    embaixo. */
-.hm-herois { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+.hm-herois { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: start; }
 
 .hm-heroi small {
     display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .07em;
     text-transform: uppercase; color: rgba(205,240,233,.62); margin-bottom: 2px;
 }
-.hm-heroi b { display: block; font-size: 27px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+.hm-heroi { min-width: 0; }
+.hm-heroi b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
 .hm-heroi b i { font-style: normal; font-size: 13px; font-weight: 700; opacity: .7; margin-left: 2px; }
 
 /* Verde claro no lucro: é a única cifra do painel que representa dinheiro que
    já entrou. O branco fica com a biomassa, que ainda está no fundo. */
 .hm-heroi-lucro b { color: #6ee7a8; }
 
-.hm-risco { height: 1px; background: rgba(255,255,255,.11); margin: 13px 0 12px; }
+.hm-risco { height: 1px; background: rgba(255,255,255,.11); margin: 8px 0 9px; }
 .hm-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .hm-num small {
     display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
@@ -136,7 +137,7 @@
 /* Uma LINHA de pendência, com um número — nunca uma lista, que cresceria com
    o tamanho da fazenda. Some sozinha quando está tudo lançado. */
 .hm-alerta {
-    display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 12px;
+    display: flex; align-items: center; gap: 8px; margin-top: 9px; padding-top: 9px;
     border-top: 1px solid rgba(255,255,255,.10);
     font-size: 12.5px; color: #ffd98a; font-weight: 700;
 }
@@ -221,27 +222,11 @@ body.tema-escuro #aviso-boletos .boleto-banner-texto strong { color: #e5e7eb; }
 body.tema-escuro #aviso-boletos .boleto-banner-texto span { color: #9ca3af; }
 body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto strong { color: #fca5a5; }
 
-/* ---------------------------------------------------------------------------
-   O cartão que roda
-
-   O lugar do "Lucro 2026" virou um botão: toca e vem o próximo número. Ele
-   precisa parecer tocável sem virar outro botão na tela — por isso só ganha
-   o toque de fundo e as bolinhas, e não borda nem cor própria.
-
-   Troca SÓ ao toque. Número que muda sozinho enquanto a pessoa lê é a forma
-   mais rápida de ela desistir de ler — e aqui ela vai querer parar num e
-   olhar.
-   --------------------------------------------------------------------------- */
-/* min-height pra o painel NÃO pular de altura quando se troca de cartão. Um
-   rótulo ou uma nota que quebre em duas linhas empurra tudo o que vem abaixo,
-   e aí a tela inteira se mexe a cada toque.
-   Uma linha de nota basta pra todos. Cheguei a reservar duas, porque a nota
-   do laboratório trazia o lucro médio e quebrava — o dono olhou e disse que
-   bastava o nome. Melhor assim: a reserva de duas linhas custava 16px em
-   todos os seis cartões por causa de um. */
+/* Indicador compacto: alterna a cada 6s e também ao toque.
+   A altura reserva uma linha de valor e de nota, sem espaço vazio extra. */
 .hm-heroi-btn {
-    min-height: 92px;
-    width: auto; margin: 0; padding: 6px 8px 5px;
+    min-height: 68px; height: 68px; box-sizing: border-box; min-width: 0;
+    width: 100%; margin: 0; padding: 0;
     background: none; border: none; border-radius: 11px;
     text-align: left; font-family: inherit; cursor: pointer;
     transition: background .15s ease;
@@ -259,9 +244,15 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
     color: rgba(255,255,255,.55); line-height: 1.3;
 }
 
-.hm-bolinhas { display: flex; gap: 4px; margin-top: 7px; }
+.hm-bolinhas { display: flex; gap: 4px; margin-top: 5px; }
 .hm-bolinhas i {
     width: 5px; height: 5px; border-radius: 50%;
     background: rgba(255,255,255,.25);
 }
 .hm-bolinhas i.ativa { background: #6ee7a8; }
+
+/* Nomes longos não empurram o card nem a coluna vizinha. */
+.hm-heroi-btn small, .hm-heroi-btn b, .hm-heroi-btn em {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hm-heroi-btn:focus-visible { outline: 2px solid #7fd9c9; outline-offset: 3px; }

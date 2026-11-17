@@ -674,3 +674,86 @@ body.tema-escuro .faq-item { background: #1f2937; border-color: #374151; }
 body.tema-escuro .faq-pergunta { color: #f3f4f6; }
 body.tema-escuro .faq-seta { stroke: #34d399; }
 body.tema-escuro .faq-resposta-inner p { color: #d1d5db; }
+
+/* Hub compacto: cabeçalho verde e opções em linhas, exclusivo desta tela. */
+.cfg-hub {
+    background: #f3f5f4;
+    border-radius: 22px;
+    padding: 0 14px 16px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+.cfg-hub-titulo {
+    margin: 0 -14px;
+    padding: 15px 20px 12px;
+    background: transparent;
+    color: #253c34;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .06em;
+}
+.cfg-hub .cfg-header {
+    margin: 0 0 14px;
+    padding: 11px 12px;
+    border: 1px solid #dce8e2;
+    border-left: 4px solid #159b65;
+    border-radius: 16px;
+    background: #fff;
+    gap: 10px;
+}
+.cfg-hub .cfg-header-avatar {
+    width: 40px; height: 40px;
+    background: #e0f1ec;
+    color: #086b63;
+    border: 0;
+    box-sizing: border-box;
+    font-size: 18px;
+}
+.cfg-hub .cfg-header-info { flex: 1; }
+.cfg-hub .cfg-header-nome { color: #173d32; font-size: 16px; font-weight: 650; }
+.cfg-hub .cfg-header-email { color: #667a71; font-size: 12px; }
+.cfg-hub .cfg-header-online { color: #188252; font-size: 10px; font-weight: 500; }
+.cfg-hub .cfg-lista { gap: 9px; margin-bottom: 9px; }
+.cfg-hub .cfg-item {
+    min-height: 52px;
+    padding: 13px 14px;
+    gap: 12px;
+    border: 1px solid #e7ebe9;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(19, 49, 41, .025);
+}
+.cfg-hub .cfg-item:hover { background: #f9fcfa; border-color: #c7d9d2; }
+.cfg-hub .cfg-item:active { background: #eaf3ef; }
+.cfg-hub .cfg-item:focus-visible { outline: 2px solid #158477; outline-offset: 2px; }
+.cfg-hub .cfg-item-ico { width: 22px; height: 24px; border-radius: 0; background: transparent; }
+.cfg-hub .cfg-item-ico svg { width: 21px; height: 21px; stroke: #60736c; stroke-width: 1.8; }
+.cfg-hub .cfg-item-titulo { font-size: 15px; font-weight: 600; color: #253c34; line-height: 1.35; }
+.cfg-hub .cfg-item-chevron { width: 16px; height: 16px; stroke: #81918b; stroke-width: 2; }
+/* Mantém as descrições disponíveis para leitores de tela. */
+.cfg-hub .cfg-item-sub {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.cfg-hub .cfg-item:disabled .cfg-item-sub {
+    position: static; width: auto; height: auto; margin: 0;
+    clip-path: none; white-space: normal; color: #60736c;
+}
+.cfg-hub .cfg-item-sair { background: #fff; border-color: #eadfdd; margin-top: 0; }
+.cfg-hub .cfg-item-sair .cfg-item-titulo { color: #b4433b; }
+.cfg-hub .cfg-item-sair .cfg-item-ico svg { stroke: #b4433b; }
+.cfg-hub .cfg-perigo { text-align: center; margin-top: 16px; }
+.cfg-hub .cfg-excluir-link { font-size: 12px; }
+body.tema-escuro .cfg-hub { background: #111e1b; }
+body.tema-escuro .cfg-hub-titulo { background: transparent; color: #e8f1ec; }
+body.tema-escuro .cfg-hub .cfg-header { background: #1c2c27; border-color: #30433b; border-left-color: #46c08c; }
+body.tema-escuro .cfg-hub .cfg-header-nome { color: #e8f1ec; }
+body.tema-escuro .cfg-hub .cfg-header-email { color: #aec0b7; }
+body.tema-escuro .cfg-hub .cfg-header-online { color: #83dbad; }
+body.tema-escuro .cfg-hub .cfg-item { background: #1c2c27; border-color: #30433b; }
+body.tema-escuro .cfg-hub .cfg-item:hover { background: #263b32; }
+body.tema-escuro .cfg-hub .cfg-item-titulo { color: #e8f1ec; }
+body.tema-escuro .cfg-hub .cfg-item-ico { background: transparent; }
+body.tema-escuro .cfg-hub .cfg-item-ico svg { stroke: #a0b9ad; }
+body.tema-escuro .cfg-hub .cfg-item-sair .cfg-item-titulo { color: #f6aaa1; }
+body.tema-escuro .cfg-hub .cfg-item-sair .cfg-item-ico svg { stroke: #f6aaa1; }
