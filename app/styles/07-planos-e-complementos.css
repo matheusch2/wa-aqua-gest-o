@@ -566,3 +566,67 @@ body.tema-escuro .dd-sem-preco { color: #fbbf24; }
     flex-shrink: 0; width: 16px; height: 16px;
     fill: none; stroke: #85988f; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
 }
+
+/* Comparativo: leitura por etapas, campos confortáveis e resultado destacado. */
+.comparativo-v2 { --cmp-ink:#173c38; --cmp-muted:#607570; --cmp-line:#dce8e3; --cmp-soft:#f3f8f6; --cmp-card:#fff; color:var(--cmp-ink); }
+.comparativo-v2 .cfg-wrap { max-width:760px; margin:0 auto; }
+.comparativo-v2 .cmp-cabecalho { display:flex; justify-content:space-between; align-items:center; gap:16px; max-width:760px; margin:0 auto 22px; padding:20px; border-radius:20px; background:linear-gradient(120deg,#0c4f49,#087b6a); color:#fff; box-shadow:0 8px 24px #0b5b4912; }
+.comparativo-v2 .cmp-eyebrow { font-size:9px; letter-spacing:1.5px; font-weight:700; color:#b7e7d9; }
+.comparativo-v2 .cmp-cabecalho h3 { margin:5px 0; color:#fff; font-size:26px; font-weight:800; letter-spacing:-.7px; text-align:left; }
+.comparativo-v2 .cmp-cabecalho p { margin:0; font-size:12px; line-height:1.5; color:#d2eee6; }
+.comparativo-v2 .cmp-cabecalho img { width:64px; height:64px; object-fit:contain; flex-shrink:0; }
+.comparativo-v2 .campo-form, .comparativo-v2 .simfut-linha2 > * { min-width:0; }
+.comparativo-v2 .campo-label { gap:6px; margin-bottom:7px; }
+.comparativo-v2 .campo-label label { font-size:12px; font-weight:700; color:var(--cmp-ink); }
+.comparativo-v2 input, .comparativo-v2 select { box-sizing:border-box; min-width:0; min-height:46px; border:1px solid var(--cmp-line); border-radius:12px; background:var(--cmp-card); color:var(--cmp-ink); font-size:16px; padding:11px 12px; box-shadow:none; }
+.comparativo-v2 input::placeholder { color:#82958f; font-size:13px; }
+.comparativo-v2 .campo-input-unidade { border:1px solid var(--cmp-line); border-radius:12px; overflow:hidden; background:var(--cmp-card); box-shadow:none; }
+.comparativo-v2 .campo-input-unidade input { width:100%; border:0; border-radius:0; padding:11px 10px; font-size:16px; }
+.comparativo-v2 .campo-unidade { flex-shrink:0; padding:0 9px; border-left:1px solid var(--cmp-line); background:var(--cmp-soft); color:var(--cmp-muted); font-size:11px; font-weight:600; }
+.comparativo-v2 :is(input,select,button):focus-visible { outline:2px solid #12967c; outline-offset:3px; }
+.comparativo-v2 .campo-input-unidade:focus-within { border-color:#12967c; box-shadow:0 0 0 3px #12967c15; }
+.comparativo-v2 .simfut-bloco { padding:0; margin-top:18px; border:0; background:transparent; }
+.comparativo-v2 .cmp-etapa { display:flex; gap:10px; align-items:center; margin:26px 0 14px; padding-top:20px; border-top:1px solid var(--cmp-line); }
+.comparativo-v2 .cmp-etapa:first-child { margin-top:0; padding-top:0; border:0; }
+.comparativo-v2 .cmp-etapa > span { display:grid; place-items:center; width:30px; height:30px; flex-shrink:0; border-radius:10px; background:#e5f4ed; color:#14765e; font-size:11px; font-weight:800; }
+.comparativo-v2 .cmp-etapa h4 { margin:0; font-size:16px; letter-spacing:-.3px; color:var(--cmp-ink); }
+.comparativo-v2 .cmp-etapa p { margin:3px 0 0; color:var(--cmp-muted); font-size:11px; line-height:1.5; }
+.comparativo-v2 .simfut-linha2 { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.comparativo-v2 .simfut-nota { padding:8px 0; color:var(--cmp-muted); font-size:12px; }
+.comparativo-v2 .simfut-nota b { color:var(--cmp-ink); }
+.comparativo-v2 .simfut-resumo { gap:6px; margin:8px 0 0; padding:12px 5px; background:var(--cmp-soft); border:1px solid var(--cmp-line); border-radius:14px; }
+.comparativo-v2 .simfut-resumo > div { min-width:0; padding:2px; background:transparent; border:0; border-radius:0; }
+.comparativo-v2 .simfut-resumo > div + div { border-left:1px solid var(--cmp-line); }
+.comparativo-v2 .simfut-resumo small { font-size:8px; color:var(--cmp-muted); letter-spacing:.4px; margin-bottom:5px; }
+.comparativo-v2 .simfut-resumo b { font-size:13px; color:#14765e; font-variant-numeric:tabular-nums; }
+.comparativo-v2 .simfut-sec { color:var(--cmp-muted); font-size:11px; text-transform:none; letter-spacing:0; line-height:1.6; margin:8px 0 12px; }
+.comparativo-v2 .simfut-domingo { min-height:58px; padding:10px 12px; border:1px solid var(--cmp-line); background:var(--cmp-soft); border-radius:13px; margin-bottom:12px; }
+.comparativo-v2 .simfut-domingo-txt b { color:var(--cmp-ink); font-size:12px; }
+.comparativo-v2 .simfut-domingo-txt small { color:var(--cmp-muted); font-size:10px; margin-top:3px; }
+.comparativo-v2 .simfut-semanas { gap:10px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.comparativo-v2 .simfut-semana { padding:12px; background:var(--cmp-soft); border:1px solid var(--cmp-line); border-radius:14px; min-width:0; }
+.comparativo-v2 .simfut-semana label { color:var(--cmp-ink); font-size:12px; margin-bottom:9px; }
+.comparativo-v2 .simfut-semana-dias { display:block; color:var(--cmp-muted); font-size:9px; line-height:1.5; margin-top:4px; font-weight:500; }
+.comparativo-v2 .simfut-semana-tot { color:var(--cmp-muted); font-size:11px; margin-top:7px; }
+.comparativo-v2 #simFut-resultado { padding:14px; border:1px solid var(--cmp-line); border-radius:16px; background:var(--cmp-card); }
+.comparativo-v2 #simFut-resultado:empty { display:none; }
+.comparativo-v2 .simfut-veredito { padding:14px; border:1px solid; border-radius:12px; font-size:13px; line-height:1.6; margin-bottom:16px; }
+.comparativo-v2 .sim-sobr-tab.comparar { column-gap:0; grid-template-columns:.7fr 1fr 1fr 1fr; margin-bottom:18px; font-variant-numeric:tabular-nums; }
+.comparativo-v2 .sim-sobr-tab > div > span { padding:10px 3px; font-size:11px; border-bottom-color:var(--cmp-line); text-align:right; overflow-wrap:anywhere; }
+.comparativo-v2 .sim-sobr-tab > div > span:first-child { text-align:left; }
+.comparativo-v2 .sim-sobr-tab > .sim-sobr-cab > span { font-size:8px; color:var(--cmp-muted); text-transform:none; letter-spacing:0; }
+.comparativo-v2 .sim-sobr-tab .ss-ganho { background:var(--cmp-soft); font-weight:800; }
+.comparativo-v2 .sim-sobr-tab .ss-hoje { color:var(--cmp-muted); }
+.comparativo-v2 .sim-sobr-custo { gap:12px; padding:8px 0; color:var(--cmp-muted); font-size:11px; line-height:1.5; }
+.comparativo-v2 .sim-sobr-custo b { color:var(--cmp-ink); text-align:right; flex-shrink:0; }
+.comparativo-v2 .sim-sobr-custo-total { border-color:var(--cmp-line); margin-top:8px; padding-top:12px; }
+.comparativo-v2 .botao-voltar-form { border:1px solid var(--cmp-line); border-radius:12px; min-height:46px; background:var(--cmp-soft); color:var(--cmp-ink); font-size:14px; }
+body.tema-escuro .comparativo-v2 { --cmp-ink:#e0f1e9; --cmp-muted:#a3bcb1; --cmp-line:#314b43; --cmp-soft:#1b332c; --cmp-card:#142820; }
+body.tema-escuro .comparativo-v2 .cmp-etapa > span { background:#234a3b; color:#8ee3bd; }
+body.tema-escuro .comparativo-v2 .simfut-resumo b { color:#8ee3bd; }
+@media(max-width:359px) {
+ .comparativo-v2 .simfut-semanas, .comparativo-v2 .simfut-linha2 { grid-template-columns:minmax(0,1fr); }
+ .comparativo-v2 .cmp-cabecalho { padding:16px; }
+ .comparativo-v2 .cmp-cabecalho img { width:48px; height:48px; }
+ .comparativo-v2 #simFut-resultado { padding:10px; }
+}
