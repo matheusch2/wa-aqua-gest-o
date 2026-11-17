@@ -528,3 +528,55 @@ body.tema-escuro .simfut-nota b { color: #f3f4f6; }
 body.tema-escuro .rh-row-desp.aberto { background: #052e2b; border-color: #0f4d47; }
 body.tema-escuro .desp-valor { background: #064e3b; color: #6ee7b7; }
 body.tema-escuro .dd-sem-preco { color: #fbbf24; }
+
+/* ── Menu do Simular venda ───────────────────────────────────────────────────
+   Tinha um círculo de 110px com um cifrão e o título embaixo: 360px para
+   escrever "Simular venda" numa tela aberta pelo botão "Simular venda". No
+   lugar vai a biomassa que está na água, que é o que a pessoa veio simular —
+   sem ela, as três portas são perguntas sem contexto. */
+.simv-estado {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 12px 14px;
+    border-radius: 15px;
+    background: linear-gradient(150deg, #0c4f49, #073a36);
+    color: #fff;
+}
+.simv-estado small {
+    display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; color: rgba(205,240,233,.72); margin-bottom: 3px;
+}
+.simv-estado b {
+    display: block; font-size: 17px; font-weight: 800; letter-spacing: -.02em;
+    line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.simv-estado b i {
+    font-style: normal; font-size: 11px; font-weight: 700; opacity: .72; margin-left: 3px;
+}
+
+.simv-portas { display: flex; flex-direction: column; gap: 9px; }
+.simv-porta {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 13px 13px 13px 12px;
+    border: 1px solid #e1eae5; border-radius: 15px; background: #fff;
+    box-shadow: 0 2px 10px rgba(7,72,57,.045);
+    font: inherit; text-align: left; cursor: pointer;
+}
+.simv-porta:active { background: #f6faf8; }
+.simv-porta-ico {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 12px; background: #e9f4ef;
+}
+.simv-porta-ico svg {
+    width: 19px; height: 19px;
+    fill: none; stroke: #0d6b55; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.simv-porta-txt { flex: 1; min-width: 0; }
+.simv-porta-txt b { display: block; font-size: 15px; font-weight: 800; color: #143b33; letter-spacing: -.01em; }
+.simv-porta-txt small { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: #5f6e6b; }
+.simv-porta-seta {
+    flex-shrink: 0; width: 16px; height: 16px;
+    fill: none; stroke: #85988f; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+}

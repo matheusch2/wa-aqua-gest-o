@@ -113,9 +113,13 @@
    embaixo. */
 .hm-herois { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: start; }
 
+/* .72 e nao .62: medido contra o verde realmente pintado do painel
+   (rgb 12,79,73), .62 dava 4,05:1 — abaixo do minimo para texto. Sao os
+   rotulos que dizem O QUE cada numero e; ilegiveis, o painel vira uma fila
+   de numeros sem nome. Com .72 da 4,86:1. */
 .hm-heroi small {
     display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .07em;
-    text-transform: uppercase; color: rgba(205,240,233,.62); margin-bottom: 2px;
+    text-transform: uppercase; color: rgba(205,240,233,.72); margin-bottom: 2px;
 }
 .hm-heroi { min-width: 0; }
 .hm-heroi b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
@@ -129,7 +133,7 @@
 .hm-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .hm-num small {
     display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
-    text-transform: uppercase; color: rgba(205,240,233,.62); margin-bottom: 3px;
+    text-transform: uppercase; color: rgba(205,240,233,.72); margin-bottom: 3px;
 }
 .hm-num b { display: block; font-size: 15.5px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
 .hm-num b i { font-style: normal; font-size: 12px; font-weight: 700; opacity: .72; margin-left: 2px; }

@@ -7957,6 +7957,7 @@ function _simFutAbrir(modo, titulo) {
       <div id="projDesp-painel"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
     </div>`;
+  _simPreSelecionar(ativos, _projDespRender);
 }
 
 // Redesenha o painel inteiro: usado quando muda o viveiro, o peso-alvo ou o
@@ -8041,13 +8042,18 @@ function abrirSimularVenda() {
   const area = document.getElementById("area-gestao");
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
+  /* Antes aqui havia um círculo de 110px com um cifrão e o título embaixo:
+     360px para escrever "Simular venda" numa tela aberta pelo botão "Simular
+     venda". No lugar vai o que a pessoa veio simular — a biomassa que está na
+     água agora. Sem ela, as três portas são perguntas sem contexto. */
+  const r = _resumoFazenda(viveiros, _hojeLocal());
   const topo = `
-    <div class="form-topo" style="margin-top:8px">
-      <div class="form-icone-circulo">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-      <h2 class="form-titulo">Simular venda</h2>
-    </div>`;
+    <h3 class="titulo-secao" style="margin:8px 0 12px">Simular venda</h3>
+    ${r.emCultivo ? `<div class="simv-estado">
+      <div><small>Na água hoje</small><b>${formatarNumeroBR(r.biomassa, 0)}<i>kg</i></b></div>
+      <div><small>Viveiros</small><b>${r.emCultivo}<i>em cultivo</i></b></div>
+      <div><small>Peso médio</small><b>${formatarNumeroBR(r.pesoMedio, 1)}<i>g</i></b></div>
+    </div>` : ""}`;
 
   if (!ativos.length) {
     area.innerHTML = topo + `
@@ -8056,35 +8062,23 @@ function abrirSimularVenda() {
     return;
   }
 
+  const porta = (acao, titulo, sub, ico) => `
+    <button class="simv-porta" onclick="${acao}">
+      <span class="simv-porta-ico"><svg viewBox="0 0 24 24">${ico}</svg></span>
+      <span class="simv-porta-txt"><b>${titulo}</b><small>${sub}</small></span>
+      <svg class="simv-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>`;
+
   area.innerHTML = topo + `
-    <button class="hc-viv-card" onclick="abrirVenderHoje()">
-      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-      <span class="hc-viv-txt">
-        <b>Vender hoje</b>
-        <small>Com a biomassa que está no viveiro agora</small>
-      </span>
-      <span class="hc-viv-seta">›</span>
-    </button>
-
-    <button class="hc-viv-card" onclick="abrirProjetarDespesca()">
-      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span>
-      <span class="hc-viv-txt">
-        <b>Projetar despesca</b>
-        <small>Levando o camarão até o peso que você escolher</small>
-      </span>
-      <span class="hc-viv-seta">›</span>
-    </button>
-
-    <button class="hc-viv-card" onclick="abrirComparativo()">
-      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span>
-      <span class="hc-viv-txt">
-        <b>Comparativo</b>
-        <small>Vale mais vender hoje ou esperar até o peso-alvo?</small>
-      </span>
-      <span class="hc-viv-seta">›</span>
-    </button>
-
-    <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+    <div class="simv-portas">
+      ${porta("abrirVenderHoje()", "Vender hoje", "Com o que está no viveiro agora",
+        `<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/>`)}
+      ${porta("abrirProjetarDespesca()", "Projetar despesca", "Levando até o peso que você escolher",
+        `<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>`)}
+      ${porta("abrirComparativo()", "Comparativo", "Vender agora ou esperar?",
+        `<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>`)}
+    </div>
+    <button class="botao-voltar-form" style="margin-top:12px" onclick="voltarMenuGestao()">Voltar</button>`;
 }
 
 function abrirVenderHoje() {
@@ -8143,6 +8137,25 @@ function abrirVenderHoje() {
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
     </div>
   `;
+  _simPreSelecionar(ativos, _simVendaTrocouViveiro);
+}
+
+/*
+ * Com UM viveiro em cultivo, "Selecione o viveiro" é uma pergunta de resposta
+ * única: a tela abria vazia esperando a pessoa escolher a única opção que
+ * existe. Agora já abre com ele escolhido e os números na tela.
+ *
+ * Com dois ou mais NÃO escolhe nada, de propósito. Chutar o primeiro faria a
+ * tela mostrar números de um viveiro que ninguém pediu, e esse é o tipo de
+ * engano que passa despercebido — a pessoa lê o lucro do V1 achando que é o
+ * do V3.
+ */
+function _simPreSelecionar(ativos, aoTrocar) {
+  if (!ativos || ativos.length !== 1) return;
+  const sel = document.getElementById("simVenda-viveiro");
+  if (!sel) return;
+  sel.value = String(ativos[0].i);
+  try { aoTrocar(); } catch (e) { /* a tela abre mesmo se o cálculo falhar */ }
 }
 
 // Troca de viveiro: a biomassa digitada era do viveiro anterior, então volta
