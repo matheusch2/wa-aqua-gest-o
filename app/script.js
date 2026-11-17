@@ -649,8 +649,23 @@ const _WMO = {
 };
 function _wmo(codigo) { return _WMO[codigo] || ["🌡️", "Tempo"]; }
 
+// Cenários seguem o código meteorológico, nunca a chance de chuva isolada.
+function _climaCenario(codigo) {
+  if ([95, 96, 99].includes(codigo)) return "trovoada";
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(codigo)) return "chuva";
+  if ([71, 73, 75, 77, 85, 86].includes(codigo)) return "neve";
+  if ([3, 45, 48].includes(codigo)) return "nublado";
+  if ([1, 2].includes(codigo)) return "parcial";
+  return codigo === 0 ? "limpo" : "neutro";
+}
+function _climaIcone(codigo, noite, fallback) {
+  if (noite && [0, 1, 2].includes(codigo)) return codigo === 0 ? "🌙" : "☁️";
+  if (noite && [51, 53, 80].includes(codigo)) return "🌧️";
+  return fallback || _wmo(codigo)[0];
+}
+
 let _clima = null;                       // o que a tira mostra; null = não mostra
-const _CLIMA_CACHE = "wa-clima";
+const _CLIMA_CACHE = "wa-clima-cenario-v2";
 const _CLIMA_VALIDADE = 30 * 60 * 1000;  // meia hora
 
 // A tira redesenha a cada três segundos. Sem este guarda, cada redesenho
@@ -695,7 +710,7 @@ async function carregarClima() {
   try {
     const url = "https://api.open-meteo.com/v1/forecast"
       + `?latitude=${onde.lat}&longitude=${onde.lon}`
-      + "&current=temperature_2m,weathercode"
+      + "&current=temperature_2m,weathercode,is_day"
       + "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
       + "&timezone=auto&forecast_days=5";
     const [meteo, cidade] = await Promise.all([
@@ -704,16 +719,20 @@ async function carregarClima() {
     ]);
     if (!meteo || !meteo.current || !meteo.daily) return;
 
-    const [emoji, descricao] = _wmo(meteo.current.weathercode);
+    const [iconeDia, descricao] = _wmo(meteo.current.weathercode);
+    const noite = meteo.current.is_day === 0;
+    const emoji = _climaIcone(meteo.current.weathercode, noite, iconeDia);
     const previsao = (meteo.daily.time || []).slice(1).map((data, i) => ({
       data,
+      codigo: meteo.daily.weathercode[i + 1],
       emoji: _wmo(meteo.daily.weathercode[i + 1])[0],
       max: Math.round(meteo.daily.temperature_2m_max[i + 1]),
       min: Math.round(meteo.daily.temperature_2m_min[i + 1]),
       chuva: meteo.daily.precipitation_probability_max
         ? meteo.daily.precipitation_probability_max[i + 1] : null,
     }));
-    _clima = { temp: Math.round(meteo.current.temperature_2m), emoji, descricao, cidade, previsao };
+    _clima = { temp: Math.round(meteo.current.temperature_2m), emoji, descricao, cidade, previsao,
+      codigo: meteo.current.weathercode, noite };
     try { sessionStorage.setItem(_CLIMA_CACHE, JSON.stringify({ quando: Date.now(), dados: _clima })); } catch (e) {}
   } catch (e) { /* sem tempo hoje; a tira mostra só a lua */ }
 }
@@ -738,7 +757,7 @@ function mostrarClimaLua() {
   const semana = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
   const previsao = (_clima && _clima.previsao || []).map(d => {
     const data = new Date(d.data + "T12:00:00");
-    return `<div class="cl-dia">
+    return `<div class="cl-dia cl-cenario cl-${_climaCenario(d.codigo)}">
       <span class="cl-dia-nome">${semana[data.getDay()]} ${String(data.getDate()).padStart(2, "0")}</span>
       <span class="cl-dia-ico">${d.emoji}</span>
       <span class="cl-dia-chuva">${d.chuva === null || d.chuva === undefined ? "" : d.chuva + "%"}</span>
@@ -750,7 +769,7 @@ function mostrarClimaLua() {
     <div class="form-lancamento">
 
       ${_clima ? `
-      <div class="cl-agora">
+      <div class="cl-agora cl-cenario cl-${_climaCenario(_clima.codigo)}${_clima.noite ? " cl-noite" : ""}">
         <span class="cl-agora-ico">${_clima.emoji}</span>
         <div class="cl-agora-txt">
           <b>${_clima.temp}°C</b>
@@ -764,7 +783,7 @@ function mostrarClimaLua() {
         <p>O tempo precisa da localização do aparelho. Libere o acesso nas configurações do celular e abra o app de novo.</p>
       </div>`}
 
-      <div class="cl-bloco">
+      <div class="cl-bloco cl-lunar">
         <h3>A lua</h3>
         <div class="cl-lua">
           <span class="cl-lua-ico">${f.emoji}</span>
