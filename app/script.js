@@ -373,6 +373,12 @@ const PRECOS_VALIDADE_DIAS = 10;
 // coisa que muda quando a referência passar a ser de outra região.
 const PRECOS_TITULO = "Preço referência · Vale do Jaguaribe";
 
+// Velocidade da fita, em pixels por segundo. É daqui que sai a duração da
+// animação — a largura do trilho muda toda semana, conforme os tamanhos
+// publicados, e o que tem de ficar igual é o tempo que o número passa diante
+// do olho. Um valor só para mexer; nada mais depende da largura.
+const PRECOS_FITA_PXS = 40;
+
 // Decide o que a faixa pode mostrar. Função pura -> tem teste.
 function _precosFrescos(linhas, hojeYmd, validadeDias = PRECOS_VALIDADE_DIAS) {
   const lista = (linhas || []).filter(l => l && Number(l.gramas) > 0 && Number(l.preco) > 0);
@@ -455,12 +461,15 @@ function _fitaPrecos() {
 
   // A duração sai da LARGURA, não é fixa. Com os 26s de antes a fita andava a
   // uma velocidade diferente a cada semana: seis tamanhos passavam devagar e
-  // vinte passavam a 102px/s, rápido demais para ler o número. Preso em 80px/s
-  // a leitura é sempre a mesma, publique ele os tamanhos que publicar.
+  // vinte passavam a 102px/s, rápido demais para ler o número. Amarrada à
+  // velocidade, a leitura é sempre a mesma, publique ele os tamanhos que
+  // publicar.
   const trilho = alvo.querySelector(".fp-trilho");
   if (trilho) {
     const larguraCopia = trilho.getBoundingClientRect().width / 2;
-    if (larguraCopia > 0) trilho.style.animationDuration = Math.max(18, Math.round(larguraCopia / 80)) + "s";
+    if (larguraCopia > 0) {
+      trilho.style.animationDuration = Math.round(larguraCopia / PRECOS_FITA_PXS) + "s";
+    }
   }
 
   // Os preços chegam do banco depois que a tela já montou, então quem monta a
