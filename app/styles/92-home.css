@@ -256,3 +256,104 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hm-heroi-btn:focus-visible { outline: 2px solid #7fd9c9; outline-offset: 3px; }
+
+/* ── A tira do ambiente: o tempo e a lua, alternando ─────────────────────────
+   Fica no alto do painel "Sua fazenda hoje", acima dos números. Linha fina de
+   propósito: é informação de contexto, não indicador da fazenda — o que manda
+   na tela continua sendo a biomassa e o cartão que roda. */
+.hm-amb {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    margin: 0 0 11px;
+    padding: 7px 10px 7px 9px;
+    border: 1px solid #e3ecea;
+    border-radius: 11px;
+    background: #f7faf9;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.hm-amb:active { background: #eef4f2; }
+.hm-amb-ico { font-size: 19px; line-height: 1; flex-shrink: 0; }
+/* min-width:0 para o nome da fase poder encolher em vez de empurrar os pontos
+   e a seta para fora da tira. "Minguante côncava" é o pior caso. */
+.hm-amb-txt {
+    flex: 1; min-width: 0;
+    display: flex; align-items: baseline; gap: 6px;
+    overflow: hidden; white-space: nowrap;
+}
+.hm-amb-txt b {
+    font-size: 13.5px; font-weight: 800; color: #10322f;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.hm-amb-txt small { font-size: 11.5px; font-weight: 600; color: #5f6e6b; flex-shrink: 0; }
+.hm-amb-pontos { display: flex; gap: 4px; flex-shrink: 0; }
+.hm-amb-pontos i {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #cbdbd7;
+}
+.hm-amb-pontos i.ativa { background: #0a7d62; }
+.hm-amb-seta {
+    width: 14px; height: 14px; flex-shrink: 0;
+    fill: none; stroke: #7a918c; stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ── Tela do tempo e da lua ──────────────────────────────────────────────── */
+.cl-agora {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 16px 15px;
+    border: 1px solid #cfdcd9; border-radius: 16px;
+    background: #fff; margin-bottom: 14px;
+}
+.cl-agora-ico { font-size: 42px; line-height: 1; }
+.cl-agora-txt b { display: block; font-size: 30px; font-weight: 800; color: #10322f; letter-spacing: -.5px; }
+.cl-agora-txt span { font-size: 13px; font-weight: 600; color: #5f6e6b; }
+
+.cl-bloco { margin-bottom: 14px; }
+.cl-bloco h3 {
+    font-size: 11.5px; font-weight: 800; color: #46605b;
+    letter-spacing: .5px; text-transform: uppercase; margin: 0 2px 8px;
+}
+.cl-dias, .cl-lua-itens {
+    background: #fff; border: 1px solid #cfdcd9; border-radius: 14px; overflow: hidden;
+}
+.cl-dia {
+    display: grid; grid-template-columns: 62px 28px 1fr auto;
+    align-items: center; gap: 8px; padding: 9px 13px;
+    position: relative;
+}
+.cl-dia + .cl-dia::before {
+    content: ""; position: absolute; left: 13px; right: 13px; top: 0;
+    height: 1px; background: #f0f5f3;
+}
+.cl-dia-nome { font-size: 13px; font-weight: 700; color: #10322f; }
+.cl-dia-ico { font-size: 17px; }
+.cl-dia-chuva { font-size: 11.5px; font-weight: 700; color: #2c6ca8; }
+.cl-dia-temp { font-size: 13.5px; font-weight: 600; color: #65736f; font-variant-numeric: tabular-nums; }
+.cl-dia-temp b { font-weight: 800; color: #10322f; }
+
+.cl-lua { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; padding: 0 2px; }
+.cl-lua-ico { font-size: 34px; line-height: 1; }
+.cl-lua b { font-size: 18px; font-weight: 800; color: #10322f; }
+.cl-lua-item {
+    display: flex; align-items: center; gap: 11px; padding: 11px 13px;
+    position: relative;
+}
+.cl-lua-item + .cl-lua-item::before {
+    content: ""; position: absolute; left: 13px; right: 13px; top: 0;
+    height: 1px; background: #f0f5f3;
+}
+.cl-lua-item-ico { font-size: 20px; line-height: 1; }
+.cl-lua-item small { display: block; font-size: 11px; font-weight: 700; color: #5f6e6b; }
+.cl-lua-item b { font-size: 14px; font-weight: 800; color: #10322f; }
+
+.cl-sem {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 15px; margin-bottom: 14px;
+    border: 1px solid #e8e2cf; border-radius: 14px; background: #fdfaf1;
+}
+.cl-sem span { font-size: 24px; line-height: 1; }
+.cl-sem p { margin: 0; font-size: 13px; line-height: 1.5; color: #6b5e3a; }

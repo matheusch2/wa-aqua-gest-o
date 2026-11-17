@@ -462,6 +462,71 @@ test("preços: lista vazia ou suja não quebra",()=>{
     assert.equal(a.run('__r.itens.length'), 0, l);
   }
 });
+/* ═══════════════════════════════════════════════════════════════════════════
+   A LUA
+
+   O camarão muda de casca com a lua, e o produtor decide despesca olhando
+   isso. Então "lua cheia em 8 dias" não é enfeite: é número que vira decisão.
+
+   A conta ingênua (mês sinódico médio) erra até 0,9 dia — medi. Dezessete
+   horas de erro viram um dia inteiro na contagem. Por isso os testes batem
+   contra EFEMÉRIDES PUBLICADAS, não contra a própria conta: um teste que só
+   conferisse a função com ela mesma passaria igualmente com a conta errada.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const LUAS = [   // instantes publicados, UTC
+  ["nova",  "2026-11-09T07:02:00Z"],
+  ["cheia", "2026-11-24T14:53:00Z"],
+  ["cheia", "2026-12-24T01:28:00Z"],
+];
+
+test("lua: o instante bate com as efemérides, com minutos de folga",()=>{
+  const a=load();
+  for (const [tipo, quando] of LUAS) {
+    const alvo = Date.parse(quando);
+    // procura a partir de dez dias antes, para cair nessa lunação
+    const achou = a.run(`_luaProxima(${alvo - 10 * 86400000}, ${tipo === "cheia"})`);
+    const erroMin = Math.abs(achou - alvo) / 60000;
+    assert.ok(erroMin < 10, `${tipo} ${quando}: errou ${erroMin.toFixed(0)} min`);
+  }
+});
+
+test("lua: o nome da fase acompanha o céu",()=>{
+  const a=load();
+  const nome = (iso) => a.run(`_luaFase(${Date.parse(iso)}).nome`);
+  assert.equal(nome("2026-11-09T07:02:00Z"), "Lua nova");
+  assert.equal(nome("2026-11-24T14:53:00Z"), "Lua cheia");
+  // entre as duas, crescendo
+  assert.ok(/[Cc]rescente/.test(nome("2026-11-16T12:00:00Z")), nome("2026-11-16T12:00:00Z"));
+  // depois da cheia, minguando
+  assert.ok(/[Mm]inguante/.test(nome("2026-12-01T12:00:00Z")), nome("2026-12-01T12:00:00Z"));
+});
+
+/* Este é o que pega a conta ingênua. Em 17/11/2026 a lua cheia é dia 24: são
+   7 dias. A conta do mês médio dava a cheia 16h depois do instante real e
+   respondia 8. Um dia de diferença numa decisão de despesca. */
+test("lua: a contagem de dias é a do calendário, não a da fração",()=>{
+  const a=load();
+  const dias = (iso, cheia) => a.run(`_luaDiasAte(${Date.parse(iso)}, ${cheia})`);
+  assert.equal(dias("2026-11-17T09:00:00Z", true), 7);    // cheia em 24/11
+  assert.equal(dias("2026-11-23T23:00:00Z", true), 1);    // amanhã
+  assert.equal(dias("2026-11-24T10:00:00Z", true), 0);    // hoje
+  assert.equal(dias("2026-11-01T12:00:00Z", false), 8);   // nova em 09/11
+});
+
+test("lua: as lunações se seguem sem buraco nem repetição",()=>{
+  const a=load();
+  let antes = null;
+  for (let m = 0; m < 14; m++) {
+    const t = a.run(`_luaProxima(${Date.UTC(2026, 0, 1) + m * 30 * 86400000}, false)`);
+    assert.ok(t > 0, "achou lua no mês " + m);
+    if (antes !== null && t !== antes) {
+      const dias = (t - antes) / 86400000;
+      assert.ok(dias > 29 && dias < 30.5, `lunação de ${dias.toFixed(2)} dias`);
+    }
+    antes = t;
+  }
+});
+
 /* A faixa só existe na tela inicial — lá dentro, num lançamento, ela é
    barulho. A pegadinha é que "tela inicial" muda com o tamanho: no celular é o
    painel da fazenda, e a lista de viveiros é tela de DENTRO; no desktop não há

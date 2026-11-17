@@ -478,6 +478,280 @@ function _fitaPrecos() {
   _fitaPrecosNaInicial();
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUA E CLIMA
+
+   Duas informações que o produtor hoje busca fora do app. A lua porque o
+   camarão muda de casca com ela — é a conversa de todo viveiro — e o tempo
+   porque chuva muda o manejo do dia.
+
+   A LUA É CONTA, NÃO CONSULTA: não precisa de internet, de permissão nem de
+   servidor, e funciona com o aparelho no modo avião no meio do viveiro.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Instante da lua nova (k inteiro) ou cheia (k + 0,5), pelo capítulo 49 do
+ * Meeus. Devolve Dia Juliano.
+ *
+ * A conta ingênua — mês sinódico médio de 29,530588 dias a partir de uma lua
+ * conhecida — erra até 0,9 dia, porque a órbita da Lua é elíptica e a lunação
+ * real varia quase um dia para mais ou para menos. Medi: para a lua nova de
+ * 09/11/2026 ela dava 17 horas de atraso. Dezessete horas viram um dia inteiro
+ * no "lua cheia em N dias", e esse número alguém usa para decidir quando
+ * despescar. Com os termos periódicos abaixo o erro cai para 1 ou 2 minutos
+ * contra as efemérides publicadas — conferi em três datas.
+ *
+ * O que sobra de erro é o ΔT (diferença entre tempo dinâmico e UTC, uns 70
+ * segundos em 2026). Para contar dias, não faz diferença.
+ */
+function _luaJDE(k) {
+  const RAD = Math.PI / 180;
+  const sen = (g) => Math.sin(g * RAD);
+  const T = k / 1236.85;
+  const T2 = T * T, T3 = T2 * T, T4 = T3 * T;
+  const E  = 1 - 0.002516 * T - 0.0000074 * T2;
+  const M  = 2.5534   +  29.10535670 * k - 0.0000014 * T2 - 0.00000011 * T3;
+  const Ml = 201.5643 + 385.81693528 * k + 0.0107582 * T2 + 0.00001238 * T3 - 0.000000058 * T4;
+  const F  = 160.7108 + 390.67050284 * k - 0.0016118 * T2 - 0.00000227 * T3 + 0.000000011 * T4;
+  const Om = 124.7746 -   1.56375588 * k + 0.0020672 * T2 + 0.00000215 * T3;
+  const cheia = Math.abs(k - Math.floor(k) - 0.5) < 1e-9;
+
+  return 2451550.09766 + 29.530588861 * k + 0.00015437 * T2 - 0.000000150 * T3 + 0.00000000073 * T4
+    + (cheia ? -0.40614 : -0.40720) * sen(Ml)
+    + (cheia ?  0.17302 :  0.17241) * E * sen(M)
+    + (cheia ?  0.01614 :  0.01608) * sen(2 * Ml)
+    + (cheia ?  0.01043 :  0.01039) * sen(2 * F)
+    + (cheia ?  0.00734 :  0.00739) * E * sen(Ml - M)
+    + (cheia ? -0.00515 : -0.00514) * E * sen(Ml + M)
+    + (cheia ?  0.00209 :  0.00208) * E * E * sen(2 * M)
+    - 0.00111 * sen(Ml - 2 * F)      - 0.00057 * sen(Ml + 2 * F)
+    + 0.00056 * E * sen(2 * Ml + M)  - 0.00042 * sen(3 * Ml)
+    + 0.00042 * E * sen(M + 2 * F)   + 0.00038 * E * sen(M - 2 * F)
+    - 0.00024 * E * sen(2 * Ml - M)  - 0.00017 * sen(Om)
+    - 0.00007 * sen(Ml + 2 * M)      + 0.00004 * sen(2 * Ml - 2 * F)
+    + 0.00004 * sen(3 * M)           + 0.00003 * sen(Ml + M - 2 * F)
+    + 0.00003 * sen(2 * Ml + 2 * F)  - 0.00003 * sen(Ml + M + 2 * F)
+    + 0.00003 * sen(Ml - M + 2 * F)  - 0.00002 * sen(Ml - M - 2 * F)
+    - 0.00002 * sen(3 * Ml + M)      + 0.00002 * sen(4 * Ml);
+}
+
+const _JD_PARA_MS = (jd) => (jd - 2440587.5) * 86400000;
+
+// k aproximado da lunação de uma data: 12,3685 lunações por ano.
+function _luaK(ms) {
+  const ano = new Date(ms).getUTCFullYear();
+  return (ano + (ms - Date.UTC(ano, 0, 1)) / 31557600000 - 2000) * 12.3685;
+}
+
+// Instante (ms) da próxima lua nova (cheia = false) ou cheia, a partir de ms.
+// Começa duas lunações atrás porque o k aproximado pode adiantar.
+function _luaProxima(ms, cheia) {
+  let k = Math.floor(_luaK(ms)) - 2 + (cheia ? 0.5 : 0);
+  for (let i = 0; i < 6; i++, k++) {
+    const t = _JD_PARA_MS(_luaJDE(k));
+    if (t >= ms) return t;
+  }
+  return null;
+}
+
+/* Os oito nomes. A fração sai da posição ENTRE as duas luas novas que cercam
+   a data, não da divisão pelo mês médio: perto do quarto minguante as duas
+   contas discordam e o app mostraria um nome e o céu, outro. */
+const _LUA_FASES = [
+  ["🌑", "Lua nova"],          ["🌒", "Crescente côncava"],
+  ["🌓", "Quarto crescente"],  ["🌔", "Crescente gibosa"],
+  ["🌕", "Lua cheia"],         ["🌖", "Minguante gibosa"],
+  ["🌗", "Quarto minguante"],  ["🌘", "Minguante côncava"],
+];
+
+function _luaFase(ms) {
+  let anterior = null, seguinte = null;
+  for (let k = Math.floor(_luaK(ms)) - 2; k < Math.floor(_luaK(ms)) + 3; k++) {
+    const t = _JD_PARA_MS(_luaJDE(k));
+    if (t <= ms) anterior = t; else { seguinte = t; break; }
+  }
+  if (!anterior || !seguinte || seguinte <= anterior) return { frac: 0, emoji: "🌑", nome: "Lua nova" };
+  const frac = (ms - anterior) / (seguinte - anterior);
+  // Cada nome vale um oitavo da lunação, centrado no seu ponto: a "lua cheia"
+  // não é um instante na boca do produtor, é a noite em que ela está cheia.
+  const i = Math.floor((frac + 1 / 16) * 8) % 8;
+  return { frac, emoji: _LUA_FASES[i][0], nome: _LUA_FASES[i][1] };
+}
+
+// Dias inteiros até a próxima nova/cheia, contados do dia de hoje: o produtor
+// pensa em "daqui a quantos dias", não em horas fracionadas.
+function _luaDiasAte(ms, cheia) {
+  const alvo = _luaProxima(ms, cheia);
+  if (!alvo) return null;
+  const d0 = new Date(ms); d0.setHours(0, 0, 0, 0);
+  const d1 = new Date(alvo); d1.setHours(0, 0, 0, 0);
+  return Math.round((d1 - d0) / 86400000);
+}
+
+
+/* ── O TEMPO ─────────────────────────────────────────────────────────────────
+   Esse não é conta: precisa da localização do aparelho e de internet. Por isso
+   ele FALHA PARA O LADO DE SUMIR — negou a permissão, está sem sinal, a API
+   caiu: o app abre igual e a tira mostra só a lua. Nada aqui pode atrasar a
+   entrada de ninguém.
+
+   As coordenadas vão arredondadas na segunda casa, cerca de 1,1 km. É o
+   bastante para o tempo (os modelos têm malha de quilômetros) e para achar a
+   cidade, e evita entregar a porteira da fazenda do cliente para um serviço
+   de fora. O que não é preciso mandar, não se manda.                        */
+
+// Código WMO -> como se diz aqui.
+const _WMO = {
+  0:  ["☀️", "Céu limpo"],     1:  ["🌤️", "Pouco nublado"],
+  2:  ["⛅", "Parcial"],        3:  ["☁️", "Encoberto"],
+  45: ["🌫️", "Névoa"],         48: ["🌫️", "Névoa"],
+  51: ["🌦️", "Garoa leve"],    53: ["🌦️", "Garoa"],         55: ["🌧️", "Garoa forte"],
+  56: ["🌧️", "Garoa gelada"],  57: ["🌧️", "Garoa gelada"],
+  61: ["🌧️", "Chuva leve"],    63: ["🌧️", "Chuva"],         65: ["🌧️", "Chuva forte"],
+  66: ["🌧️", "Chuva gelada"],  67: ["🌧️", "Chuva gelada"],
+  71: ["🌨️", "Neve"],          73: ["🌨️", "Neve"],          75: ["🌨️", "Neve forte"],
+  80: ["🌦️", "Pancadas"],      81: ["🌧️", "Pancadas"],      82: ["⛈️", "Pancadas fortes"],
+  95: ["⛈️", "Trovoada"],      96: ["⛈️", "Trovoada"],       99: ["⛈️", "Trovoada com granizo"],
+};
+function _wmo(codigo) { return _WMO[codigo] || ["🌡️", "Tempo"]; }
+
+let _clima = null;                       // o que a tira mostra; null = não mostra
+const _CLIMA_CACHE = "wa-clima";
+const _CLIMA_VALIDADE = 30 * 60 * 1000;  // meia hora
+
+// A tira redesenha a cada três segundos. Sem este guarda, cada redesenho
+// bateria na API — e serviço gratuito que apanha assim bloqueia o cliente.
+function _climaDoCache() {
+  try {
+    const bruto = sessionStorage.getItem(_CLIMA_CACHE);
+    if (!bruto) return null;
+    const g = JSON.parse(bruto);
+    if (!g || Date.now() - g.quando > _CLIMA_VALIDADE) return null;
+    return g.dados;
+  } catch (e) { return null; }
+}
+
+function _ondeEstou() {
+  return new Promise((ok) => {
+    if (!navigator.geolocation) { ok(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (p) => ok({ lat: Math.round(p.coords.latitude * 100) / 100,
+                  lon: Math.round(p.coords.longitude * 100) / 100 }),
+      () => ok(null),
+      { timeout: 8000, maximumAge: 30 * 60 * 1000 });
+  });
+}
+
+async function _buscarCidade(lat, lon) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
+      { headers: { "Accept-Language": "pt-BR" } });
+    const d = await r.json();
+    const a = d && d.address;
+    return (a && (a.city || a.town || a.village || a.municipality || a.county)) || "";
+  } catch (e) { return ""; }
+}
+
+async function carregarClima() {
+  const guardado = _climaDoCache();
+  if (guardado) { _clima = guardado; return; }
+
+  const onde = await _ondeEstou();
+  if (!onde) return;
+  try {
+    const url = "https://api.open-meteo.com/v1/forecast"
+      + `?latitude=${onde.lat}&longitude=${onde.lon}`
+      + "&current=temperature_2m,weathercode"
+      + "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+      + "&timezone=auto&forecast_days=5";
+    const [meteo, cidade] = await Promise.all([
+      fetch(url).then(r => r.json()),
+      _buscarCidade(onde.lat, onde.lon),
+    ]);
+    if (!meteo || !meteo.current || !meteo.daily) return;
+
+    const [emoji, descricao] = _wmo(meteo.current.weathercode);
+    const previsao = (meteo.daily.time || []).slice(1).map((data, i) => ({
+      data,
+      emoji: _wmo(meteo.daily.weathercode[i + 1])[0],
+      max: Math.round(meteo.daily.temperature_2m_max[i + 1]),
+      min: Math.round(meteo.daily.temperature_2m_min[i + 1]),
+      chuva: meteo.daily.precipitation_probability_max
+        ? meteo.daily.precipitation_probability_max[i + 1] : null,
+    }));
+    _clima = { temp: Math.round(meteo.current.temperature_2m), emoji, descricao, cidade, previsao };
+    try { sessionStorage.setItem(_CLIMA_CACHE, JSON.stringify({ quando: Date.now(), dados: _clima })); } catch (e) {}
+  } catch (e) { /* sem tempo hoje; a tira mostra só a lua */ }
+}
+
+/*
+ * O tempo e a lua por extenso, atrás do toque na tira.
+ *
+ * Uma tela, e não dois modais como seria o natural: o app inteiro navega por
+ * telas, com o voltar do celular funcionando. Um modal aqui seria o único da
+ * casa, e o botão de voltar do aparelho fecharia o app em vez do modal.
+ */
+function mostrarClimaLua() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const agora = Date.now();
+  const f = _luaFase(agora);
+  const cheia = _luaProxima(agora, true), nova = _luaProxima(agora, false);
+  const dC = _luaDiasAte(agora, true), dN = _luaDiasAte(agora, false);
+  const emDias = (q) => q === 0 ? "hoje" : q === 1 ? "amanhã" : `em ${q} dias`;
+  const dia = (ms) => formatarData(new Date(ms).toISOString().substring(0, 10));
+
+  const semana = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  const previsao = (_clima && _clima.previsao || []).map(d => {
+    const data = new Date(d.data + "T12:00:00");
+    return `<div class="cl-dia">
+      <span class="cl-dia-nome">${semana[data.getDay()]} ${String(data.getDate()).padStart(2, "0")}</span>
+      <span class="cl-dia-ico">${d.emoji}</span>
+      <span class="cl-dia-chuva">${d.chuva === null || d.chuva === undefined ? "" : d.chuva + "%"}</span>
+      <span class="cl-dia-temp"><b>${d.max}°</b> ${d.min}°</span>
+    </div>`;
+  }).join("");
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+
+      ${_clima ? `
+      <div class="cl-agora">
+        <span class="cl-agora-ico">${_clima.emoji}</span>
+        <div class="cl-agora-txt">
+          <b>${_clima.temp}°C</b>
+          <span>${_esc(_clima.descricao)}${_clima.cidade ? ` · ${_esc(_clima.cidade)}` : ""}</span>
+        </div>
+      </div>
+      ${previsao ? `<div class="cl-bloco"><h3>Próximos dias</h3><div class="cl-dias">${previsao}</div></div>` : ""}
+      ` : `
+      <div class="cl-sem">
+        <span>🌦️</span>
+        <p>O tempo precisa da localização do aparelho. Libere o acesso nas configurações do celular e abra o app de novo.</p>
+      </div>`}
+
+      <div class="cl-bloco">
+        <h3>A lua</h3>
+        <div class="cl-lua">
+          <span class="cl-lua-ico">${f.emoji}</span>
+          <b>${f.nome}</b>
+        </div>
+        <div class="cl-lua-itens">
+          <div class="cl-lua-item">
+            <span class="cl-lua-item-ico">🌕</span>
+            <div><small>Próxima lua cheia</small><b>${emDias(dC)} · ${dia(cheia)}</b></div>
+          </div>
+          <div class="cl-lua-item">
+            <span class="cl-lua-item-ico">🌑</span>
+            <div><small>Próxima lua nova</small><b>${emDias(dN)} · ${dia(nova)}</b></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
+    </div>`;
+}
+
 /*
  * A tabela parada, atrás do "ver tudo" da fita.
  *
@@ -1692,6 +1966,34 @@ let _insightAtual = 0;
 let _insightVolta = 0;
 let _insightTimer = null;
 
+/* A tira do ambiente, no alto do painel: o tempo e a lua, um de cada vez.
+   Vira sozinha a cada dois tiques do painel — seis segundos — e não a cada
+   três como o cartão de baixo. Duas coisas piscando no mesmo compasso o olho
+   aceita; em compassos diferentes a tela parece inquieta.
+
+   A lua está SEMPRE aqui, porque é conta e não depende de nada. O tempo entra
+   quando chega; não chegando, a tira fica só com a lua e ninguém vê buraco. */
+let _ambienteAtual = 0;
+let _painelTiques = 0;
+
+function _ambienteCards(ms) {
+  const cards = [];
+  if (_clima) {
+    cards.push({ emoji: _clima.emoji, titulo: `${_clima.temp}°C`, sub: _clima.descricao });
+  }
+  const f = _luaFase(ms);
+  const dC = _luaDiasAte(ms, true), dN = _luaDiasAte(ms, false);
+  // Mostra a que vier primeiro: é a próxima que muda alguma coisa no viveiro.
+  const perto = dC <= dN
+    ? { q: dC, nome: "lua cheia" }
+    : { q: dN, nome: "lua nova" };
+  const sub = perto.q === 0 ? `${perto.nome} hoje`
+            : perto.q === 1 ? `${perto.nome} amanhã`
+            : `${perto.nome} em ${perto.q}d`;
+  cards.push({ emoji: f.emoji, titulo: f.nome, sub });
+  return cards;
+}
+
 function _insightPararAuto() {
   clearTimeout(_insightTimer);
   _insightTimer = null;
@@ -1702,6 +2004,8 @@ function _insightAgendarAuto() {
   const home = document.getElementById("home-mobile");
   if (!home?.classList.contains("ativo") ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Quem desligou animação no aparelho não vê nada girar — nem a tira nem o
+  // cartão. Os dois continuam lá, parados no primeiro, e o toque funciona.
   _insightTimer = setTimeout(() => {
     _insightTimer = null;
     const botao = document.querySelector("#painel-fazenda .hm-heroi-btn");
@@ -1712,8 +2016,25 @@ function _insightAgendarAuto() {
       _insightAgendarAuto();
       return;
     }
-    _insightTrocar();
+    _painelTique();
   }, 3000);
+}
+
+/* O relógio do painel. O toque no cartão de baixo chama _insightTrocar() e
+   mexe só nele — quem tocou pediu OUTRO NÚMERO, não que a tira de cima
+   pulasse junto. */
+function _painelTique() {
+  _painelTiques++;
+  const amb = _ambienteCards(Date.now());
+  if (amb.length > 1 && _painelTiques % 2 === 0) {
+    _ambienteAtual = (_ambienteAtual + 1) % amb.length;
+  }
+  const n = _insightsFazenda(viveiros, _hojeLocal(), _resumoFazenda(viveiros, _hojeLocal())).length;
+  if (n > 1) {
+    _insightAtual = (Math.min(_insightAtual, n - 1) + 1) % n;
+    if (_insightAtual === 0) _insightVolta++;
+  }
+  _painelFazenda();
 }
 
 function _insightTrocar() {
@@ -1741,12 +2062,23 @@ function _painelFazenda() {
   const idx = Math.min(_insightAtual, cards.length - 1);
   const card = cards[idx];
 
+  const amb = _ambienteCards(Date.now());
+  const iAmb = Math.min(_ambienteAtual, amb.length - 1);
+  const ambiente = amb[iAmb];
+
   alvo.innerHTML = `
     <div class="hm-painel">
       <div class="hm-painel-topo">
         <span class="hm-painel-titulo">Sua fazenda hoje</span>
         <span class="hm-painel-data">${formatarData(hoje)}</span>
       </div>
+      ${ambiente ? `<button class="hm-amb" onclick="mostrarClimaLua()" aria-label="Ver o tempo e a lua">
+        <span class="hm-amb-ico">${ambiente.emoji}</span>
+        <span class="hm-amb-txt"><b>${_esc(ambiente.titulo)}</b><small>${_esc(ambiente.sub)}</small></span>
+        ${amb.length > 1 ? `<span class="hm-amb-pontos">${amb.map((_, i) =>
+          `<i class="${i === iAmb ? "ativa" : ""}"></i>`).join("")}</span>` : ""}
+        <svg class="hm-amb-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>` : ""}
       <div class="hm-herois">
         <div class="hm-heroi">
           <small>Biomassa estimada</small>
@@ -1772,7 +2104,7 @@ function _painelFazenda() {
         ${r.semRacao} viveiro${r.semRacao !== 1 ? "s" : ""} sem ração lançada hoje
       </div>` : ""}
     </div>`;
-  if (cards.length > 1) _insightAgendarAuto();
+  if (cards.length > 1 || amb.length > 1) _insightAgendarAuto();
 }
 
 function esconderMenu() {
@@ -14677,6 +15009,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       // esconde o espaço. Não trava a entrada — roda solta, e se falhar o app
       // abre sem faixa.
       carregarPrecosCamarao().then(_fitaPrecos).catch(() => {});
+      // O tempo chega quando chegar: a tira do painel já nasce com a lua, que
+      // é conta, e ganha o tempo no primeiro redesenho depois da resposta.
+      // Soltos de propósito — nada disso pode atrasar a entrada de ninguém.
+      carregarClima().then(() => _painelFazenda()).catch(() => {});
       if (window.innerWidth >= 900) {
         mostrarListaViveiros();
       } else {
