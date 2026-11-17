@@ -439,7 +439,19 @@ function _fitaPrecos() {
     `<span class="fp-item fp-fonte">atualizado ${quando}</span>`;
   // O conteúdo entra DUAS vezes: o trilho desliza a largura de uma cópia e
   // volta ao começo, então a emenda não aparece e a fita parece sem fim.
-  alvo.innerHTML = `<div class="fp-fita"><div class="fp-trilho">${corpo}${corpo}</div></div>`;
+  //
+  // O "ver tudo" fica FORA da fita, parado na ponta direita. Dentro dela ele
+  // passaria e sumiria, e aí o atalho só existiria para quem estivesse olhando
+  // na hora certa — que é o mesmo que não existir. Numa fita que anda, o
+  // convite tem de ficar quieto.
+  alvo.innerHTML = `
+    <button type="button" class="fp-barra" onclick="mostrarTabelaPrecos()"
+            aria-label="Ver todos os preços numa tabela">
+      <span class="fp-fita"><span class="fp-trilho">${corpo}${corpo}</span></span>
+      <span class="fp-ver">ver tudo
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </span>
+    </button>`;
 
   // A duração sai da LARGURA, não é fixa. Com os 26s de antes a fita andava a
   // uma velocidade diferente a cada semana: seis tamanhos passavam devagar e
@@ -455,6 +467,62 @@ function _fitaPrecos() {
   // faixa também decide na hora se ela aparece. Sem isto, abrir o app direto
   // numa tela de dentro faria a faixa nascer visível onde não devia.
   _fitaPrecosNaInicial();
+}
+
+/*
+ * A tabela parada, atrás do "ver tudo" da fita.
+ *
+ * A fita é boa para o olhar de passagem e péssima para procurar: o produtor
+ * quer O tamanho dele, e numa fita que anda ele espera a volta inteira. Aqui
+ * estão os mesmos números, parados, na ordem do tamanho.
+ *
+ * Mesma fonte dos dados e mesma regra de validade da fita: se o preço
+ * envelheceu, não há tabela — preço velho é pior que preço nenhum, e abrir
+ * exceção aqui seria desfazer a regra por uma porta lateral.
+ */
+function mostrarTabelaPrecos() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  const { itens, dias } = _precosFrescos(precosCamarao, _hojeLocal());
+  const quando = dias === 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
+
+  if (!itens.length) {
+    area.innerHTML = `
+      <div class="form-lancamento">
+        <div class="tp-cab"><h2>Preço referência</h2><span>${_esc(PRECOS_TITULO.split("·").pop().trim())}</span></div>
+        <p class="tp-vazio">Não há preço publicado no momento.</p>
+        <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
+      </div>`;
+    return;
+  }
+
+  const linha = (l) => {
+    const v = _variacaoPreco(l);
+    // A coluna da variação existe em TODA linha, mesmo vazia: sem ela as
+    // colunas de preço dançavam conforme umas linhas tinham seta e outras não.
+    const var_ = v === null
+      ? `<span class="tp-var tp-sem">—</span>`
+      : `<span class="tp-var ${v > 0 ? "fp-sobe" : "fp-desce"}">${v > 0 ? "▲" : "▼"} ${formatarNumeroBR(Math.abs(v), 2)}</span>`;
+    return `<div class="tp-linha">
+      <span class="tp-tam">${Number(l.gramas)} g</span>
+      <span class="tp-val">R$ ${formatarNumeroBR(Number(l.preco), 2)}<small>/kg</small></span>
+      ${var_}
+    </div>`;
+  };
+
+  area.innerHTML = `
+    <div class="form-lancamento">
+      <div class="tp-cab">
+        <h2>Preço referência</h2>
+        <span>${_esc(PRECOS_TITULO.split("·").pop().trim())} · atualizado ${quando}</span>
+      </div>
+      <div class="tp-lista">${itens.map(linha).join("")}</div>
+      <p class="tp-nota">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Preço do quilo, por tamanho. É referência de mercado para orientar a negociação, não o preço da sua venda.</span>
+      </p>
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
+    </div>`;
 }
 
 /*

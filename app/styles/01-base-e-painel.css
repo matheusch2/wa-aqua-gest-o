@@ -1600,15 +1600,60 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
    o produtor está num número só e tem vinte passando em cima. */
 #fita-precos.fp-fora { display: none; }
 
-.fp-fita {
+/* A barra inteira é o botão que abre a tabela parada. Branco, e não o cinza
+   da casa: o fundo da página é #f5f5f5, e no cinza ela derretia nele —
+   deixava de ser uma tira e virava um vão entre o cabeçalho e o primeiro
+   card. No branco tem borda própria sem precisar de linha nenhuma. */
+.fp-barra {
+    display: flex;
+    align-items: stretch;
+    width: calc(100% + 36px);
     margin: 10px -18px -12px;        /* vaza a largura toda, rente ao rodapé do topo */
+    border: none;
+    background: #fff;
+    font: inherit;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
+}
+.fp-barra:active { background: #f4f7f6; }
+.fp-fita {
+    flex: 1;
+    min-width: 0;                    /* sem isto o trilho empurra o "ver tudo" para fora */
+    display: block;
     padding: 8px 0;
     overflow: hidden;
-    /* Branco, e não o cinza da casa: o fundo da página é #f5f5f5, e no cinza
-       a fita derretia nele — deixava de ser uma tira e virava um vão entre o
-       cabeçalho e o primeiro card. No branco ela tem borda própria sem
-       precisar de linha nenhuma. */
-    background: #fff;
+}
+/* O convite para abrir a tabela. Fica FORA da fita, parado: dentro dela ele
+   passaria e sumiria, e o atalho só existiria para quem estivesse olhando na
+   hora certa — que é o mesmo que não existir. */
+.fp-ver {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 13px 0 4px;
+    color: #0a7d62;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.fp-ver svg {
+    width: 13px; height: 13px;
+    fill: none; stroke: currentColor; stroke-width: 2.6;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+/* Os números somem no branco antes de bater no botão, em vez de serem
+   cortados no meio do algarismo. */
+.fp-ver::before {
+    content: "";
+    position: absolute;
+    left: -26px; top: 0; bottom: 0;
+    width: 26px;
+    background: linear-gradient(to right, rgba(255,255,255,0), #fff 85%);
 }
 .fp-trilho {
     display: flex;
@@ -1658,6 +1703,59 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
 @keyframes fp-passa {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
+}
+
+/* ── Tabela de preços parada, atrás do "ver tudo" ────────────────────────────
+   A fita é boa para o olhar de passagem e péssima para procurar: o produtor
+   quer O tamanho dele, e numa fita que anda ele espera a volta inteira. As
+   linhas são finas de propósito — são vinte e tantas, e a tela é um índice,
+   não um formulário. */
+/* text-align explícito: uma regra geral centraliza h2 dentro do
+   .form-lancamento, e o título saía centralizado com o subtítulo à esquerda.
+   O resto do app alinha os dois à esquerda — conferi no cadastro de viveiro. */
+.tp-cab { padding: 2px 2px 14px; text-align: left; }
+.tp-cab h2 { font-size: 21px; font-weight: 800; color: #10322f; margin: 0 0 2px; text-align: left; }
+.tp-cab span { font-size: 12.5px; font-weight: 600; color: #5f6e6b; }
+
+.tp-lista {
+    background: #fff;
+    border: 1px solid #cfdcd9;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.tp-linha {
+    display: grid;
+    grid-template-columns: 58px 1fr 76px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border-bottom: 1px solid #eef3f2;
+}
+.tp-linha:last-child { border-bottom: none; }
+.tp-tam { font-size: 14px; font-weight: 800; color: #111827; }
+.tp-val { font-size: 15px; font-weight: 800; color: #0a7d62; text-align: right; }
+.tp-val small { font-size: 10px; font-weight: 700; color: #5a6763; margin-left: 1px; }
+/* A coluna existe em toda linha, mesmo vazia: sem ela as colunas de preço
+   dançavam conforme umas linhas tinham seta e outras não. */
+.tp-var {
+    justify-self: end;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+}
+/* O traço não é enfeite: diz "este tamanho não tem com o que comparar ainda".
+   No cinza anterior media 2,1:1 — invisível. Este dá 3,1:1. */
+.tp-sem { background: none; color: #879592; padding: 0; }
+.tp-vazio { padding: 24px 4px; font-size: 14px; color: #5f6e6b; text-align: center; }
+.tp-nota {
+    display: flex; gap: 8px; align-items: flex-start;
+    margin: 12px 2px 16px;
+    font-size: 12px; line-height: 1.5; color: #5f6e6b;
+}
+.tp-nota svg {
+    flex-shrink: 0; width: 15px; height: 15px; margin-top: 1px;
+    fill: none; stroke: #8aa09b; stroke-width: 2; stroke-linecap: round;
 }
 
 /* Quem desligou animação no aparelho lê parado, arrastando com o dedo. */
