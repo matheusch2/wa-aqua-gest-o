@@ -7985,7 +7985,12 @@ function _simFutAbrir(modo, titulo) {
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
   area.innerHTML = `
-    <h3 class="titulo-secao">${titulo}</h3>
+    <div class="${modo === "comparativo" ? "comparativo-v2" : ""}">
+    ${modo === "comparativo" ? `<header class="cmp-cabecalho">
+      <div><span class="cmp-eyebrow">SIMULADOR DE VENDA</span><h3>Comparativo</h3>
+      <p>Vender hoje ou esperar crescer?</p></div>
+      <img src="assets/sim-comparativo.webp" alt="" width="64" height="64">
+    </header>` : `<h3 class="titulo-secao">${titulo}</h3>`}
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
@@ -8009,7 +8014,7 @@ function _simFutAbrir(modo, titulo) {
 
       <div id="projDesp-painel"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
-    </div>`;
+    </div></div>`;
   _simPreSelecionar(ativos, _projDespRender);
 }
 
@@ -8602,6 +8607,7 @@ function _simFutPainel(viveiro, dados) {
 
   return `
     <div class="simfut-bloco">
+      ${_simFutModo === "comparativo" ? '<div class="cmp-etapa"><span>01</span><div><h4>Meta de crescimento</h4><p>Ajuste o peso e o ritmo esperado.</p></div></div>' : ""}
       <div class="simfut-linha2">
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Peso-alvo</label></div>
@@ -8633,13 +8639,14 @@ function _simFutPainel(viveiro, dados) {
         <div><small>Despesca em</small><b>${formatarData(proj.dataAlvo)}</b></div>
       </div>
 
+      ${_simFutModo === "comparativo" ? '<div class="cmp-etapa"><span>02</span><div><h4>Plano de alimentação</h4><p>Defina a oferta diária de cada semana.</p></div></div>' : ""}
       <div class="simfut-sec">Ração planejada por semana${_ajudaBtn("racao")}</div>
       ${_ajudaTxt("racao", porDia > 0
         ? `Hoje você dá cerca de <b>${formatarNumeroBR(porDia, 0)} kg</b> por dia de oferta, e é esse o valor sugerido.
            Digite a oferta diária de cada semana — os dias de cada uma vêm do calendário até ${formatarData(proj.dataAlvo)}, somando <b>${totalDiasOferta}</b> dias de oferta.
            A chave do domingo muda esses dias.`
         : `Sem ração lançada ainda para sugerir um valor. Digite a oferta diária de cada semana.`)}
-      <button type="button" class="simfut-domingo${_simFutDomingo ? " ligado" : ""}" onclick="_simFutToggleDomingo()">
+      <button type="button" class="simfut-domingo${_simFutDomingo ? " ligado" : ""}" role="switch" aria-checked="${_simFutDomingo}" onclick="_simFutToggleDomingo()">
         <span class="simfut-switch"><span></span></span>
         <span class="simfut-domingo-txt">
           <b>Ofertar no domingo</b>
@@ -8658,6 +8665,7 @@ function _simFutPainel(viveiro, dados) {
       </div>` : `<div class="sim-aviso" style="margin-top:10px">Cadastre um <b>tipo de ração</b> com preço para o custo da ração futura entrar na conta.</div>`}
 
       ${_simFutModo === "comparativo" ? `
+      <div class="cmp-etapa"><span>03</span><div><h4>Preços e custos</h4><p>Compare os dois cenários com seus valores.</p></div></div>
       <div class="simfut-linha2" style="margin-top:10px">
         <div class="campo-form" style="margin:0">
           <div class="campo-label"><label>Custos da despesca</label>${_ajudaBtn("custos")}</div>
@@ -8722,7 +8730,8 @@ function _simFutPainel(viveiro, dados) {
         </div>
       </div>`}
 
-      <div id="simFut-resultado"></div>`}
+      ${_simFutModo === "comparativo" ? '<div class="cmp-etapa"><span>04</span><div><h4>Resultado da comparação</h4><p>Estimativas conforme os dados informados. Valores em R$.</p></div></div>' : ""}
+      <div id="simFut-resultado" aria-live="polite"></div>`}
     </div>`;
 }
 function _simSobrFaixa() { _simVendaCalcular(); }
