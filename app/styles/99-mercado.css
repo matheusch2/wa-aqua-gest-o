@@ -39,3 +39,91 @@ body.tema-escuro .mc-painel { --mc-ink:#e5f0ec; --mc-muted:#a0b6ad; --mc-line:#3
 body.tema-escuro .mc-alta { color:#6ee7ad; }body.tema-escuro .mc-queda { color:#fca5a5; }
 body.tema-escuro .mc-painel .mc-linha.mc-selecionado { background:#244638; box-shadow:inset 3px 0 #6ee7ad; }
 @media(min-width:900px) { #area-gestao:has(.mc-painel) { padding:28px; }.mc-colunas,.mc-painel .mc-linha { padding-left:20px; padding-right:20px; } }
+
+
+/* Faixa de cotações: identificação fixa e ação separada do conteúdo móvel. */
+#fita-precos .fp-barra {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:auto auto;
+  width:100%;
+  margin:12px 0 0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid #dce9e4;
+  border-radius:12px;
+  background:#fff;
+  color:#123831;
+  box-shadow:0 2px 8px rgba(8,51,42,.06);
+}
+#fita-precos .fp-barra::before {
+  content:"MERCADO DO CAMARÃO";
+  grid-column:1;
+  grid-row:1;
+  padding:9px 12px 0;
+  color:#60766e;
+  font-size:9px;
+  line-height:1.3;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+#fita-precos .fp-fita {
+  grid-column:1;
+  grid-row:2;
+  padding:7px 0 10px;
+  min-width:0;
+}
+#fita-precos .fp-trilho {
+  gap:0;
+  padding-left:0;
+  align-items:center;
+}
+#fita-precos .fp-item {
+  align-items:center;
+  flex-shrink:0;
+  gap:8px;
+  min-height:26px;
+  padding:0 12px;
+  border-right:1px solid #e2ebe7;
+  font-variant-numeric:tabular-nums;
+}
+#fita-precos .fp-tam {
+  padding:4px 6px;
+  border-radius:5px;
+  background:#edf4f1;
+  color:#25483e;
+  font-size:11px;
+  line-height:1.2;
+}
+#fita-precos .fp-val { font-size:13px; letter-spacing:-.02em; }
+#fita-precos .fp-val small { font-size:9px; margin-left:3px; }
+#fita-precos .fp-titulo { font-size:9px; letter-spacing:.03em; }
+#fita-precos .fp-fonte { font-size:10px; }
+#fita-precos .fp-ver {
+  grid-column:2;
+  grid-row:1 / 3;
+  padding:0 10px;
+  gap:3px;
+  border-left:1px solid #dce9e4;
+  background:#f0f7f3;
+  color:#126a52;
+  font-size:9px;
+  letter-spacing:.02em;
+}
+#fita-precos .fp-ver::before { display:none; }
+#fita-precos .fp-ver svg { width:12px; height:12px; }
+#fita-precos .fp-barra:focus-visible { outline:2px solid #70d8b2; outline-offset:3px; }
+#fita-precos .fp-barra:focus-visible .fp-trilho { animation-play-state:paused; }
+@media (hover:hover) {
+  #fita-precos .fp-barra:hover .fp-trilho { animation-play-state:paused; }
+  #fita-precos .fp-barra:hover .fp-ver { background:#e3f1e9; }
+}
+body.tema-escuro #fita-precos .fp-barra { background:#1b2924; border-color:#354b43; }
+body.tema-escuro #fita-precos .fp-barra::before,
+body.tema-escuro #fita-precos .fp-fonte { color:#a0b6ad; }
+body.tema-escuro #fita-precos .fp-item { border-color:#354b43; }
+body.tema-escuro #fita-precos .fp-tam { background:#2b4037; color:#e5f0ec; }
+body.tema-escuro #fita-precos .fp-val,
+body.tema-escuro #fita-precos .fp-titulo { color:#8fe1bf; }
+body.tema-escuro #fita-precos .fp-val small { color:#a0b6ad; }
+body.tema-escuro #fita-precos .fp-ver { background:#23372f; border-color:#354b43; color:#8fe1bf; }
