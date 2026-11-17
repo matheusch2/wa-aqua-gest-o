@@ -803,7 +803,18 @@ function mostrarTabelaPrecos() {
   const area = document.getElementById("area-gestao");
   const { itens, atualizado } = _precosFrescos(precosCamarao, _hojeLocal());
   const regiao = _esc(PRECOS_TITULO.split("·").pop().trim());
-  const cab = `<header class="mc-cab"><span class="mc-sobretitulo">COTAÇÕES REGIONAIS</span><h2>Mercado do camarão</h2><p>${regiao}</p></header>`;
+  // "COTAÇÕES REGIONAIS" saiu: dizia a mesma coisa que "Vale do Jaguaribe"
+  // logo abaixo, e eram três linhas de texto cinza empilhadas. A procedência
+  // virou pastilha e ganhou a data, que antes só aparecia miúda no rodapé do
+  // cartão — e é ela que diz se a cotação ainda vale alguma coisa.
+  const diaCab = atualizado ? formatarData(atualizado) : "";
+  const cab = `<header class="mc-cab">
+    <h2>Mercado do camarão</h2>
+    <span class="mc-origem">
+      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      ${regiao}${diaCab ? ` <i>·</i> ${diaCab}` : ""}
+    </span>
+  </header>`;
   if (!itens.length) {
     area.innerHTML = `<section class="mc-painel">${cab}<div class="mc-vazio"><b>Nenhuma cotação vigente</b><p>Os preços aparecerão aqui quando uma nova tabela for publicada.</p></div><button class="mc-voltar" onclick="voltarMenuGestao()">Voltar</button></section>`;
     return;
