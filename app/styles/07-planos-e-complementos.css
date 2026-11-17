@@ -546,14 +546,19 @@ body.tema-escuro .dd-sem-preco { color: #fbbf24; }
     font: inherit; text-align: left; cursor: pointer;
 }
 .simv-porta:active { background: #f6faf8; }
+/* 48px e não os 40px das portas do Financeiro: lá dentro mora um ícone de
+   traço simples; aqui mora um camarão inteiro com um gráfico ao lado. Olhei
+   os três tamanhos ampliados — a 26px o desenho vira mancha, e só a partir
+   de 34px dá para ler o R$, a seta e o relógio. */
 .simv-porta-ico {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 12px; background: #e9f4ef;
+    width: 48px; height: 48px; border-radius: 13px; background: #e9f4ef;
 }
-.simv-porta-ico svg {
-    width: 19px; height: 19px;
-    fill: none; stroke: #0d6b55; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-}
+/* Desenho do dono, não ícone de traço: vai maior que os 19px que um SVG de
+   linha pediria, porque aqui há um camarão inteiro dentro do quadrado e a
+   24px ele vira borrão. O arquivo tem 96px (3x) para não serrilhar em tela
+   de alta densidade. */
+.simv-porta-ico img { display: block; width: 34px; height: 34px; }
 .simv-porta-txt { flex: 1; min-width: 0; }
 .simv-porta-txt b { display: block; font-size: 15px; font-weight: 800; color: #143b33; letter-spacing: -.01em; }
 .simv-porta-txt small { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: #5f6e6b; }

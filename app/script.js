@@ -8056,21 +8056,22 @@ function abrirSimularVenda() {
     return;
   }
 
-  const porta = (acao, titulo, sub, ico) => `
+  /* Os desenhos vieram do dono, e cada um foi para a porta que ele ILUSTRA,
+     não para a que chegou junto: a etiqueta de R$ é vender agora, a seta
+     subindo é engordar até o peso, e o relógio contra o cifrão é exatamente a
+     pergunta do comparativo — tempo ou dinheiro. */
+  const porta = (acao, titulo, sub, arte) => `
     <button class="simv-porta" onclick="${acao}">
-      <span class="simv-porta-ico"><svg viewBox="0 0 24 24">${ico}</svg></span>
+      <span class="simv-porta-ico"><img src="assets/${arte}?v=20261117" alt="" width="34" height="34"></span>
       <span class="simv-porta-txt"><b>${titulo}</b><small>${sub}</small></span>
       <svg class="simv-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
     </button>`;
 
   area.innerHTML = topo + `
     <div class="simv-portas">
-      ${porta("abrirVenderHoje()", "Vender hoje", "Com o que está no viveiro agora",
-        `<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/>`)}
-      ${porta("abrirProjetarDespesca()", "Projetar despesca", "Levando até o peso que você escolher",
-        `<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>`)}
-      ${porta("abrirComparativo()", "Comparativo", "Vender agora ou esperar?",
-        `<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>`)}
+      ${porta("abrirVenderHoje()", "Vender hoje", "Com o que está no viveiro agora", "sim-vender.webp")}
+      ${porta("abrirProjetarDespesca()", "Projetar despesca", "Levando até o peso que você escolher", "sim-projetar.webp")}
+      ${porta("abrirComparativo()", "Comparativo", "Vender agora ou esperar?", "sim-comparativo.webp")}
     </div>
     <button class="botao-voltar-form" style="margin-top:12px" onclick="voltarMenuGestao()">Voltar</button>`;
 }
