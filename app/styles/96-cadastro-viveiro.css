@@ -115,3 +115,13 @@ body.tema-escuro .cad-viveiro .cad-espera-nota svg { stroke: #6b7280; }
     padding: 0;
 }
 .cad-viveiro .rc-print-dica { margin-top: 7px; line-height: 1.45; }
+
+/* ── Os ícones do cultivo nos rótulos do cadastro ────────────────────────────
+   Os mesmos desenhos da tela do viveiro, em vez de ícones de traço genéricos:
+   quem cadastra e quem depois olha o viveiro vê a mesma coisa, e o app para
+   de falar duas línguas sobre o mesmo assunto. */
+.cad-viveiro .campo-icone-aqua {
+    width: 26px; height: 26px;
+    stroke: #0d6b55; stroke-width: 3.5;
+}
+.cad-viveiro .campo-arte { display: block; width: 26px; height: 26px; }
