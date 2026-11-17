@@ -104,10 +104,13 @@
   max-width:860px;margin-left:auto;margin-right:auto;
 }
 #area-gestao:has(> .fin-topo-acoes) > .fin-topo-acoes {
-  margin-bottom:17px;
+  margin-bottom:12px;
 }
+/* 23px quebrava "Relatório financeiro" em duas linhas ao lado do botão de
+   imprimir, e o título sozinho comia 55px. Em 19px ele cabe numa linha. */
 #area-gestao:has(> .fin-topo-acoes) .fin-topo-acoes .titulo-secao {
-  color:#163e35;font-size:23px;line-height:1.2;letter-spacing:-.035em;
+  color:#163e35;font-size:19px;line-height:1.25;letter-spacing:-.03em;
+  white-space:nowrap;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-topo-acoes .fin-novo-btn {
   display:inline-flex;align-items:center;justify-content:center;
@@ -116,28 +119,42 @@
   background:#edf7f2;color:#096a53;
   padding:8px 12px;font-weight:750;
 }
+/* FILTROS SEM CAIXA. Eram dois cartões de 107px cada — 215px da tela, com
+   borda, fundo e sombra, para embrulhar um seletor de 43px. O seletor já tem
+   borda própria; a caixa em volta era moldura de moldura. */
 #area-gestao:has(> .fin-topo-acoes) .cfg-wrap > .campo-form,
 #area-gestao:has(> .fin-topo-acoes) #fin-ciclo-wrap > .campo-form {
   box-sizing:border-box;
-  margin:0 0 10px!important;
-  padding:12px 13px;
-  background:#f6faf8;
-  border:1px solid #e2ece7;border-radius:13px;
+  margin:0 0 9px!important;
+  padding:0;
+  background:none;
+  border:0;
 }
+/* A bolinha do ícone faz sentido num formulário de lançamento, onde cada
+   campo é uma decisão. Aqui são dois seletores de filtro: ela gastava 29px de
+   altura por rótulo para repetir o que a palavra ao lado já diz. */
 #area-gestao:has(> .fin-topo-acoes) .campo-label {
-  margin-bottom:7px;
+  margin-bottom:4px;
+}
+#area-gestao:has(> .fin-topo-acoes) .cfg-wrap > .campo-form .campo-icone,
+#area-gestao:has(> .fin-topo-acoes) #fin-ciclo-wrap .campo-icone {
+  display:none;
+}
+#area-gestao:has(> .fin-topo-acoes) .cfg-wrap > .campo-form .campo-label label,
+#area-gestao:has(> .fin-topo-acoes) #fin-ciclo-wrap .campo-label label {
+  font-size:12px;letter-spacing:.02em;color:#5d726a;
 }
 #area-gestao:has(> .fin-topo-acoes) .cfg-wrap select,
 #area-gestao:has(> .fin-topo-acoes) .fin-periodo-row input {
-  min-height:43px;
+  min-height:40px;
   box-sizing:border-box;
   border:1px solid #d3e3dc;
   border-radius:10px;
   background-color:#fff;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-limpar-filtros {
-  margin:1px 2px 13px auto;
-  padding:7px 5px;
+  margin:0 2px 9px auto;
+  padding:4px 5px;
   width:auto;color:#13745b;font-size:12px;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-modo-toggle {
@@ -145,7 +162,7 @@
   border-radius:12px;background:#edf3ef;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-modo-btn {
-  min-height:39px;border-radius:9px;
+  min-height:36px;border-radius:9px;
   color:#6a7e75;font-size:13px;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-modo-btn.ativo {
@@ -156,23 +173,25 @@
 /* Indicadores: um valor principal em destaque, os demais como apoio. */
 #area-gestao:has(> .fin-topo-acoes) .fin-cards {
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:9px;margin:0 0 22px;
+  gap:8px;margin:0 0 16px;
 }
+/* 15px de respiro em cima e embaixo de um número de 19px era mais moldura
+   que conteúdo. 11px chega, e a tela ganha quase 100px no total. */
 #area-gestao:has(> .fin-topo-acoes) .fin-card {
   min-width:0;
-  padding:15px 14px;
+  padding:11px 13px;
   border:1px solid #e1eae5;border-radius:15px;
   background:#fff;box-shadow:0 2px 10px rgba(7,72,57,.045);
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-card:first-child {
   grid-column:1/-1;
-  padding:18px;
+  padding:13px 14px;
   background:linear-gradient(135deg,#075e53,#07473f);
   border-color:#075e53;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-card:last-child {grid-column:1/-1;}
 #area-gestao:has(> .fin-topo-acoes) .fin-card-top {
-  gap:8px;margin-bottom:9px;
+  gap:7px;margin-bottom:5px;
 }
 #area-gestao:has(> .fin-topo-acoes) .fin-card-top svg {
   width:17px;height:17px;stroke:#147a60;
