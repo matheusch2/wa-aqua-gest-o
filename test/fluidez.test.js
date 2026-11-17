@@ -462,6 +462,26 @@ test("preços: lista vazia ou suja não quebra",()=>{
     assert.equal(a.run('__r.itens.length'), 0, l);
   }
 });
+/* A faixa só existe na tela inicial — lá dentro, num lançamento, ela é
+   barulho. A pegadinha é que "tela inicial" muda com o tamanho: no celular é o
+   painel da fazenda, e a lista de viveiros é tela de DENTRO; no desktop não há
+   painel e a lista É a inicial. Errei isso duas vezes, e erra calado: a faixa
+   fica acesa onde não devia e nada quebra. */
+test("faixa: a tela inicial do celular é o painel, a do desktop é a lista",()=>{
+  const a=load();
+  const v = (larg, home, lista, saindo) => a.run(`_fitaNaInicial(${larg}, ${home}, ${lista}, ${saindo})`);
+  // celular: manda o painel, a lista não conta
+  assert.equal(v(390, true,  false, false), true);
+  assert.equal(v(390, false, true,  false), false);
+  // desktop: manda a lista, e o painel não existe lá
+  assert.equal(v(1100, false, true,  false), true);
+  assert.equal(v(1100, false, false, false), false);
+  assert.equal(v(1100, true,  false, false), false);
+  // saindo da inicial some nos dois, mesmo com a tela anterior ainda na área
+  assert.equal(v(390,  true, true, true), false);
+  assert.equal(v(1100, true, true, true), false);
+});
+
 test("preços: sem preço anterior não inventa variação",()=>{
   const a=load();
   assert.equal(a.run(`_variacaoPreco({preco: 22, preco_anterior: null})`), null);

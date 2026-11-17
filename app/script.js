@@ -450,6 +450,11 @@ function _fitaPrecos() {
     const larguraCopia = trilho.getBoundingClientRect().width / 2;
     if (larguraCopia > 0) trilho.style.animationDuration = Math.max(18, Math.round(larguraCopia / 80)) + "s";
   }
+
+  // Os preços chegam do banco depois que a tela já montou, então quem monta a
+  // faixa também decide na hora se ela aparece. Sem isto, abrir o app direto
+  // numa tela de dentro faria a faixa nascer visível onde não devia.
+  _fitaPrecosNaInicial();
 }
 
 /*
@@ -1369,6 +1374,47 @@ function _mostrarHomeCelular(mostrar) {
   if (menu) menu.style.display = mostrar && desktop ? "grid" : (mostrar ? "none" : "none");
   if (home) home.classList.toggle("ativo", !!mostrar && !desktop);
   if (mostrar && !desktop) _painelFazenda();
+  _fitaPrecosNaInicial();
+}
+
+/*
+ * A faixa de preços só existe na tela inicial. Lá dentro — lançando ração,
+ * olhando custo, fechando ciclo — ela é barulho: o produtor está num número
+ * só e tem uma tira de outros vinte passando em cima.
+ *
+ * O estado é DERIVADO de quem já manda na tela inicial (#home-mobile.ativo no
+ * celular, #menuGestao em grade no desktop), em vez de uma variável à parte.
+ * Variável à parte são dezenas de telas para lembrar de avisar, e a que
+ * esquecesse deixaria a faixa presa onde não devia — calado, como sempre.
+ */
+/*
+ * A regra, separada do DOM para ter teste. Errei ela duas vezes montando:
+ *
+ *  1. A tela inicial NÃO é a mesma nos dois tamanhos. No celular é o painel
+ *     "Sua fazenda hoje"; no desktop esse painel não existe e quem abre o app
+ *     é a lista de viveiros — que no celular é tela de dentro.
+ *  2. Quem está saindo tem de avisar, em vez de a conta descobrir sozinha: o
+ *     esconderMenu() roda ANTES de a tela nova ser desenhada, então naquele
+ *     instante a área ainda mostra a tela anterior.
+ *
+ * Os dois erros deixavam a faixa acesa onde não devia, sem derrubar nada.
+ */
+function _fitaNaInicial(larguraPx, homeAtivo, listaNaArea, saindo) {
+  if (saindo) return false;
+  return larguraPx >= 900 ? !!listaNaArea : !!homeAtivo;
+}
+
+function _fitaPrecosNaInicial(saindoDaInicial) {
+  const alvo = document.getElementById("fita-precos");
+  if (!alvo) return;
+  // O #menuGestao não serve de pista: no desktop o CSS o deixa visível o tempo
+  // todo, inclusive lá dentro — conferi no navegador.
+  const naInicial = _fitaNaInicial(
+    window.innerWidth,
+    document.getElementById("home-mobile")?.classList.contains("ativo"),
+    document.querySelector("#area-gestao > .sv-topo"),
+    saindoDaInicial);
+  alvo.classList.toggle("fp-fora", !naInicial);
 }
 
 /*
@@ -1655,6 +1701,7 @@ function esconderMenu() {
   _insightPararAuto();
   document.getElementById("menuGestao").style.display = "none";
   document.getElementById("home-mobile")?.classList.remove("ativo");
+  _fitaPrecosNaInicial(true);
   _armarVoltarNavegador();
   _toggleVoltarTopo(true);
 }
@@ -2304,6 +2351,11 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
     const alvo = document.getElementById("viveiro-card-" + viveiros.indexOf(viveirosOrdenados[posicao]));
     if (alvo) alvo.scrollIntoView({ block: "center", behavior: "auto" });
   }
+
+  // No desktop ESTA é a tela inicial — não existe o painel do celular lá. A
+  // chamada vem no fim porque o esconderMenu() do começo da função roda antes
+  // da lista ser desenhada, e a faixa olha o que está na tela para se decidir.
+  _fitaPrecosNaInicial();
 }
 
 function editarNomeViveiro(index) {

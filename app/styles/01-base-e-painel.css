@@ -1596,6 +1596,9 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
    emenda não aparece e a fita parece não ter fim. A duração vem do script, da
    largura real, para a velocidade de leitura ser a mesma com 6 ou 28 tamanhos. */
 #fita-precos:empty { display: none; }
+/* Fora da tela inicial a faixa some. Dentro de um lançamento ela é barulho:
+   o produtor está num número só e tem vinte passando em cima. */
+#fita-precos.fp-fora { display: none; }
 
 .fp-fita {
     margin: 10px -18px -12px;        /* vaza a largura toda, rente ao rodapé do topo */
