@@ -369,3 +369,55 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
 }
 .cl-sem span { font-size: 24px; line-height: 1; }
 .cl-sem p { margin: 0; font-size: 13px; line-height: 1.5; color: #6b5e3a; }
+
+/* Céu vivo: camadas decorativas sem alterar a geometria dos cartões. */
+.cl-cenario {
+    position: relative; isolation: isolate; overflow: hidden;
+    background: linear-gradient(115deg, #f2f8fb, #e3eff6);
+}
+.cl-cenario > * { position: relative; z-index: 1; }
+.cl-limpo { background: radial-gradient(circle at 88% 15%, #ffe7a0 0, transparent 38%), linear-gradient(115deg, #e9f8ff, #d0edfa); }
+.cl-parcial { background: linear-gradient(115deg, #edf7fc, #cddfec); }
+.cl-nublado { background: linear-gradient(115deg, #edf1f4, #bdcfda); }
+.cl-chuva { background: linear-gradient(115deg, #e7f0f7, #b5cedf); }
+.cl-trovoada { background: linear-gradient(115deg, #e3e9f1, #aabbd3); }
+.cl-neve { background: linear-gradient(115deg, #f5fbff, #d7e6ed); }
+.cl-cenario::after {
+    content: ""; position: absolute; z-index: 0; pointer-events: none;
+    inset: 0; opacity: .65;
+    background: radial-gradient(ellipse at 82% 110%, #fff 0 17%, transparent 18%),
+      radial-gradient(ellipse at 65% 100%, #fff 0 13%, transparent 14%),
+      radial-gradient(ellipse at 100% 80%, #fff 0 23%, transparent 24%);
+}
+.cl-limpo::after, .cl-neutro::after { display: none; }
+.cl-chuva::after, .cl-trovoada::after {
+    opacity: .24;
+    background: repeating-linear-gradient(115deg, transparent 0 18px, #577f9e 19px 20px, transparent 21px 31px);
+    mask-image: linear-gradient(to right, transparent 25%, #000);
+}
+.cl-agora.cl-noite, .cl-lunar {
+    background: radial-gradient(ellipse at 90% 0%, #334d72, transparent 65%), linear-gradient(120deg, #101f38, #1c3653);
+    border-color: #304c6a;
+}
+.cl-agora.cl-noite::before, .cl-lunar::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background-image: radial-gradient(circle at 15% 19%, #ffffffb3 0 1px, transparent 1.6px),
+      radial-gradient(circle at 72% 25%, #ffffffb3 0 1px, transparent 1.6px),
+      radial-gradient(circle at 90% 67%, #ffffff80 0 1px, transparent 1.5px),
+      radial-gradient(circle at 46% 78%, #ffffff80 0 .8px, transparent 1.4px);
+    background-size: 137px 89px;
+}
+.cl-agora.cl-noite::after { opacity: .12; }
+.cl-agora.cl-noite .cl-agora-txt b { color: #f5f8ff; }
+.cl-agora.cl-noite .cl-agora-txt span { color: #d3e0ef; }
+.cl-agora-ico { filter: drop-shadow(0 3px 6px #152b3c20); }
+.cl-dia + .cl-dia::before { z-index: 2; background: #ffffff90; }
+.cl-dia-temp { color: #435e6c; }
+.cl-lunar { position: relative; isolation: isolate; overflow: hidden; border-radius: 14px; }
+.cl-lunar > * { position: relative; z-index: 1; }
+.cl-lunar h3 { color: #b8cce2; }
+.cl-lunar .cl-lua b, .cl-lunar .cl-lua-item b { color: #f0f5fc; }
+.cl-lunar .cl-lua-item small { color: #bdcfe3; }
+.cl-lunar .cl-lua-itens { background: #ffffff05; border-color: #ffffff24; }
+.cl-lunar .cl-lua-item + .cl-lua-item::before { background: #ffffff20; }
+.cl-lunar .cl-lua-ico { filter: drop-shadow(0 0 9px #ffdc7750); }
