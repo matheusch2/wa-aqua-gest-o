@@ -1,0 +1,41 @@
+
+/* Mercado do camarão: cotações e comparação com o registro anterior. */
+#area-gestao:has(.mc-painel) { padding: 20px 16px; }
+.mc-painel { --mc-ink:#123831; --mc-muted:#647b74; --mc-line:#e3ece8; --mc-bg:#fff; --mc-soft:#f3f7f5; color:var(--mc-ink); max-width:760px; margin:0 auto; text-align:left; }
+.mc-cab { margin-bottom:18px; }
+.mc-sobretitulo { font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--mc-muted); }
+.mc-cab h2 { text-align:left; font-size:23px; line-height:1.2; letter-spacing:-.03em; margin:6px 0; color:var(--mc-ink); }
+.mc-cab p { font-size:12px; margin:0; color:var(--mc-muted); }
+.mc-destaque { padding:17px; border:1px solid var(--mc-line); border-radius:16px; background:var(--mc-soft); }
+.mc-destaque-topo { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px; font-weight:700; }
+.mc-selo { padding:5px 8px; border:1px solid currentColor; border-radius:7px; font-size:11px; white-space:nowrap; }
+.mc-preco { font-size:34px; font-weight:800; letter-spacing:-.04em; margin:12px 0 4px; font-variant-numeric:tabular-nums; }
+.mc-preco small { font-size:14px; margin-left:4px; color:var(--mc-muted); letter-spacing:0; font-weight:500; }
+.mc-delta { font-size:11px; margin:0; line-height:1.5; }
+.mc-comparacao { display:flex; justify-content:space-between; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-line); font-size:10px; color:var(--mc-muted); }
+.mc-comparacao b { display:block; margin-top:4px; color:var(--mc-ink); font-size:12px; }
+.mc-lista-titulo { display:flex; justify-content:space-between; align-items:center; margin-top:21px; }
+.mc-lista-titulo h3 { text-align:left; font-size:14px; margin:0; color:var(--mc-ink); }
+.mc-lista-titulo > span, .mc-ajuda { color:var(--mc-muted); font-size:11px; }
+.mc-ajuda { margin:5px 0 12px; }
+.mc-tabela { border:1px solid var(--mc-line); border-radius:12px; overflow:hidden; background:var(--mc-bg); }
+.mc-colunas, .mc-painel .mc-linha { display:grid; grid-template-columns:minmax(40px,.7fr) minmax(80px,1.2fr) minmax(76px,1fr); align-items:center; gap:6px; }
+.mc-colunas { padding:10px 12px; background:var(--mc-soft); color:var(--mc-muted); font-size:10px; font-weight:700; }
+.mc-colunas span:not(:first-child) { text-align:right; }
+.mc-painel .mc-linha { width:100%; min-height:44px; padding:10px 12px; margin:0; background:var(--mc-bg); border:0; border-top:1px solid var(--mc-line); border-radius:0; box-shadow:none; color:var(--mc-ink); font-family:inherit; cursor:pointer; text-align:left; }
+.mc-peso { font-size:13px; font-weight:700; }
+.mc-peso small { font-size:11px; font-weight:500; }
+.mc-valor { text-align:right; font-size:14px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mc-var { text-align:right; font-size:10.5px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mc-alta { color:#137a4b; }.mc-queda { color:#b73535; }.mc-neutro { color:var(--mc-muted); }
+.mc-painel .mc-linha.mc-selecionado { background:#eaf7f0; box-shadow:inset 3px 0 #14835d; }
+.mc-painel .mc-linha:focus-visible { outline:2px solid #14835d; outline-offset:-3px; }
+.mc-nota { margin:14px 2px; color:var(--mc-muted); font-size:10.5px; line-height:1.5; }
+.mc-nota p { margin:5px 0; }
+.mc-painel .mc-voltar { width:100%; min-height:44px; margin:8px 0 0; padding:10px; border:1px solid var(--mc-line); border-radius:10px; background:var(--mc-soft); color:var(--mc-ink); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.mc-vazio { padding:24px 16px; border-radius:12px; background:var(--mc-soft); font-size:14px; }
+.mc-vazio p { color:var(--mc-muted); font-size:12px; line-height:1.5; }
+body.tema-escuro .mc-painel { --mc-ink:#e5f0ec; --mc-muted:#a0b6ad; --mc-line:#354b43; --mc-bg:#1b2924; --mc-soft:#23372f; }
+body.tema-escuro .mc-alta { color:#6ee7ad; }body.tema-escuro .mc-queda { color:#fca5a5; }
+body.tema-escuro .mc-painel .mc-linha.mc-selecionado { background:#244638; box-shadow:inset 3px 0 #6ee7ad; }
+@media(min-width:900px) { #area-gestao:has(.mc-painel) { padding:28px; }.mc-colunas,.mc-painel .mc-linha { padding-left:20px; padding-right:20px; } }
