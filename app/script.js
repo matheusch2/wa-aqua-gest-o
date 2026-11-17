@@ -13708,9 +13708,11 @@ function _cxLinha({ chip, nome, sub, valor, id, pct, acoes }) {
 
 // Desenhos das pastilhas. Traço fino, 24x24, como todo ícone da casa.
 const _CX_ICONES = {
-  racao:    `<path d="M3 11h18M5 11a7 7 0 0 0 14 0"/><path d="M10 4c0 1.5-1 2.5-1 4h6c0-1.5-1-2.5-1-4"/>`,
-  probio:   `<path d="M12 2.7S5.5 9.5 5.5 14a6.5 6.5 0 0 0 13 0c0-4.5-6.5-11.3-6.5-11.3z"/>`,
-  calcario: `<path d="M12 2.6 20.5 7v10L12 21.4 3.5 17V7z"/>`,
+  racao:    `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  probio:   `<image href="assets/icone-produto-bombona.svg" width="24" height="24"/>`,
+  calcario: `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  saco:     `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  balde:    `<ellipse cx="12" cy="5" rx="8" ry="2.5"/><path d="m4 5 2 15q6 3 12 0l2-15M5 7v3a7 7 0 0 0 14 0V7"/>`,
   aditivo:  `<path d="M9 2v6.3L3.8 17A2.4 2.4 0 0 0 5.9 21h12.2a2.4 2.4 0 0 0 2.1-4L15 8.3V2"/><line x1="8" y1="2" x2="16" y2="2"/>`,
   // Três pontinhos = um punhado de pós-larva. Qualquer desenho de camarão
   // vira rabisco a 16px; três círculos continuam legíveis.
@@ -13731,7 +13733,10 @@ function _cxCategoriaChave(c) {
   // com o padrão solto a Operação saía com a tigela de ração.
   if (/(^|[^a-z])racao/.test(t)) return "racao";
   if (/larva|povoament|semente/.test(t)) return "larva";
-  if (/probiot|bacter/.test(t)) return "probio";
+  // Embalagens conhecidas têm prioridade sobre a categoria genérica.
+  if (/melac|melass/.test(t)) return "balde";
+  if (/bactinil|acido.*organic|bokash|bocach|potass|cloreto|oxido|dolomit|calcar/.test(t)) return "saco";
+  if (/probiot|bacter|ponddetox|pond.?detox|bm\s*pro|protr/.test(t)) return "probio";
   if (/calcar|dolomit|calcio|cal /.test(t)) return "calcario";
   if (/aditiv|fertiliz|melac|quimic/.test(t)) return "aditivo";
   if (/energia|luz|combustiv|diesel|oleo/.test(t)) return "energia";
