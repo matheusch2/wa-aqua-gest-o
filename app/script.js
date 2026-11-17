@@ -763,52 +763,67 @@ function mostrarClimaLua() {
  * envelheceu, não há tabela — preço velho é pior que preço nenhum, e abrir
  * exceção aqui seria desfazer a regra por uma porta lateral.
  */
+function _mercadoVariacao(linha) {
+  const atual = Number(linha.preco), anterior = Number(linha.preco_anterior);
+  if (!Number.isFinite(anterior) || anterior <= 0) return { classe: "neutro", texto: "Sem base", detalhe: "Sem cotação anterior para comparar." };
+  const delta = Math.round((atual - anterior) * 100) / 100;
+  if (delta === 0) return { classe: "neutro", texto: "0,00%", detalhe: "Sem alteração desde a cotação anterior." };
+  const sinal = delta > 0 ? "+" : "−";
+  return { classe: delta > 0 ? "alta" : "queda",
+    texto: (delta > 0 ? "▲ " : "▼ ") + sinal + formatarNumeroBR(Math.abs(delta / anterior * 100), 2) + "%",
+    detalhe: sinal + "R$ " + formatarNumeroBR(Math.abs(delta), 2) + "/kg desde a cotação anterior." };
+}
+
+function _mercadoDestaque(linha) {
+  const v = _mercadoVariacao(linha);
+  const anterior = Number(linha.preco_anterior);
+  const data = String(linha.atualizado_em || "").substring(0, 10);
+  return `<div class="mc-destaque-topo"><span>Camarão · ${Number(linha.gramas)} g</span><span class="mc-selo mc-${v.classe}">${v.texto}</span></div>
+    <div class="mc-preco">R$ ${formatarNumeroBR(Number(linha.preco), 2)}<small>/kg</small></div>
+    <p class="mc-delta mc-${v.classe}">${v.detalhe}</p>
+    <div class="mc-comparacao"><span>Anterior <b>${anterior > 0 && Number.isFinite(anterior) ? "R$ " + formatarNumeroBR(anterior, 2) + "/kg" : "Não informado"}</b></span>
+    <span>Atualização <b>${data ? _esc(formatarData(data)) : "Não informada"}</b></span></div>`;
+}
+
+function _mercadoSelecionar(gramas) {
+  const { itens } = _precosFrescos(precosCamarao, _hojeLocal());
+  const linha = itens.find(l => Number(l.gramas) === Number(gramas));
+  const alvo = document.getElementById("mc-destaque");
+  if (!linha || !alvo) return;
+  alvo.innerHTML = _mercadoDestaque(linha);
+  document.querySelectorAll(".mc-linha").forEach(el => {
+    const selecionado = Number(el.dataset.gramas) === Number(gramas);
+    el.classList.toggle("mc-selecionado", selecionado);
+    el.setAttribute("aria-pressed", String(selecionado));
+  });
+}
+
 function mostrarTabelaPrecos() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
-  const { itens, dias } = _precosFrescos(precosCamarao, _hojeLocal());
-  const quando = dias === 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
-
+  const { itens, atualizado } = _precosFrescos(precosCamarao, _hojeLocal());
+  const regiao = _esc(PRECOS_TITULO.split("·").pop().trim());
+  const cab = `<header class="mc-cab"><span class="mc-sobretitulo">COTAÇÕES REGIONAIS</span><h2>Mercado do camarão</h2><p>${regiao}</p></header>`;
   if (!itens.length) {
-    area.innerHTML = `
-      <div class="form-lancamento">
-        <div class="tp-cab"><h2>Preço referência</h2>
-          <span class="tp-fonte"><i></i>${_esc(PRECOS_TITULO.split("·").pop().trim())}</span></div>
-        <p class="tp-vazio">Não há preço publicado no momento.</p>
-        <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-      </div>`;
+    area.innerHTML = `<section class="mc-painel">${cab}<div class="mc-vazio"><b>Nenhuma cotação vigente</b><p>Os preços aparecerão aqui quando uma nova tabela for publicada.</p></div><button class="mc-voltar" onclick="voltarMenuGestao()">Voltar</button></section>`;
     return;
   }
-
-  const linha = (l) => {
-    const v = _variacaoPreco(l);
-    // A coluna da variação existe em TODA linha, mesmo vazia: sem ela as
-    // colunas de preço dançavam conforme umas linhas tinham seta e outras não.
-    const var_ = v === null
-      ? `<span class="tp-var tp-sem">—</span>`
-      : `<span class="tp-var ${v > 0 ? "fp-sobe" : "fp-desce"}">${v > 0 ? "▲" : "▼"} ${formatarNumeroBR(Math.abs(v), 2)}</span>`;
-    return `<div class="tp-linha">
-      <span class="tp-tam">${Number(l.gramas)} g</span>
-      <span class="tp-val">R$ ${formatarNumeroBR(Number(l.preco), 2)}<small>/kg</small></span>
-      ${var_}
-    </div>`;
-  };
-
-  area.innerHTML = `
-    <div class="form-lancamento">
-      <div class="tp-cab">
-        <h2>Preço referência</h2>
-        <span class="tp-fonte"><i></i>${_esc(PRECOS_TITULO.split("·").pop().trim())} · atualizado ${quando}</span>
-      </div>
-      <div class="tp-lista">${itens.map(linha).join("")}</div>
-      <p class="tp-nota">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span>Preço do quilo, por tamanho. É referência de mercado para orientar a negociação, não o preço da sua venda.</span>
-      </p>
-      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>
-    </div>`;
+  const selecionado = itens.find(l => Number(l.gramas) === 15) || itens[0];
+  area.innerHTML = `<section class="mc-painel">${cab}
+    <section id="mc-destaque" class="mc-destaque" aria-live="polite" aria-atomic="true">${_mercadoDestaque(selecionado)}</section>
+    <div class="mc-lista-titulo"><h3>Preços por gramatura</h3><span>R$/kg</span></div>
+    <p class="mc-ajuda">Toque em uma gramatura para comparar.</p>
+    <div class="mc-tabela">
+      <div class="mc-colunas" aria-hidden="true"><span>Peso</span><span>Preço/kg</span><span>Variação</span></div>
+      ${itens.map(l => { const v = _mercadoVariacao(l); const ativo = l === selecionado;
+        return `<button type="button" class="mc-linha${ativo ? " mc-selecionado" : ""}" data-gramas="${Number(l.gramas)}" aria-pressed="${ativo}" onclick="_mercadoSelecionar(${Number(l.gramas)})">
+          <span class="mc-peso">${Number(l.gramas)} <small>g</small></span><span class="mc-valor">R$ ${formatarNumeroBR(Number(l.preco), 2)}</span><span class="mc-var mc-${v.classe}">${v.texto}</span></button>`;
+      }).join("")}
+    </div>
+    <footer class="mc-nota"><p>Variação em relação à cotação anterior de cada gramatura.</p><p>Tabela atualizada em ${_esc(formatarData(atualizado))}. Fonte: referências publicadas pela administração do WA Aqua.</p><p>Referência regional para negociação. O valor da sua venda pode variar.</p></footer>
+    <button class="mc-voltar" onclick="voltarMenuGestao()">Voltar</button>
+  </section>`;
 }
-
 /*
  * Nome tirado do e-mail, quando não há cadastro nenhum.
  * "matheus.vitalo@gmail.com" -> "Matheus Vitalo".
