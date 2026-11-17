@@ -422,10 +422,12 @@ function _fitaPrecos() {
 
   const pedaco = (l) => {
     const v = _variacaoPreco(l);
+    // A setinha, e não só o sinal de + ou −: num relance de meio segundo a
+    // forma chega antes do símbolo, e a fita não para para ninguém ler.
     const seta = v === null ? ""
-      : `<span class="fp-${v > 0 ? "sobe" : "desce"}">${v > 0 ? "+" : "−"}${formatarNumeroBR(Math.abs(v), 2)}</span>`;
+      : `<span class="fp-${v > 0 ? "sobe" : "desce"}">${v > 0 ? "▲" : "▼"} ${formatarNumeroBR(Math.abs(v), 2)}</span>`;
     return `<span class="fp-item"><span class="fp-tam">${Number(l.gramas)} g</span>` +
-           `<span class="fp-val">R$ ${formatarNumeroBR(Number(l.preco), 2)}</span>${seta}</span>`;
+           `<span class="fp-val">R$ ${formatarNumeroBR(Number(l.preco), 2)}<small>/kg</small></span>${seta}</span>`;
   };
 
   const quando = dias === 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
