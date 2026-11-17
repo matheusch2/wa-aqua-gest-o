@@ -2065,6 +2065,13 @@ function _vvAbrir(index) {
   if (alvo) alvo.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
+function _svConfirmarExclusao(index, botao) {
+  const v = viveiros[index];
+  if (!v || _bloqueioEdicao()) return;
+  if (!window.confirm(`Excluir o viveiro "${v.nome}" da sua lista?`)) return;
+  return excluirViveiro(index, botao);
+}
+
 function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -2102,14 +2109,15 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
         : (viveirosOrdenados.find(v => v.dataPovoamento) || viveirosOrdenados[0]));
 
   const ICO = {
-    biomassa:   `<path d="M5 8h14l1.4 11a2 2 0 0 1-2 2.3H5.6A2 2 0 0 1 3.6 19z"/><path d="M8.5 8V6.2A3.5 3.5 0 0 1 15.5 6.2V8"/>`,
+    povoamento: `<g transform="translate(-1 -3) scale(.78)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><path d="M46 31h12m-6-6v12M8 51q6-5 12 0t12 0t12 0t12 0M8 59q6-5 12 0t12 0t12 0t12 0"/>`,
+    biomassa: `<path d="M9 7h46v5a9 9 0 0 1-9 9H18a9 9 0 0 1-9-9ZM26 21v7m12-7v7M18 28h28l10 29H8Z"/><g transform="translate(19 28) scale(.43)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g>`,
     // Um talhão visto de cima, não uma régua: a régua inclinada a 15px lia
     // como losango.
-    area:       `<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="12" y1="3.5" x2="12" y2="20.5"/>`,
-    biometria:  `<path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 14h6z"/><path d="M19 7l-3 7h6z"/>`,
+    area: `<rect x="20" y="8" width="37" height="37" rx="5"/><path d="M27 22q4-4 8 0t8 0t7 0M27 33q4-4 8 0t8 0t7 0M8 9v36m-4-31 4-5 4 5M4 40l4 5 4-5M20 56h37m-32-4-5 4 5 4m27-8 5 4-5 4"/>`,
+    biometria: `<g transform="translate(3 -6) scale(.85)"><path d="M40 12h10c12 0 12 16 1 16M47 22C26 17 11 26 12 40c1 9 8 15 18 15l4-7c-9 0-14-5-13-11 8 4 23 1 26-15Z"/><path d="m22 25 6 12m-15-3 9 5m-7 7 9-3m0 10 3-7m6-10-1 6m8-8-1 6"/><circle cx="40" cy="27" r="1.7" fill="currentColor" stroke="none"/></g><rect x="7" y="49" width="50" height="11" rx="2"/><path d="M17 49v6m10-6v4m10-4v6m10-6v4"/>`,
     agua:       `<path d="M3 8c2.5-2 4.5 2 7 0s4.5-2 7 0"/><path d="M3 13c2.5-2 4.5 2 7 0s4.5-2 7 0"/><path d="M3 18c2.5-2 4.5 2 7 0s4.5-2 7 0"/>`,
   };
-  const svg = (k) => `<svg viewBox="0 0 24 24">${ICO[k]}</svg>`;
+  const svg = (k) => `<svg viewBox="0 0 ${k === "agua" ? "24 24" : "64 64"}" class="${k === "agua" ? "" : "sv-icone-aqua"}" aria-hidden="true" focusable="false">${ICO[k]}</svg>`;
 
   const cartaoAberto = (viveiro) => {
     const i = viveiros.indexOf(viveiro);
@@ -2156,26 +2164,29 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
               : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Vazio`}
           </span>
         </div>
-        <button class="sv-fechar" onclick="event.stopPropagation(); _vvFecharTodos()" title="Fechar" aria-label="Fechar este viveiro"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
-        <button class="sv-lapis" onclick="event.stopPropagation(); editarNomeViveiro(${i})" title="Editar nome" aria-label="Editar nome do viveiro"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <details class="sv-opcoes" onkeydown="if(event.key === 'Escape'){this.open=false;this.querySelector('summary').focus();}">
+          <summary aria-label="Opções do viveiro" title="Opções do viveiro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></summary>
+          <div class="sv-opcoes-lista">
+            <button type="button" onclick="this.closest('details').open=false; editarNomeViveiro(${i})">Editar viveiro</button>
+            <button type="button" onclick="_vvFecharTodos()">Recolher card</button>
+            <button type="button" class="sv-opcoes-excluir" onclick="_svConfirmarExclusao(${i}, this)">Excluir viveiro</button>
+          </div>
+        </details>
       </div>
 
       ${emCultivoV ? `
       <div class="sv-ciclo">
-        <div class="sv-barra${passou > 0 ? " sv-barra-passou" : ""}"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
-        <div class="sv-marcos">
-          <span>dia ${dias}</span>
-          <span${passou > 0 ? ` class="sv-passou"` : ""}>${passou > 0
-            ? `${passou} ${passou === 1 ? "dia" : "dias"} além da meta`
-            : `${pct}%`}</span>
-          <span>meta: ${meta} dias</span>
-        </div>
+        <div class="sv-ciclo-resumo"><strong>${dias} ${dias === 1 ? "dia" : "dias"} de cultivo</strong><span>Meta: ${meta} dias</span></div>
+        <div class="sv-barra${passou > 0 ? " sv-barra-passou" : ""}" aria-hidden="true"><i style="width:${Math.max(pct, 1.5)}%"></i></div>
+        <div class="sv-ciclo-nota${passou > 0 ? " sv-passou" : ""}">${passou > 0
+          ? `${passou} ${passou === 1 ? "dia" : "dias"} além da meta`
+          : passou === 0 ? "Meta de cultivo atingida" : `${pct}% da meta de cultivo`}</div>
       </div>` : ""}
 
       <div class="sv-baixo">
       <div class="sv-grade">
         <div class="sv-item">
-          <span class="sv-item-ico sv-item-ico-camarao">🦐</span>
+          <span class="sv-item-ico">${svg("povoamento")}</span>
           <span class="sv-item-txt"><small>Povoamento</small><b>${plsTxt}</b></span>
         </div>
         ${item("biomassa", "Biomassa est.", biomassaTxt)}
@@ -2195,8 +2206,8 @@ function mostrarListaViveiros(posicao = 0, direcao = "", msg = "") {
       </div>` : ""}
 
       <button class="sv-abrir" onclick="abrirViveiro(${i})">
-        Abrir detalhes do viveiro
-        <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg>
+        Ver viveiro
+        <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
       </button>
       </div>
     </div>`;
