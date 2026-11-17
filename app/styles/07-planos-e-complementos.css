@@ -630,3 +630,38 @@ body.tema-escuro .comparativo-v2 .simfut-resumo b { color:#8ee3bd; }
  .comparativo-v2 .cmp-cabecalho img { width:48px; height:48px; }
  .comparativo-v2 #simFut-resultado { padding:10px; }
 }
+
+
+/* Comparativo compacto: preserva os campos da seção Preços e custos. */
+.comparativo-v2 .cmp-cabecalho { padding:13px 16px; gap:12px; margin-bottom:15px; border-radius:15px; }
+.comparativo-v2 .cmp-eyebrow { font-size:8px; letter-spacing:1.2px; }
+.comparativo-v2 .cmp-cabecalho h3 { font-size:21px; margin:3px 0; }
+.comparativo-v2 .cmp-cabecalho p { font-size:11px; }
+.comparativo-v2 .cmp-cabecalho img { width:44px; height:44px; }
+.comparativo-v2 .cfg-wrap > .campo-form:first-child { margin-bottom:10px; }
+.comparativo-v2 .cfg-wrap > .campo-form:first-child .campo-icone { width:24px; height:24px; padding:5px; box-sizing:content-box; }
+.comparativo-v2 #simVenda-viveiro { min-height:42px; padding:9px 11px; }
+.comparativo-v2 .simfut-bloco { margin-top:12px; }
+.comparativo-v2 .cmp-etapa:first-child,
+.comparativo-v2 .simfut-resumo + .cmp-etapa { gap:8px; margin-bottom:10px; }
+.comparativo-v2 .simfut-resumo + .cmp-etapa { margin-top:17px; padding-top:14px; }
+.comparativo-v2 .cmp-etapa:first-child > span,
+.comparativo-v2 .simfut-resumo + .cmp-etapa > span { width:25px; height:25px; border-radius:8px; font-size:10px; }
+.comparativo-v2 .cmp-etapa:first-child h4,
+.comparativo-v2 .simfut-resumo + .cmp-etapa h4 { font-size:14px; }
+.comparativo-v2 .cmp-etapa:first-child p,
+.comparativo-v2 .simfut-resumo + .cmp-etapa p { font-size:10px; margin-top:2px; }
+.comparativo-v2 .cmp-etapa:first-child + .simfut-linha2 input { min-height:40px; padding:8px 10px; }
+.comparativo-v2 .simfut-nota { padding:5px 0; font-size:11px; }
+.comparativo-v2 .simfut-resumo { margin-top:5px; padding:9px 4px; border-radius:11px; }
+.comparativo-v2 .simfut-resumo small { margin-bottom:3px; }
+.comparativo-v2 .simfut-resumo b { font-size:12px; }
+.comparativo-v2 .simfut-domingo { min-height:48px; padding:7px 10px; margin-bottom:9px; border-radius:11px; gap:8px; }
+.comparativo-v2 .simfut-domingo-txt b { font-size:11px; }
+.comparativo-v2 .simfut-domingo-txt small { margin-top:2px; font-size:10px; }
+.comparativo-v2 .simfut-semanas { gap:8px; }
+.comparativo-v2 .simfut-semana { padding:9px; border-radius:11px; }
+.comparativo-v2 .simfut-semana label { margin-bottom:6px; font-size:11px; }
+.comparativo-v2 .simfut-semana-dias { margin-top:2px; }
+.comparativo-v2 .simfut-semana input { min-height:40px; padding:8px; }
+.comparativo-v2 .simfut-semana-tot { margin-top:5px; font-size:10px; }
