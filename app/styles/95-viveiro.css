@@ -551,3 +551,21 @@ body.tema-escuro .painel-viveiro .info-box small { color: #9ca3af; }
 body.tema-escuro .painel-viveiro .info-box-icone { background: #1f2937; }
 body.tema-escuro .painel-viveiro .info-box-icone svg { stroke: #6ee7a8; }
 body.tema-escuro .painel-viveiro .vv-consulta-btn { background: #182230; border-color: #2b3747; }
+
+/* Indicadores WA Aqua: desenhos vetoriais da coleção de aquicultura. */
+.painel-viveiro .info-box-icone.info-box-icone-aqua {
+    background: #def6ec;
+    color: #08776a;
+}
+.painel-viveiro .info-box-icone .aqua-metrica {
+    display: block;
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3.5;
+}
+body.tema-escuro .painel-viveiro .info-box-icone.info-box-icone-aqua {
+    background: #173e36;
+    color: #88e0c1;
+}
