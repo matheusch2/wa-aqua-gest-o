@@ -369,6 +369,10 @@ let precosCamarao = [];
 // dez dias dá folga para um atraso sem deixar passar preço de quinze dias.
 const PRECOS_VALIDADE_DIAS = 10;
 
+// De onde vem o preço. Fica aqui em cima, numa linha só, porque é a primeira
+// coisa que muda quando a referência passar a ser de outra região.
+const PRECOS_TITULO = "Preço referência · Vale do Jaguaribe";
+
 // Decide o que a faixa pode mostrar. Função pura -> tem teste.
 function _precosFrescos(linhas, hojeYmd, validadeDias = PRECOS_VALIDADE_DIAS) {
   const lista = (linhas || []).filter(l => l && Number(l.gramas) > 0 && Number(l.preco) > 0);
@@ -425,11 +429,25 @@ function _fitaPrecos() {
   };
 
   const quando = dias === 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`;
-  const corpo = itens.map(pedaco).join("") +
+  // O título passa JUNTO com os números, no começo de cada volta, em vez de
+  // ficar preso na esquerda: a fita tem 390px no celular, e um rótulo fixo
+  // desse tamanho comeria metade do espaço dos preços para sempre.
+  const corpo = `<span class="fp-item fp-titulo">${_esc(PRECOS_TITULO)}</span>` +
+    itens.map(pedaco).join("") +
     `<span class="fp-item fp-fonte">atualizado ${quando}</span>`;
   // O conteúdo entra DUAS vezes: o trilho desliza a largura de uma cópia e
   // volta ao começo, então a emenda não aparece e a fita parece sem fim.
   alvo.innerHTML = `<div class="fp-fita"><div class="fp-trilho">${corpo}${corpo}</div></div>`;
+
+  // A duração sai da LARGURA, não é fixa. Com os 26s de antes a fita andava a
+  // uma velocidade diferente a cada semana: seis tamanhos passavam devagar e
+  // vinte passavam a 102px/s, rápido demais para ler o número. Preso em 80px/s
+  // a leitura é sempre a mesma, publique ele os tamanhos que publicar.
+  const trilho = alvo.querySelector(".fp-trilho");
+  if (trilho) {
+    const larguraCopia = trilho.getBoundingClientRect().width / 2;
+    if (larguraCopia > 0) trilho.style.animationDuration = Math.max(18, Math.round(larguraCopia / 80)) + "s";
+  }
 }
 
 /*

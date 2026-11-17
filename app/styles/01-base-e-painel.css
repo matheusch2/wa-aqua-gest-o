@@ -1608,6 +1608,15 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
     white-space: nowrap;
 }
 .fp-item { display: inline-flex; align-items: baseline; gap: 6px; font-size: 12.5px; }
+/* O título de onde vem o preço. Caixa alta e espaçado para ler como cabeçalho
+   e não como mais um item da lista — é a única coisa na fita que não é número. */
+.fp-titulo {
+    color: #fff;
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+}
 .fp-tam { color: rgba(214,247,241,.62); font-weight: 700; }
 .fp-val { color: #fff; font-weight: 800; }
 .fp-sobe { color: #6ee7a8; font-weight: 800; font-size: 11px; }
