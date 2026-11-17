@@ -1,0 +1,310 @@
+/* WA Aqua Gestão | Financeiro v2 — revisão estritamente visual.
+   O menu, relatório, filtros, cálculos e boletos mantêm seus handlers originais.
+   :has() delimita o escopo sem acrescentar classes ao script principal. */
+
+/* Menu Financeiro: identificação exclusiva pelo botão do relatório. */
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) > .titulo-secao {
+  display:none;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) > .cfg-wrap {
+  max-width:760px;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-hero {
+  position:relative;
+  overflow:hidden;
+  box-sizing:border-box;
+  margin:0 0 16px;
+  padding:22px;
+  border-radius:20px;
+  background:linear-gradient(135deg,#0a655c 0%,#064b45 65%,#063a37 100%);
+  color:#fff;
+  text-align:left;
+  box-shadow:0 9px 22px rgba(5,76,69,.12);
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-hero::after {
+  content:"";
+  position:absolute;
+  width:190px;height:190px;right:-95px;top:-115px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:50%;
+  box-shadow:0 0 0 26px rgba(255,255,255,.025),0 0 0 62px rgba(255,255,255,.02);
+  pointer-events:none;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-hero-ico {
+  width:44px;height:44px;
+  margin:0 0 15px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  background:rgba(255,255,255,.13);
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-hero-ico svg {
+  width:23px;height:23px;stroke:#b6f5df;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-hero h4 {
+  margin:0 0 6px;color:#fff;font-size:25px;line-height:1.18;letter-spacing:-.035em;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-hero p {
+  max-width:340px;color:#c6e6de;font-size:13px;line-height:1.5;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-lista {
+  display:grid;grid-template-columns:minmax(0,1fr);
+  gap:10px;margin-bottom:14px;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item {
+  min-height:83px;
+  gap:12px;
+  padding:17px;
+  border:1px solid #dce9e4;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(5,76,69,.035);
+  transition:border-color .15s,background .15s,transform .15s,box-shadow .15s;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item:active {
+  transform:scale(.985);background:#f0f8f4;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item:focus-visible {
+  outline:2px solid #13876e;outline-offset:3px;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-ico {
+  width:45px;height:45px;border-radius:13px;
+  background:#e5f5ef;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-ico svg {
+  width:22px;height:22px;stroke:#08765e;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-ico-amber {
+  background:#fff4df!important;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-ico-amber svg {
+  stroke:#b77a22!important;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-titulo {
+  color:#153e34;font-size:15px;font-weight:800;line-height:1.35;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-sub {
+  color:#6d8078;font-size:12px;line-height:1.4;
+}
+#area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-chevron {
+  stroke:#86a39a;
+}
+@media (min-width:660px){
+  #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-lista {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item {
+    align-items:flex-start;
+    min-height:116px;
+  }
+}
+
+/* Relatório: o escopo depende do cabeçalho exclusivo da tela. */
+#area-gestao:has(> .fin-topo-acoes) > .fin-topo-acoes,
+#area-gestao:has(> .fin-topo-acoes) > .cfg-wrap {
+  max-width:860px;margin-left:auto;margin-right:auto;
+}
+#area-gestao:has(> .fin-topo-acoes) > .fin-topo-acoes {
+  margin-bottom:17px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-topo-acoes .titulo-secao {
+  color:#163e35;font-size:23px;line-height:1.2;letter-spacing:-.035em;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-topo-acoes .fin-novo-btn {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:39px;width:auto;
+  border:1px solid #cce2d9;border-radius:10px;
+  background:#edf7f2;color:#096a53;
+  padding:8px 12px;font-weight:750;
+}
+#area-gestao:has(> .fin-topo-acoes) .cfg-wrap > .campo-form,
+#area-gestao:has(> .fin-topo-acoes) #fin-ciclo-wrap > .campo-form {
+  box-sizing:border-box;
+  margin:0 0 10px!important;
+  padding:12px 13px;
+  background:#f6faf8;
+  border:1px solid #e2ece7;border-radius:13px;
+}
+#area-gestao:has(> .fin-topo-acoes) .campo-label {
+  margin-bottom:7px;
+}
+#area-gestao:has(> .fin-topo-acoes) .cfg-wrap select,
+#area-gestao:has(> .fin-topo-acoes) .fin-periodo-row input {
+  min-height:43px;
+  box-sizing:border-box;
+  border:1px solid #d3e3dc;
+  border-radius:10px;
+  background-color:#fff;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-limpar-filtros {
+  margin:1px 2px 13px auto;
+  padding:7px 5px;
+  width:auto;color:#13745b;font-size:12px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-modo-toggle {
+  gap:3px;padding:4px;border:1px solid #e0e9e5;
+  border-radius:12px;background:#edf3ef;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-modo-btn {
+  min-height:39px;border-radius:9px;
+  color:#6a7e75;font-size:13px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-modo-btn.ativo {
+  background:#fff;color:#0b6b52;
+  box-shadow:0 2px 7px rgba(15,61,47,.09);
+}
+
+/* Indicadores: um valor principal em destaque, os demais como apoio. */
+#area-gestao:has(> .fin-topo-acoes) .fin-cards {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;margin:0 0 22px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card {
+  min-width:0;
+  padding:15px 14px;
+  border:1px solid #e1eae5;border-radius:15px;
+  background:#fff;box-shadow:0 2px 10px rgba(7,72,57,.045);
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card:first-child {
+  grid-column:1/-1;
+  padding:18px;
+  background:linear-gradient(135deg,#075e53,#07473f);
+  border-color:#075e53;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card:last-child {grid-column:1/-1;}
+#area-gestao:has(> .fin-topo-acoes) .fin-card-top {
+  gap:8px;margin-bottom:9px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card-top svg {
+  width:17px;height:17px;stroke:#147a60;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card-top span {
+  font-size:11px;font-weight:750;letter-spacing:.01em;color:#6c8178;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card strong {
+  display:block;
+  overflow-wrap:anywhere;
+  color:#173e35;font-size:19px;line-height:1.24;
+  font-variant-numeric:tabular-nums;letter-spacing:-.035em;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card small {
+  color:#6b8278;line-height:1.4;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card:first-child :is(span,strong,small) {
+  color:#fff;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card:first-child strong {
+  font-size:28px;letter-spacing:-.045em;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card:first-child .fin-card-top svg {
+  stroke:#95ebc9;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-card:first-child small {
+  color:#b7e7d8;
+}
+
+/* Lançamentos consolidados: leitura no estilo extrato, sem cartões soltos. */
+#area-gestao:has(> .fin-topo-acoes) .fin-lista-head {
+  gap:8px;margin-bottom:11px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-lista-head span {
+  color:#193f36;font-size:15px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-lista-hint {
+  text-align:right;line-height:1.3;max-width:160px;font-size:10px;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-lista {
+  gap:0;overflow:hidden;border:1px solid #e1ebe6;
+  border-radius:14px;background:#fff;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo {
+  margin:0;border:0;border-top:1px solid #e9f0ec;
+  border-radius:0;min-height:53px;
+  background:transparent;padding:12px 13px;
+  box-shadow:none;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo:first-child {border-top:0;}
+#area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo.aberto {
+  background:#edf7f2;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-grupo-det {
+  margin:0;padding:6px 9px 10px 14px;
+  border-left:3px solid #a4d3bf;
+  background:#f7faf8;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-total-geral {
+  margin-top:15px;
+  border:1px solid #dcebe4;border-radius:13px;
+  background:#eef7f2;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-total-geral-txt strong {
+  font-variant-numeric:tabular-nums;
+}
+/* Por tipo: rosca e ranking com respiro consistente. */
+#area-gestao:has(> .fin-topo-acoes) .fin-pizza-wrap {
+  padding:16px 12px;
+  border:1px solid #e0eae5;border-radius:15px;background:#fff;
+}
+#area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
+  border-color:#e3ece7;border-radius:11px;background:#fff;
+}
+
+/* A hierarquia continua clara quando o tema escuro está ligado. */
+body.tema-escuro #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item {
+  background:#1b2b27;border-color:#355148;box-shadow:none;
+}
+body.tema-escuro #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-titulo {color:#e7f2ed;}
+body.tema-escuro #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item-sub {color:#aac0b5;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-topo-acoes .titulo-secao {color:#eaf4ef;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-topo-acoes .fin-novo-btn {
+  background:#1d3831;border-color:#36574a;color:#a6ead0;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .cfg-wrap > .campo-form,
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) #fin-ciclo-wrap > .campo-form {
+  background:#1c2c28;border-color:#385048;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .cfg-wrap select,
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-periodo-row input {
+  background-color:#17241f;border-color:#385248;color:#eaf4ee;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-modo-toggle {
+  background:#21322c;border-color:#374e43;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-modo-btn.ativo {
+  background:#345044;color:#ddf8eb;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card {
+  background:#1d2d28;border-color:#344d43;box-shadow:none;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card:first-child {
+  background:linear-gradient(135deg,#075e53,#063b35);border-color:#286f5a;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card strong {color:#e8f5ee;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card-top span,
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card small {color:#a6c1b3;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card:first-child :is(span,strong) {color:#fff;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-card:first-child small {color:#b7e7d8;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-lista-head span {color:#e5f0eb;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-lista {
+  background:#1b2924;border-color:#385046;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo {
+  border-top-color:#364c42;background:transparent;
+}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-lista > .fin-grupo.aberto {background:#224639;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-grupo-det {background:#20332b;border-left-color:#3d8166;}
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-total-geral,
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-pizza-wrap,
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
+  background:#1d2d28;border-color:#344d43;
+}
+@media(min-width:800px){
+  #area-gestao:has(> .fin-topo-acoes) .fin-cards {
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #area-gestao:has(> .fin-topo-acoes) .fin-card:first-child,
+  #area-gestao:has(> .fin-topo-acoes) .fin-card:last-child {grid-column:auto;}
+  #area-gestao:has(> .fin-topo-acoes) .fin-card:first-child strong {font-size:24px;}
+}
+@media(prefers-reduced-motion:reduce){
+  #area-gestao:has(.cfg-item[onclick="abrirFinanceiro()"]) .cfg-item {transition:none;}
+}
