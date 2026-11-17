@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261117-simular";
+const CACHE = "waaqua-20261117-sw404";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -163,41 +163,70 @@ function buscarNaRede(req) {
     });
 }
 
+/*
+ * A melhor cópia guardada para este pedido.
+ *
+ * ignoreSearch é o detalhe que faz isto conviver com o "?v=" das atualizações:
+ * sem ele, o script.js guardado como "?v=20260820b" nunca serviria de reserva
+ * depois do deploy seguinte, e o app quebraria a cada publicação.
+ */
+async function reservaGuardada(req) {
+  const guardado = await caches.match(req, { ignoreSearch: true });
+  if (guardado) return guardado;
+
+  if (req.mode === "navigate") {
+    // Devolve a tela mais próxima do que a pessoa pediu: quem tentou abrir o
+    // sistema quer o sistema, não a página de vendas.
+    const noApp = new URL(req.url).pathname.startsWith("/app");
+    const alvos = noApp
+      ? ["/app/login.html", "/app/index.html", "/index.html"]
+      : ["/index.html", "/app/login.html"];
+    for (const a of alvos) {
+      const g = await caches.match(a, { ignoreSearch: true });
+      if (g) return g;
+    }
+  }
+  return null;
+}
+
 self.addEventListener("fetch", (evento) => {
   const req = evento.request;
   if (!podeCuidar(req)) return; // deixa o navegador cuidar normalmente
 
   evento.respondWith(
     buscarNaRede(req)
-      .then((resposta) => {
+      .then(async (resposta) => {
         // Guarda uma cópia só do que veio certo e do próprio site.
         if (resposta && resposta.ok && resposta.type === "basic") {
           const copia = resposta.clone();
           caches.open(CACHE).then((c) => c.put(req, copia)).catch(() => {});
+          return resposta;
+        }
+
+        /* ERRO DO SERVIDOR NÃO É FALHA DE REDE.
+         *
+         * Um 404 ou um 500 chegam como resposta normal: não caem no catch, e
+         * iam direto para a tela. Durante a publicação no GitHub Pages existe
+         * uma janela de alguns segundos em que o arquivo velho já saiu e o
+         * novo ainda não entrou — e nela o produtor via a página de 404 do
+         * GitHub, com o unicórnio, no lugar do app.
+         *
+         * A cópia guardada é a versão anterior. Versão anterior é pior que a
+         * nova e MUITO melhor que um unicórnio: o app abre, funciona, e na
+         * próxima vez já pega a nova.
+         *
+         * Se não houver cópia, devolve o erro como veio: um 404 de verdade,
+         * de um endereço que não existe mesmo, tem de continuar sendo 404.
+         */
+        if (resposta && resposta.status >= 400) {
+          const reserva = await reservaGuardada(req);
+          if (reserva) return reserva;
         }
         return resposta;
       })
       .catch(async () => {
-        // ignoreSearch é o detalhe que faz isto conviver com o "?v=" das
-        // atualizações: sem ele, o script.js guardado como "?v=20260820b"
-        // nunca serviria de reserva depois do deploy seguinte, e o app
-        // offline quebraria a cada atualização.
-        const guardado = await caches.match(req, { ignoreSearch: true });
-        if (guardado) return guardado;
-
-        if (req.mode === "navigate") {
-          // Sem internet, devolve a tela mais próxima do que a pessoa pediu:
-          // quem tentou abrir o sistema quer o sistema, não a página de vendas.
-          const noApp = new URL(req.url).pathname.startsWith("/app");
-          const alvos = noApp
-            ? ["/app/login.html", "/app/index.html", "/index.html"]
-            : ["/index.html", "/app/login.html"];
-          for (const a of alvos) {
-            const guardado = await caches.match(a, { ignoreSearch: true });
-            if (guardado) return guardado;
-          }
-        }
-
+        const reserva = await reservaGuardada(req);
+        if (reserva) return reserva;
         return new Response(
           "Sem conexão com a internet. Abra o app novamente quando o sinal voltar.",
           { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }

@@ -37,9 +37,14 @@ const PAGINA = (versao) =>
 // página sem reiniciar nada, que é o que uma publicação faz na vida real.
 function servidor() {
   let versao = "1";
+  let publicando = false;   // a janela de segundos em que o Pages devolve 404
   const app = http.createServer((req, res) => {
     const url = new URL(req.url, "http://x");
 
+    if (publicando && url.pathname === "/teste-sw.html") {
+      res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+      return res.end("<!doctype html><title>404</title><body>UNICORNIO");
+    }
     if (url.pathname === "/teste-sw.html") {
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
@@ -71,6 +76,7 @@ function servidor() {
   return {
     ouvir: () => new Promise((ok) => app.listen(0, "127.0.0.1", () => ok(app.address().port))),
     publicar: (v) => { versao = v; },
+    emPublicacao: (b) => { publicando = b; },
     fechar: () => new Promise((ok) => app.close(ok)),
   };
 }
@@ -120,6 +126,22 @@ test("service worker: as duas promessas", { skip: chromium ? false : "playwright
           "offline o app tem que abrir com a última versão guardada");
       } finally {
         await ctx.setOffline(false);
+      }
+    });
+
+    /* O unicornio do GitHub. Durante a publicacao o arquivo velho ja saiu e o
+       novo ainda nao entrou, e o Pages devolve 404. Um 404 NAO e falha de
+       rede: chega como resposta normal e ia direto para a tela. O app tem de
+       abrir na versao anterior em vez de mostrar a pagina de erro. */
+    await t.test("durante a publicacao, o app abre em vez de mostrar o 404", async () => {
+      s.emPublicacao(true);
+      try {
+        await p.goto(url);
+        const t = await texto(p);
+        assert.ok(!/UNICORNIO/.test(t), "o 404 do servidor vazou para a tela: " + t);
+        assert.equal(t, "VERSAO-2", "devia abrir com a ultima versao guardada");
+      } finally {
+        s.emPublicacao(false);
       }
     });
 
