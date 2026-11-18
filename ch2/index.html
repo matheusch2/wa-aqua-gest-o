@@ -70,7 +70,7 @@
 
         /* ── Busca + filtros ── */
         /* ── Preços do camarão ──────────────────────────────────────────────
-           A tabela já nasce inteira na tela, 8 a 35 g, e o trabalho é só
+           A tabela já nasce inteira na tela, 6 a 35 g, e o trabalho é só
            digitar o valor do quilo onde tem preço. A versão anterior pedia
            para criar linha por linha e escrever o nome do tamanho antes do
            número — três passos para cada preço, e nada impedia dois "12 g". */
@@ -251,7 +251,7 @@
                  do app. Escreve direto na tabela precos_camarao: a política do
                  banco só deixa quem tem perfis.role = 'admin' gravar, a mesma
                  checagem que o admin_ajustar_vencimento já usa.
-                 A grade é montada por pcRender(), de 8 a 35 g. -->
+                 A grade é montada por pcRender(), de 6 a 35 g. -->
             <div class="sec-tit">Preços do camarão</div>
             <div class="pc-card">
                 <p class="pc-aviso">
@@ -680,7 +680,7 @@
            Grava direto na tabela: a política do banco só deixa quem tem
            perfis.role = 'admin' escrever.
 
-           A grade é FIXA, de 8 a 35 g — a faixa de despesca que se negocia. O
+           A grade é FIXA, de 6 a 35 g — a faixa de despesca que se negocia. O
            administrador só digita o valor do quilo onde tem preço; tamanho em
            branco não vai para o banco, e tamanho que ESTAVA publicado e ficou
            em branco sai da faixa.
@@ -689,7 +689,7 @@
            publicar significa "confirmo esta tabela hoje", e é esse carimbo que
            segura a faixa viva pelos 10 dias. O preço anterior da setinha de
            alta/baixa é calculado pelo gatilho do banco, não aqui.             */
-        const PC_MIN = 8, PC_MAX = 35;
+        const PC_MIN = 6, PC_MAX = 35;
         let pcSalvos = {};   // gramas -> { preco, preco_anterior } que está no banco
         let pcCampos = {};   // gramas -> texto como está na caixinha agora
 
@@ -774,7 +774,7 @@
             campo.value = pcCampos[g];
         }
 
-        // Enter desce para o tamanho seguinte — são 28 caixinhas, e tirar a mão
+        // Enter desce para o tamanho seguinte — são 30 caixinhas, e tirar a mão
         // do teclado em cada uma é o que fazia essa tela ser chata.
         function pcTecla(ev, g) {
             if (ev.key !== "Enter") return;
