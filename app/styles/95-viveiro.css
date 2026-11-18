@@ -569,3 +569,29 @@ body.tema-escuro .painel-viveiro .info-box-icone.info-box-icone-aqua {
     background: #173e36;
     color: #88e0c1;
 }
+
+/* Análise por período: acesso compacto no viveiro. */
+.vv-semana-btn { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:10px 13px; margin:14px 0 6px; border:1px solid #cce4da; border-radius:12px; background:#edf7f2; color:#126b58; font-size:13px; font-weight:700; cursor:pointer; }
+.vv-semana-btn span:last-child { margin-left:auto; font-size:20px; }
+.semana-tela .sem-faixa { display:flex; gap:12px; padding:10px; margin:12px 0; background:var(--cmp-soft); border:1px solid var(--cmp-line); border-radius:11px; }
+.semana-tela .sem-faixa label { flex:1; min-width:0; font-size:11px; }
+.semana-tela select { width:100%; margin-top:5px; }
+.semana-tela label { font-size:12px; color:var(--cmp-ink); }
+.semana-tela .campo-form input { width:100%; margin-top:6px; }
+.semana-tela .campo-form small { display:block; font-size:10px; color:var(--cmp-muted); line-height:1.5; margin-top:5px; }
+.sem-resumo { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:16px 0 10px; }
+.sem-resumo small { display:block; font-size:9px; color:var(--cmp-muted); }
+.sem-resumo b { display:block; font-size:12px; margin-top:4px; color:var(--cmp-ink); }
+.semana-tela h4 { margin:20px 0 8px; font-size:15px; color:var(--cmp-ink); }
+.sem-nota { font-size:11px; line-height:1.5; color:var(--cmp-muted); margin:8px 0; }
+.sem-tabela { border-collapse:collapse; width:100%; font-size:12px; font-variant-numeric:tabular-nums; }
+.sem-tabela th { font-size:10px; background:var(--cmp-soft); color:var(--cmp-muted); }
+.sem-tabela th,.sem-tabela td { padding:9px 5px; text-align:right; border-bottom:1px solid var(--cmp-line); }
+.sem-tabela th:first-child,.sem-tabela td:first-child { text-align:left; }
+.sem-tabela td small { display:block; font-size:9px; color:var(--cmp-muted); }
+.sem-pos { color:#14765e; font-weight:700; } .sem-neg { color:#b93636; font-weight:700; }
+.sem-destaque { padding:10px; border-radius:10px; background:var(--cmp-soft); color:var(--cmp-ink); font-size:11px; }
+.semana-tela details { margin:16px 0; border:1px solid var(--cmp-line); border-radius:11px; padding:12px; font-size:11px; line-height:1.5; color:var(--cmp-muted); }
+.semana-tela summary { cursor:pointer; color:var(--cmp-ink); font-weight:700; }
+body.tema-escuro .vv-semana-btn { background:#183d31; color:#a3e6c9; border-color:#31594a; }
+body.tema-escuro .sem-pos { color:#8ee3bd; } body.tema-escuro .sem-neg { color:#ffaaaa; }
