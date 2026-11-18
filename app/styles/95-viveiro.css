@@ -638,3 +638,32 @@ body.tema-escuro .semana-tela .sem-alerta { background:#3d3017; color:#f7d98f; }
   text-align:center;
   padding-inline:10px;
 }
+
+/* Calendário compacto: impede que o campo nativo do iPhone invada a outra data. */
+.semana-tela .sem-datas:not([hidden]) {
+  box-sizing:border-box; padding:12px; gap:12px;
+  border:1px solid var(--cmp-line); border-radius:12px;
+  background:var(--cmp-soft); margin:12px 0;
+}
+.semana-tela .sem-datas label {
+  display:flex; flex-direction:column; gap:6px; margin:0;
+  font-size:11px; font-weight:600; color:var(--cmp-ink);
+}
+.semana-tela .sem-datas input[type="date"] {
+  display:block; box-sizing:border-box; width:100%; max-width:100%; min-width:0;
+  height:42px; min-height:42px; margin:0; padding:8px;
+  border:1px solid var(--cmp-line); border-radius:8px;
+  font-family:inherit; font-size:12px; line-height:1.2;
+}
+.semana-tela .sem-datas input[type="date"]::-webkit-date-and-time-value {
+  min-width:0; text-align:center; margin:0;
+}
+.semana-tela .sem-datas>small { margin:0; padding-top:8px; border-top:1px solid var(--cmp-line); }
+@media(max-width:480px) {
+  .semana-tela .sem-datas:not([hidden]) { grid-template-columns:minmax(0,1fr); gap:9px; }
+  .semana-tela .sem-datas label {
+    display:grid; grid-template-columns:88px minmax(0,1fr);
+    align-items:center; gap:8px;
+  }
+  .semana-tela .sem-datas input[type="date"] { width:100%; min-width:0; }
+}
