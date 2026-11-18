@@ -8157,12 +8157,12 @@ function _simFutAbrir(modo, titulo) {
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
   area.innerHTML = `
-    <div class="${modo === "comparativo" ? "comparativo-v2" : ""}">
+    <div class="${modo === "comparativo" ? "comparativo-v2" : "comparativo-v2 projecao-v2"}">
     ${modo === "comparativo" ? `<header class="cmp-cabecalho">
       <div><span class="cmp-eyebrow">SIMULADOR DE VENDA</span><h3>Comparativo</h3>
       <p>Vender hoje ou esperar crescer?</p></div>
       <img src="assets/sim-comparativo.webp" alt="" width="64" height="64">
-    </header>` : `<h3 class="titulo-secao">${titulo}</h3>`}
+    </header>` : `<header class="proj-cabecalho"><h3>${titulo}</h3><p>Planeje o peso, a alimentação e o resultado da despesca.</p></header>`}
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
