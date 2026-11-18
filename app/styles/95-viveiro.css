@@ -631,3 +631,10 @@ body.tema-escuro .semana-tela .sem-alerta { background:#3d3017; color:#f7d98f; }
 .semana-tela .sem-datas>small { grid-column:1/-1; font-size:10px; color:var(--cmp-muted); line-height:1.4; }
 .semana-tela .sem-periodo-info { font-size:11px; color:var(--cmp-ink); font-weight:600; margin:14px 0 0; }
 .semana-tela .sem-tabela th,.semana-tela .sem-tabela td { padding-left:4px; padding-right:4px; }
+
+/* Centraliza resultado e FCA do período dentro da última coluna. */
+.semana-tela .sem-tabela th:last-child,
+.semana-tela .sem-tabela td:last-child {
+  text-align:center;
+  padding-inline:10px;
+}
