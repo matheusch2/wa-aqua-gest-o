@@ -757,3 +757,67 @@ body.tema-escuro .cfg-hub .cfg-item-ico { background: transparent; }
 body.tema-escuro .cfg-hub .cfg-item-ico svg { stroke: #a0b9ad; }
 body.tema-escuro .cfg-hub .cfg-item-sair .cfg-item-titulo { color: #f6aaa1; }
 body.tema-escuro .cfg-hub .cfg-item-sair .cfg-item-ico svg { stroke: #f6aaa1; }
+
+/* ── Lançar pelo WhatsApp ────────────────────────────────────────────────────
+   A tela onde o produtor liga o número dele à conta. Mora em Configurações e
+   não no cabeçalho: conectar é coisa que se faz uma vez na vida, e o
+   cabeçalho é o lugar mais caro do app — ali cabe o que se usa todo dia. */
+.zap-cab { display: flex; gap: 13px; align-items: flex-start; margin: 4px 2px 18px; }
+.zap-cab-ico {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 13px; background: #e4f6ec;
+}
+.zap-cab-ico svg {
+    width: 23px; height: 23px;
+    fill: none; stroke: #0d7a4f; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+/* text-align explícito: uma regra geral centraliza h2 dentro do
+   .form-lancamento, e o título saía centralizado com o texto à esquerda. */
+.zap-cab h2 { margin: 0 0 3px; font-size: 20px; font-weight: 800; color: #10322f; letter-spacing: -.02em; text-align: left; }
+.zap-cab p { margin: 0; font-size: 13px; line-height: 1.45; color: #5f6e6b; }
+
+.zap-passos { margin: 0 0 16px; padding-left: 20px; }
+.zap-passos li { font-size: 13.5px; line-height: 1.6; color: #3f4a52; margin-bottom: 4px; }
+.zap-passos b { color: #10322f; font-weight: 800; }
+
+/* O código grande e espaçado: ele vai ser lido em voz alta ou conferido de
+   relance contra o que o WhatsApp escreveu. */
+.zap-codigo {
+    text-align: center; padding: 18px 16px 15px; margin-bottom: 14px;
+    border: 1px solid #cfdcd9; border-radius: 16px; background: #f7faf9;
+}
+.zap-codigo small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: #5f6e6b; margin-bottom: 6px; }
+.zap-codigo b {
+    display: block; font-size: 38px; font-weight: 800; letter-spacing: .14em;
+    color: #10322f; font-variant-numeric: tabular-nums;
+}
+.zap-codigo em { display: block; margin-top: 5px; font-style: normal; font-size: 11.5px;
+    font-weight: 700; color: #8a6a11; }
+
+.zap-abrir { display: block; text-align: center; text-decoration: none; }
+
+.zap-ligado {
+    display: flex; align-items: center; gap: 12px; padding: 15px 16px; margin-bottom: 12px;
+    border: 1px solid #bfe3d1; border-radius: 16px; background: #f1faf5;
+}
+.zap-ponto {
+    flex-shrink: 0; width: 10px; height: 10px; border-radius: 50%;
+    background: #15a06b; box-shadow: 0 0 0 4px rgba(21,160,107,.16);
+}
+.zap-ligado small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .06em;
+    text-transform: uppercase; color: #3f6b58; }
+.zap-ligado b { font-size: 18px; font-weight: 800; color: #10322f; font-variant-numeric: tabular-nums; }
+
+.zap-espera {
+    padding: 15px 16px; margin-bottom: 14px;
+    border: 1px solid #e8e2cf; border-radius: 14px; background: #fdfaf1;
+}
+.zap-espera b { display: block; font-size: 14.5px; color: #6b5405; margin-bottom: 4px; }
+.zap-espera p { margin: 0; font-size: 13px; line-height: 1.5; color: #6b5e3a; }
+
+.zap-nota { margin: 12px 2px 0; font-size: 12px; line-height: 1.5; color: #5f6e6b; }
+.zap-nota b { color: #10322f; font-weight: 800; }
+.zap-erro { margin: 0 2px 12px; font-size: 13px; font-weight: 700; color: #a8211a; }
+/* Desconectar é destrutivo: o canal para de funcionar na hora. Vermelho. */
+.zap-desligar { color: #a8211a; border-color: #e8bdba; }

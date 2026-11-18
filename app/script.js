@@ -311,6 +311,7 @@ document.addEventListener("click", function(e) {
 // ═══ CONFIGURAÇÕES ═══════════════════════════════════════════════════════════
 
 const _ICO = {
+  whatsapp: `<svg viewBox="0 0 24 24"><path d="M3 21l1.6-4.6A8.4 8.4 0 1 1 7.8 19.6L3 21z"/><path d="M9 8.2c-.2 0-.5 0-.7.3-.3.3-.9.8-.9 2s.9 2.3 1 2.5c.1.2 1.7 2.8 4.3 3.8 2.1.8 2.6.7 3 .6.6-.1 1.8-.7 2-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.4l-1.8-.9c-.2-.1-.4-.1-.6.1l-.8 1c-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.5-.6c.1-.2.1-.3.2-.5 0-.2 0-.4-.1-.5l-.7-1.7c-.2-.4-.4-.3-.6-.3z"/></svg>`,
   atualizar:`<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
   fazenda:  `<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   seguranca:`<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
@@ -327,8 +328,8 @@ const _ICO = {
   ideia:    `<svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>`,
 };
 
-function _cfgItem(ico, titulo, sub, onclick) {
-  return `<button class="cfg-item" onclick="${onclick}">
+function _cfgItem(ico, titulo, sub, onclick, id) {
+  return `<button class="cfg-item" onclick="${onclick}"${id ? ` id="${id}"` : ""}>
     <div class="cfg-item-ico">${_ICO[ico]}</div>
     <div class="cfg-item-texto">
       <span class="cfg-item-titulo">${titulo}</span>
@@ -336,6 +337,173 @@ function _cfgItem(ico, titulo, sub, onclick) {
     </div>
     <svg class="cfg-item-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
   </button>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANÇAR PELO WHATSAPP — a ponta do app
+
+   Aqui o produtor liga o número dele à conta. O banco guarda o vínculo (ver
+   banco/whatsapp-vinculo.sql); esta tela só mostra o código e confere.
+
+   O CÓDIGO VAI NO SENTIDO CONTRÁRIO do que se espera: o app mostra, e a
+   PESSOA manda para o nosso número. É isso que prova que o WhatsApp é dela —
+   a mensagem chega daquele número. Mandar o código para o número que ela
+   digitou provaria menos, e exigiria um template aprovado pela Meta.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* O número do canal. VAZIO de propósito enquanto a conta na Meta não existe:
+   a API oficial exige um número DEDICADO, que deixa de funcionar no WhatsApp
+   normal do aparelho — então não pode ser o número comercial de atendimento.
+   Com ele vazio, a tela explica que o canal está sendo montado em vez de
+   mandar o produtor conversar com um número que não responde. */
+const _WHATSAPP_CANAL = "";
+
+let _zapVinculo = null;
+
+async function _zapLer() {
+  try {
+    const { data, error } = await supabaseClient
+      .from("whatsapp_vinculos")
+      .select("telefone, verificado_em")
+      .maybeSingle();
+    // 42P01 = tabela ainda não criada neste banco. Recurso novo não derruba
+    // as Configurações.
+    if (error && error.code !== "42P01" && error.code !== "PGRST116") return null;
+    _zapVinculo = data || null;
+    return _zapVinculo;
+  } catch (e) { return null; }
+}
+
+// Preenche o subtítulo da linha em Configurações depois que a rede responde.
+async function _zapAtualizarLinha() {
+  const el = document.querySelector("#cfg-item-zap .cfg-item-sub");
+  if (!el) return;
+  const v = await _zapLer();
+  el.textContent = v && v.verificado_em
+    ? `Conectado em ${_zapTelefoneBonito(v.telefone)}`
+    : "Lance ração e custos direto do seu zap";
+}
+
+// "5588992498067" -> "(88) 99249-8067". Só para mostrar; o banco guarda cru.
+function _zapTelefoneBonito(tel) {
+  const d = String(tel || "").replace(/\D/g, "");
+  const semDdi = d.startsWith("55") ? d.slice(2) : d;
+  if (semDdi.length < 10) return d;
+  const ddd = semDdi.slice(0, 2), resto = semDdi.slice(2);
+  const meio = resto.length > 8 ? resto.slice(0, 5) : resto.slice(0, 4);
+  return `(${ddd}) ${meio}-${resto.slice(meio.length)}`;
+}
+
+async function abrirWhatsAppVinculo() {
+  esconderMenu();
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `<div class="form-lancamento"><div id="zap-area"></div></div>`;
+  await _zapLer();
+  _zapRender();
+}
+
+function _zapRender(codigo, expira, aviso) {
+  const alvo = document.getElementById("zap-area");
+  if (!alvo) return;
+  const ligado = _zapVinculo && _zapVinculo.verificado_em;
+
+  const cabecalho = `
+    <div class="zap-cab">
+      <span class="zap-cab-ico">${_ICO.whatsapp}</span>
+      <div>
+        <h2>Lançar pelo WhatsApp</h2>
+        <p>Mande a ração do dia por mensagem, sem abrir o app.</p>
+      </div>
+    </div>`;
+
+  if (ligado) {
+    alvo.innerHTML = cabecalho + `
+      <div class="zap-ligado">
+        <span class="zap-ponto"></span>
+        <div><small>Conectado</small><b>${_esc(_zapTelefoneBonito(_zapVinculo.telefone))}</b></div>
+      </div>
+      <p class="zap-nota">Só este número pode lançar na sua fazenda. Trocou de
+        chip? Desconecte e conecte o novo.</p>
+      <button class="botao-voltar-form zap-desligar" onclick="_zapDesconectar(this)">Desconectar este número</button>
+      <button class="botao-voltar-form" style="margin-top:8px" onclick="abrirConfiguracoes()">Voltar</button>`;
+    return;
+  }
+
+  if (!_WHATSAPP_CANAL) {
+    alvo.innerHTML = cabecalho + `
+      <div class="zap-espera">
+        <b>Canal em montagem</b>
+        <p>O número do WhatsApp do WA Aqua está sendo liberado junto à Meta.
+           Assim que estiver no ar, esta tela mostra o seu código e em um
+           minuto você conecta.</p>
+      </div>
+      <button class="botao-voltar-form" onclick="abrirConfiguracoes()">Voltar</button>`;
+    return;
+  }
+
+  if (!codigo) {
+    alvo.innerHTML = cabecalho + `
+      ${aviso ? `<p class="zap-erro">${_esc(aviso)}</p>` : ""}
+      <ol class="zap-passos">
+        <li>Toque em <b>Gerar meu código</b>.</li>
+        <li>O WhatsApp abre com o código já escrito. É só enviar.</li>
+        <li>Pronto — a gente responde confirmando.</li>
+      </ol>
+      <button class="botao-salvar" onclick="_zapGerar(this)">Gerar meu código</button>
+      <button class="botao-voltar-form" style="margin-top:8px" onclick="abrirConfiguracoes()">Voltar</button>`;
+    return;
+  }
+
+  const texto = encodeURIComponent(`Conectar minha fazenda: ${codigo}`);
+  alvo.innerHTML = cabecalho + `
+    <div class="zap-codigo"><small>Seu código</small><b>${_esc(codigo)}</b>
+      <em>vale por 10 minutos</em></div>
+    <a class="botao-salvar zap-abrir" href="https://wa.me/${_WHATSAPP_CANAL}?text=${texto}" target="_blank" rel="noopener">
+      Abrir o WhatsApp com o código
+    </a>
+    <button class="botao-voltar-form" style="margin-top:8px" onclick="_zapConferir(this)">Já mandei — conferir</button>
+    <p class="zap-nota">Se o WhatsApp não abrir sozinho, mande
+      <b>Conectar minha fazenda: ${_esc(codigo)}</b> para o nosso número.</p>
+    <button class="botao-voltar-form" style="margin-top:8px" onclick="abrirConfiguracoes()">Voltar</button>`;
+}
+
+async function _zapGerar(botao) {
+  botao.disabled = true;
+  const antes = botao.textContent;
+  botao.textContent = "Gerando…";
+  const { data, error } = await supabaseClient.rpc("whatsapp_gerar_codigo");
+  botao.disabled = false;
+  botao.textContent = antes;
+  if (error) {
+    // "já conectado" é o único erro esperado: a tela estava velha.
+    await _zapLer();
+    _zapRender(null, null, /conectado/i.test(error.message || "")
+      ? "Este número já está conectado. Puxe a tela de novo."
+      : "Não consegui gerar agora. Tente de novo em instantes.");
+    return;
+  }
+  const linha = Array.isArray(data) ? data[0] : data;
+  _zapRender(linha && linha.codigo, linha && linha.expira_em);
+}
+
+async function _zapConferir(botao) {
+  botao.disabled = true;
+  const antes = botao.textContent;
+  botao.textContent = "Conferindo…";
+  await _zapLer();
+  botao.disabled = false;
+  botao.textContent = antes;
+  if (_zapVinculo && _zapVinculo.verificado_em) { _zapRender(); return; }
+  _toastErro("Ainda não chegou. Mande a mensagem e toque de novo.");
+}
+
+async function _zapDesconectar(botao) {
+  botao.disabled = true;
+  const { error } = await supabaseClient.rpc("whatsapp_desconectar");
+  botao.disabled = false;
+  if (error) { _toastErro("Não consegui desconectar agora."); return; }
+  _zapVinculo = null;
+  _zapRender();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -999,6 +1167,7 @@ async function abrirConfiguracoes() {
       <div class="cfg-lista">
         ${_cfgItem("fazenda", "Fazenda", "Nome, e-mail e foto", "abrirFazenda()")}
         ${_cfgItem("conta", "Meus dados", "Nome e WhatsApp para contato", "abrirMeusDados()")}
+        ${_cfgItem("whatsapp", "Lançar pelo WhatsApp", "Carregando…", "abrirWhatsAppVinculo()", "cfg-item-zap")}
         ${_cfgItem("seguranca", "Segurança", "Alterar senha", "abrirSeguranca()")}
         ${_cfgItem("aparencia", "Aparência", "Tema claro ou escuro", "abrirAparencia()")}
         ${_cfgItem("conta", "Minha conta", "Plano e assinatura", "abrirMinhaConta()")}
@@ -1055,6 +1224,9 @@ async function abrirConfiguracoes() {
     if (elNome) elNome.textContent = nome;
     if (elEmail) elEmail.textContent = email;
   } catch (e) {}
+  // O estado do WhatsApp vem da rede e não pode atrasar a tela: entra depois,
+  // como o avatar. Até chegar, a linha diz "Carregando…".
+  _zapAtualizarLinha();
 }
 
 function confirmarSairConta() {
