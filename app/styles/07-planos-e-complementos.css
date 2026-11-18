@@ -721,3 +721,33 @@ body.tema-escuro .comparativo-v2 .simfut-resumo b { color:#8ee3bd; }
 .sim-padrao .sim-sobr-sel { color:var(--cmp-muted); }
 body.tema-escuro .sim-padrao .sim-card.sim-ok strong { color:#8ee3bd; }
 body.tema-escuro .sim-padrao .sim-card.sim-neg strong { color:#ffaaaa; }
+
+/* ── Cartão da semana mais baixo ─────────────────────────────────────────────
+   Eram 110px para um campo onde se digita dois dígitos, em quatro linhas
+   empilhadas: nome, datas, campo, total. O TOTAL subiu para a linha do nome —
+   ele é o número-resumo da semana, pertence ao título, e some uma linha
+   inteira do cartão. O resto é respiro aparado. */
+.comparativo-v2 .simfut-semana { padding: 8px 9px; }
+.comparativo-v2 .simfut-semana label {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 0 6px; margin-bottom: 5px;
+}
+.comparativo-v2 .simfut-semana-nome { font-size: 12px; font-weight: 800; color: var(--cmp-ink); }
+.comparativo-v2 .simfut-semana-tot {
+    margin: 0; font-size: 11px; font-weight: 800; color: var(--cmp-ink);
+    font-variant-numeric: tabular-nums;
+}
+/* flex-basis 100% joga as datas para a linha de baixo inteira, sem precisar
+   de um <br> nem de um div a mais. */
+.comparativo-v2 .simfut-semana-dias { flex-basis: 100%; margin-top: 2px; font-size: 9.5px; }
+/* O !important aqui não é preguiça: a regra base de .campo-input-unidade
+   input (02-viveiros, linha 509) já usa !important no padding e no
+   font-size, para vencer o "input, select" global. Sem responder na mesma
+   moeda, qualquer tamanho que eu escrevesse era ignorado — o min-height
+   pegava e o padding não, e o campo ficava em 41px. Descobri perguntando ao
+   navegador quais regras casavam, depois de duas tentativas no escuro. */
+.comparativo-v2 .simfut-semana .campo-input-unidade input {
+    min-height: 36px;
+    padding: 7px 9px !important;
+    font-size: 14px !important;
+}

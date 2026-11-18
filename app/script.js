@@ -8539,7 +8539,7 @@ function _simFutSetSemana(i, valor) {
   const tot = document.getElementById(`simfut-tot-${i}`);
   if (tot) {
     const nd = Number(tot.dataset.dias) || 0;
-    tot.textContent = "= " + formatarNumeroBR(_simFutRacao[i] * nd, 0) + " kg";
+    tot.textContent = formatarNumeroBR(_simFutRacao[i] * nd, 0) + " kg";
   }
   _simFutCalcular();
 }
@@ -8766,13 +8766,16 @@ function _simFutPainel(viveiro, dados) {
     const totalSem = (Number(_simFutRacao[i]) || 0) * w.dias;
     campos.push(`
       <div class="simfut-semana">
-        <label>Semana ${i + 1} <span class="simfut-semana-dias">${_dm(w.de)} a ${_dm(w.ate)} · ${w.dias} dia${w.dias === 1 ? "" : "s"}</span></label>
+        <label>
+          <span class="simfut-semana-nome">Semana ${i + 1}</span>
+          <span class="simfut-semana-tot" id="simfut-tot-${i}" data-dias="${w.dias}">${formatarNumeroBR(totalSem, 0)} kg</span>
+          <span class="simfut-semana-dias">${_dm(w.de)} a ${_dm(w.ate)} · ${w.dias} dia${w.dias === 1 ? "" : "s"}</span>
+        </label>
         <div class="campo-input-unidade">
           <input type="text" inputmode="decimal" value="${formatarNumeroBR(_simFutRacao[i], 0)}"
                  oninput="_simFutSetSemana(${i}, this.value)">
           <span class="campo-unidade">kg/dia</span>
         </div>
-        <span class="simfut-semana-tot" id="simfut-tot-${i}" data-dias="${w.dias}">= ${formatarNumeroBR(totalSem, 0)} kg</span>
       </div>`);
   });
   _simFutRacao.length = semanasOferta.length;
