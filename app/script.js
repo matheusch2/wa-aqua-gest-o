@@ -6945,11 +6945,11 @@ function abrirRelatorios() {
       <h2 class="form-titulo">Relatórios</h2>
     </div>
 
-    <button class="hc-viv-card" onclick="mostrarHistoricoCiclos()">
+    <div class="rep-menu-opcoes"><button class="hc-viv-card" onclick="mostrarHistoricoCiclos()">
       <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg></span>
       <span class="hc-viv-txt">
         <b>Relatório de ciclo</b>
-        <small>${nCiclos ? `${nCiclos} ciclo${nCiclos > 1 ? "s" : ""} encerrado${nCiclos > 1 ? "s" : ""}` : "Nenhum ciclo encerrado ainda"} · escolha o viveiro e o ciclo</small>
+        <small>${nCiclos ? `${nCiclos} ciclo${nCiclos > 1 ? "s" : ""} encerrado${nCiclos > 1 ? "s" : ""}` : "Nenhum ciclo encerrado ainda"}</small>
       </span>
       <span class="hc-viv-seta">›</span>
     </button>
@@ -6958,12 +6958,12 @@ function abrirRelatorios() {
       <span class="hc-viv-ico"><svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg></span>
       <span class="hc-viv-txt">
         <b>Relatório geral</b>
-        <small>Compara viveiros e laboratórios: lucro, crescimento, sobrevivência e FCA</small>
+        <small>Compare viveiros e laboratórios</small>
       </span>
       <span class="hc-viv-seta">›</span>
     </button>
 
-    <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
+    </div><button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>`;
 }
 
 // ═══ RELATÓRIO GERAL ═══════════════════════════════════════════════════════
