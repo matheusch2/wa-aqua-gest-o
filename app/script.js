@@ -15741,6 +15741,26 @@ function _semanaPreco(peso, itens) {
   const item = lista.filter(x => Number(x.gramas) <= peso).pop();
   return item ? Number(item.preco) : null;
 }
+
+function _semanaCobertura(periodo, d1, d2, ofertaDomingo) {
+  const registrados = new Set(periodo.map(r=>String(r.data).slice(0,10)));
+  const faltantes = [], folgas = [];
+  for(let dia=_maAddDias(d1,1); dia<=d2; dia=_maAddDias(dia,1)) {
+    if(registrados.has(dia)) continue;
+    if(!ofertaDomingo && _parseDataLocal(dia).getDay()===0) folgas.push(dia);
+    else faltantes.push(dia);
+  }
+  return { faltantes, folgas, completo: faltantes.length===0 };
+}
+function _semanaCustos(v, d1, d2) {
+  const inicio = _maAddDias(d1,1);
+  const custos = (v.custos||[]).filter(c=>{
+    const data=String(c.data).slice(0,10);
+    return data>=inicio && data<=d2;
+  });
+  return _custosCicloAtivo({...v,custos},v.cicloId,inicio,d2);
+}
+
 function abrirResultadoSemana(index) {
   const v = viveiros[index]; if (!v) return;
   esconderMenu();
@@ -15756,7 +15776,7 @@ function abrirResultadoSemana(index) {
     '<div class="campo-form"><label for="sem-periodo">Período entre biometrias</label><select id="sem-periodo" onchange="_semanaRender()">'+
     unicas.slice(1).map((b,i)=>'<option value="'+(i+1)+'" '+(i===unicas.length-2?'selected':'')+'>'+formatarData(unicas[i].data)+' a '+formatarData(b.data)+'</option>').join('')+'</select></div>'+
     '<div class="sem-faixa"><label>Sobrevivência de <select id="sem-de" onchange="_semanaRender()">'+opcoes(50)+'</select></label><label>até <select id="sem-ate" onchange="_semanaRender()">'+opcoes(80)+'</select></label></div>'+
-    '<div class="campo-form"><label for="sem-extra">Outros custos do período (opcional)</label><input id="sem-extra" inputmode="decimal" placeholder="R$ — não incluídos" oninput="_semanaRender()"><small>Energia, mão de obra e outros custos. Informe o total; não inclua ração.</small></div><div id="sem-resultado"></div>')+
+    '<label class="sem-domingo"><input type="checkbox" id="sem-domingo" onchange="_semanaRender()"><span><b>Ofertar no domingo</b><small>Desligado: domingo sem lançamento é folga. Ração registrada sempre entra na soma.</small></span></label><div id="sem-resultado"></div>')+
     voltar+'</div>';
   if(unicas.length>=2) _semanaRender();
 }
@@ -15776,13 +15796,12 @@ function _semanaRender() {
   const periodo=racoes.filter(r=>String(r.data).slice(0,10)>d1);
   const antes=racoes.filter(r=>String(r.data).slice(0,10)<=d1).reduce((a,r)=>a+Number(r.racao||0),0);
   const rsem=periodo.reduce((a,r)=>a+Number(r.racao||0),0);
-  const diasRegistrados=new Set(periodo.map(r=>String(r.data).slice(0,10))).size;
-  const completo=diasRegistrados===dias;
+  const cobertura=_semanaCobertura(periodo,d1,d2,document.getElementById("sem-domingo").checked);
+  const completo=cobertura.completo;
   const precoFalta=periodo.some(r=>Number(r.racao)>0 && !(_precoKgRacao(r)>0));
-  const extraTexto=document.getElementById("sem-extra").value.trim();
-  const extra=extraTexto ? parseDecimalBR(extraTexto) : 0;
-  if(!Number.isFinite(extra)||extra<0) { alvo.innerHTML='<div class="sim-aviso">Informe um custo válido, igual ou maior que zero.</div>'; return; }
-  const custo=precoFalta||!completo ? null : periodo.reduce((a,r)=>a+Number(r.racao||0)*_precoKgRacao(r),0)+extra;
+  const custosAuto=_semanaCustos(v,d1,d2);
+  const custoRacao=periodo.reduce((a,r)=>a+Number(r.racao||0)*_precoKgRacao(r),0);
+  const custo=precoFalta||!completo ? null : custoRacao+custosAuto.total;
   const ref=_precosFrescos(precosCamarao,_hojeLocal());
   const p1=Number(b1.gramatura),p2=Number(b2.gramatura);
   const pr1=_semanaPreco(p1,ref.itens), pr2=_semanaPreco(p2,ref.itens);
@@ -15798,17 +15817,20 @@ function _semanaRender() {
     return '<tr><td>'+l.s+'%</td><td>'+fmt(l.anterior)+' → '+(completo?fmt(l.atual):'—')+'<small>'+(completo?tendencia:'histórico incompleto')+'</small></td><td>'+(completo?fmt(l.semanal):'—')+'</td></tr>';
   }));
   const avisos=[];
-  if(!completo) avisos.push('Ração registrada em '+diasRegistrados+' de '+dias+' dias. Complete o histórico, incluindo zero nos dias sem oferta, para liberar os resultados.');
+  if(!completo) avisos.push('Falta conferir a ração em: '+cobertura.faltantes.map(formatarData).join(', ')+'. Lance a quantidade ou zero se não houve oferta. Domingos de folga não bloqueiam o cálculo.');
   if(precoFalta) avisos.push('Há ração sem preço cadastrado. Complete o preço para calcular o custo.');
   if(pr1===null||pr2===null) avisos.push('Preço de referência indisponível ou gramatura fora da tabela vigente. O resultado financeiro não será estimado.');
-  if(!extraTexto) avisos.push('Outros custos não incluídos: o resultado desconta somente a ração.');
+
   const positivos=linhas.every(l=>l.resultado!==null && l.resultado>0);
   alvo.innerHTML='<div class="sem-resumo"><div><small>Peso</small><b>'+fmt(p1)+' → '+fmt(p2)+' g</b></div><div><small>Crescimento / 7 dias</small><b>'+fmt((p2-p1)*7/dias)+' g</b></div><div><small>Ração · '+dias+' dias</small><b>'+fmt(rsem,1)+' kg</b></div></div>'+
-    '<p class="sem-nota">Custo do período: <b>'+ (custo===null?'incompleto':'R$ '+fmt(custo))+'</b></p>'+
-    avisos.map(a=>'<p class="sem-nota">'+a+'</p>').join('')+
-    '<h4>Resultado por sobrevivência</h4><p class="sem-nota">Valorização estimada menos custos informados.</p>'+resultado+
+    '<div class="sem-custo"><span>Custos do período <small>Importados automaticamente do viveiro</small></span><b>'+ (custo===null?'A conferir':'R$ '+fmt(custo))+'</b></div>'+
+    '<div class="sem-custos-itens"><div><span>Ração</span><b>'+(precoFalta?'Preço pendente':'R$ '+fmt(custoRacao))+'</b></div><div><span>Probióticos e produtos</span><b>R$ '+fmt(custosAuto.totalProdutos)+'</b></div><div><span>Outros lançamentos</span><b>R$ '+fmt(custosAuto.totalOutros)+'</b></div><div><span>Custos fixos rateados</span><b>R$ '+fmt(custosAuto.rateioFixo)+'</b></div></div>'+
+    '<p class="sem-nota">Custos fixos incluem energia, mão de obra e demais itens cadastrados, proporcionais aos dias do período. Valores não cadastrados não entram na conta.</p>'+
+    (cobertura.folgas.length?'<p class="sem-folga">✓ '+cobertura.folgas.length+' domingo(s) de folga considerado(s), sem ração.</p>':'')+
+    avisos.map(a=>'<p class="sem-alerta">'+a+'</p>').join('')+
+    '<h4>Resultado por sobrevivência</h4><p class="sem-nota">Valorização estimada do camarão menos todos os custos registrados do período.</p>'+resultado+
     (positivos?'<p class="sem-destaque">Resultado positivo em toda a faixa simulada.</p>':'')+
     '<h4>Conversão alimentar · FCA</h4>'+fca+
     '<p class="sem-nota">Quanto menor, melhor. Sem ganho de biomassa, o FCA do período aparece como —.</p>'+
-    '<details><summary>Ver cálculo e preços de referência</summary><p>Mesma sobrevivência nas duas datas. Ração do período: após '+formatarData(d1)+' até '+formatarData(d2)+'.</p><p>FCA acumulado usa toda a ração registrada até cada biometria; confira também o histórico anterior.</p><p>Preços atuais do painel: '+fmt(p1)+' g = R$ '+fmt(pr1)+'/kg; '+fmt(p2)+' g = R$ '+fmt(pr2)+'/kg. Para peso entre duas gramaturas, usamos a faixa inferior. Não extrapolamos os limites da tabela.</p><p>O resultado compara os dois pesos pela mesma tabela atual, não por preços históricos. Custo da ração usa o preço gravado no lançamento ou, quando ausente, o cadastro atual.</p><p>Resultado = biomassa final × preço final − biomassa inicial × preço inicial − custo do período. É uma simulação, não uma venda realizada.</p></details>';
+    '<details><summary>Ver cálculo e preços de referência</summary><p>Mesma sobrevivência nas duas datas. Ração do período: após '+formatarData(d1)+' até '+formatarData(d2)+'.</p><p>FCA acumulado usa toda a ração registrada até cada biometria; confira também o histórico anterior.</p><p>Preços atuais do painel: '+fmt(p1)+' g = R$ '+fmt(pr1)+'/kg; '+fmt(p2)+' g = R$ '+fmt(pr2)+'/kg. Para peso entre duas gramaturas, usamos a faixa inferior. Não extrapolamos os limites da tabela.</p><p>O resultado compara os dois pesos pela mesma tabela atual, não por preços históricos. Custo da ração usa o preço gravado no lançamento ou, quando ausente, o cadastro atual. Produtos e outros lançamentos entram pela data do custo; os custos fixos seguem o rateio diário do sistema, inclusive nos domingos de folga.</p><p>Resultado = biomassa final × preço final − biomassa inicial × preço inicial − custo do período. É uma simulação, não uma venda realizada.</p></details>';
 }
