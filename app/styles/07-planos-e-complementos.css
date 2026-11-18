@@ -665,3 +665,23 @@ body.tema-escuro .comparativo-v2 .simfut-resumo b { color:#8ee3bd; }
 .comparativo-v2 .simfut-semana-dias { margin-top:2px; }
 .comparativo-v2 .simfut-semana input { min-height:40px; padding:8px; }
 .comparativo-v2 .simfut-semana-tot { margin-top:5px; font-size:10px; }
+
+
+/* Projeção no padrão compacto, sem banner ou etapas adicionais. */
+.projecao-v2 .proj-cabecalho { margin:0 0 16px; padding:0 0 12px; border-bottom:1px solid var(--cmp-line); }
+.projecao-v2 .proj-cabecalho h3 { margin:0; text-align:left; color:var(--cmp-ink); font-size:19px; font-weight:800; letter-spacing:-.4px; }
+.projecao-v2 .proj-cabecalho p { margin:5px 0 0; font-size:11px; line-height:1.5; color:var(--cmp-muted); }
+.projecao-v2 .cfg-wrap > .campo-form { margin-bottom:13px; }
+.projecao-v2 .cfg-wrap > .campo-form .campo-icone { width:18px; height:18px; padding:0; background:transparent; border-radius:0; }
+.projecao-v2 .campo-label { margin-bottom:6px; }
+.projecao-v2 .simfut-bloco { padding:12px; border:1px solid var(--cmp-line); border-radius:14px; background:var(--cmp-card); }
+.projecao-v2 .simfut-linha2 input { min-height:42px; padding:9px 10px !important; font-size:16px !important; }
+.projecao-v2 .simfut-sec { margin:16px 0 8px; color:var(--cmp-ink); font-weight:700; font-size:11px; }
+.projecao-v2 .simfut-resumo { margin-bottom:14px; }
+.projecao-v2 .simfut-semana { padding:8px; }
+.projecao-v2 .simfut-semana input { min-height:40px; padding:8px !important; font-size:16px !important; }
+.projecao-v2 #simFut-resultado { margin-top:16px; padding:12px 0 0; border:0; border-top:1px solid var(--cmp-line); border-radius:0; }
+.projecao-v2 .sim-sobr-tab { grid-template-columns:.7fr 1fr .6fr 1.3fr; column-gap:4px; font-variant-numeric:tabular-nums; }
+.projecao-v2 .sim-sobr-tab .ss-lucro { font-weight:800; }
+.projecao-v2 .simfut-faixa2 select { min-height:42px; padding:8px 3px; font-size:13px; }
+@media(max-width:359px) { .projecao-v2 .simfut-bloco { padding:10px; } }
