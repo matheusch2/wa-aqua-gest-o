@@ -804,3 +804,40 @@ body.tema-escuro .racao-total-box { background: #052e2b; border-color: #0f4d47; 
 body.tema-escuro .racao-total-box .lbl { color: #9ad9cd; }
 body.tema-escuro .racao-total-box .sub { color: #6aa39b; }
 body.tema-escuro .racao-total-box .val { color: #34d399; }
+
+
+/* Lançamento de ração: formulário compacto nos dois modos de oferta. */
+.racao-form-v2 { --rf-ink:#173e37; --rf-muted:#647970; --rf-line:#dae7e1; --rf-card:#fff; --rf-soft:#f3f8f5; max-width:600px; margin:0 auto; }
+.racao-form-v2 .form-topo { display:grid; grid-template-columns:44px minmax(0,1fr); gap:3px 12px; align-items:center; padding:14px; margin:0 0 17px; border:1px solid var(--rf-line); border-radius:15px; background:var(--rf-soft); }
+.racao-form-v2 .form-icone-circulo { grid-column:1; grid-row:1 / span 3; width:44px; height:44px; margin:0; border:0; border-radius:13px; background:#dcefe6; box-shadow:none; }
+.racao-form-v2 .form-icone-circulo svg { width:24px; height:24px; }
+.racao-form-v2 .form-titulo { grid-column:2; text-align:left; font-size:20px; line-height:1.2; letter-spacing:-.4px; color:var(--rf-ink); }
+.racao-form-v2 .form-caption { grid-column:2; font-size:9px; letter-spacing:.7px; color:var(--rf-muted); margin:0; }
+.racao-form-v2 .racao-subtitulo { grid-column:2; font-size:11px; line-height:1.4; color:var(--rf-muted); margin:0; }
+.racao-form-v2 .form-corpo { padding:0; border:0; border-radius:0; background:transparent; overflow:visible; }
+.racao-form-v2 .campo-form { margin-bottom:14px; min-width:0; }
+.racao-form-v2 .campo-label { gap:7px; margin-bottom:6px; }
+.racao-form-v2 .campo-label label { font-size:12px; font-weight:700; color:var(--rf-ink); }
+.racao-form-v2 .campo-icone { width:17px; height:17px; padding:0; background:transparent; border-radius:0; box-shadow:none; color:#157966; stroke:#157966; }
+.racao-form-v2 .campo-form input, .racao-form-v2 .campo-form select { min-height:44px; padding:10px 12px; font-size:16px; color:var(--rf-ink); border:1px solid var(--rf-line); background:var(--rf-card); border-radius:11px; }
+.racao-form-v2 .campo-form input[type="date"] { width:100%; height:44px; min-width:0; }
+.racao-form-v2 .campo-input-unidade { border:1px solid var(--rf-line); border-radius:11px; background:var(--rf-card); }
+.racao-form-v2 .campo-input-unidade input { padding:10px 12px !important; font-size:16px !important; }
+.racao-form-v2 .campo-unidade { padding:0 13px; font-size:12px; color:var(--rf-muted); border-left:1px solid var(--rf-line); background:var(--rf-soft); }
+.racao-form-v2 input::placeholder { color:#8b9b94; }
+.racao-form-v2 :is(input,select,button):focus-visible { outline:2px solid #159878; outline-offset:2px; }
+.racao-form-v2 .racao-add-segunda { width:100%; min-height:44px; padding:10px; margin:3px 0 14px; gap:7px; justify-content:center; font-size:12px; border:1px dashed #a3cfc0; border-radius:11px; background:var(--rf-soft); color:#126e58; }
+.racao-form-v2 .racao-add-segunda svg { width:16px; height:16px; }
+.racao-form-v2 .racao-2bloco { padding:12px; margin:2px 0 14px; border:1px solid var(--rf-line); border-left:3px solid #258871; border-radius:13px; background:var(--rf-soft); }
+.racao-form-v2 .racao-2topo { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.racao-form-v2 .racao-2tag { display:flex; align-items:center; gap:6px; color:var(--rf-ink); font-size:11px; }
+.racao-form-v2 .racao-2tag i { width:22px; height:22px; font-size:11px; }
+.racao-form-v2 .racao-2remover { min-height:44px; padding:6px; background:transparent; border:0; font-size:11px; color:#b34242; }
+.racao-form-v2 .racao-2bloco .campo-form:last-child { margin-bottom:0; }
+.racao-form-v2 .racao-total-box, .racao-form-v2 .racao-custo-box { padding:10px 12px; margin:0 0 12px; border:1px solid var(--rf-line); border-radius:11px; background:var(--rf-soft); color:var(--rf-ink); font-size:12px; }
+.racao-form-v2 .botao-salvar { min-height:46px; padding:11px 14px; margin:0; border:0; border-radius:11px; background:#0c7666; box-shadow:0 4px 10px #0c766612; font-size:14px; }
+.racao-form-v2 .botao-voltar-form { min-height:44px; padding:10px; margin-top:8px; border:1px solid var(--rf-line); border-radius:11px; color:var(--rf-muted); background:var(--rf-card); font-size:13px; }
+body.tema-escuro .racao-form-v2 { --rf-ink:#e0f1e9; --rf-muted:#abc1b7; --rf-line:#344d43; --rf-card:#162b23; --rf-soft:#1d352c; }
+body.tema-escuro .racao-form-v2 .form-icone-circulo { background:#284c3e; }
+body.tema-escuro .racao-form-v2 .racao-add-segunda, body.tema-escuro .racao-form-v2 .campo-icone { color:#90ddbd; stroke:#90ddbd; }
+body.tema-escuro .racao-form-v2 .racao-2remover { color:#ffadad; }
