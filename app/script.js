@@ -15761,6 +15761,15 @@ function _semanaCustos(v, d1, d2) {
   return _custosCicloAtivo({...v,custos},v.cicloId,inicio,d2);
 }
 
+function _semanaVariacaoFca(anterior, atual) {
+  return anterior>0 && Number.isFinite(atual) ? (atual/anterior-1)*100 : null;
+}
+function _semanaBiometrias(bios, inicio, fim) {
+  if(!inicio || !fim || inicio>=fim) return null;
+  const b1=bios.find(b=>String(b.data).slice(0,10)===inicio);
+  const b2=bios.find(b=>String(b.data).slice(0,10)===fim);
+  return b1&&b2 ? [b1,b2] : null;
+}
 function abrirResultadoSemana(index) {
   const v = viveiros[index]; if (!v) return;
   esconderMenu();
@@ -15771,10 +15780,11 @@ function abrirResultadoSemana(index) {
   const voltar = '<button class="botao-voltar-form" onclick="abrirViveiro('+index+'); restaurarScroll()">Voltar ao viveiro</button>';
   const opcoes = (valor) => Array.from({length:20},(_,i)=>(i+1)*5).map(p=>'<option '+(p===valor?'selected':'')+' value="'+p+'">'+p+'%</option>').join('');
   document.getElementById("area-gestao").innerHTML = '<div class="comparativo-v2 sim-padrao semana-tela">'+
-    _simTopoPadrao("Resultado da semana", _esc(v.nome))+
+    '<header class="sem-cabecalho"><h3>Resultado da semana · '+_esc(String(v.nome||"").replace(/^viveiro\s*[-–]?\s*(\d+)$/i,"V$1"))+'</h3></header>'+
     (unicas.length<2 ? '<div class="sim-aviso">São necessárias duas biometrias em datas diferentes no ciclo atual para comparar o período.</div>' :
     '<div class="campo-form"><label for="sem-periodo">Período entre biometrias</label><select id="sem-periodo" onchange="_semanaRender()">'+
-    unicas.slice(1).map((b,i)=>'<option value="'+(i+1)+'" '+(i===unicas.length-2?'selected':'')+'>'+formatarData(unicas[i].data)+' a '+formatarData(b.data)+'</option>').join('')+'</select></div>'+
+    unicas.slice(1).map((b,i)=>'<option value="'+(i+1)+'" '+(i===unicas.length-2?'selected':'')+'>'+formatarData(unicas[i].data)+' a '+formatarData(b.data)+'</option>').join('')+'<option value="personalizado">Escolher datas no calendário</option></select></div>'+
+    '<div id="sem-datas" class="sem-datas" hidden><label>Biometria inicial<input type="date" id="sem-inicio" min="'+(unicas[0]?String(unicas[0].data).slice(0,10):'')+'" max="'+(unicas.length?String(unicas[unicas.length-1].data).slice(0,10):'')+'" value="'+(unicas.length>1?String(unicas[unicas.length-2].data).slice(0,10):'')+'" onchange="_semanaRender()"></label><label>Biometria final<input type="date" id="sem-fim" min="'+(unicas[0]?String(unicas[0].data).slice(0,10):'')+'" max="'+(unicas.length?String(unicas[unicas.length-1].data).slice(0,10):'')+'" value="'+(unicas.length?String(unicas[unicas.length-1].data).slice(0,10):'')+'" onchange="_semanaRender()"></label><small>Escolha duas datas com biometria registrada, mesmo que separadas por semanas ou meses.</small></div>'+
     '<div class="sem-faixa"><label>Sobrevivência de <select id="sem-de" onchange="_semanaRender()">'+opcoes(50)+'</select></label><label>até <select id="sem-ate" onchange="_semanaRender()">'+opcoes(80)+'</select></label></div>'+
     '<label class="sem-domingo"><input type="checkbox" id="sem-domingo" onchange="_semanaRender()"><span><b>Ofertar no domingo</b><small>Desligado: domingo sem lançamento é folga. Ração registrada sempre entra na soma.</small></span></label><div id="sem-resultado"></div>')+
     voltar+'</div>';
@@ -15783,8 +15793,16 @@ function abrirResultadoSemana(index) {
 function _semanaRender() {
   const state=window._semanaTela; if(!state) return;
   const v=viveiros[state.index], bios=state.bios;
-  const pos=Number(document.getElementById("sem-periodo").value), b1=bios[pos-1], b2=bios[pos];
-  const alvo=document.getElementById("sem-resultado"); if(!b1 || !b2 || !alvo) return;
+  const escolha=document.getElementById("sem-periodo").value;
+  const personalizado=escolha==="personalizado";
+  document.getElementById("sem-datas").hidden=!personalizado;
+  const pos=Number(escolha);
+  const par=personalizado?_semanaBiometrias(bios,document.getElementById("sem-inicio").value,document.getElementById("sem-fim").value):[bios[pos-1],bios[pos]];
+  const alvo=document.getElementById("sem-resultado"); if(!alvo) return;
+  if(!par || !par[0] || !par[1]) {
+    alvo.innerHTML='<div class="sem-alerta">Escolha uma data inicial anterior à final, ambas com biometria registrada. Datas disponíveis: '+bios.map(b=>formatarData(b.data)).join(', ')+'.</div>'; return;
+  }
+  const [b1,b2]=par;
   const d1=String(b1.data).slice(0,10), d2=String(b2.data).slice(0,10);
   const dias=Math.round((_parseDataLocal(d2)-_parseDataLocal(d1))/86400000);
   const n=Number(String(v.totalPovoado || "").replace(/\./g,""));
@@ -15811,10 +15829,11 @@ function _semanaRender() {
   const linhas=[]; for(let s=Math.min(de,ate);s<=Math.max(de,ate);s+=5) linhas.push({s,..._semanaCenario(n,s,p1,p2,antes,rsem,pr1,pr2,custo)});
   const tabela=(cab,rows)=>'<table class="sem-tabela"><thead><tr>'+cab.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
   const resultado=tabela(['Sobrev.','Ganho (kg)','Resultado'],linhas.map(l=>'<tr><td>'+l.s+'%</td><td>'+fmt(l.ganho,1)+'</td><td class="'+(l.resultado===null?'':l.resultado>=0?'sem-pos':'sem-neg')+'">'+dinheiro(l.resultado)+'</td></tr>'));
-  const fca=tabela(['Sobrev.','FCA anterior → atual','No período'],linhas.map(l=>{
+  const fca=tabela(['Sobrev.','FCA anterior → atual','Variação','No período'],linhas.map(l=>{
+    const variacao=_semanaVariacaoFca(l.anterior,l.atual);
     const delta=l.atual-l.anterior;
     const tendencia=Math.abs(delta)<1e-9?'estável':delta<0?'caindo':'subindo';
-    return '<tr><td>'+l.s+'%</td><td>'+fmt(l.anterior)+' → '+(completo?fmt(l.atual):'—')+'<small>'+(completo?tendencia:'histórico incompleto')+'</small></td><td>'+(completo?fmt(l.semanal):'—')+'</td></tr>';
+    return '<tr><td>'+l.s+'%</td><td>'+fmt(l.anterior)+' → '+(completo?fmt(l.atual):'—')+'<small>'+(completo?tendencia:'histórico incompleto')+'</small></td><td class="'+(completo&&variacao!==null?(variacao>0?'sem-neg':variacao<0?'sem-pos':''):'')+'">'+(completo&&variacao!==null?(variacao>0?'+':'')+fmt(variacao,1)+'%':'—')+'</td><td>'+(completo?fmt(l.semanal):'—')+'</td></tr>';
   }));
   const avisos=[];
   if(!completo) avisos.push('Falta conferir a ração em: '+cobertura.faltantes.map(formatarData).join(', ')+'. Lance a quantidade ou zero se não houve oferta. Domingos de folga não bloqueiam o cálculo.');
@@ -15822,7 +15841,7 @@ function _semanaRender() {
   if(pr1===null||pr2===null) avisos.push('Preço de referência indisponível ou gramatura fora da tabela vigente. O resultado financeiro não será estimado.');
 
   const positivos=linhas.every(l=>l.resultado!==null && l.resultado>0);
-  alvo.innerHTML='<div class="sem-resumo"><div><small>Peso</small><b>'+fmt(p1)+' → '+fmt(p2)+' g</b></div><div><small>Crescimento / 7 dias</small><b>'+fmt((p2-p1)*7/dias)+' g</b></div><div><small>Ração · '+dias+' dias</small><b>'+fmt(rsem,1)+' kg</b></div></div>'+
+  alvo.innerHTML='<p class="sem-periodo-info">'+formatarData(d1)+' a '+formatarData(d2)+' · '+dias+' dias</p><div class="sem-resumo"><div><small>Peso</small><b>'+fmt(p1)+' → '+fmt(p2)+' g</b></div><div><small>Crescimento / 7 dias</small><b>'+fmt((p2-p1)*7/dias)+' g</b></div><div><small>Ração · '+dias+' dias</small><b>'+fmt(rsem,1)+' kg</b></div></div>'+
     '<div class="sem-custo"><span>Custos do período <small>Importados automaticamente do viveiro</small></span><b>'+ (custo===null?'A conferir':'R$ '+fmt(custo))+'</b></div>'+
     '<div class="sem-custos-itens"><div><span>Ração</span><b>'+(precoFalta?'Preço pendente':'R$ '+fmt(custoRacao))+'</b></div><div><span>Probióticos e produtos</span><b>R$ '+fmt(custosAuto.totalProdutos)+'</b></div><div><span>Outros lançamentos</span><b>R$ '+fmt(custosAuto.totalOutros)+'</b></div><div><span>Custos fixos rateados</span><b>R$ '+fmt(custosAuto.rateioFixo)+'</b></div></div>'+
     '<p class="sem-nota">Custos fixos incluem energia, mão de obra e demais itens cadastrados, proporcionais aos dias do período. Valores não cadastrados não entram na conta.</p>'+
@@ -15831,6 +15850,6 @@ function _semanaRender() {
     '<h4>Resultado por sobrevivência</h4><p class="sem-nota">Valorização estimada do camarão menos todos os custos registrados do período.</p>'+resultado+
     (positivos?'<p class="sem-destaque">Resultado positivo em toda a faixa simulada.</p>':'')+
     '<h4>Conversão alimentar · FCA</h4>'+fca+
-    '<p class="sem-nota">Quanto menor, melhor. Sem ganho de biomassa, o FCA do período aparece como —.</p>'+
+    '<p class="sem-nota">Variação = (FCA atual ÷ anterior − 1) × 100, calculada antes do arredondamento. Positiva: aumentou; negativa: caiu. Sem FCA anterior positivo, o percentual aparece como —. Sem ganho de biomassa, não calculamos o FCA do período.</p>'+
     '<details><summary>Ver cálculo e preços de referência</summary><p>Mesma sobrevivência nas duas datas. Ração do período: após '+formatarData(d1)+' até '+formatarData(d2)+'.</p><p>FCA acumulado usa toda a ração registrada até cada biometria; confira também o histórico anterior.</p><p>Preços atuais do painel: '+fmt(p1)+' g = R$ '+fmt(pr1)+'/kg; '+fmt(p2)+' g = R$ '+fmt(pr2)+'/kg. Para peso entre duas gramaturas, usamos a faixa inferior. Não extrapolamos os limites da tabela.</p><p>O resultado compara os dois pesos pela mesma tabela atual, não por preços históricos. Custo da ração usa o preço gravado no lançamento ou, quando ausente, o cadastro atual. Produtos e outros lançamentos entram pela data do custo; os custos fixos seguem o rateio diário do sistema, inclusive nos domingos de folga.</p><p>Resultado = biomassa final × preço final − biomassa inicial × preço inicial − custo do período. É uma simulação, não uma venda realizada.</p></details>';
 }
