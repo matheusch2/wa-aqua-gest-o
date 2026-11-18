@@ -595,3 +595,29 @@ body.tema-escuro .painel-viveiro .info-box-icone.info-box-icone-aqua {
 .semana-tela summary { cursor:pointer; color:var(--cmp-ink); font-weight:700; }
 body.tema-escuro .vv-semana-btn { background:#183d31; color:#a3e6c9; border-color:#31594a; }
 body.tema-escuro .sem-pos { color:#8ee3bd; } body.tema-escuro .sem-neg { color:#ffaaaa; }
+
+/* Resultado semanal: contraste e custos automáticos, escala compacta. */
+.semana-tela .sim-topo { border-bottom:3px solid #168570; padding-bottom:12px; }
+.semana-tela .sem-domingo { display:flex; align-items:center; gap:10px; padding:11px 12px; border:1px solid #c2ded5; border-radius:10px; background:#f0f8f5; margin:12px 0; }
+.semana-tela .sem-domingo input { width:18px; height:18px; margin:0; flex-shrink:0; accent-color:#087969; }
+.semana-tela .sem-domingo b { display:block; font-size:12px; color:var(--cmp-ink); }
+.semana-tela .sem-domingo small { display:block; font-size:10px; line-height:1.45; margin-top:3px; color:var(--cmp-muted); }
+.semana-tela .sem-resumo { gap:7px; }
+.semana-tela .sem-resumo>div { padding:9px 7px; background:var(--cmp-soft); border:1px solid var(--cmp-line); border-radius:9px; }
+.semana-tela .sem-resumo small { display:block; margin-bottom:5px; }
+.semana-tela .sem-custo { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#086b5e; color:white; padding:13px 12px; border-radius:11px 11px 0 0; font-size:12px; }
+.semana-tela .sem-custo small { display:block; font-size:9px; color:#d1eee6; margin-top:4px; }
+.semana-tela .sem-custo>b { font-size:16px; white-space:nowrap; }
+.semana-tela .sem-custos-itens { padding:6px 12px; border:1px solid var(--cmp-line); border-top:0; border-radius:0 0 11px 11px; }
+.semana-tela .sem-custos-itens>div { display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:11px; color:var(--cmp-ink); }
+.semana-tela .sem-custos-itens>div+div { border-top:1px solid var(--cmp-line); }
+.semana-tela .sem-folga { font-size:10px; color:#13705b; background:#eaf7ef; padding:8px 10px; border-radius:8px; }
+.semana-tela .sem-alerta { font-size:11px; line-height:1.5; padding:10px; border-left:3px solid #ca8a17; background:#fff5dd; color:#674818; border-radius:6px; }
+.semana-tela h4 { border-left:3px solid #149780; padding-left:9px; }
+.semana-tela .sem-tabela th { background:#0d7063; color:#fff; font-weight:600; }
+.semana-tela .sem-tabela tbody tr:nth-child(even) { background:var(--cmp-soft); }
+.semana-tela .sem-tabela .sem-pos { background:rgba(21,145,100,.08); }
+.semana-tela .sem-tabela .sem-neg { background:rgba(195,50,50,.08); }
+body.tema-escuro .semana-tela .sem-domingo { background:#13352e; border-color:#285347; }
+body.tema-escuro .semana-tela .sem-folga { background:#153c30; color:#9be0bc; }
+body.tema-escuro .semana-tela .sem-alerta { background:#3d3017; color:#f7d98f; }
