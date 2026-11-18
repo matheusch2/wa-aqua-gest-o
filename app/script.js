@@ -1,3 +1,7 @@
+function _simTopoPadrao(titulo, descricao) {
+  return `<header class="sim-padrao-topo"><h3>${titulo}</h3><p>${descricao}</p></header>`;
+}
+
 /*!
  * WA Aqua Gestão
  * Copyright © 2026 Matheus. Todos os direitos reservados / All rights reserved.
@@ -8157,12 +8161,8 @@ function _simFutAbrir(modo, titulo) {
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
 
   area.innerHTML = `
-    <div class="${modo === "comparativo" ? "comparativo-v2" : "comparativo-v2 projecao-v2"}">
-    ${modo === "comparativo" ? `<header class="cmp-cabecalho">
-      <div><span class="cmp-eyebrow">SIMULADOR DE VENDA</span><h3>Comparativo</h3>
-      <p>Vender hoje ou esperar crescer?</p></div>
-      <img src="assets/sim-comparativo.webp" alt="" width="64" height="64">
-    </header>` : `<header class="proj-cabecalho"><h3>${titulo}</h3><p>Planeje o peso, a alimentação e o resultado da despesca.</p></header>`}
+    <div class="comparativo-v2 sim-padrao ${modo === "comparativo" ? "" : "projecao-v2"}">
+    ${_simTopoPadrao(titulo, modo === "comparativo" ? "Compare vender hoje com esperar crescer." : "Planeje o peso, a alimentação e a despesca.")}
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
@@ -8277,12 +8277,12 @@ function abrirSimularVenda() {
      depois uma tira verde com a biomassa da fazenda. A tira saiu a pedido do
      dono: a biomassa já está no painel da tela inicial, e repetida aqui ela
      empurrava as três portas para baixo sem mudar nenhuma decisão. */
-  const topo = `<h3 class="titulo-secao simv-titulo">Simular venda</h3>`;
+  const topo = `<div class="comparativo-v2 sim-padrao sim-menu-v2">${_simTopoPadrao("Simular venda", "Escolha como deseja planejar sua venda.")}`;
 
   if (!ativos.length) {
     area.innerHTML = topo + `
       <p style="text-align:center;color:#9ca3af;padding:16px 0;font-size:14px">Nenhum viveiro em cultivo ativo para simular.<br><small>Cadastre um ciclo e lance ração/biometria primeiro.</small></p>
-      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>`;
+      <button class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button></div>`;
     return;
   }
 
@@ -8311,7 +8311,7 @@ function abrirVenderHoje() {
   const area = document.getElementById("area-gestao");
   const ativos = viveiros.map((v, i) => ({ v, i })).filter(o => o.v.dataPovoamento);
   area.innerHTML = `
-    <h3 class="titulo-secao">Vender hoje</h3>
+    <div class="comparativo-v2 sim-padrao venda-hoje-v2">${_simTopoPadrao("Vender hoje", "Estime o resultado com o que está no viveiro agora.")}
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
@@ -8360,7 +8360,7 @@ function abrirVenderHoje() {
 
       <div id="simVenda-resultado"></div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirSimularVenda()">Voltar</button>
-    </div>
+    </div></div>
   `;
   _simPreSelecionar(ativos, _simVendaTrocouViveiro);
 }
