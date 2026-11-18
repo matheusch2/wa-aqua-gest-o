@@ -3921,12 +3921,12 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
 
   if (!dentroDoViveiro && viveirosCicloAtivo.length === 0) {
     area.innerHTML = `
-      <div class="form-lancamento">
+      <div class="form-lancamento racao-form-v2">
         <div class="form-topo">
           <div class="form-icone-circulo">
             <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           </div>
-          <h2 class="form-titulo">Lançar Ração</h2>
+          <h2 class="form-titulo">Lançar ração</h2><p class="racao-subtitulo">Registre a alimentação do viveiro.</p>
         </div>
         <div class="viveiro-sem-ciclo-msg">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -3941,20 +3941,20 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
   const hoje = _hojeLocal();
 
   area.innerHTML = `
-    <div class="form-lancamento">
+    <div class="form-lancamento racao-form-v2">
       <div class="form-topo">
         <div class="form-icone-circulo">
           <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         </div>
         ${dentroDoViveiro ? `<span class="form-caption">${abreviarViveiro(viveiros[indexSelecionado].nome)}</span>` : ""}
-        <h2 class="form-titulo">Lançar Ração</h2>
+        <h2 class="form-titulo">Lançar ração</h2><p class="racao-subtitulo">Registre a alimentação do viveiro.</p>
       </div>
       <div class="form-corpo">
         ${!dentroDoViveiro ? `
           <div class="campo-form">
             <div class="campo-label">
               <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
-              <label>Viveiro</label>
+              <label for="viveiroRacao">Viveiro</label>
             </div>
             <select id="viveiroRacao" onchange="_racaoTrocarViveiro(this.value)">
               ${viveiros.map((v, i) => v.dataPovoamento ? `<option value="${i}">${_esc(v.nome)}</option>` : "").join("")}
@@ -3965,7 +3965,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <label>Data</label>
+            <label for="dataRacao">Data</label>
           </div>
           <input type="date" id="dataRacao" value="${hoje}">
           <div id="racao-ultimo-chip"></div>
@@ -3975,7 +3975,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <label id="lbl-tipo-racao1">Tipo de ração</label>
+            <label for="tipoRacaoSelect" id="lbl-tipo-racao1">Tipo de ração</label>
           </div>
           <select id="tipoRacaoSelect" onchange="_calcCustoRacao()">
             <option value="">— Não especificado —</option>
@@ -3986,7 +3986,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         <div class="campo-form">
           <div class="campo-label">
             <svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-            <label>Consumo de ração</label>
+            <label for="consumoRacao">Quantidade oferecida</label>
           </div>
           <div class="campo-input-unidade">
             <input type="text" inputmode="decimal" id="consumoRacao" placeholder="Ex: 50" oninput="document.getElementById('msg-racao-erro')&&(document.getElementById('msg-racao-erro').style.display='none');_calcCustoRacao()">
@@ -4003,7 +4003,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
         <div id="racao-2-area">
           <button type="button" class="racao-add-segunda" id="racao-btn-add2" onclick="_racaoToggleSegunda(true)">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Lançar uma 2ª ração (transição)
+            Adicionar 2ª ração · transição
           </button>
           <div id="racao-2-bloco" class="racao-2bloco" style="display:none">
             <div class="racao-2topo">
@@ -4012,11 +4012,11 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
             </div>
             ${tiposRacao.length > 0 ? `
             <div class="campo-form">
-              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><label>Tipo de ração</label></div>
+              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><label for="tipoRacaoSelect2">Tipo de ração</label></div>
               <select id="tipoRacaoSelect2"><option value="">— Selecione —</option>${tiposRacao.map((t, i) => `<option value="${i}">${_esc(t.nome)}</option>`).join("")}</select>
             </div>` : ""}
             <div class="campo-form">
-              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg><label>Consumo</label></div>
+              <div class="campo-label"><svg class="campo-icone" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg><label for="consumoRacao2">Quantidade oferecida</label></div>
               <div class="campo-input-unidade"><input type="text" inputmode="decimal" id="consumoRacao2" placeholder="Ex: 20" oninput="_calcTotalRacao()"><span class="campo-unidade">kg</span></div>
             </div>
           </div>
@@ -4030,7 +4030,7 @@ function mostrarLancamentoRacao(indexSelecionado = "") {
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar lançamento
         </button>
-        <div class="separador-ou"><span>ou</span></div>
+        
         <button class="botao-voltar-form" onclick="${dentroDoViveiro ? `abrirViveiro(${indexSelecionado}); restaurarScroll()` : "voltarMenuGestao()"}">
           Voltar
         </button>
