@@ -23,10 +23,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? "";
-const APP_SECRET   = Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
-const TOKEN        = Deno.env.get("WHATSAPP_TOKEN") ?? "";
-const PHONE_ID     = Deno.env.get("WHATSAPP_PHONE_ID") ?? "";
+// .trim() nos quatro: um espaço ou quebra de linha colado junto do valor no
+// painel do Supabase é invisível e derruba a comparação. Custou uma noite.
+const VERIFY_TOKEN = (Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? "").trim();
+const APP_SECRET   = (Deno.env.get("WHATSAPP_APP_SECRET") ?? "").trim();
+const TOKEN        = (Deno.env.get("WHATSAPP_TOKEN") ?? "").trim();
+const PHONE_ID     = (Deno.env.get("WHATSAPP_PHONE_ID") ?? "").trim();
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -89,9 +91,19 @@ Deno.serve(async (req: Request) => {
 
   // ── Handshake: a Meta chama uma vez, ao salvar a URL no painel ───────────
   if (req.method === "GET") {
-    const modo = url.searchParams.get("hub.mode");
-    const token = url.searchParams.get("hub.verify_token");
-    const desafio = url.searchParams.get("hub.challenge");
+    // A Meta manda em dois formatos conforme a versão do painel: hub.mode e
+    // hub_mode. Aceita os dois, senão o handshake falha por causa de um ponto.
+    const modo = url.searchParams.get("hub.mode") ?? url.searchParams.get("hub_mode");
+    const token = (url.searchParams.get("hub.verify_token")
+                ?? url.searchParams.get("hub_verify_token") ?? "").trim();
+    const desafio = url.searchParams.get("hub.challenge")
+                 ?? url.searchParams.get("hub_challenge");
+
+    // Diagnóstico: TAMANHOS, nunca os valores. Com isto dá para separar
+    // "segredo não chegou" de "segredo chegou diferente" sem expor nada — foi
+    // o que resolveu o handshake que ficou três tentativas em 403.
+    console.log(`handshake modo=${modo} segredo_configurado=${VERIFY_TOKEN.length} recebido=${token.length} bate=${token === VERIFY_TOKEN}`);
+
     if (modo === "subscribe" && VERIFY_TOKEN && token === VERIFY_TOKEN) {
       return new Response(desafio ?? "", { status: 200 });
     }
