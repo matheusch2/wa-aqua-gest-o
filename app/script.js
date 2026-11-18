@@ -3463,6 +3463,7 @@ function abrirViveiro(index) {
         <span>Sobrevivência estimada acima de 100% — verifique povoamento, ração, taxa alimentar, peso médio ou o cadastro das despescas.</span>
       </div>` : ""}
 
+      <button class="vv-semana-btn" onclick="salvarScroll(); abrirResultadoSemana(${index})"><span>↗</span> Resultado da semana <span aria-hidden="true">›</span></button>
       <div class="vv-secao-lbl">Lançamentos</div>
       <div class="vv-manejo-grid">
         <button class="vv-manejo-btn" onclick="salvarScroll(); mostrarLancamentoRacao(${index})">
@@ -15720,4 +15721,94 @@ async function buscarAtualizacaoManual(botao) {
   if (botao) { botao.disabled = false; botao.innerHTML = antes; }
   if (r === false) _toastSucesso("Você já está na versão mais recente.");
   else if (r === null) _toastErro("Não consegui verificar. Veja sua conexão.");
+}
+
+
+/* Resultado entre biometrias: cenários, sem alterar dados do cultivo. */
+function _semanaCenario(n, sobrevivencia, p1, p2, racaoAntes, racaoPeriodo, preco1, preco2, custo) {
+  const vivos = n * sobrevivencia / 100;
+  const b1 = vivos * p1 / 1000, b2 = vivos * p2 / 1000;
+  const ganho = b2 - b1;
+  const anterior = b1 > 0 ? racaoAntes / b1 : null;
+  const atual = b2 > 0 ? (racaoAntes + racaoPeriodo) / b2 : null;
+  return { b1, b2, ganho, anterior, atual,
+    semanal: ganho > 0 ? racaoPeriodo / ganho : null,
+    resultado: preco1 !== null && preco2 !== null && custo !== null ? b2 * preco2 - b1 * preco1 - custo : null };
+}
+function _semanaPreco(peso, itens) {
+  const lista = itens.slice().sort((a,b) => Number(a.gramas)-Number(b.gramas));
+  if (!lista.length || peso < Number(lista[0].gramas) || peso > Number(lista[lista.length-1].gramas)) return null;
+  const item = lista.filter(x => Number(x.gramas) <= peso).pop();
+  return item ? Number(item.preco) : null;
+}
+function abrirResultadoSemana(index) {
+  const v = viveiros[index]; if (!v) return;
+  esconderMenu();
+  const bios = (v.biometrias || []).filter(b => Number(b.gramatura)>0 && b.data >= v.dataPovoamento && b.data <= _hojeLocal())
+    .slice().sort((a,b)=>String(a.data).localeCompare(String(b.data)));
+  const unicas = [...new Map(bios.map(b=>[String(b.data).slice(0,10),b])).values()];
+  window._semanaTela = { index, bios:unicas };
+  const voltar = '<button class="botao-voltar-form" onclick="abrirViveiro('+index+'); restaurarScroll()">Voltar ao viveiro</button>';
+  const opcoes = (valor) => Array.from({length:20},(_,i)=>(i+1)*5).map(p=>'<option '+(p===valor?'selected':'')+' value="'+p+'">'+p+'%</option>').join('');
+  document.getElementById("area-gestao").innerHTML = '<div class="comparativo-v2 sim-padrao semana-tela">'+
+    _simTopoPadrao("Resultado da semana", _esc(v.nome))+
+    (unicas.length<2 ? '<div class="sim-aviso">São necessárias duas biometrias em datas diferentes no ciclo atual para comparar o período.</div>' :
+    '<div class="campo-form"><label for="sem-periodo">Período entre biometrias</label><select id="sem-periodo" onchange="_semanaRender()">'+
+    unicas.slice(1).map((b,i)=>'<option value="'+(i+1)+'" '+(i===unicas.length-2?'selected':'')+'>'+formatarData(unicas[i].data)+' a '+formatarData(b.data)+'</option>').join('')+'</select></div>'+
+    '<div class="sem-faixa"><label>Sobrevivência de <select id="sem-de" onchange="_semanaRender()">'+opcoes(50)+'</select></label><label>até <select id="sem-ate" onchange="_semanaRender()">'+opcoes(80)+'</select></label></div>'+
+    '<div class="campo-form"><label for="sem-extra">Outros custos do período (opcional)</label><input id="sem-extra" inputmode="decimal" placeholder="R$ — não incluídos" oninput="_semanaRender()"><small>Energia, mão de obra e outros custos. Informe o total; não inclua ração.</small></div><div id="sem-resultado"></div>')+
+    voltar+'</div>';
+  if(unicas.length>=2) _semanaRender();
+}
+function _semanaRender() {
+  const state=window._semanaTela; if(!state) return;
+  const v=viveiros[state.index], bios=state.bios;
+  const pos=Number(document.getElementById("sem-periodo").value), b1=bios[pos-1], b2=bios[pos];
+  const alvo=document.getElementById("sem-resultado"); if(!b1 || !b2 || !alvo) return;
+  const d1=String(b1.data).slice(0,10), d2=String(b2.data).slice(0,10);
+  const dias=Math.round((_parseDataLocal(d2)-_parseDataLocal(d1))/86400000);
+  const n=Number(String(v.totalPovoado || "").replace(/\./g,""));
+  if(!(n>0)) { alvo.innerHTML='<div class="sim-aviso">Informe o total povoado para calcular os cenários.</div>'; return; }
+  if((v.despescas||[]).some(d=>String(d.data).slice(0,10)<=d2 && String(d.data).slice(0,10)>=v.dataPovoamento)) {
+    alvo.innerHTML='<div class="sim-aviso">Há despesca neste ciclo até a data escolhida. Este cálculo ainda não desconta os animais retirados; o resultado fica indisponível para não distorcer biomassa e lucro.</div>'; return;
+  }
+  const racoes=(v.racoes||[]).filter(r=>r.data>=v.dataPovoamento && String(r.data).slice(0,10)<=d2);
+  const periodo=racoes.filter(r=>String(r.data).slice(0,10)>d1);
+  const antes=racoes.filter(r=>String(r.data).slice(0,10)<=d1).reduce((a,r)=>a+Number(r.racao||0),0);
+  const rsem=periodo.reduce((a,r)=>a+Number(r.racao||0),0);
+  const diasRegistrados=new Set(periodo.map(r=>String(r.data).slice(0,10))).size;
+  const completo=diasRegistrados===dias;
+  const precoFalta=periodo.some(r=>Number(r.racao)>0 && !(_precoKgRacao(r)>0));
+  const extraTexto=document.getElementById("sem-extra").value.trim();
+  const extra=extraTexto ? parseDecimalBR(extraTexto) : 0;
+  if(!Number.isFinite(extra)||extra<0) { alvo.innerHTML='<div class="sim-aviso">Informe um custo válido, igual ou maior que zero.</div>'; return; }
+  const custo=precoFalta||!completo ? null : periodo.reduce((a,r)=>a+Number(r.racao||0)*_precoKgRacao(r),0)+extra;
+  const ref=_precosFrescos(precosCamarao,_hojeLocal());
+  const p1=Number(b1.gramatura),p2=Number(b2.gramatura);
+  const pr1=_semanaPreco(p1,ref.itens), pr2=_semanaPreco(p2,ref.itens);
+  const de=Number(document.getElementById("sem-de").value),ate=Number(document.getElementById("sem-ate").value);
+  const fmt=(x,d=2)=>x===null?'—':formatarNumeroBR(x,d);
+  const dinheiro=x=>x===null?'—':(x>0?'+ ':'')+'R$ '+fmt(x);
+  const linhas=[]; for(let s=Math.min(de,ate);s<=Math.max(de,ate);s+=5) linhas.push({s,..._semanaCenario(n,s,p1,p2,antes,rsem,pr1,pr2,custo)});
+  const tabela=(cab,rows)=>'<table class="sem-tabela"><thead><tr>'+cab.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+  const resultado=tabela(['Sobrev.','Ganho (kg)','Resultado'],linhas.map(l=>'<tr><td>'+l.s+'%</td><td>'+fmt(l.ganho,1)+'</td><td class="'+(l.resultado===null?'':l.resultado>=0?'sem-pos':'sem-neg')+'">'+dinheiro(l.resultado)+'</td></tr>'));
+  const fca=tabela(['Sobrev.','FCA anterior → atual','No período'],linhas.map(l=>{
+    const delta=l.atual-l.anterior;
+    const tendencia=Math.abs(delta)<1e-9?'estável':delta<0?'caindo':'subindo';
+    return '<tr><td>'+l.s+'%</td><td>'+fmt(l.anterior)+' → '+(completo?fmt(l.atual):'—')+'<small>'+(completo?tendencia:'histórico incompleto')+'</small></td><td>'+(completo?fmt(l.semanal):'—')+'</td></tr>';
+  }));
+  const avisos=[];
+  if(!completo) avisos.push('Ração registrada em '+diasRegistrados+' de '+dias+' dias. Complete o histórico, incluindo zero nos dias sem oferta, para liberar os resultados.');
+  if(precoFalta) avisos.push('Há ração sem preço cadastrado. Complete o preço para calcular o custo.');
+  if(pr1===null||pr2===null) avisos.push('Preço de referência indisponível ou gramatura fora da tabela vigente. O resultado financeiro não será estimado.');
+  if(!extraTexto) avisos.push('Outros custos não incluídos: o resultado desconta somente a ração.');
+  const positivos=linhas.every(l=>l.resultado!==null && l.resultado>0);
+  alvo.innerHTML='<div class="sem-resumo"><div><small>Peso</small><b>'+fmt(p1)+' → '+fmt(p2)+' g</b></div><div><small>Crescimento / 7 dias</small><b>'+fmt((p2-p1)*7/dias)+' g</b></div><div><small>Ração · '+dias+' dias</small><b>'+fmt(rsem,1)+' kg</b></div></div>'+
+    '<p class="sem-nota">Custo do período: <b>'+ (custo===null?'incompleto':'R$ '+fmt(custo))+'</b></p>'+
+    avisos.map(a=>'<p class="sem-nota">'+a+'</p>').join('')+
+    '<h4>Resultado por sobrevivência</h4><p class="sem-nota">Valorização estimada menos custos informados.</p>'+resultado+
+    (positivos?'<p class="sem-destaque">Resultado positivo em toda a faixa simulada.</p>':'')+
+    '<h4>Conversão alimentar · FCA</h4>'+fca+
+    '<p class="sem-nota">Quanto menor, melhor. Sem ganho de biomassa, o FCA do período aparece como —.</p>'+
+    '<details><summary>Ver cálculo e preços de referência</summary><p>Mesma sobrevivência nas duas datas. Ração do período: após '+formatarData(d1)+' até '+formatarData(d2)+'.</p><p>FCA acumulado usa toda a ração registrada até cada biometria; confira também o histórico anterior.</p><p>Preços atuais do painel: '+fmt(p1)+' g = R$ '+fmt(pr1)+'/kg; '+fmt(p2)+' g = R$ '+fmt(pr2)+'/kg. Para peso entre duas gramaturas, usamos a faixa inferior. Não extrapolamos os limites da tabela.</p><p>O resultado compara os dois pesos pela mesma tabela atual, não por preços históricos. Custo da ração usa o preço gravado no lançamento ou, quando ausente, o cadastro atual.</p><p>Resultado = biomassa final × preço final − biomassa inicial × preço inicial − custo do período. É uma simulação, não uma venda realizada.</p></details>';
 }
