@@ -15827,13 +15827,13 @@ function _semanaRender() {
   const fmt=(x,d=2)=>x===null?'—':formatarNumeroBR(x,d);
   const dinheiro=x=>x===null?'—':(x>0?'+ ':'')+'R$ '+fmt(x);
   const linhas=[]; for(let s=Math.min(de,ate);s<=Math.max(de,ate);s+=5) linhas.push({s,..._semanaCenario(n,s,p1,p2,antes,rsem,pr1,pr2,custo)});
-  const tabela=(cab,rows)=>'<table class="sem-tabela"><thead><tr>'+cab.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
-  const resultado=tabela(['Sobrev.','Ganho (kg)','Resultado'],linhas.map(l=>'<tr><td>'+l.s+'%</td><td>'+fmt(l.ganho,1)+'</td><td class="'+(l.resultado===null?'':l.resultado>=0?'sem-pos':'sem-neg')+'">'+dinheiro(l.resultado)+'</td></tr>'));
+  const tabela=(cab,rows)=>'<div class="sem-quadro"><table class="sem-tabela '+(cab.length===4?'sem-fca':'sem-financeiro')+'"><thead><tr>'+cab.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+  const resultado=tabela(['Sobrev.','Ganho (kg)','Resultado'],linhas.map(l=>'<tr><td><span class="sem-sobrev">'+l.s+'%</span></td><td>'+fmt(l.ganho,1)+'</td><td class="'+(l.resultado===null?'':l.resultado>=0?'sem-pos':'sem-neg')+'"><span class="sem-valor">'+dinheiro(l.resultado)+'</span></td></tr>'));
   const fca=tabela(['Sobrev.','FCA anterior → atual','Variação','No período'],linhas.map(l=>{
     const variacao=_semanaVariacaoFca(l.anterior,l.atual);
     const delta=l.atual-l.anterior;
     const tendencia=Math.abs(delta)<1e-9?'estável':delta<0?'caindo':'subindo';
-    return '<tr><td>'+l.s+'%</td><td>'+fmt(l.anterior)+' → '+(completo?fmt(l.atual):'—')+'<small>'+(completo?tendencia:'histórico incompleto')+'</small></td><td class="'+(completo&&variacao!==null?(variacao>0?'sem-neg':variacao<0?'sem-pos':''):'')+'">'+(completo&&variacao!==null?(variacao>0?'+':'')+fmt(variacao,1)+'%':'—')+'</td><td>'+(completo?fmt(l.semanal):'—')+'</td></tr>';
+    return '<tr><td><span class="sem-sobrev">'+l.s+'%</span></td><td><span class="sem-fca-antes">'+fmt(l.anterior)+'</span> <span class="sem-seta">→</span> <b>'+(completo?fmt(l.atual):'—')+'</b>'+'<small>'+(completo?tendencia:'histórico incompleto')+'</small></td><td class="'+(completo&&variacao!==null?(variacao>0?'sem-neg':variacao<0?'sem-pos':''):'')+'"><span class="sem-variacao">'+(completo&&variacao!==null?(variacao>0?'+':'')+fmt(variacao,1)+'%':'—')+'</span></td><td>'+(completo?fmt(l.semanal):'—')+'</td></tr>';
   }));
   const avisos=[];
   if(!completo) avisos.push('Falta conferir a ração em: '+cobertura.faltantes.map(formatarData).join(', ')+'. Lance a quantidade ou zero se não houve oferta. Domingos de folga não bloqueiam o cálculo.');
