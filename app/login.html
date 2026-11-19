@@ -7,6 +7,9 @@
 <!-- tela-entrada: pinta a arte de fundo na página inteira (01-base-e-painel.css) -->
 <html lang="pt-BR" translate="no" class="tela-entrada">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
     <!-- Primeira coisa do <head>, e tem que continuar sendo: o navegador decide
          a codificação nos primeiros 1024 bytes. Sem isto a página só mostra os
          acentos certos porque o servidor manda charset no cabeçalho; aberta de
@@ -263,7 +266,7 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
 .convite-simulacao a::after{content:"";position:absolute;inset:-5px 0}
 @media(prefers-reduced-transparency:reduce){.login-wrapper .convite-simulacao{background:#191d1c}}
 </style>
-<link rel="stylesheet" href="styles/101-login-logo.css?v=20261119-a">
+<link rel="stylesheet" href="styles/101-login-logo.css?v=20261119-c">
 </head>
 <body class="notranslate">
 
@@ -437,9 +440,6 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="/logo-wa.webp?v=20261119" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
                     </div>
                     <div class="login-form-card volta-card">
                         <div class="volta-avatar">${u.foto
@@ -476,9 +476,6 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="/logo-wa.webp?v=20261119" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
                         <h1 class="titulo-login">Acessar conta</h1>
                         <p class="login-subtitulo">Bem-vindo de volta!</p>
                     </div>
@@ -511,9 +508,6 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="/logo-wa.webp?v=20261119" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
                         <h1 class="titulo-login" style="font-size:22px">Criar conta</h1>
                     </div>
                     <div class="login-form-card">
@@ -550,9 +544,6 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="/logo-wa.webp?v=20261119" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
                         <h1 class="titulo-login" style="font-size:22px">Recuperar senha</h1>
                     </div>
                     <div class="login-form-card">
@@ -692,9 +683,6 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
                     <div class="login-topo">
-                        <div class="logo-circulo login-logo">
-                            <img src="/logo-wa.webp?v=20261119" alt="WA Aqua Gestão" class="login-logo-img">
-                        </div>
                         <h1 class="titulo-login">NOVA SENHA</h1>
                         <p class="login-subtitulo">Defina a sua nova senha</p>
                     </div>
