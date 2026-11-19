@@ -236,6 +236,15 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
 .volta-card .volta-email{margin:2px 0 0}
 .volta-card>.input-com-icone,.volta-card>.botao-entrar,.volta-card>#msg-login{grid-column:1/-1}
 .volta-card>.input-com-icone{margin-top:14px}
+</style><style id="login-base-mobile">
+@media (max-width:899px) {
+  #area-login .login-wrapper:has(>.atalhos-acesso) {
+    display:flex; flex-direction:column; justify-content:flex-end;
+    box-sizing:border-box; min-height:100vh; min-height:100dvh;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+  }
+  #area-login .login-wrapper:has(>.atalhos-acesso)>* {flex-shrink:0}
+}
 </style></head>
 <body class="notranslate">
 
