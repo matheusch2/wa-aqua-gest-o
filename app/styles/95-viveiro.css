@@ -106,7 +106,24 @@
    tinha que procurar o número no meio de cada caixa. Doze cartões passaram de
    ~780px para ~430px, e agora os valores descem alinhados.
    --------------------------------------------------------------------------- */
-.painel-viveiro .painel-info { gap: 8px; margin-bottom: 4px; }
+/* TODOS OS DOZE DA MESMA ALTURA, E A ALTURA É A DO MAIOR.
+ *
+ * Os rótulos não têm todos o mesmo tamanho: "Média de crescimento" e
+ * "Biomassa estimada" quebram em duas linhas, e o cartão do FCA às vezes
+ * ganha uma terceira ("em 12/11/2026"). Com as linhas da grade em "auto",
+ * cada fileira ficava da altura do seu próprio conteúdo e a tela tinha três
+ * tamanhos de cartão medidos: 56px, 67px e 70px.
+ *
+ * O 1fr aqui não divide espaço nenhum — a grade não tem altura fixa para
+ * repartir. Numa grade de altura livre ele faz todas as fileiras ficarem do
+ * tamanho da maior, que é exatamente o pedido: engordar os menores em vez de
+ * apertar os maiores. Rótulo nenhum precisa ser cortado para isso.
+ */
+.painel-viveiro .painel-info {
+    gap: 8px;
+    margin-bottom: 4px;
+    grid-auto-rows: 1fr;
+}
 
 .painel-viveiro .info-box {
     flex-direction: row;
