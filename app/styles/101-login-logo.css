@@ -46,3 +46,6 @@ html.tela-entrada #area-login .login-topo .login-logo::after {
   text-shadow: 0 1px 2px rgba(255,255,255,.65);
   pointer-events: none;
 }
+
+/* Pedido 19/11: ocultar a marca somente no topo do login. */
+html.tela-entrada #area-login .login-topo:has(.login-logo) { display: none !important; }
