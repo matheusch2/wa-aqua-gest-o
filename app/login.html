@@ -318,6 +318,21 @@ html.tela-entrada #area-login .login-form-card .input-com-icone .botao-olho svg 
   html.tela-entrada #area-login .login-form-card .input-com-icone input {font-size:14px;}
 }
 </style>
+<style id="safari-autofill-login-20261119">
+/* Safari/iOS: preservar o preenchimento automático sem destaque amarelo.
+   Mantém Face ID, senhas salvas e autofill funcionais. */
+html.tela-entrada #area-login .login-form-card .input-com-icone input:-webkit-autofill,
+html.tela-entrada #area-login .login-form-card .input-com-icone input:-webkit-autofill:hover,
+html.tela-entrada #area-login .login-form-card .input-com-icone input:-webkit-autofill:focus,
+html.tela-entrada #area-login .login-form-card .input-com-icone input:-webkit-autofill:active {
+  -webkit-box-shadow:0 0 0 1000px #f1f3f5 inset !important;
+  box-shadow:0 0 0 1000px #f1f3f5 inset !important;
+  -webkit-text-fill-color:#243734 !important;
+  caret-color:#243734;
+  border-radius:0;
+  transition:background-color 9999s ease-out 0s;
+}
+</style>
 <style id="acesso-campos-acabamento-20261119">
 /* Acabamento uniforme dos campos em login, cadastro e recuperação. */
 html.tela-entrada #area-login .login-form-card .input-com-icone {
