@@ -226,7 +226,17 @@ html.tela-entrada .volta-avatar { box-shadow:0 0 0 2px white,0 1px 8px #193c3850
 html.tela-entrada .volta-avatar img { filter:contrast(1.08) saturate(1.12); }
 @media (prefers-reduced-transparency:reduce) { html.tela-entrada .login-form-card { background:#f8fcfa; } }
 </style>
-</head>
+<style>
+.atalhos-acesso{display:grid;grid-template-columns:repeat(var(--colunas),minmax(0,1fr));gap:6px;margin:10px 0 0}
+.atalhos-acesso>a,.atalhos-acesso>button{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:58px;width:100%;padding:6px 2px;margin:0;border:1px solid #ffffff58;border-radius:12px;background:rgba(5,51,45,.89);color:white;font:600 11px/1.15 system-ui;text-align:center;text-decoration:none;cursor:pointer}
+.atalhos-acesso svg{width:18px;height:18px;stroke:#b8f7df;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1fr);column-gap:12px;text-align:left;padding:16px}
+.volta-card .volta-avatar{grid-row:1/3;width:48px;height:48px;margin:0}
+.volta-card .volta-nome{align-self:end;font-size:19px}
+.volta-card .volta-email{margin:2px 0 0}
+.volta-card>.input-com-icone,.volta-card>.botao-entrar,.volta-card>#msg-login{grid-column:1/-1}
+.volta-card>.input-com-icone{margin-top:14px}
+</style></head>
 <body class="notranslate">
 
     <!-- Tela de abertura: some quando o login aparece ou o app assume -->
@@ -424,9 +434,8 @@ html.tela-entrada .volta-avatar img { filter:contrast(1.08) saturate(1.12); }
                             Entrar
                         </button>
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
-                        <button class="link-esqueci" onclick="mostrarRecuperarSenha()">Esqueci minha senha</button>
-                        <button class="link-trocar-conta" onclick="_esquecerUltimoAcesso()">Entrar com outra conta</button>
-                    </div>
+                        </div>
+                    <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:4"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="_esquecerUltimoAcesso()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 9-8 12-3m1-6h7m-3-3 3 3-3 3"/></svg><span>Outra conta</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
                 </div>
             `;
             _verificarLockLogin();
@@ -466,13 +475,8 @@ html.tela-entrada .volta-avatar img { filter:contrast(1.08) saturate(1.12); }
                             Entrar
                         </button>
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
-                        <button class="link-esqueci" onclick="mostrarRecuperarSenha()">Esqueci minha senha</button>
-                        <div class="separador-login"><span>Não tem uma conta?</span></div>
-                        <button class="botao-criar-conta" onclick="mostrarCadastro()">
-                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                            Criar conta
-                        </button>
-                    </div>
+                        </div>
+                    <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:3"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
                 </div>
             `;
             _verificarLockLogin();
