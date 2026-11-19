@@ -254,6 +254,14 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
 .login-wrapper:has(>.atalhos-acesso) .botao-entrar,.login-wrapper .convite-simulacao a{background:#92eabc;color:#073c2d;border:0;border-radius:999px;font-weight:750;box-shadow:none}
 .login-wrapper .convite-simulacao a{padding-inline:16px;white-space:nowrap}
 @media(prefers-reduced-transparency:reduce){html.tela-entrada .login-wrapper:has(>.atalhos-acesso) .login-form-card,.login-wrapper .convite-simulacao,.login-wrapper .atalhos-acesso>*{background:#181e1e}}
+</style><style id="simular-referencia">
+.login-wrapper .convite-simulacao{box-sizing:border-box;padding:10px 12px;gap:14px;border:1px solid rgba(255,255,255,.19);border-radius:16px;background:rgba(9,12,13,.52);backdrop-filter:none;-webkit-backdrop-filter:none}
+.convite-simulacao>div{min-width:0;flex:1}
+.login-wrapper .convite-simulacao strong{font-size:15px;font-weight:650;line-height:1.25}
+.login-wrapper .convite-simulacao small{margin-top:5px;color:#e5e8e6;font-size:13px;line-height:1.28}
+.login-wrapper .convite-simulacao a{display:inline-flex;align-items:center;justify-content:center;position:relative;flex:none;min-height:34px;padding:0 15px;border-radius:999px;font-size:14px;line-height:1}
+.convite-simulacao a::after{content:"";position:absolute;inset:-5px 0}
+@media(prefers-reduced-transparency:reduce){.login-wrapper .convite-simulacao{background:#191d1c}}
 </style></head>
 <body class="notranslate">
 
@@ -451,7 +459,7 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         </div>
                     <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:4"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="_esquecerUltimoAcesso()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 9-8 12-3m1-6h7m-3-3 3 3-3 3"/></svg><span>Outra conta</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
-                    <aside class="convite-simulacao"><div><strong>Simule sua sobrevivência</strong><small>Estime a sobrevivência do seu lote.</small></div><a href="https://matheusch2.github.io/wa-aqua/#sobrevivencia">Simular</a></aside>
+                    <aside class="convite-simulacao"><div><strong>Simule sua sobrevivência</strong><small>Veja quantos camarões podem estar vivos no viveiro.</small></div><a href="https://matheusch2.github.io/wa-aqua/#sobrevivencia">Simular</a></aside>
                 </div>
             `;
             _verificarLockLogin();
@@ -490,7 +498,7 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         </div>
                     <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:3"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
-                    <aside class="convite-simulacao"><div><strong>Simule sua sobrevivência</strong><small>Estime a sobrevivência do seu lote.</small></div><a href="https://matheusch2.github.io/wa-aqua/#sobrevivencia">Simular</a></aside>
+                    <aside class="convite-simulacao"><div><strong>Simule sua sobrevivência</strong><small>Veja quantos camarões podem estar vivos no viveiro.</small></div><a href="https://matheusch2.github.io/wa-aqua/#sobrevivencia">Simular</a></aside>
                 </div>
             `;
             _verificarLockLogin();
