@@ -267,6 +267,44 @@ html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao sma
 @media(prefers-reduced-transparency:reduce){.login-wrapper .convite-simulacao{background:#191d1c}}
 </style>
 <link rel="stylesheet" href="styles/101-login-logo.css?v=20261119-d">
+
+<style id="recuperacao-visual-20261119">
+/* Tela de recuperação com o mesmo padrão visual do cadastro. */
+html.tela-entrada #area-login .login-wrapper:has(#emailRecuperacao) {
+  box-sizing:border-box;
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:calc(env(safe-area-inset-top, 0px) + 32px) 20px calc(env(safe-area-inset-bottom, 0px) + 32px);
+}
+html.tela-entrada #area-login .login-wrapper:has(#emailRecuperacao) .login-form-card {
+  background:rgba(16,18,19,.78);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.24);
+  -webkit-backdrop-filter:blur(7px);
+  backdrop-filter:blur(7px);
+  box-shadow:0 12px 32px rgba(0,0,0,.16);
+}
+html.tela-entrada #area-login .login-wrapper:has(#emailRecuperacao) .login-form-card label {color:#fff;}
+html.tela-entrada #area-login .login-wrapper:has(#emailRecuperacao) .botao-entrar {
+  background:#92eabc;
+  color:#073c2d;
+  border:0;
+  border-radius:999px;
+  box-shadow:none;
+  font-weight:750;
+}
+html.tela-entrada #area-login .login-wrapper:has(#emailRecuperacao) .botao-voltar-form {
+  background:transparent;
+  border:1px solid rgba(255,255,255,.48);
+  color:#fff;
+  border-radius:16px;
+}
+@media(prefers-reduced-transparency:reduce) {
+  html.tela-entrada #area-login .login-wrapper:has(#emailRecuperacao) .login-form-card {background:#181e1e;}
+}
+</style>
 <style id="cadastro-visual-20261119">
 /* Cadastro: centralização e identidade visual iguais à tela de acesso. */
 html.tela-entrada #area-login .login-wrapper:has(#emailCadastro) {
@@ -578,9 +616,6 @@ html.tela-entrada #area-login .login-wrapper:has(#emailCadastro) .botao-voltar-f
         function mostrarRecuperarSenha() {
             document.getElementById("area-login").innerHTML = `
                 <div class="login-wrapper">
-                    <div class="login-topo">
-                        <h1 class="titulo-login" style="font-size:22px">Recuperar senha</h1>
-                    </div>
                     <div class="login-form-card">
                         <label>E-mail da sua conta</label>
                         <div class="input-com-icone">
