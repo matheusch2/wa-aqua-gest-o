@@ -811,7 +811,7 @@ body.tema-escuro .botao-voltar-form.botao-perigo-outline:active {
 html.tela-entrada,
 html.tela-entrada body {
     min-height: 100%;
-    background: #e8f4f2 url("/app/assets/fundo-login.webp?v=20261113w") center / cover no-repeat fixed;
+    background: linear-gradient(180deg,rgba(241,249,248,.22),transparent 55%) center / cover no-repeat fixed, url("/app/assets/login-viveiro-entardecer.svg") center / cover no-repeat fixed;
 }
 
 .login-wrapper {
