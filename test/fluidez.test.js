@@ -11,7 +11,9 @@ const noop = () => {};
 function element() {
   const attrs = new Map(), classes = new Set();
   return { value: "", innerHTML: "Salvar", textContent: "", disabled: false,
-    style: {}, dataset: {}, scrollTop: 0, firstElementChild: {},
+    style: {}, dataset: {}, scrollTop: 0, firstElementChild: null,
+    __caixa: { height: 0, top: 0, width: 0 },
+    getBoundingClientRect() { return this.__caixa; },
     addEventListener: noop, removeEventListener: noop, appendChild: noop, remove: noop,
     focus: noop, querySelector: () => null, querySelectorAll: () => [],
     getAttribute: k => attrs.has(k) ? attrs.get(k) : null,
@@ -28,7 +30,16 @@ function load() {
   const ctx = {window:win,location:win.location,history:{pushState:noop},
     document:{getElementById:get,querySelector:s=>s===".botao-salvar"?button:null,
       querySelectorAll:()=>[],addEventListener:noop,createElement:element,body:element(),documentElement:element()},
-    navigator:{onLine:true},localStorage:{getItem:()=>null,setItem:noop},
+    navigator:{onLine:true},
+    // localStorage DE VERDADE (um Map): a reserva do espaço da faixa de preços
+    // guarda e lê a altura da última abertura, e com um stub que devolve null
+    // o caminho inteiro ficava sem teste.
+    localStorage:(()=>{const m=new Map();return{
+      getItem:k=>m.has(k)?m.get(k):null,
+      setItem:(k,v)=>m.set(k,String(v)),
+      removeItem:k=>m.delete(k),
+      __mapa:m};})(),
+    getComputedStyle:el=>(el&&el.__estilo)||{marginTop:"0px",marginBottom:"0px"},
     supabase:{createClient:()=>({})},console:{log:noop},
     setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout:noop,setInterval:noop,
     crypto:{randomUUID:()=>"test-id"},Chart:function(){},
@@ -783,7 +794,7 @@ test("custos: a pastilha vem da categoria, e 'Operação' não é ração",()=>{
   assert.equal(chave('Probiótico'), 'probio');
   // Calcário e dolomita passaram a cair na chave "saco" quando as embalagens
   // entraram. Não mudou desenho nenhum: _CX_ICONES.calcario e _CX_ICONES.saco
-  // apontam para o MESMO icone-produto-saco.svg — conferi. O que o teste
+  // apontam para o MESMO icone-produto-saco.webp — conferi. O que o teste
   // continua guardando é que eles não caem em "outro" nem viram ração.
   assert.equal(chave('Calcário'), 'saco');          // com acento
   assert.equal(chave('Outros', 'Dolomita (P)'), 'saco');
@@ -1086,4 +1097,134 @@ test("painel: todo cartao de comparacao diz de quantos ciclos saiu",()=>{
   const semNota = a.run(`__c.filter(x => /lab\\.|ciclo 2026|FCA|Produção/i.test(x.rotulo))
                               .filter(x => !/ciclo/.test(x.nota || "")).map(x => x.rotulo).join(",")`);
   assert.equal(semNota, "", "estes cartoes precisam dizer a base: " + semNota);
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   O AQUECIMENTO DAS ARTES SÓ SERVE SE OS ENDEREÇOS BATEREM
+
+   _aquecerArtes() busca os desenhos no tempo ocioso para que a tela não os
+   peça na hora do toque. Isso só funciona se o endereço aquecido for o MESMO
+   que a tela pede, "?v=" incluído — um "?v=" diferente é outra chave de cache,
+   e o aquecimento vira download inútil.
+
+   O jeito de quebrar isto é banal e silencioso: trocar o "?v=" de uma arte na
+   tela e esquecer da lista. Nada dá erro, nada aparece no console, e a lentidão
+   volta sozinha. Daí este teste.
+   ─────────────────────────────────────────────────────────────────────────── */
+test("aquecimento: toda arte aquecida é uma arte que alguma tela realmente pede", () => {
+  const bloco = source.match(/const _ARTES_DAS_TELAS = \[([\s\S]*?)\];/);
+  assert.ok(bloco, "não achei a lista _ARTES_DAS_TELAS no script.js");
+  const aquecidas = [...bloco[1].matchAll(/"([^"]+)"/g)].map(m => m[1]);
+  assert.ok(aquecidas.length >= 5, "a lista de artes aquecidas encolheu: " + aquecidas.length);
+
+  // Em vez de procurar texto solto no arquivo, MONTA as telas e lê o que elas
+  // pedem de verdade. O "?v=" das portas da Simular venda mora num template a
+  // vinte linhas da chamada, e nenhuma busca por proximidade acerta isso.
+  const a = load();
+  a.run(`viveiros = [{ id:'v1', nome:'V1', ciclosFinalizados:[],
+      dataPovoamento:'2026-06-01', quantidadePovoada:250000, areaHectare:1,
+      biometrias:[{id:'b1',data:'2026-07-01',gramatura:10}], racoes:[], custos:[] }];`);
+  const pedidos = new Set();
+  const colher = (html) => {
+    for (const m of String(html || "").matchAll(/(?:src|href)="([^"]*assets\/[^"]+)"/g))
+      pedidos.add(m[1]);
+  };
+  for (const tela of ["abrirRelatorios()", "abrirSimularVenda()", "mostrarListaViveiros()"]) {
+    try { a.run(tela); } catch (e) { /* tela que precisa de mais dado: tudo bem */ }
+    colher(a.get("area-gestao").innerHTML);
+  }
+  // As pastilhas de custo não passam por uma tela: são uma constante.
+  colher(a.run("Object.values(_CX_ICONES).join('')").replace(/href=/g, 'src='));
+
+  assert.ok(pedidos.size >= 5,
+    "as telas não produziram artes suficientes para o teste valer: " + [...pedidos].join(", "));
+
+  const normal = (u) => u.replace(/^.*?assets\//, "assets/");
+  const lista = new Set(aquecidas.map(normal));
+  for (const pedido of pedidos) {
+    assert.ok(lista.has(normal(pedido)),
+      `a tela pede "${pedido}" e o aquecimento não tem esse endereço exato. ` +
+      `Se foi só o "?v=" que mudou, o aquecimento virou download inútil ` +
+      `e a lentidão voltou em silêncio. Lista atual: ${[...lista].join(", ")}`);
+  }
+});
+
+test("aquecimento: nenhuma arte de tela ficou de fora da lista", () => {
+  const bloco = source.match(/const _ARTES_DAS_TELAS = \[([\s\S]*?)\];/);
+  const aquecidas = new Set([...bloco[1].matchAll(/"([^"]+)"/g)]
+    .map(m => m[1].replace(/^.*\//, "").replace(/\?.*$/, "")));
+  const telas = source.replace(bloco[0], "");
+
+  // Toda arte .webp que alguma tela cita tem de estar sendo aquecida. Foto de
+  // fazenda e avatar não entram: são de cada cliente, não arte do app.
+  const citadas = new Set([...telas.matchAll(/([a-z0-9-]+\.webp)/gi)].map(m => m[1]));
+  const faltando = [...citadas].filter(a => !aquecidas.has(a));
+  assert.deepEqual(faltando, [],
+    "arte de tela fora do aquecimento — vai nascer com o quadrado vazio: " + faltando.join(", "));
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   O ESPAÇO GUARDADO DA FAIXA DE PREÇOS
+
+   A faixa chega do banco depois da tela já pintada, e como ela mora ACIMA do
+   primeiro card, ao nascer empurrava tudo para baixo. Medido num Chromium com
+   a rede estrangulada no servidor: 30px de uma vez, logo depois da tela de
+   abertura sair. Era o "quando eu abro ela, é como se ela fosse descendo".
+
+   A correção guarda a altura da última abertura e já nasce com o buraco do
+   tamanho certo. Dois detalhes dela são fáceis de desfazer sem perceber, e é
+   deles que estes testes cuidam.
+   ─────────────────────────────────────────────────────────────────────────── */
+test("faixa de preços: guarda o espaço que ela OCUPA, não a altura da caixa", () => {
+  const a = load();
+  const fita = a.get("fita-precos");
+  const barra = element();
+  // A .fp-barra tem margin: 10px -18px -12px. Como o #fita-precos não tem
+  // borda nem padding, essas margens vazam para fora dele: a faixa ocupa
+  // 32 + 10 - 12 = 30px, não 32. Guardar 32 fazia a tela subir 2px quando a
+  // faixa real entrava — pequeno, mas é o mesmo defeito de novo, menor.
+  barra.__estilo = { marginTop: "10px", marginBottom: "-12px" };
+  fita.firstElementChild = barra;
+  fita.__caixa = { height: 32, top: 0, width: 390 };
+
+  a.run("_soltarEspacoDaFita()");
+
+  assert.equal(a.run("localStorage.getItem('fitaPrecosAltura')"), "30",
+    "guardou a altura da caixa em vez do espaço ocupado: a tela vai pular quando a faixa entrar");
+});
+
+test("faixa de preços: a reserva nasce do que foi guardado, e some quando não há preço", () => {
+  const a = load();
+  a.run("localStorage.setItem('fitaPrecosAltura','30')");
+  const fita = a.get("fita-precos");
+
+  a.run("_reservarEspacoDaFita()");
+  assert.equal(fita.style.minHeight, "30px",
+    "o buraco da faixa não foi reservado: a tela volta a descer quando o preço chegar");
+  assert.equal(fita.classList.contains("fp-reservado"), true,
+    "sem a classe, o :empty do CSS some com o espaço e a reserva não vale nada");
+
+  // Administrador tirou a tabela do ar: _fitaPrecos não acha o que mostrar.
+  // A reserva tem de ser desfeita, senão fica um vão vazio para sempre.
+  a.run("precosCamarao = [];");
+  fita.__caixa = { height: 0, top: 0, width: 390 };
+  fita.firstElementChild = null;
+  a.run("_fitaPrecos()");
+  assert.equal(fita.classList.contains("fp-reservado"), false,
+    "sem preço nenhum, a reserva continuou lá e vai sobrar um vão em branco");
+  assert.equal(a.run("localStorage.getItem('fitaPrecosAltura')"), null,
+    "sem preço nenhum, a altura guardada tinha de ser apagada");
+});
+
+test("faixa de preços: fora da tela inicial, não mede nem apaga o que estava guardado", () => {
+  const a = load();
+  a.run("localStorage.setItem('fitaPrecosAltura','30')");
+  const fita = a.get("fita-precos");
+  fita.classList.add("fp-fora");          // está escondida: mediria zero
+  fita.__caixa = { height: 0, top: 0, width: 390 };
+
+  a.run("_soltarEspacoDaFita()");
+
+  assert.equal(a.run("localStorage.getItem('fitaPrecosAltura')"), "30",
+    "mediu a faixa escondida e apagou a reserva: a próxima abertura volta a descer");
 });

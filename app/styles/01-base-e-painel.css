@@ -829,7 +829,7 @@ html.tela-entrada body {
 }
 
 /* Sem a caixa branca: na arte do fundo a logo fica solta sobre a água.
-   O logo-wa.jpg é JPEG e carrega o fundo branco dentro dele — quem apaga esse
+   O logo-wa.webp carrega o fundo branco dentro dele (é opaco de propósito) — quem apaga esse
    branco é o mix-blend-mode: multiply, que sobre um fundo claro deixa passar
    só o laranja e o azul do desenho. Sem ele apareceria um retângulo branco no
    meio do gradiente. */
@@ -1596,6 +1596,15 @@ body.tema-escuro .aviso-cadastro b { color: #fbbf24; }
    emenda não aparece e a fita parece não ter fim. A duração vem do script, da
    largura real, para a velocidade de leitura ser a mesma com 6 ou 28 tamanhos. */
 #fita-precos:empty { display: none; }
+/* O ESPAÇO GUARDADO. Os preços chegam do banco depois da tela já pintada, e
+   como a faixa mora acima do primeiro card, ao nascer ela empurrava tudo para
+   baixo — medido: 30px de uma vez, logo depois da tela de abertura sair.
+   Quando a abertura anterior viu a faixa, _reservarEspacoDaFita() põe esta
+   classe com a altura da última vez e o buraco já nasce do tamanho certo.
+   O :not(.fp-fora) não é enfeite: sem ele esta regra venceria por
+   especificidade a que esconde a faixa fora da tela inicial, e o vão
+   apareceria no meio dos lançamentos. */
+#fita-precos.fp-reservado:empty:not(.fp-fora) { display: block; }
 /* Fora da tela inicial a faixa some. Dentro de um lançamento ela é barulho:
    o produtor está num número só e tem vinte passando em cima. */
 #fita-precos.fp-fora { display: none; }

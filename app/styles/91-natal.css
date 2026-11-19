@@ -5,7 +5,7 @@
    ser lido, ajustado e, se um dia não quisermos mais, apagado inteiro sem
    garimpar linha solta no meio do CSS do produto.
 
-   A logo (logo-wa.jpg) NÃO é tocada. O gorro é um SVG desenhado por cima, e o
+   A logo (logo-wa.webp) NÃO é tocada. O gorro é um SVG desenhado por cima, e o
    mesmo desenho serve nos três lugares onde a logo aparece: a abertura
    (.splash-wa-logo-card, 110px), a entrada (.login-logo, 74px) e a barra de
    cima (.logo-circulo, 65px). Por isso todas as medidas do gorro são em %: ele
@@ -125,7 +125,7 @@ html.natal .login-wrapper { padding-top: 80px; }
 
    A tela de entrada ganhou a arte de fundo e a logo perdeu a caixa branca: ela
    ficou solta sobre a água, com mix-blend-mode: multiply apagando o fundo
-   branco do logo-wa.jpg (ver 01-base-e-painel.css).
+   branco do logo-wa.webp (ver 01-base-e-painel.css).
 
    Só que o .wa-natal cria contexto de empilhamento próprio (position +
    z-index), e dentro dele o multiply passa a misturar com o envoltório em vez

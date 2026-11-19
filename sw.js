@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261119-a4";
+const CACHE = "waaqua-20261119-artes";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -56,6 +56,17 @@ const ESSENCIAIS = [
   "/app/styles/90-desktop.css",
   "/app/assets/fundo-login.webp",  // arte de fundo da tela de entrada
   "/app/assets/viveiro.webp",      // desenho do viveiro no cabecalho
+  // As artes das telas. Entraram depois e tinham ficado de fora: sem elas
+  // aqui, abrir "Simular venda" ou "Relatorios" offline mostrava os botoes
+  // com o quadrado vazio no lugar do desenho. Juntas nao chegam a 20 KB.
+  "/app/assets/sim-vender.webp",
+  "/app/assets/sim-projetar.webp",
+  "/app/assets/sim-comparativo.webp",
+  "/app/assets/rel-topo.webp",
+  "/app/assets/rel-ciclo.webp",
+  "/app/assets/rel-geral.webp",
+  "/app/assets/icone-produto-saco.webp",
+  "/app/assets/icone-produto-bombona.webp",
   "/app/styles/91-natal.css",   // enfeite de dezembro; o par deles some
   "/app/natal.js",              // do caminho sozinho fora do mês
   "/app/styles/92-home.css",    // tela inicial do celular
@@ -69,7 +80,7 @@ const ESSENCIAIS = [
                       // abertura offline carregava a casca sem funcionar.
                       // Continua rede-primeiro; isto é só a reserva offline.
   "/app/manifest.json",
-  "/logo-wa.jpg",
+  "/logo-wa.webp",
   // Comuns
   "/icon-192.png",
   "/favicon.ico",
@@ -189,9 +200,78 @@ async function reservaGuardada(req) {
   return null;
 }
 
+/*
+ * DESENHO GUARDADO É DESENHO PRONTO.
+ *
+ * A REGRA DE OURO — rede sempre primeiro — existe por causa do CÓDIGO: casca,
+ * script e CSS não podem chegar velhos no aparelho do cliente. Desenho não é
+ * código, e aplicar a mesma regra nele só custa.
+ *
+ * O custo foi MEDIDO, não suposto. Com a rede estrangulada no próprio servidor
+ * (o estrangulamento do DevTools não serve: o service worker roda em outra
+ * thread e escapa dele), num 4G ruim, abrindo "Simular venda" pela segunda vez
+ * na mesma sessão:
+ *
+ *     sim-vender.webp       transferido 0 B   ->   209 ms
+ *     sim-projetar.webp     transferido 0 B   ->   210 ms
+ *     sim-comparativo.webp  transferido 0 B   ->   210 ms
+ *
+ * Zero byte transferido e ainda assim 210ms: o arquivo JÁ estava guardado, mas
+ * o fetch daqui saía para o servidor antes de olhar a despensa. O botão nascia
+ * com o quadrado vazio toda vez.
+ *
+ * Então imagem e fonte do próprio site respondem da cópia guardada primeiro.
+ *
+ * POR QUE ISTO NÃO PODE SERVIR DESENHO VELHO:
+ *  - a busca é EXATA, com o "?v=" e tudo. Trocar o desenho é trocar o "?v=",
+ *    e um "?v=" novo é outro endereço, que não está guardado e cai na rede.
+ *    (É por isso que não uso ignoreSearch aqui, ao contrário da reserva
+ *    offline lá embaixo: ali o objetivo é achar qualquer coisa que sirva;
+ *    aqui é não achar nada além da versão pedida.)
+ *  - o nome do CACHE muda a cada publicação e o "activate" apaga o anterior
+ *    inteiro, então nada sobrevive a um deploy.
+ *
+ * Na PRIMEIRA vez de cada desenho ainda há uma ida à rede. Quem paga essa ida
+ * é o _aquecerArtes() do app, que busca as artes no tempo ocioso depois que a
+ * tela já está no ar — e é por isso que as duas coisas são uma só: sem esta
+ * parte o aquecimento não adiantava nada (o fetch daqui rebuscava de qualquer
+ * jeito), e sem o aquecimento esta parte só ajudaria da segunda tela em diante.
+ */
+function ehDesenho(req) {
+  if (req.destination === "image" || req.destination === "font") return true;
+  try {
+    return /\.(webp|png|jpe?g|gif|svg|ico|woff2?)$/i.test(new URL(req.url).pathname);
+  } catch (e) { return false; }
+}
+
+async function desenhoGuardadoPrimeiro(req) {
+  const guardado = await caches.match(req);      // exata: ver o comentário acima
+  if (guardado) return guardado;
+  try {
+    const resposta = await fetch(req);
+    if (resposta && resposta.ok && resposta.type === "basic") {
+      const copia = resposta.clone();
+      caches.open(CACHE).then((c) => c.put(req, copia)).catch(() => {});
+    }
+    if (resposta && resposta.status >= 400) {
+      const reserva = await reservaGuardada(req);
+      if (reserva) return reserva;
+    }
+    return resposta;
+  } catch (e) {
+    // Sem rede: aqui sim vale qualquer versão guardada — um desenho da
+    // publicação passada é melhor que um quadrado vazio.
+    const reserva = await reservaGuardada(req);
+    if (reserva) return reserva;
+    throw e;
+  }
+}
+
 self.addEventListener("fetch", (evento) => {
   const req = evento.request;
   if (!podeCuidar(req)) return; // deixa o navegador cuidar normalmente
+
+  if (ehDesenho(req)) { evento.respondWith(desenhoGuardadoPrimeiro(req)); return; }
 
   evento.respondWith(
     buscarNaRede(req)

@@ -38,8 +38,23 @@ const PAGINA = (versao) =>
 function servidor() {
   let versao = "1";
   let publicando = false;   // a janela de segundos em que o Pages devolve 404
+  const batidas = {};       // quantas vezes o SERVIDOR foi mesmo incomodado
   const app = http.createServer((req, res) => {
     const url = new URL(req.url, "http://x");
+    batidas[req.url] = (batidas[req.url] || 0) + 1;
+
+    /* Um desenho de mentira, para contar quantas idas ao servidor ele custa.
+       no-store de propósito, e isto é o coração do teste: com max-age a
+       despensa do navegador já evitaria a segunda ida sozinha, e o teste
+       passaria mesmo com o service worker indo à rede primeiro — foi o que
+       aconteceu na primeira versão desta prova. Com no-store, a ÚNICA coisa
+       capaz de poupar a ida é o Cache Storage do próprio service worker. */
+    if (url.pathname === "/teste-arte.webp") {
+      res.writeHead(200, { "Content-Type": "image/webp", "Cache-Control": "no-store" });
+      // 1x1 webp valido
+      return res.end(Buffer.from(
+        "UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==", "base64"));
+    }
 
     if (publicando && url.pathname === "/teste-sw.html") {
       res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
@@ -75,6 +90,7 @@ function servidor() {
 
   return {
     ouvir: () => new Promise((ok) => app.listen(0, "127.0.0.1", () => ok(app.address().port))),
+    batidas: (caminho) => batidas[caminho] || 0,
     publicar: (v) => { versao = v; },
     emPublicacao: (b) => { publicando = b; },
     fechar: () => new Promise((ok) => app.close(ok)),
@@ -150,8 +166,103 @@ test("service worker: as duas promessas", { skip: chromium ? false : "playwright
       await p.goto(url);
       assert.equal(await texto(p), "VERSAO-3");
     });
+
+    /* A TERCEIRA PROMESSA: desenho guardado não volta à rede.
+     *
+     * A regra de ouro é do CÓDIGO. Aplicá-la aos desenhos custava uma ida e
+     * volta inteira por ícone, toda vez — medido em 4G ruim: 210ms com ZERO
+     * byte transferido, porque o arquivo já estava guardado e o fetch saía
+     * para o servidor antes de olhar a despensa. Era o "demora a aparecer
+     * essas imagens" da tela de Simular venda.
+     *
+     * Este teste guarda as duas metades da promessa de uma vez: o desenho não
+     * incomoda o servidor duas vezes, E um desenho de versão nova incomoda,
+     * porque senão a correção teria trocado lentidão por desenho velho.
+     */
+    await t.test("desenho guardado não vai à rede de novo (e o ?v= novo vai)", async () => {
+      const buscar = (u) => p.evaluate((x) => fetch(x).then((r) => r.ok), u);
+
+      assert.equal(await buscar("/teste-arte.webp?v=1"), true);
+      const depoisDaPrimeira = s.batidas("/teste-arte.webp?v=1");
+      assert.equal(depoisDaPrimeira, 1, "a primeira busca tem de ir ao servidor");
+
+      await buscar("/teste-arte.webp?v=1");
+      await buscar("/teste-arte.webp?v=1");
+      assert.equal(s.batidas("/teste-arte.webp?v=1"), depoisDaPrimeira,
+        "o desenho já estava guardado e mesmo assim o service worker foi ao servidor de novo");
+
+      // A outra metade: trocar o desenho é trocar o ?v=, e aí TEM de ir buscar.
+      assert.equal(await buscar("/teste-arte.webp?v=2"), true);
+      assert.equal(s.batidas("/teste-arte.webp?v=2"), 1,
+        "um ?v= novo é outro desenho: servir o guardado aqui seria servir desenho velho");
+    });
+
   } finally {
     await navegador.close();
     await s.fechar();
   }
+});
+
+/*
+ * A porta de entrada do caminho "desenho guardado primeiro", testada sozinha.
+ *
+ * O teste do navegador acima prova que o desenho não volta à rede. Falta a
+ * outra metade, que é o que esta correção poderia estragar sem ninguém ver:
+ * o ehDesenho não pode confundir CÓDIGO com desenho. Se um dia ele passar a
+ * responder true para script.js, o app inteiro congela na versão guardada e
+ * a regra de ouro morre em silêncio — não quebra teste nenhum, só para de
+ * chegar publicação no aparelho do cliente.
+ *
+ * Roda o sw.js de verdade num sandbox com um "self" de mentira, em vez de
+ * copiar a função para cá, que sairia do sincronismo no primeiro ajuste.
+ */
+function carregarSw() {
+  const src = fs.readFileSync(path.join(RAIZ, "sw.js"), "utf8");
+  const vm = require("node:vm");
+  const noop = () => {};
+  const self = {
+    addEventListener: noop, skipWaiting: noop,
+    clients: { claim: noop },
+    location: { origin: "https://waaqua.com.br" },
+  };
+  const ctx = {
+    self, caches: { open: () => Promise.resolve({ add: noop, put: noop }), keys: () => Promise.resolve([]), match: () => Promise.resolve(null) },
+    fetch: () => Promise.resolve({}), URL, Promise, console, RegExp, JSON,
+  };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(src, ctx);
+  return ctx;
+}
+
+test("service worker: desenho é desenho, código é código", () => {
+  const sw = carregarSw();
+  assert.equal(typeof sw.ehDesenho, "function", "o sw.js deixou de expor ehDesenho");
+
+  const pedido = (url, destino) => ({ url, destination: destino || "" });
+
+  // Desenho: pode responder da cópia guardada.
+  for (const u of [
+    "https://waaqua.com.br/app/assets/sim-vender.webp?v=20261117",
+    "https://waaqua.com.br/app/assets/icone-produto-saco.webp?v=20261119",
+    "https://waaqua.com.br/logo-wa.webp?v=20261119",
+    "https://waaqua.com.br/icon-192.png",
+    "https://waaqua.com.br/apple-touch-icon.png",
+  ]) assert.equal(sw.ehDesenho(pedido(u)), true, "devia ser tratado como desenho: " + u);
+
+  // CÓDIGO E CASCA: têm de continuar no caminho da regra de ouro, sempre.
+  for (const u of [
+    "https://waaqua.com.br/app/script.js?v=20261119-a4",
+    "https://waaqua.com.br/app/styles/01-base-e-painel.css?v=20261119",
+    "https://waaqua.com.br/app/index.html",
+    "https://waaqua.com.br/app/login.html",
+    "https://waaqua.com.br/sw.js",
+    "https://waaqua.com.br/app/manifest.json",
+  ]) assert.equal(sw.ehDesenho(pedido(u)), false,
+    "CÓDIGO sendo tratado como desenho — a regra de ouro morre aqui: " + u);
+
+  // E pelo destination, que é o que o navegador diz quando a URL não entrega.
+  assert.equal(sw.ehDesenho(pedido("https://waaqua.com.br/foto", "image")), true);
+  assert.equal(sw.ehDesenho(pedido("https://waaqua.com.br/x", "script")), false);
+  assert.equal(sw.ehDesenho(pedido("nao-e-url-nenhuma")), false);
 });

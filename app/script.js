@@ -626,11 +626,72 @@ async function carregarPrecosCamarao() {
   precosCamarao = data || [];
 }
 
+/* O LUGAR DA FITA DE PREÇO FICA GUARDADO
+ *
+ * carregarPrecosCamarao() é solta de propósito — preço não pode atrasar a
+ * entrada de ninguém, e essa decisão continua certa. O preço dela é que a
+ * fita pousa DEPOIS da tela já pintada, e como o #fita-precos mora ACIMA do
+ * card da tela inicial, quando ela chega empurra o card inteiro para baixo.
+ *
+ * Medido com a rede estrangulada no próprio servidor, primeira abertura num
+ * 4G ruim: a fita entra ~50ms depois da abertura sair e desce tudo 30px de
+ * uma vez. É o "quando eu abro ela, é como se ela fosse descendo".
+ *
+ * A saída não é esperar pelo preço — isso desfaria a decisão de cima. É
+ * guardar o lugar dele. Quem abriu o app ontem e viu a fita vai ver de novo,
+ * então a altura da última vez é um palpite bom, e barato: um número no
+ * localStorage.
+ *
+ * O que esta solução NÃO cobre, de propósito:
+ *  - a primeiríssima abertura do aparelho ainda dá o empurrão, porque não dá
+ *    para reservar espaço para uma coisa que nunca se viu;
+ *  - se o administrador tirar a tabela do ar, fica um vão por UMA abertura,
+ *    e a própria _fitaPrecos() apaga a reserva ao não achar o que mostrar.
+ */
+const _FITA_ALTURA_CHAVE = "fitaPrecosAltura";
+
+function _reservarEspacoDaFita() {
+  const alvo = document.getElementById("fita-precos");
+  if (!alvo) return;
+  let h = 0;
+  try { h = Number(localStorage.getItem(_FITA_ALTURA_CHAVE) || 0); } catch (e) { return; }
+  if (!(h > 0)) return;
+  alvo.style.minHeight = h + "px";
+  alvo.classList.add("fp-reservado");
+}
+
+function _soltarEspacoDaFita() {
+  const alvo = document.getElementById("fita-precos");
+  if (!alvo) return;
+  alvo.classList.remove("fp-reservado");
+  alvo.style.minHeight = "";
+  // Fora da tela inicial a fita está com display:none e mediria zero — gravar
+  // esse zero apagaria a reserva da próxima abertura por engano.
+  if (alvo.classList.contains("fp-fora")) return;
+  // O ESPAÇO QUE A FITA CONSOME, não a altura da caixa dela. A .fp-barra tem
+  // margin: 10px -18px -12px, e como o #fita-precos não tem borda nem padding
+  // essas margens VAZAM para fora dele (colapso de margem). Guardar só o
+  // getBoundingClientRect().height reservava 32px para uma coisa que ocupa 30,
+  // e a tela subia 2px quando a fita real entrava — medido, não suposto.
+  // Somar as margens do filho acerta a conta e continua certo se um dia
+  // alguém mexer nesses valores no CSS.
+  const barra = alvo.firstElementChild;
+  let h = Math.round(alvo.getBoundingClientRect().height);
+  if (barra) {
+    const cs = getComputedStyle(barra);
+    h = Math.round(h + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0));
+  }
+  try {
+    if (h > 0) localStorage.setItem(_FITA_ALTURA_CHAVE, String(h));
+    else localStorage.removeItem(_FITA_ALTURA_CHAVE);
+  } catch (e) {}
+}
+
 function _fitaPrecos() {
   const alvo = document.getElementById("fita-precos");
   if (!alvo) return;
   const { itens, dias } = _precosFrescos(precosCamarao, _hojeLocal());
-  if (!itens.length) { alvo.innerHTML = ""; return; }
+  if (!itens.length) { alvo.innerHTML = ""; _soltarEspacoDaFita(); return; }
 
   const pedaco = (l) => {
     const v = _variacaoPreco(l);
@@ -682,6 +743,12 @@ function _fitaPrecos() {
   // faixa também decide na hora se ela aparece. Sem isto, abrir o app direto
   // numa tela de dentro faria a faixa nascer visível onde não devia.
   _fitaPrecosNaInicial();
+
+  // A fita real já está no ar: solta a reserva e guarda a altura de hoje para
+  // a próxima abertura. Depois do _fitaPrecosNaInicial de propósito — é ele
+  // quem decide se a faixa fica visível, e medir antes dele mediria a altura
+  // de uma faixa que pode estar prestes a ser escondida.
+  _soltarEspacoDaFita();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -14503,10 +14570,10 @@ function _cxLinha({ chip, nome, sub, valor, id, pct, acoes }) {
 
 // Desenhos das pastilhas. Traço fino, 24x24, como todo ícone da casa.
 const _CX_ICONES = {
-  racao:    `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
-  probio:   `<image href="assets/icone-produto-bombona.svg" width="24" height="24"/>`,
-  calcario: `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
-  saco:     `<image href="assets/icone-produto-saco.svg" width="24" height="24"/>`,
+  racao:    `<image href="assets/icone-produto-saco.webp?v=20261119" width="24" height="24"/>`,
+  probio:   `<image href="assets/icone-produto-bombona.webp?v=20261119" width="24" height="24"/>`,
+  calcario: `<image href="assets/icone-produto-saco.webp?v=20261119" width="24" height="24"/>`,
+  saco:     `<image href="assets/icone-produto-saco.webp?v=20261119" width="24" height="24"/>`,
   balde:    `<ellipse cx="12" cy="5" rx="8" ry="2.5"/><path d="m4 5 2 15q6 3 12 0l2-15M5 7v3a7 7 0 0 0 14 0V7"/>`,
   aditivo:  `<path d="M9 2v6.3L3.8 17A2.4 2.4 0 0 0 5.9 21h12.2a2.4 2.4 0 0 0 2.1-4L15 8.3V2"/><line x1="8" y1="2" x2="16" y2="2"/>`,
   // Três pontinhos = um punhado de pós-larva. Qualquer desenho de camarão
@@ -15281,8 +15348,68 @@ function _esconderSplash() {
   setTimeout(() => s.remove(), 500); // depois do fade (.45s no CSS)
 }
 
+/* AQUECIMENTO DAS ARTES DAS TELAS
+ *
+ * Os desenhos das telas entram por innerHTML, então o navegador só os pede no
+ * instante em que a tela é montada — e quem toca em "Simular venda" vê o botão
+ * aparecer com o quadrado vazio no lugar do desenho por um momento.
+ *
+ * Medido com a rede estrangulada no próprio servidor (o estrangulamento do
+ * DevTools NÃO serve aqui: o service worker roda em outra thread e escapa
+ * dele). Cada arte custa uma ida e volta inteira:
+ *
+ *     arte de 2,4 KB   ->  203 ms num 4G ruim,  401 ms num 3G
+ *
+ * Quase tudo é latência, não tamanho — encolher a arte não resolveria nada.
+ * O que resolve é não pedir a arte na hora do toque. Aqui elas são buscadas
+ * depois que o app já está na tela, no tempo ocioso, e ficam seguradas em
+ * objetos Image vivos para não saírem do cache de memória enquanto o app
+ * estiver aberto.
+ *
+ * Não atrasa a entrada de ninguém: só começa depois do _esconderSplash, e em
+ * navegador sem requestIdleCallback cai num setTimeout curto. Se alguma falhar,
+ * não acontece nada — a tela pede de novo, como era antes.
+ *
+ * CUIDADO: os endereços aqui têm que bater LETRA POR LETRA com os que as telas
+ * pedem, "?v=" incluído. Um "?v=" diferente é outra chave de cache e o
+ * aquecimento vira download inútil — em silêncio, sem erro nenhum. O teste
+ * "aquecimento: toda arte aquecida é uma arte que alguma tela realmente pede"
+ * existe só para isso.
+ */
+const _ARTES_DAS_TELAS = [
+  "assets/sim-vender.webp?v=20261117",
+  "assets/sim-projetar.webp?v=20261117",
+  "assets/sim-comparativo.webp?v=20261117",
+  "assets/rel-topo.webp?v=20261119",
+  "assets/rel-ciclo.webp?v=20261119",
+  "assets/rel-geral.webp?v=20261119",
+  "assets/icone-produto-saco.webp?v=20261119",
+  "assets/icone-produto-bombona.webp?v=20261119",
+  "/app/assets/viveiro.webp?v=20261115l",
+];
+let _artesAquecidas = [];
+
+function _aquecerArtes() {
+  if (_artesAquecidas.length) return;            // uma vez por sessão basta
+  const ocioso = window.requestIdleCallback
+    ? (f) => window.requestIdleCallback(f, { timeout: 2500 })
+    : (f) => setTimeout(f, 400);
+  ocioso(() => {
+    _artesAquecidas = _ARTES_DAS_TELAS.map((url) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = url;
+      return img;
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   _armarFrasesSplash();
+  // Antes de qualquer coisa: o buraco da faixa de preços já nasce do tamanho
+  // que ele teve na última abertura, para a tela não descer quando o preço
+  // chegar. Ver _reservarEspacoDaFita.
+  _reservarEspacoDaFita();
   if (localStorage.getItem("tema") === "escuro") {
     document.body.classList.add("tema-escuro");
   }
@@ -15362,6 +15489,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       _talvezPedirContato();
       _esconderSplash();   // app pronto na tela: tira a abertura
+      _aquecerArtes();     // e só então busca os desenhos das outras telas
     } else {
       window.location.replace("login.html"); // splash fica até o login assumir
     }
