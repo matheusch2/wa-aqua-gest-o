@@ -245,7 +245,16 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
   }
   #area-login .login-wrapper:has(>.atalhos-acesso)>* {flex-shrink:0}
 }
-</style><style>.convite-simulacao{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;margin-top:12px;border-radius:14px;background:rgba(9,39,36,.86);color:white;text-align:left}.convite-simulacao strong,.convite-simulacao small{display:block}.convite-simulacao strong{font-size:15px}.convite-simulacao small{margin-top:3px;color:#d8ebe6;font-size:12px}.convite-simulacao a{display:grid;place-items:center;min-height:44px;padding:0 15px;background:#a6f1cf;color:#063d32;border-radius:12px;text-decoration:none;font-weight:700}</style></head>
+</style><style>.convite-simulacao{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;margin-top:12px;border-radius:14px;background:rgba(9,39,36,.86);color:white;text-align:left}.convite-simulacao strong,.convite-simulacao small{display:block}.convite-simulacao strong{font-size:15px}.convite-simulacao small{margin-top:3px;color:#d8ebe6;font-size:12px}.convite-simulacao a{display:grid;place-items:center;min-height:44px;padding:0 15px;background:#a6f1cf;color:#063d32;border-radius:12px;text-decoration:none;font-weight:700}</style><style id="acesso-vidro-escuro">
+html.tela-entrada .login-wrapper:has(>.atalhos-acesso) .login-form-card,.login-wrapper .convite-simulacao{background:rgba(16,18,19,.74);color:#fff;border:1px solid rgba(255,255,255,.24);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+html.tela-entrada .volta-card .volta-nome,.login-wrapper:has(>.atalhos-acesso) .login-form-card label{color:white}
+html.tela-entrada .volta-card .volta-email,.login-wrapper .convite-simulacao small{color:#e4e8e6}
+.login-wrapper .atalhos-acesso>*{background:rgba(12,15,16,.55);border:1px solid rgba(255,255,255,.26);color:white}
+.login-wrapper .atalhos-acesso svg{stroke:white}
+.login-wrapper:has(>.atalhos-acesso) .botao-entrar,.login-wrapper .convite-simulacao a{background:#92eabc;color:#073c2d;border:0;border-radius:999px;font-weight:750;box-shadow:none}
+.login-wrapper .convite-simulacao a{padding-inline:16px;white-space:nowrap}
+@media(prefers-reduced-transparency:reduce){html.tela-entrada .login-wrapper:has(>.atalhos-acesso) .login-form-card,.login-wrapper .convite-simulacao,.login-wrapper .atalhos-acesso>*{background:#181e1e}}
+</style></head>
 <body class="notranslate">
 
     <!-- Tela de abertura: some quando o login aparece ou o app assume -->
@@ -327,7 +336,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
             btn.disabled = false;
             btn.style.opacity = "";
             if (btn.querySelector(".btn-spinner")) {
-                btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Entrar`;
+                btn.innerHTML = "Acessar conta";
             }
         }
 
@@ -438,10 +447,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                         </div>
-                        <button class="botao-entrar" onclick="entrarUsuario(this)">
-                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                            Entrar
-                        </button>
+                        <button class="botao-entrar" onclick="entrarUsuario(this)">Acessar conta</button>
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         </div>
                     <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:4"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="_esquecerUltimoAcesso()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 9-8 12-3m1-6h7m-3-3 3 3-3 3"/></svg><span>Outra conta</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
@@ -463,7 +469,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
                         <div class="logo-circulo login-logo">
                             <img src="/logo-wa.webp?v=20261119" alt="WA Aqua Gestão" class="login-logo-img">
                         </div>
-                        <h1 class="titulo-login">Entrar</h1>
+                        <h1 class="titulo-login">Acessar conta</h1>
                         <p class="login-subtitulo">Bem-vindo de volta!</p>
                     </div>
                     <div class="login-form-card">
@@ -480,10 +486,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                         </div>
-                        <button class="botao-entrar" onclick="entrarUsuario(this)">
-                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                            Entrar
-                        </button>
+                        <button class="botao-entrar" onclick="entrarUsuario(this)">Acessar conta</button>
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         </div>
                     <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:3"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
@@ -604,7 +607,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
                 const seg = Math.ceil((s.until - Date.now()) / 1000);
                 if (seg <= 0) {
                     clearInterval(_lockTimer); _lockTimer = null;
-                    if (b) { b.disabled = false; b.style.opacity = ""; b.innerHTML = b.dataset.htmlOrig || "Entrar"; }
+                    if (b) { b.disabled = false; b.style.opacity = ""; b.innerHTML = b.dataset.htmlOrig || "Acessar conta"; }
                     msgLogin("Pode tentar novamente.", "ok");
                     return;
                 }
