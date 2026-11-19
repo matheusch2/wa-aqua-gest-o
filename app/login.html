@@ -241,11 +241,11 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
   #area-login .login-wrapper:has(>.atalhos-acesso) {
     display:flex; flex-direction:column; justify-content:flex-end;
     box-sizing:border-box; min-height:100vh; min-height:100dvh;
-    padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+    padding-bottom:calc(clamp(16px,3.8dvh,34px) + env(safe-area-inset-bottom,0px));
   }
   #area-login .login-wrapper:has(>.atalhos-acesso)>* {flex-shrink:0}
 }
-</style></head>
+</style><style>.convite-simulacao{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;margin-top:12px;border-radius:14px;background:rgba(9,39,36,.86);color:white;text-align:left}.convite-simulacao strong,.convite-simulacao small{display:block}.convite-simulacao strong{font-size:15px}.convite-simulacao small{margin-top:3px;color:#d8ebe6;font-size:12px}.convite-simulacao a{display:grid;place-items:center;min-height:44px;padding:0 15px;background:#a6f1cf;color:#063d32;border-radius:12px;text-decoration:none;font-weight:700}</style></head>
 <body class="notranslate">
 
     <!-- Tela de abertura: some quando o login aparece ou o app assume -->
@@ -445,6 +445,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         </div>
                     <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:4"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="_esquecerUltimoAcesso()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 9-8 12-3m1-6h7m-3-3 3 3-3 3"/></svg><span>Outra conta</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
+                    <aside class="convite-simulacao"><div><strong>Simule sua sobrevivência</strong><small>Estime a sobrevivência do seu lote.</small></div><a href="https://matheusch2.github.io/wa-aqua/#sobrevivencia">Simular</a></aside>
                 </div>
             `;
             _verificarLockLogin();
@@ -486,6 +487,7 @@ html.tela-entrada .volta-card{display:grid;grid-template-columns:50px minmax(0,1
                         <div id="msg-login" style="display:none;text-align:center;font-size:13px;font-weight:600;margin-top:10px"></div>
                         </div>
                     <nav class="atalhos-acesso" aria-label="Opções de acesso" style="--colunas:3"><button type="button" onclick="mostrarRecuperarSenha()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><path d="m11 12 8 8 2-2-2-2 1-1"/></svg><span>Recuperar senha</span></button><button type="button" onclick="mostrarCadastro()"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-6 10-8 13-2m4-11v6m-3-3h6"/></svg><span>Criar conta</span></button><a href="https://wa.me/5588992498067" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 8c1 4 3 6 7 7"/></svg><span>Atendimento</span></a></nav>
+                    <aside class="convite-simulacao"><div><strong>Simule sua sobrevivência</strong><small>Estime a sobrevivência do seu lote.</small></div><a href="https://matheusch2.github.io/wa-aqua/#sobrevivencia">Simular</a></aside>
                 </div>
             `;
             _verificarLockLogin();
