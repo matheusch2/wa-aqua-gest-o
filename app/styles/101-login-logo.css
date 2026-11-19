@@ -1,0 +1,48 @@
+/* WA Aqua | Destaque da marca no login (apenas apresentação).
+   O arquivo /logo-wa.webp permanece original: só a área visível aumenta.
+   Mantém a mesma altura do cabeçalho, sem deslocar o formulário nem os atalhos. */
+html.tela-entrada #area-login .login-topo .login-logo {
+  position: relative;
+  flex: none;
+  display: block;
+  width: 166px !important;
+  height: 104px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  mix-blend-mode: normal;
+}
+/* A arte original possui margens brancas grandes: aproximamos a palavra
+   sem aplicar escala ao cabeçalho inteiro. */
+html.tela-entrada #area-login .login-topo .login-logo-img {
+  position: absolute;
+  left: 50%;
+  top: -50px;
+  display: block;
+  width: 224px;
+  max-width: none;
+  height: 224px;
+  object-fit: contain;
+  border-radius: 0;
+  background: #fff;
+  transform: translateX(-50%);
+  transform-origin: center center;
+  mix-blend-mode: multiply;
+  filter: saturate(1.22) contrast(1.07);
+}
+html.tela-entrada #area-login .login-topo .login-logo::after {
+  content: "GESTÃO";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+  color: #083f43;
+  font: 800 9px/1.15 Arial, sans-serif;
+  letter-spacing: 0.28em;
+  text-shadow: 0 1px 2px rgba(255,255,255,.65);
+  pointer-events: none;
+}
