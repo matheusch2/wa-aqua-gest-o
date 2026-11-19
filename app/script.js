@@ -5697,40 +5697,7 @@ function _imprimirRacoesDe(nomeViveiro, dataPovoamento, listaRacoes, dataEncerra
     .det-item{display:inline-block;margin-right:14px}
     .total-row td{font-weight:700;font-size:14px;border-top:2px solid #066b63;border-bottom:none;color:#066b63;background:#fff}
     @media print{body{padding:0}}
-  
-  /* Identidade editorial compartilhada pelos relatórios impressos. */
-  @page { size:A4; margin:12mm; }
-  body { font-family:"Segoe UI",Arial,sans-serif; color:#193a35; font-size:11px; padding:0; line-height:1.45; }
-  .cab { text-align:left; border-bottom:2px solid #157b6b; padding:0 0 10px; margin-bottom:12px; }
-  .cab .marca { font-size:9px; letter-spacing:.13em; }
-  .cab h1,h1 { font-size:18px; color:#163e36; letter-spacing:-.3px; }
-  .cab .sub,.sub { font-size:10px; color:#61756f; }
-  h2 { margin:12px 0 6px; font-size:10px; letter-spacing:.06em; border-bottom:1px solid #d8e5df; padding-bottom:4px; break-after:avoid; page-break-after:avoid; }
-  .cols { gap:20px; align-items:flex-start; }
-  .cols>div { min-width:0; }
-  table { font-size:11px; font-variant-numeric:tabular-nums; }
-  td { padding:4px 5px; border-bottom:1px solid #e6ede9; }
-  td.lbl { color:#5a6e68; }
-  thead { display:table-header-group; }
-  tr { break-inside:avoid; page-break-inside:avoid; }
-  .ind { border:1px solid #d6e5df; border-radius:8px; overflow:hidden; background:#f1f7f4; break-inside:avoid; }
-  .ind>div { padding:8px 5px; border-color:#d6e5df; }
-  .ind b { font-size:16px; color:#126c5c; }
-  .ind small { font-size:8px; color:#506a61; }
-  .bio-tab th { background:#edf5f1; color:#315d50; border-bottom:1px solid #ccded5; }
-  .bio-tab tbody tr:nth-child(even) { background:#f7faf8; }
-  .concl { text-align:left; font-size:10.5px; padding:9px; border-left:3px solid #157b6b; background:#f2f7f4; border-radius:0 6px 6px 0; }
-  .bio-cresc { background:#f2f7f4; padding:7px; border:1px solid #d6e5df; border-radius:7px; break-inside:avoid; }
-  .bio-cresc span { font-size:9px; }
-  .bio-cresc b { font-size:14px; }
-  .rodape { margin-top:14px; font-size:9px; color:#60746c; border-top:1px solid #d6e5df; }
-  .resumo { gap:8px; break-inside:avoid; }
-  .rbox { background:#f2f7f4; border-color:#d6e5df; }
-  th { background:#edf5f1; color:#315d50; font-size:10px; padding:8px; }
-  @media screen { body { max-width:760px; margin:20px auto; padding:20px; } }
-  @media print { body { max-width:none; margin:0; padding:0; } .ind,.rbox,th,.concl { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
-
-</style></head><body>
+  </style></head><body>
   <h1>${titulo}</h1>
   <p class="sub">${_esc(viveiro.nome || "Viveiro")}${dataEncerramento ? ` · ciclo de ${formatarData(dataPovoamento)} a ${formatarData(dataEncerramento)}` : ""} · emitido em ${hoje} · ${porDia.length} dia${porDia.length > 1 ? "s" : ""} com oferta</p>
   <div class="resumo">
@@ -12088,39 +12055,6 @@ function gerarRelatorioImpressao() {
   .bio-cresc span { font-size: 10.5px; color: #0b6b63; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
   .bio-cresc b { font-size: 16px; color: #0b6b63; font-weight: 800; }
   .rodape { margin-top: 12px; padding-top: 7px; border-top: 1px solid #d8dcdb; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
-
-  /* Identidade editorial compartilhada pelos relatórios impressos. */
-  @page { size:A4; margin:12mm; }
-  body { font-family:"Segoe UI",Arial,sans-serif; color:#193a35; font-size:11px; padding:0; line-height:1.45; }
-  .cab { text-align:left; border-bottom:2px solid #157b6b; padding:0 0 10px; margin-bottom:12px; }
-  .cab .marca { font-size:9px; letter-spacing:.13em; }
-  .cab h1,h1 { font-size:18px; color:#163e36; letter-spacing:-.3px; }
-  .cab .sub,.sub { font-size:10px; color:#61756f; }
-  h2 { margin:12px 0 6px; font-size:10px; letter-spacing:.06em; border-bottom:1px solid #d8e5df; padding-bottom:4px; break-after:avoid; page-break-after:avoid; }
-  .cols { gap:20px; align-items:flex-start; }
-  .cols>div { min-width:0; }
-  table { font-size:11px; font-variant-numeric:tabular-nums; }
-  td { padding:4px 5px; border-bottom:1px solid #e6ede9; }
-  td.lbl { color:#5a6e68; }
-  thead { display:table-header-group; }
-  tr { break-inside:avoid; page-break-inside:avoid; }
-  .ind { border:1px solid #d6e5df; border-radius:8px; overflow:hidden; background:#f1f7f4; break-inside:avoid; }
-  .ind>div { padding:8px 5px; border-color:#d6e5df; }
-  .ind b { font-size:16px; color:#126c5c; }
-  .ind small { font-size:8px; color:#506a61; }
-  .bio-tab th { background:#edf5f1; color:#315d50; border-bottom:1px solid #ccded5; }
-  .bio-tab tbody tr:nth-child(even) { background:#f7faf8; }
-  .concl { text-align:left; font-size:10.5px; padding:9px; border-left:3px solid #157b6b; background:#f2f7f4; border-radius:0 6px 6px 0; }
-  .bio-cresc { background:#f2f7f4; padding:7px; border:1px solid #d6e5df; border-radius:7px; break-inside:avoid; }
-  .bio-cresc span { font-size:9px; }
-  .bio-cresc b { font-size:14px; }
-  .rodape { margin-top:14px; font-size:9px; color:#60746c; border-top:1px solid #d6e5df; }
-  .resumo { gap:8px; break-inside:avoid; }
-  .rbox { background:#f2f7f4; border-color:#d6e5df; }
-  th { background:#edf5f1; color:#315d50; font-size:10px; padding:8px; }
-  @media screen { body { max-width:760px; margin:20px auto; padding:20px; } }
-  @media print { body { max-width:none; margin:0; padding:0; } .ind,.rbox,th,.concl { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
-
 </style></head><body>
   <div class="cab">
     <div class="marca">WA AQUA GESTÃO</div>
