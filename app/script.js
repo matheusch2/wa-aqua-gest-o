@@ -6940,13 +6940,13 @@ function abrirRelatorios() {
   area.innerHTML = `
     <div class="form-topo rep-topo">
       <div class="form-icone-circulo">
-        <svg viewBox="0 0 24 24">${_SVG_CICLOS}</svg>
+        <img class="rep-arte" src="assets/rel-topo.webp?v=20261119" alt="" width="26" height="26">
       </div>
       <h2 class="form-titulo">Relatórios</h2>
     </div>
 
     <div class="rep-menu-opcoes"><button class="hc-viv-card" onclick="mostrarHistoricoCiclos()">
-      <span class="hc-viv-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg></span>
+      <span class="hc-viv-ico"><img class="rep-arte" src="assets/rel-ciclo.webp?v=20261119" alt="" width="24" height="24"></span>
       <span class="hc-viv-txt">
         <b>Relatório de ciclo</b>
         <small>${nCiclos ? `${nCiclos} ciclo${nCiclos > 1 ? "s" : ""} encerrado${nCiclos > 1 ? "s" : ""}` : "Nenhum ciclo encerrado ainda"}</small>
@@ -6955,7 +6955,7 @@ function abrirRelatorios() {
     </button>
 
     <button class="hc-viv-card" onclick="mostrarRelatorioGeral()">
-      <span class="hc-viv-ico"><svg viewBox="0 0 24 24">${_SVG_TROFEU}</svg></span>
+      <span class="hc-viv-ico"><img class="rep-arte" src="assets/rel-geral.webp?v=20261119" alt="" width="24" height="24"></span>
       <span class="hc-viv-txt">
         <b>Relatório geral</b>
         <small>Compare viveiros e laboratórios</small>

@@ -888,3 +888,22 @@ body.tema-escuro .rg-chip.ativo { color:#102d23; }
 #area-gestao:has(.rep-topo) .rep-menu-opcoes .hc-viv-txt b { font-size:14px; line-height:1.3; margin:0; }
 #area-gestao:has(.rep-topo) .rep-menu-opcoes .hc-viv-txt small { font-size:11px; line-height:1.4; margin:0; }
 #area-gestao:has(.rep-topo) .rep-menu-opcoes .hc-viv-seta { justify-self:center; margin:0; font-size:22px; }
+
+/* ── Cabeçalho dos relatórios centralizado ───────────────────────────────────
+   O par ícone+nome sai da esquerda e vai para o meio, SEM empilhar: empilhar
+   centraliza o nome de verdade mas custa 34px de altura, e esta é uma tela
+   que o dono já pediu para encolher duas vezes. A coluna do título deixa de
+   ser 1fr e passa a ser auto, senão ela estica e o "centro" fica só no papel. */
+#area-gestao .rep-topo {
+  grid-template-columns: 40px auto;
+  justify-content: center;
+  column-gap: 11px;
+}
+/* A legenda, quando existe, continua alinhada ao título e não ao centro da
+   tela — centralizar uma linha de 10px debaixo de um título de 20px deixa as
+   duas desencontradas. */
+#area-gestao .rep-topo .form-caption { text-align: left; }
+
+/* ── As artes do dono no lugar dos ícones de traço ───────────────────────── */
+#area-gestao .rep-topo .form-icone-circulo .rep-arte { display: block; width: 26px; height: 26px; }
+#area-gestao:has(.rep-topo) .hc-viv-ico .rep-arte { display: block; width: 24px; height: 24px; }
