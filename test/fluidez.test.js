@@ -1390,16 +1390,35 @@ test("caixa: respeita o período, pelo dia do dinheiro",()=>{
   }
 });
 
-test("caixa: dentro de um viveiro nao ha caixa nenhum — pagamento e da fazenda",()=>{
-  // Boleto nao tem viveiro_id, e custo lancado nao e pagamento. Entao a visao
-  // de caixa de UM viveiro fica legitimamente vazia, e a tela manda escolher
-  // "Todos os viveiros". Inventar um numero ali seria pior que o vazio.
+test("fluxo: e da FAZENDA — viveiro escolhido no Relatorio nao vaza para ca",()=>{
+  // O Fluxo nao tem seletor de viveiro: caixa e dinheiro da empresa saindo,
+  // e nem haveria o que mostrar por viveiro (boleto nao tem viveiro). O
+  // marcador e explicito de proposito: depender de "o <select> nao esta na
+  // tela" faria uma tela nova somar a fazenda sem querer, e o numero
+  // continuaria parecendo certo.
   const a=load(); cenarioCaixa(a);
-  a.run(`document.getElementById('viveiroFinanceiro').value = '0';`);
+  a.run(`document.getElementById('viveiroFinanceiro').value = '0'; _finEscopoFazenda = true;`);
   const r = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa())`));
-  assert.equal(r.porViveiro, true);
-  assert.deepEqual(r.saidas, [],
-    "apareceu saida de caixa dentro de um viveiro: ou o boleto vazou, ou um custo lancado virou pagamento");
+  assert.equal(r.porViveiro, false, "o viveiro escolhido alcancou o Fluxo");
+  assert.ok(r.saidas.some(x => x.origem === "boleto"),
+    "o boleto da fazenda sumiu: o Fluxo esta se comportando como se fosse de um viveiro");
+
+  // E a competencia, no Fluxo, tambem e da fazenda inteira.
+  const c = JSON.parse(a.run(`JSON.stringify(_finColetarCustos().porViveiro)`));
+  assert.equal(c, false, "a competencia do Fluxo ficou presa a um viveiro");
+});
+
+test("fluxo: as duas entradas marcam o escopo, e o Relatorio desmarca",()=>{
+  const fluxo = source.match(/function abrirFluxoDe\(regime\)[\s\S]*?\n\}/)[0];
+  assert.match(fluxo, /_finEscopoFazenda = true/,
+    "abrirFluxoDe parou de marcar o escopo de fazenda");
+  assert.ok(!/id="viveiroFinanceiro"/.test(fluxo),
+    "voltou o seletor de viveiro para o Fluxo; ele e da fazenda inteira");
+
+  const rel = source.match(/function abrirFinanceiro\(\)[\s\S]*?\n\}/)[0];
+  assert.match(rel, /_finEscopoFazenda = false/,
+    "o Relatorio nao desmarca o escopo: depois de ver o Fluxo, o viveiro escolhido seria ignorado la");
+  assert.match(rel, /id="viveiroFinanceiro"/, "o Relatorio perdeu o seletor de viveiro");
 });
 
 test("caixa: lancar custo NAO e pagar — custo lancado nao vira saida",()=>{

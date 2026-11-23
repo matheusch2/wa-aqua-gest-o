@@ -61,6 +61,18 @@ let _financeiroModo = "detalhado";
  * O padrão continua competência: é ela que faz o custo por quilo ser verdade.
  */
 let _finRegime = "competencia";
+
+/* O Fluxo é da FAZENDA, sempre — nas duas réguas.
+ *
+ * Não existe fluxo "deste viveiro": caixa é dinheiro da empresa saindo, e no
+ * caixa nem haveria o que mostrar por viveiro (boleto não tem viveiro). A
+ * competência por viveiro já existe, e mora dentro do viveiro e no Relatório.
+ *
+ * O marcador é explícito e não "o <select> não está na tela": tela nova que
+ * esqueça de desenhar o seletor passaria a somar a fazenda sem querer, e
+ * ninguém veria — o número continuaria parecendo certo.
+ */
+let _finEscopoFazenda = false;
 let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalhado"
 // Qual viveiro está aberto na lista (índice em `viveiros`). A lista mostra um
 // aberto e os outros em linha fina; null = abre o primeiro em cultivo.
@@ -10584,10 +10596,12 @@ async function desmarcarBoletoPago(index, voltarDetalhe, botao) {
 
 function abrirFinanceiro() {
   esconderMenu();
-  // O Relatório é SEMPRE competência. _finRegime é global e a tela de Fluxo
-  // mexe nele; sem esta linha, quem visse o caixa e depois abrisse o
-  // relatório veria o caixa aqui dentro, com os filtros do relatório.
+  // O Relatório é SEMPRE competência, e é ele quem tem o seletor de viveiro.
+  // As duas variáveis são globais e a tela de Fluxo mexe nas duas; sem estas
+  // linhas, quem visse o Fluxo e depois abrisse o Relatório veria a tela de
+  // caixa aqui dentro, e com o viveiro escolhido sendo ignorado.
   _finRegime = "competencia";
+  _finEscopoFazenda = false;
   // Guarda o ID, não o índice: renomear/remover um viveiro pode reordenar a lista.
   const escolhido = viveiros.findIndex(v => v.id === _finViveiroId);
   if (escolhido < 0) { _finViveiroId = null; _finCicloSel = ""; }
@@ -10821,7 +10835,9 @@ function _finCustosDoViveiro(v) {
 }
 
 function _finColetarCustos() {
-  const viveiroIndex = document.getElementById("viveiroFinanceiro")?.value ?? "";
+  // No Fluxo, a conta é da fazenda inteira e o viveiro escolhido no Relatório
+  // não pode vazar para cá. Ver _finEscopoFazenda.
+  const viveiroIndex = _finEscopoFazenda ? "" : (document.getElementById("viveiroFinanceiro")?.value ?? "");
   const porViveiro = viveiroIndex !== "";
 
   // Modo CICLO: um viveiro + um ciclo específico escolhido. Usa a MESMA fonte
@@ -10898,7 +10914,7 @@ function _finColetarCustos() {
    ═══════════════════════════════════════════════════════════════════════════ */
 function _finSaidasDeCaixa() {
   const dentro = (d) => (!_finPeriodoIni || d >= _finPeriodoIni) && (!_finPeriodoFim || d <= _finPeriodoFim);
-  const viveiroIndex = document.getElementById("viveiroFinanceiro")?.value ?? "";
+  const viveiroIndex = _finEscopoFazenda ? "" : (document.getElementById("viveiroFinanceiro")?.value ?? "");
   const porViveiro = viveiroIndex !== "";
   const saidas = [];
 
@@ -10937,7 +10953,7 @@ function _finSaidasDeCaixa() {
 }
 
 function _finRenderCaixa(resultado) {
-  const { saidas, porViveiro } = _finSaidasDeCaixa();
+  const { saidas } = _finSaidasDeCaixa();
   const total = saidas.reduce((s, x) => s + x.valor, 0);
 
   const porDia = new Map();
@@ -10953,9 +10969,7 @@ function _finRenderCaixa(resultado) {
     </div>
 
     ${saidas.length === 0 ? `<p class="sobrevivencia-texto" style="margin:16px 0">
-        Nenhum pagamento registrado no período.${porViveiro
-          ? "<br><small>Boleto é da fazenda inteira: escolha “Todos os viveiros”.</small>"
-          : ""}</p>`
+        Nenhum pagamento registrado no período.</p>`
       : `${[...porDia.entries()].map(([dia, itens]) => `
           <div class="cx-dia">
             <span class="cx-dia-data">${_cdDataHeader(dia)}</span>
@@ -11015,6 +11029,7 @@ function abrirFluxo() {
 
 function abrirFluxoDe(regime) {
   _finRegime = regime === "caixa" ? "caixa" : "competencia";
+  _finEscopoFazenda = true;   // o Fluxo é da fazenda; ver _finEscopoFazenda
   const caixa = _finRegime === "caixa";
   const area = document.getElementById("area-gestao");
   /* O cabeçalho vai dentro de .fin-topo-acoes, e NÃO é enfeite: as 71 regras
@@ -11029,16 +11044,6 @@ function abrirFluxoDe(regime) {
       <h3 class="titulo-secao" style="margin:0">${caixa ? "Fluxo de caixa" : "Fluxo de competência"}</h3>
     </div>
     <div class="cfg-wrap">
-      <div class="campo-form">
-        <div class="campo-label">
-          <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
-          <label>Viveiro</label>
-        </div>
-        <select id="viveiroFinanceiro" onchange="mostrarCustosFinanceiro()">
-          <option value="">Todos os viveiros</option>
-          ${viveiros.map((v, i) => `<option value="${i}">${_esc(v.nome)}</option>`).join("")}
-        </select>
-      </div>
       <div class="campo-form" style="margin-bottom:6px">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
