@@ -117,6 +117,29 @@ for (const [wCss, hCss, dpr, quem] of APARELHOS) {
   execSync(`"${CHROME}" --headless=new --no-sandbox --disable-gpu --hide-scrollbars ` +
     `--window-size=${w},${h} --force-device-scale-factor=1 --virtual-time-budget=2500 ` +
     `--screenshot="${outFile}" "file://${htmlFile}"`, { stdio: "ignore", timeout: 60000 });
+
+  /* O Chromium grava PNG de 16 bits por canal. Estas telas tem MENOS DE 90
+   * cores (fundo solido, aneis e uma faixa), entao 16 bits e desperdicio
+   * puro: a pasta inteira pesava 1,9 MB e passou a 0,5 MB so com isto.
+   *
+   * Medido antes de aplicar, nos tres tamanhos extremos: nenhum pixel muda
+   * mais que 1 passo de 255 (RMSE 0,27%, pior pixel 1/255). E arredondamento
+   * de 16 para 8 bits — e nenhuma tela de celular mostra 16 bits.
+   *
+   * Continua PNG de proposito: o apple-touch-startup-image do Safari nao
+   * aceita WebP, e um formato que ele nao entende faz o aparelho abrir em
+   * BRANCO, sem erro nenhum — o mesmo sintoma de nao ter a imagem.
+   *
+   * +dither: sem isto o ImageMagick pontilha ao montar a paleta e inventa
+   * ruido numa arte que e lisa.
+   */
+  const bruto = fs.statSync(outFile).size;
+  try {
+    execSync(`convert "${outFile}" +dither -strip -define png:compression-level=9 "PNG8:${outFile}"`,
+      { stdio: "ignore", timeout: 60000 });
+  } catch (e) {
+    console.log(`     (sem ImageMagick: ${Math.round(bruto / 1024)}KB em 16 bits)`);
+  }
   console.log(`  ${String(w).padStart(4)}x${String(h).padStart(4)}  ${Math.round(fs.statSync(outFile).size / 1024)}KB  ${quem}`);
   n++;
 }
