@@ -380,3 +380,83 @@ body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
 .fin-porta-vencido .fin-porta-ico { background:#fdeaea; }
 .fin-porta-vencido .fin-porta-ico svg { stroke:#b4231c; }
 .fin-porta-vencido .fin-porta-txt small { color:#a8211a; font-weight:750; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   O QUE CUSTOU  ×  O QUE SAIU DO CAIXA
+
+   Duas réguas sobre os mesmos dias. O par de botões fica ACIMA do
+   "Detalhado / Por tipo" porque decide uma coisa maior: qual pergunta a tela
+   está respondendo. O de baixo só escolhe o formato da resposta, e some no
+   caixa, onde a lista é sempre por dia.
+   ─────────────────────────────────────────────────────────────────────────── */
+#area-gestao:has(> .fin-topo-acoes) .fin-regime-toggle { margin-bottom: 6px; }
+
+/* O total do caixa, e ao lado o mesmo período pela outra régua. A diferença
+   entre os dois é a resposta à pergunta "já paguei, por que não aparece?". */
+#area-gestao:has(> .fin-topo-acoes) .fin-caixa-topo {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 15px; margin-bottom: 10px;
+  border: 1px solid #d9e7e0; border-radius: 14px;
+  background: #f2f8f5;
+}
+.fin-caixa-rotulo {
+  font-size: 10px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: #5f7a6f;
+}
+.fin-caixa-total {
+  font-size: 25px; font-weight: 800; color: #0b5340; letter-spacing: -.02em;
+}
+.fin-caixa-contra { font-size: 12px; color: #4d6259; margin-top: 3px; }
+.fin-caixa-contra b { color: #0b5340; }
+
+/* O AVISO NÃO É ENFEITE. Enquanto mão de obra, aluguel e energia não tiverem
+   data de pagamento, este total é parcial — e um total parcial sem aviso é
+   pior que total nenhum, porque parece completo. Âmbar e não vermelho: é
+   ressalva, não erro. */
+#area-gestao:has(> .fin-topo-acoes) .fin-caixa-aviso {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 11px 13px; margin-bottom: 12px;
+  border: 1px solid #f0d9a8; border-left: 3px solid #d97706;
+  border-radius: 0 11px 11px 0; background: #fffaf0;
+  font-size: 12px; line-height: 1.42; color: #6b5120;
+}
+.fin-caixa-aviso b { color: #8a5b08; }
+
+.fin-caixa-fontes {
+  display: flex; gap: 8px; margin-bottom: 10px;
+  font-size: 12px; color: #5f7a6f;
+}
+.fin-caixa-fontes span {
+  flex: 1; padding: 8px 10px; text-align: center;
+  border: 1px solid #e3ece7; border-radius: 10px; background: #fff;
+}
+.fin-caixa-fontes b { display: block; color: #11423a; font-size: 14px; }
+
+/* A etiqueta de origem ocupa o lugar da pastilha de ícone das outras listas:
+   aqui o que importa não é a categoria, é de ONDE o sistema soube do
+   pagamento — boleto é dinheiro com data de verdade, custo é data presumida. */
+.fin-caixa-tag {
+  flex-shrink: 0; align-self: center;
+  min-width: 52px; padding: 3px 7px;
+  border-radius: 6px; text-align: center;
+  font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+}
+.fin-caixa-tag-boleto { background: #e6f2ec; color: #0b6b52; }
+.fin-caixa-tag-custo  { background: #eef1f0; color: #6a7e75; }
+
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-caixa-topo {
+  background: #1d2d28; border-color: #344d43;
+}
+body.tema-escuro .fin-caixa-rotulo,
+body.tema-escuro .fin-caixa-contra { color: #9ab3a8; }
+body.tema-escuro .fin-caixa-total,
+body.tema-escuro .fin-caixa-contra b { color: #7fe3b4; }
+body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-caixa-aviso {
+  background: #2b2416; border-color: #5c4a22; color: #e8cf9a;
+}
+body.tema-escuro .fin-caixa-aviso b { color: #fbbf5a; }
+body.tema-escuro .fin-caixa-fontes span { background: #1d2d28; border-color: #344d43; }
+body.tema-escuro .fin-caixa-fontes { color: #9ab3a8; }
+body.tema-escuro .fin-caixa-fontes b { color: #ddf8eb; }
+body.tema-escuro .fin-caixa-tag-boleto { background: #26463a; color: #7fe3b4; }
+body.tema-escuro .fin-caixa-tag-custo  { background: #2a3a34; color: #9ab3a8; }

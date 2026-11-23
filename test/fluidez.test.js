@@ -1312,3 +1312,100 @@ test("extrato: a linha de custo fixo oferece editar, e NUNCA excluir",()=>{
   const quantas = (source.match(/acoes: it\.chave \? \{/g) || []).length;
   assert.equal(quantas, 2, `esperava as duas visões do extrato (Detalhado e Geral), achei ${quantas}`);
 });
+
+/* ───────────────────────────────────────────────────────────────────────────
+   O QUE CUSTOU  ×  O QUE SAIU DO CAIXA
+
+   Nasceu de uma pergunta de cliente: "já paguei os R$ 4.000 de aluguel, por
+   que o sistema não mostra?". Mostrava — espalhado em 90 dias, porque o
+   sistema é por competência. As duas respostas estão certas; faltava a
+   segunda existir.
+
+   O risco desta tela não é dar erro: é dar um número REDONDO E INCOMPLETO
+   que parece o caixa inteiro. Os testes abaixo guardam justamente os limites
+   que a tela promete por escrito.
+   ─────────────────────────────────────────────────────────────────────────── */
+function cenarioCaixa(a) {
+  a.run(`_finRegime = 'caixa'; _finPeriodoIni = '2026-11-01'; _finPeriodoFim = '2026-11-30';
+    custosFixos=[{id:'f-al',nome:'Aluguel',categoria:'aluguel',valorMensal:4000,
+                  dataInicio:'2026-11-01',dataFim:null,ativo:true}];
+    viveiros=[{id:'v1',nome:'V1',dataPovoamento:'2026-11-01',ciclosFinalizados:[],pausas:[],
+      custos:[{id:'c1',tipo:'outro',nomeProduto:'Ração',valor:500,categoria:'Ração',data:'2026-11-04'},
+              {id:'c2',tipo:'outro',nomeProduto:'Cal',valor:120,categoria:'Outro',data:'2026-10-20'}]}];
+    boletos=[
+      {id:'b1',nome:'Aluguel do sítio',fornecedor:'Dona Maria',valor:4000,
+       dataCompra:'2026-11-05',prazoDias:5,pago:true,dataPagamento:'2026-11-10',
+       valorPago:4000,pagamentos:[{data:'2026-11-10',valor:4000}]},
+      {id:'b2',nome:'Ração a prazo',fornecedor:'Agromar',valor:1000,
+       dataCompra:'2026-11-02',prazoDias:30,pago:false,valorPago:400,
+       pagamentos:[{data:'2026-11-08',valor:150},{data:'2026-12-20',valor:250}]}];
+    Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,30,12); } };`);
+}
+
+test("caixa: o boleto entra no dia do PAGAMENTO, não no da compra",()=>{
+  const a=load(); cenarioCaixa(a);
+  const s = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa().saidas)`));
+  const aluguel = s.find(x => /sítio/.test(x.nome));
+  assert.ok(aluguel, "o boleto pago não apareceu no caixa");
+  assert.equal(aluguel.data, "2026-11-10", "entrou pela data da compra, não do pagamento");
+  assert.equal(aluguel.valor, 4000);
+  assert.equal(aluguel.origem, "boleto");
+});
+
+test("caixa: cada pagamento parcial conta no seu próprio dia",()=>{
+  const a=load(); cenarioCaixa(a);
+  const s = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa().saidas)`));
+  const parciais = s.filter(x => /prazo/.test(x.nome));
+  assert.equal(parciais.length, 1,
+    "esperava só a parcela de novembro; a de dezembro está fora do período");
+  assert.equal(parciais[0].valor, 150);
+  assert.equal(parciais[0].data, "2026-11-08");
+});
+
+test("caixa: custo fixo NUNCA entra — é a promessa escrita na tela",()=>{
+  // O sistema sabe que o aluguel custa R$ 4.000/mês, mas não sabe em que dia
+  // foi pago. Somar o rateio aqui seria competência disfarçada de caixa, que
+  // é exatamente o engano que esta tela existe para desfazer.
+  const a=load(); cenarioCaixa(a);
+  const s = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa().saidas)`));
+  for (const x of s) {
+    assert.notEqual(x.origem, "fixo", "custo fixo vazou para o caixa");
+    assert.ok(!/rateio/i.test(x.nome), `"${x.nome}" parece rateio e não pode estar no caixa`);
+  }
+  // E o total do caixa tem de ser diferente do da competência neste cenário,
+  // senão as duas réguas estão medindo a mesma coisa e a tela não serve.
+  const caixa = s.reduce((t,x)=>t+x.valor,0);
+  const comp = a.run(`_custoFixoRateado('2026-11-01','2026-11-30', viveiros[0])`) + 500;
+  assert.notEqual(Math.round(caixa), Math.round(comp),
+    "caixa e competência deram o mesmo número — a separação não está valendo");
+});
+
+test("caixa: respeita o período, pelo dia do dinheiro",()=>{
+  const a=load(); cenarioCaixa(a);
+  const s = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa().saidas)`));
+  assert.ok(!s.some(x => /Cal/.test(x.nome)),
+    "entrou um custo de outubro num período de novembro");
+  for (const x of s) {
+    assert.ok(x.data >= "2026-11-01" && x.data <= "2026-11-30", `${x.nome} em ${x.data}`);
+  }
+});
+
+test("caixa: boleto não aparece dentro de um viveiro — ele é da fazenda",()=>{
+  // Boleto não tem viveiro_id. Mostrá-lo dentro de um viveiro inventaria um
+  // vínculo que não existe, e o produtor somaria no custo daquele viveiro.
+  const a=load(); cenarioCaixa(a);
+  a.run(`document.getElementById('viveiroFinanceiro').value = '0';`);
+  const r = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa())`));
+  assert.equal(r.porViveiro, true);
+  assert.ok(!r.saidas.some(x => x.origem === "boleto"),
+    "boleto da fazenda apareceu dentro de um viveiro só");
+  assert.ok(r.saidas.some(x => x.origem === "custo"), "os custos do viveiro sumiram junto");
+});
+
+test("caixa: a tela avisa o que NÃO está no número",()=>{
+  // Um total parcial sem aviso é pior que total nenhum: parece completo.
+  const bloco = source.match(/function _finRenderCaixa\([\s\S]*?\n\}/)[0];
+  assert.match(bloco, /não entram aqui/i, "sumiu o aviso dos custos fixos");
+  assert.match(bloco, /duas vezes/i, "sumiu o aviso de contagem dupla boleto × custo");
+  assert.match(bloco, /fin-caixa-contra/, "sumiu a comparação com a competência");
+});

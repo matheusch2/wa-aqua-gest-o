@@ -46,6 +46,21 @@ let _custosFixosOk = true;
 let assinatura = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
+
+/* COMPETÊNCIA ou CAIXA — as duas perguntas que o financeiro responde.
+ *
+ *   competência  "quanto CUSTOU produzir?"   -> espalha o valor pelos dias
+ *   caixa        "quanto SAIU do bolso?"     -> o dia em que o dinheiro foi
+ *
+ * O aluguel de 3 meses é o exemplo que obrigou isto a existir: R$ 4.000 saem
+ * do caixa num dia só, e R$ 44,44 entram no custo por 90 dias seguidos. Os
+ * dois números estão certos ao mesmo tempo, e no fim do período batem — mas
+ * o sistema só mostrava o segundo, e o produtor que acabou de pagar os
+ * R$ 4.000 acha que a conta está errada.
+ *
+ * O padrão continua competência: é ela que faz o custo por quilo ser verdade.
+ */
+let _finRegime = "competencia";
 let _custoModo = "geral"; // relatório de custos do viveiro: "geral" ou "detalhado"
 // Qual viveiro está aberto na lista (índice em `viveiros`). A lista mostra um
 // aberto e os outros em linha fina; null = abre o primeiro em cultivo.
@@ -10608,7 +10623,11 @@ function abrirFinanceiro() {
         </div>
       </div>
       <button class="fin-limpar-filtros" onclick="_finLimparFiltros()">Limpar filtros</button>
-      <div class="fin-modo-toggle">
+      <div class="fin-modo-toggle fin-regime-toggle">
+        <button class="fin-modo-btn fin-regime-btn ${_finRegime === "competencia" ? "ativo" : ""}" data-regime="competencia" onclick="_finTrocarRegime('competencia')">O que custou</button>
+        <button class="fin-modo-btn fin-regime-btn ${_finRegime === "caixa" ? "ativo" : ""}" data-regime="caixa" onclick="_finTrocarRegime('caixa')">O que saiu do caixa</button>
+      </div>
+      <div class="fin-modo-toggle" id="fin-modo-wrap"${_finRegime === "caixa" ? ' style="display:none"' : ""}>
         <button class="fin-modo-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" data-modo="detalhado" onclick="_finTrocarModo('detalhado')">Detalhado</button>
         <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" data-modo="resumido" onclick="_finTrocarModo('resumido')">Por tipo</button>
       </div>
@@ -10844,6 +10863,152 @@ function _finColetarCustos() {
 // os botões são desenhados uma vez só pela tela de cima, e quem troca de aba só
 // redesenhava a área de baixo — então a marca ficava presa na primeira opção, e
 // a pessoa tocava de novo achando que não tinha pegado.
+/* ═══════════════════════════════════════════════════════════════════════════
+   O QUE SAIU DO CAIXA
+
+   Primeira versão, e ela é deliberadamente INCOMPLETA — com o buraco escrito
+   na tela, não escondido. O sistema nasceu por competência e só duas fontes
+   sabem QUANDO o dinheiro saiu:
+
+     boletos    data_pagamento e a lista `pagamentos` [{data, valor}], que é
+                dinheiro saindo de verdade, com data de verdade;
+     custos     a data do lançamento, que é quando a compra aconteceu.
+
+   Os CUSTOS FIXOS não entram, e não é esquecimento: não existe registro de
+   pagamento deles em lugar nenhum. Mão de obra, aluguel e energia são valor
+   mensal + vigência, nada mais. Somar o rateio aqui seria competência
+   disfarçada de caixa — o erro exato que esta tela existe para desfazer.
+
+   O OUTRO BURACO, que também vai escrito: boleto não é ligado a custo. Quem
+   lançou a mesma compra nos dois lugares vai vê-la duas vezes. Não dá para
+   descobrir isso sozinho sem um vínculo que ainda não existe.
+
+   Enquanto os dois buracos estiverem abertos, o número aqui é uma APROXIMAÇÃO
+   e a tela diz isso. Melhor um número honesto com ressalva do que um número
+   redondo que mente.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _finSaidasDeCaixa() {
+  const dentro = (d) => (!_finPeriodoIni || d >= _finPeriodoIni) && (!_finPeriodoFim || d <= _finPeriodoFim);
+  const viveiroIndex = document.getElementById("viveiroFinanceiro")?.value ?? "";
+  const porViveiro = viveiroIndex !== "";
+  const saidas = [];
+
+  // 1) Dinheiro que saiu de verdade: cada pagamento de boleto, na sua data.
+  //    Boleto é da fazenda, não de um viveiro — então só aparece na visão
+  //    "Todos os viveiros". Mostrá-lo dentro de um viveiro seria inventar
+  //    um vínculo que não existe.
+  if (!porViveiro) {
+    for (const b of boletos || []) {
+      const parciais = Array.isArray(b.pagamentos) ? b.pagamentos : [];
+      if (parciais.length) {
+        for (const p of parciais) {
+          const d = String(p?.data || "").slice(0, 10);
+          const v = Number(p?.valor) || 0;
+          if (!d || v <= 0 || !dentro(d)) continue;
+          saidas.push({ data: d, valor: v, nome: b.nome || "Boleto",
+            sub: b.fornecedor || "", origem: "boleto" });
+        }
+      } else if (b.pago && b.dataPagamento) {
+        // Boleto quitado antes de a lista de parciais existir: um pagamento só.
+        const d = String(b.dataPagamento).slice(0, 10);
+        const v = Number(b.valorPago) || Number(b.valor) || 0;
+        if (d && v > 0 && dentro(d)) {
+          saidas.push({ data: d, valor: v, nome: b.nome || "Boleto",
+            sub: b.fornecedor || "", origem: "boleto" });
+        }
+      }
+    }
+  }
+
+  // 2) Custos lançados: a data do lançamento vale como o dia da saída.
+  //    É suposição, e por isso vai rotulada na tela — o sistema não pergunta
+  //    se foi pago à vista ou a prazo.
+  const alvos = porViveiro ? [viveiros[viveiroIndex]] : viveiros;
+  for (const v of alvos) {
+    for (const c of _finCustosDoViveiro(v) || []) {
+      const d = String(c.data || "").slice(0, 10);
+      const val = Number(c.valor) || 0;
+      if (!d || val <= 0 || !dentro(d)) continue;
+      saidas.push({ data: d, valor: val, nome: c.nomeProduto || c.categoria || "Custo",
+        sub: v.nome || "", origem: "custo" });
+    }
+  }
+
+  saidas.sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+  return { saidas, porViveiro };
+}
+
+function _finRenderCaixa(resultado) {
+  const { saidas, porViveiro } = _finSaidasDeCaixa();
+  const total = saidas.reduce((s, x) => s + x.valor, 0);
+  const deBoleto = saidas.filter(x => x.origem === "boleto").reduce((s, x) => s + x.valor, 0);
+  const deCusto = total - deBoleto;
+
+  // O mesmo período pela outra régua, para a diferença ficar à vista. É a
+  // resposta à pergunta do produtor: "já paguei, por que não aparece tudo?"
+  const { custos } = _finColetarCustos();
+  const competencia = custos.reduce((s, c) => s + Number(c.valor), 0);
+
+  const porDia = new Map();
+  for (const s of saidas) {
+    if (!porDia.has(s.data)) porDia.set(s.data, []);
+    porDia.get(s.data).push(s);
+  }
+
+  resultado.innerHTML = `
+    <div class="fin-caixa-topo">
+      <span class="fin-caixa-rotulo">Saiu do caixa no período</span>
+      <strong class="fin-caixa-total">R$ ${formatarNumeroBR(total, 2)}</strong>
+      <span class="fin-caixa-contra">pela outra régua, o que <b>custou</b> no mesmo período foi
+        R$ ${formatarNumeroBR(competencia, 2)}</span>
+    </div>
+
+    <div class="fin-caixa-aviso">
+      <b>Este número ainda não é o caixa inteiro.</b>
+      <span>Mão de obra, aluguel e energia <b>não entram aqui</b>: o sistema guarda o valor
+      mensal deles, mas não guarda em que dia foram pagos.</span>
+      ${!porViveiro ? `<span>Se a mesma compra foi lançada como custo <i>e</i> como boleto,
+        ela aparece duas vezes — ainda não há como ligar as duas.</span>` : ""}
+      <span>A data de um custo lançado é tratada como o dia do pagamento.</span>
+    </div>
+
+    ${saidas.length === 0 ? `<p class="sobrevivencia-texto" style="margin:16px 0">
+        Nenhuma saída registrada no período.${porViveiro
+          ? "<br><small>Boletos são da fazenda inteira: escolha “Todos os viveiros” para vê-los.</small>"
+          : ""}</p>`
+      : `<div class="fin-caixa-fontes">
+          <span><b>R$ ${formatarNumeroBR(deBoleto, 2)}</b> em boletos pagos</span>
+          <span><b>R$ ${formatarNumeroBR(deCusto, 2)}</b> em custos lançados</span>
+        </div>
+        ${[...porDia.entries()].map(([dia, itens]) => `
+          <div class="cx-dia">
+            <span class="cx-dia-data">${_cdDataHeader(dia)}</span>
+            <span class="cx-dia-val">R$ ${formatarNumeroBR(itens.reduce((s, i) => s + i.valor, 0), 2)}</span>
+          </div>
+          <div class="cx-cartao">${itens.map(i => `
+            <div class="cx-linha">
+              <span class="fin-caixa-tag fin-caixa-tag-${i.origem}">${i.origem === "boleto" ? "boleto" : "custo"}</span>
+              <div class="cx-texto">
+                <span class="cx-nome">${_esc(i.nome)}</span>
+                ${i.sub ? `<span class="cx-sub">${_esc(i.sub)}</span>` : ""}
+              </div>
+              <span class="cx-valor">R$ ${formatarNumeroBR(i.valor, 2)}</span>
+            </div>`).join("")}</div>`).join("")}`}
+  `;
+}
+
+function _finTrocarRegime(regime) {
+  _finRegime = regime;
+  document.querySelectorAll(".fin-regime-btn").forEach(b => {
+    b.classList.toggle("ativo", b.dataset.regime === regime);
+  });
+  // "Detalhado / Por tipo" é do mundo da competência; no caixa a lista é por
+  // dia e aqueles dois botões não teriam o que fazer.
+  const modo = document.getElementById("fin-modo-wrap");
+  if (modo) modo.style.display = regime === "caixa" ? "none" : "";
+  mostrarCustosFinanceiro();
+}
+
 function _finTrocarModo(modo) {
   _financeiroModo = modo;
   if (modo === "detalhado") _finPagina = 0;
@@ -10856,6 +11021,9 @@ function _finTrocarModo(modo) {
 function mostrarCustosFinanceiro() {
   const resultado = document.getElementById("resultado-financeiro");
   if (!resultado) return;
+
+  if (_finRegime === "caixa") { _finRenderCaixa(resultado); return; }
+
   const { custos, porViveiro } = _finColetarCustos();
 
   if (custos.length === 0) {
