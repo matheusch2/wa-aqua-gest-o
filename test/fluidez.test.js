@@ -1422,13 +1422,14 @@ test("caixa: lancar custo NAO e pagar — custo lancado nao vira saida",()=>{
     `o caixa somou ${total}: deviam ser so os 4150 de boleto pago, sem o custo lancado`);
 });
 
-test("caixa: a tela avisa o que NÃO está no número",()=>{
-  // Um total parcial sem aviso é pior que total nenhum: parece completo.
+test("caixa: a tela mostra o total e nada mais que texto",()=>{
+  // O dono tirou os textos explicativos: o aviso ambar, a comparacao com a
+  // competencia e as frases de apoio. O que guarda a honestidade do numero
+  // agora e so o codigo (_finSaidasDeCaixa), nao a tela.
   const bloco = source.match(/function _finRenderCaixa\([\s\S]*?\n\}/)[0];
-  assert.match(bloco, /ainda não entram/i, "sumiu o aviso dos custos fixos");
-  assert.match(bloco, /custo lançado não aparece/i,
-    "sumiu o aviso de que lançar custo não é pagar");
-  assert.match(bloco, /fin-caixa-contra/, "sumiu a comparação com a competência");
+  assert.match(bloco, /fin-caixa-total/, "sumiu o total do caixa");
+  assert.ok(!/fin-caixa-aviso|fin-caixa-contra/.test(bloco),
+    "os textos voltaram; se forem desejados de novo, e decisao do dono, nao acidente");
 });
 
 test("fluxo: o Relatorio financeiro NUNCA mostra o caixa",()=>{

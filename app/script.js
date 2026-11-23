@@ -10940,11 +10940,6 @@ function _finRenderCaixa(resultado) {
   const { saidas, porViveiro } = _finSaidasDeCaixa();
   const total = saidas.reduce((s, x) => s + x.valor, 0);
 
-  // O mesmo período pela outra régua, para a diferença ficar à vista. É a
-  // resposta à pergunta do produtor: "já paguei, por que não aparece tudo?"
-  const { custos } = _finColetarCustos();
-  const competencia = custos.reduce((s, c) => s + Number(c.valor), 0);
-
   const porDia = new Map();
   for (const s of saidas) {
     if (!porDia.has(s.data)) porDia.set(s.data, []);
@@ -10955,23 +10950,12 @@ function _finRenderCaixa(resultado) {
     <div class="fin-caixa-topo">
       <span class="fin-caixa-rotulo">Saiu do caixa no período</span>
       <strong class="fin-caixa-total">R$ ${formatarNumeroBR(total, 2)}</strong>
-      <span class="fin-caixa-contra">pela outra régua, o que <b>custou</b> no mesmo período foi
-        R$ ${formatarNumeroBR(competencia, 2)}</span>
-    </div>
-
-    <div class="fin-caixa-aviso">
-      <b>Só entra aqui o pagamento que o sistema conhece a data.</b>
-      <span>Hoje isso quer dizer <b>boleto pago</b>. Um custo lançado não aparece:
-      comprar a prazo é custo hoje e dinheiro saindo depois, e o sistema não
-      tem como adivinhar o dia.</span>
-      <span>Mão de obra, aluguel e energia <b>ainda não entram</b>: o sistema guarda
-      o valor mensal deles, mas não guarda em que dia foram pagos.</span>
     </div>
 
     ${saidas.length === 0 ? `<p class="sobrevivencia-texto" style="margin:16px 0">
         Nenhum pagamento registrado no período.${porViveiro
-          ? "<br><small>Boleto é da fazenda inteira: escolha “Todos os viveiros” para vê-los.</small>"
-          : "<br><small>Registre o pagamento dos boletos para eles aparecerem aqui.</small>"}</p>`
+          ? "<br><small>Boleto é da fazenda inteira: escolha “Todos os viveiros”.</small>"
+          : ""}</p>`
       : `${[...porDia.entries()].map(([dia, itens]) => `
           <div class="cx-dia">
             <span class="cx-dia-data">${_cdDataHeader(dia)}</span>
@@ -11012,23 +10996,15 @@ function abrirFluxo() {
   area.innerHTML = `
     <h3 class="titulo-secao">Fluxo</h3>
     <div class="cfg-wrap">
-      <p class="fluxo-intro">O mesmo dinheiro responde a duas perguntas diferentes.
-        Escolha qual delas você quer ver.</p>
       <div class="fin-portas">
-        <button class="fin-porta fluxo-porta" onclick="abrirFluxoDe('competencia')">
+        <button class="fin-porta" onclick="abrirFluxoDe('competencia')">
           <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg></span>
-          <span class="fin-porta-txt">
-            <b>Fluxo de competência</b>
-            <small>O que custou. Espalha o valor pelos dias e divide por viveiro — é o que faz o custo por quilo ser verdade.</small>
-          </span>
+          <span class="fin-porta-txt"><b>Fluxo de competência</b></span>
           <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="fin-porta fluxo-porta" onclick="abrirFluxoDe('caixa')">
+        <button class="fin-porta" onclick="abrirFluxoDe('caixa')">
           <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>
-          <span class="fin-porta-txt">
-            <b>Fluxo de caixa</b>
-            <small>O que saiu do bolso, no dia em que saiu. Só pagamento registrado — hoje, boleto pago.</small>
-          </span>
+          <span class="fin-porta-txt"><b>Fluxo de caixa</b></span>
           <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -11044,9 +11020,6 @@ function abrirFluxoDe(regime) {
   area.innerHTML = `
     <h3 class="titulo-secao">${caixa ? "Fluxo de caixa" : "Fluxo de competência"}</h3>
     <div class="cfg-wrap">
-      <p class="fluxo-intro">${caixa
-        ? "O dinheiro que saiu, no dia em que saiu."
-        : "O que custou produzir, espalhado pelos dias em que custou."}</p>
       <div class="campo-form">
         <div class="campo-label">
           <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>

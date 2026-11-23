@@ -404,22 +404,6 @@ body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
 .fin-caixa-total {
   font-size: 25px; font-weight: 800; color: #0b5340; letter-spacing: -.02em;
 }
-.fin-caixa-contra { font-size: 12px; color: #4d6259; margin-top: 3px; }
-.fin-caixa-contra b { color: #0b5340; }
-
-/* O AVISO NÃO É ENFEITE. Enquanto mão de obra, aluguel e energia não tiverem
-   data de pagamento, este total é parcial — e um total parcial sem aviso é
-   pior que total nenhum, porque parece completo. Âmbar e não vermelho: é
-   ressalva, não erro. */
-#area-gestao .fin-caixa-aviso {
-  display: flex; flex-direction: column; gap: 5px;
-  padding: 11px 13px; margin-bottom: 12px;
-  border: 1px solid #f0d9a8; border-left: 3px solid #d97706;
-  border-radius: 0 11px 11px 0; background: #fffaf0;
-  font-size: 12px; line-height: 1.42; color: #6b5120;
-}
-.fin-caixa-aviso b { color: #8a5b08; }
-
 /* A etiqueta de origem ocupa o lugar da pastilha de ícone das outras listas:
    aqui o que importa não é a categoria, é de ONDE o sistema soube do
    pagamento — boleto é dinheiro com data de verdade, custo é data presumida. */
@@ -435,25 +419,7 @@ body.tema-escuro #area-gestao:has(> .fin-topo-acoes) .fin-rank-linha {
 body.tema-escuro #area-gestao .fin-caixa-topo {
   background: #1d2d28; border-color: #344d43;
 }
-body.tema-escuro .fin-caixa-rotulo,
-body.tema-escuro .fin-caixa-contra { color: #9ab3a8; }
-body.tema-escuro .fin-caixa-total,
-body.tema-escuro .fin-caixa-contra b { color: #7fe3b4; }
-body.tema-escuro #area-gestao .fin-caixa-aviso {
-  background: #2b2416; border-color: #5c4a22; color: #e8cf9a;
-}
-body.tema-escuro .fin-caixa-aviso b { color: #fbbf5a; }
+body.tema-escuro .fin-caixa-rotulo { color: #9ab3a8; }
+body.tema-escuro .fin-caixa-total { color: #7fe3b4; }
 body.tema-escuro .fin-caixa-tag-boleto { background: #26463a; color: #7fe3b4; }
 body.tema-escuro .fin-caixa-tag-custo  { background: #2a3a34; color: #9ab3a8; }
-
-/* A tela de Fluxo: escolher a régua ANTES de ver número. */
-.fluxo-intro {
-  margin: 0 0 12px; font-size: 13px; line-height: 1.45; color: #5f7a6f;
-}
-#area-gestao .fluxo-porta { align-items: flex-start; }
-#area-gestao .fluxo-porta .fin-porta-txt small {
-  white-space: normal; line-height: 1.4; margin-top: 3px;
-}
-#area-gestao .fluxo-porta .fin-porta-ico,
-#area-gestao .fluxo-porta .fin-porta-seta { margin-top: 2px; }
-body.tema-escuro .fluxo-intro { color: #9ab3a8; }
