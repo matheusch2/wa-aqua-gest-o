@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261119-cards2";
+const CACHE = "waaqua-20261123-limpeza";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -76,6 +76,12 @@ const ESSENCIAIS = [
   "/app/styles/96-cadastro-viveiro.css", // cadastrar viveiro
   "/app/styles/97-boletos.css",  // a tela de boletos
   "/app/styles/98-grafico.css", // a curva de crescimento
+  // Estas duas ficaram de fora quando foram criadas, e offline as telas de
+  // Mercado e Financeiro abriam SEM ESTILO — o conteúdo todo lá, empilhado
+  // cru. A lista de precache não se atualiza sozinha: folha nova pede linha
+  // nova aqui, e é a única forma de o app abrir inteiro sem internet.
+  "/app/styles/99-mercado.css",      // a faixa de preços e a tabela parada
+  "/app/styles/100-financeiro-v2.css", // a reforma do Financeiro
   "/app/script.js",   // o cérebro do app: sem ele no precache, a PRIMEIRA
                       // abertura offline carregava a casca sem funcionar.
                       // Continua rede-primeiro; isto é só a reserva offline.

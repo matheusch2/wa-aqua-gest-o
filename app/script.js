@@ -1637,14 +1637,6 @@ function _linkWhatsAppRenovar(planoNome, a, vencStr) {
   return `https://wa.me/${_WHATSAPP_COMERCIAL}?text=${encodeURIComponent(msg)}`;
 }
 
-function renovarAssinatura() {
-  window.open(_linkWhatsAppRenovar(
-    _planoLabel(assinatura?.plano),
-    assinatura || {},
-    assinatura?.proximo_vencimento ? _fmtDataISO(assinatura.proximo_vencimento) : "—"
-  ), "_blank", "noopener");
-}
-
 // ─── Perguntas frequentes (FAQ) ────────────────────────────────────────────
 const _FAQ = [
   { q: "Como cadastrar um viveiro?", a: "Para cadastrar um novo viveiro, acesse Cadastrar viveiro no menu principal. Informe o nome do viveiro, a data de povoamento, a quantidade de pós-larvas, o tamanho do viveiro e o laboratório de origem. Após salvar, o viveiro estará disponível para lançamentos de ração, biometria, despesca e acompanhamento do ciclo." },
@@ -7501,9 +7493,32 @@ async function excluirCiclo(viveiroIndex, cicloIndex, botao) {
 
 // ═══ BOLETOS A VENCER ══════════════════════════════════════════════════════════
 
-function _statusBoleto(dataCompra, prazoDias) {
-  const hoje = new Date();
-  const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+/*
+ * O "hoje" ENTRA pela porta, não é lido do relógio aqui dentro.
+ *
+ * Esta função decidia o vencimento com um new Date() interno, enquanto quem a
+ * chama — _resumoBoletos, _finPortaBoletos — já recebia um hojeYmd e o passava
+ * adiante. O parâmetro atravessava duas funções sem fazer nada: era uma
+ * mentira, e o cálculo que parecia conferível na verdade dependia do calendário
+ * da máquina.
+ *
+ * O preço disso apareceu sozinho: os testes da porta de boletos fixam "hoje"
+ * em 17/11, passaram a semana inteira verdes e quebraram no dia 23 — o boleto
+ * que vencia em 5 dias tinha virado vencido há 1. Teste que muda de resposta
+ * conforme o dia não guarda nada; só avisa, tarde, que o relógio andou.
+ *
+ * Sem hojeYmd, continua valendo o dia de hoje: as três telas que chamam esta
+ * função não precisaram mudar.
+ */
+function _statusBoleto(dataCompra, prazoDias, hojeYmd) {
+  let hojeZerado;
+  if (hojeYmd) {
+    const [ha, hm, hd] = String(hojeYmd).split("-").map(Number);
+    hojeZerado = new Date(ha, hm - 1, hd);
+  } else {
+    const hoje = new Date();
+    hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  }
   const [ano, mes, dia] = dataCompra.split("-").map(Number);
   const venc = new Date(ano, mes - 1, dia);
   venc.setDate(venc.getDate() + prazoDias);
@@ -7529,7 +7544,7 @@ function _statusBoleto(dataCompra, prazoDias) {
 function _resumoBoletos(lista, hojeYmd) {
   const abertos = (lista || [])
     .filter(b => b && !b.pago && b.dataCompra)
-    .map(b => ({ b, st: _statusBoleto(b.dataCompra, b.prazoDias) }))
+    .map(b => ({ b, st: _statusBoleto(b.dataCompra, b.prazoDias, hojeYmd) }))
     .filter(x => x.st.tipo !== "ok");
 
   const vencidos = abertos.filter(x => x.st.tipo === "vencido");

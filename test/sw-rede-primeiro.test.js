@@ -266,3 +266,48 @@ test("service worker: desenho é desenho, código é código", () => {
   assert.equal(sw.ehDesenho(pedido("https://waaqua.com.br/x", "script")), false);
   assert.equal(sw.ehDesenho(pedido("nao-e-url-nenhuma")), false);
 });
+
+/*
+ * TODA FOLHA QUE A PÁGINA CARREGA TEM DE ESTAR NO PRECACHE.
+ *
+ * A lista ESSENCIAIS do sw.js é escrita à mão e não se atualiza sozinha.
+ * Três folhas já escaparam dela — 99-mercado.css, 100-financeiro-v2.css e
+ * uma do login —, e o sintoma não aparece em nenhum teste nem em nenhuma
+ * tela: só offline, e só nas telas daquelas folhas, que abriam com o
+ * conteúdo todo empilhado cru, sem estilo nenhum.
+ *
+ * É um erro de OMISSÃO, o tipo que nunca dá erro. Daí a guarda.
+ */
+test("service worker: nenhuma folha de estilo fica de fora do precache", () => {
+  const sw = fs.readFileSync(path.join(RAIZ, "sw.js"), "utf8");
+  const essenciais = sw.slice(sw.indexOf("const ESSENCIAIS"), sw.indexOf("];", sw.indexOf("const ESSENCIAIS")));
+
+  for (const pagina of ["app/index.html", "app/login.html"]) {
+    const html = fs.readFileSync(path.join(RAIZ, pagina), "utf8");
+    const folhas = [...html.matchAll(/<link[^>]+href="([^"]+\.css)(?:\?[^"]*)?"/g)].map((m) => m[1]);
+    assert.ok(folhas.length > 3, `${pagina}: achei só ${folhas.length} folhas — o teste parou de enxergar`);
+
+    for (const f of folhas) {
+      // o href é relativo à página; o precache guarda caminho absoluto
+      const absoluto = f.startsWith("/") ? f : "/" + path.posix.join(path.posix.dirname(pagina), f);
+      assert.ok(essenciais.includes(absoluto),
+        `${pagina} carrega ${f}, que NÃO está no precache do sw.js. ` +
+        `Offline, essa tela abre sem estilo. Acrescente "${absoluto}" em ESSENCIAIS.`);
+    }
+  }
+});
+
+test("service worker: o precache não aponta para arquivo que não existe", () => {
+  const sw = fs.readFileSync(path.join(RAIZ, "sw.js"), "utf8");
+  const bloco = sw.slice(sw.indexOf("const ESSENCIAIS"), sw.indexOf("];", sw.indexOf("const ESSENCIAIS")));
+  const caminhos = [...bloco.matchAll(/"(\/[^"]*)"/g)].map((m) => m[1]);
+  assert.ok(caminhos.length > 10, "não consegui ler a lista ESSENCIAIS");
+
+  const faltando = caminhos.filter((c) => {
+    if (c === "/") return false;                    // a raiz é servida pelo index
+    return !fs.existsSync(path.join(RAIZ, c.replace(/^\//, "")));
+  });
+  assert.deepEqual(faltando, [],
+    "o precache pede arquivo que não existe mais — a instalação do service worker " +
+    "falha nesses e a reserva offline fica incompleta: " + faltando.join(", "));
+});
