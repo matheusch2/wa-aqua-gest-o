@@ -7821,6 +7821,11 @@ function abrirMenuFinanceiro() {
           <span class="fin-porta-txt"><b>Boletos</b><small>${_esc(subBoletos)}</small></span>
           <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+        <button class="fin-porta" onclick="abrirFluxo()">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><path d="M3 7h13l-3-3m3 3-3 3"/><path d="M21 17H8l3-3m-3 3 3 3"/></svg></span>
+          <span class="fin-porta-txt"><b>Fluxo</b><small>Caixa ou competência</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
       <button class="botao-voltar-form" style="margin-top:14px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
@@ -10579,6 +10584,10 @@ async function desmarcarBoletoPago(index, voltarDetalhe, botao) {
 
 function abrirFinanceiro() {
   esconderMenu();
+  // O Relatório é SEMPRE competência. _finRegime é global e a tela de Fluxo
+  // mexe nele; sem esta linha, quem visse o caixa e depois abrisse o
+  // relatório veria o caixa aqui dentro, com os filtros do relatório.
+  _finRegime = "competencia";
   // Guarda o ID, não o índice: renomear/remover um viveiro pode reordenar a lista.
   const escolhido = viveiros.findIndex(v => v.id === _finViveiroId);
   if (escolhido < 0) { _finViveiroId = null; _finCicloSel = ""; }
@@ -10623,11 +10632,7 @@ function abrirFinanceiro() {
         </div>
       </div>
       <button class="fin-limpar-filtros" onclick="_finLimparFiltros()">Limpar filtros</button>
-      <div class="fin-modo-toggle fin-regime-toggle">
-        <button class="fin-modo-btn fin-regime-btn ${_finRegime === "competencia" ? "ativo" : ""}" data-regime="competencia" onclick="_finTrocarRegime('competencia')">O que custou</button>
-        <button class="fin-modo-btn fin-regime-btn ${_finRegime === "caixa" ? "ativo" : ""}" data-regime="caixa" onclick="_finTrocarRegime('caixa')">O que saiu do caixa</button>
-      </div>
-      <div class="fin-modo-toggle" id="fin-modo-wrap"${_finRegime === "caixa" ? ' style="display:none"' : ""}>
+      <div class="fin-modo-toggle" id="fin-modo-wrap">
         <button class="fin-modo-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" data-modo="detalhado" onclick="_finTrocarModo('detalhado')">Detalhado</button>
         <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" data-modo="resumido" onclick="_finTrocarModo('resumido')">Por tipo</button>
       </div>
@@ -10984,15 +10989,93 @@ function _finRenderCaixa(resultado) {
   `;
 }
 
-function _finTrocarRegime(regime) {
-  _finRegime = regime;
-  document.querySelectorAll(".fin-regime-btn").forEach(b => {
-    b.classList.toggle("ativo", b.dataset.regime === regime);
-  });
-  // "Detalhado / Por tipo" é do mundo da competência; no caixa a lista é por
-  // dia e aqueles dois botões não teriam o que fazer.
-  const modo = document.getElementById("fin-modo-wrap");
-  if (modo) modo.style.display = regime === "caixa" ? "none" : "";
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLUXO — a tela que pergunta qual régua antes de mostrar número
+
+   As duas réguas não são dois formatos da mesma coisa: são duas perguntas
+   diferentes sobre o mesmo dinheiro. Por isso viraram tela própria, fora do
+   Relatório financeiro, e por isso a escolha vem ANTES do número.
+
+   Escondido dentro de um par de botões no meio de outros filtros, o produtor
+   trocava de régua sem perceber que tinha trocado de pergunta — e aí os dois
+   números viram "o sistema está errado".
+   ═══════════════════════════════════════════════════════════════════════════ */
+function abrirFluxo() {
+  esconderMenu();
+  if (!_finPeriodoInicializado) {
+    _finPeriodoInicializado = true;
+    const now = new Date();
+    _finPeriodoIni = _dataLocalISO(new Date(now.getFullYear(), now.getMonth(), 1));
+    _finPeriodoFim = _dataLocalISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  }
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">Fluxo</h3>
+    <div class="cfg-wrap">
+      <p class="fluxo-intro">O mesmo dinheiro responde a duas perguntas diferentes.
+        Escolha qual delas você quer ver.</p>
+      <div class="fin-portas">
+        <button class="fin-porta fluxo-porta" onclick="abrirFluxoDe('competencia')">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg></span>
+          <span class="fin-porta-txt">
+            <b>Fluxo de competência</b>
+            <small>O que custou. Espalha o valor pelos dias e divide por viveiro — é o que faz o custo por quilo ser verdade.</small>
+          </span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="fin-porta fluxo-porta" onclick="abrirFluxoDe('caixa')">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>
+          <span class="fin-porta-txt">
+            <b>Fluxo de caixa</b>
+            <small>O que saiu do bolso, no dia em que saiu. Só pagamento registrado — hoje, boleto pago.</small>
+          </span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">Voltar</button>
+    </div>
+  `;
+}
+
+function abrirFluxoDe(regime) {
+  _finRegime = regime === "caixa" ? "caixa" : "competencia";
+  const caixa = _finRegime === "caixa";
+  const area = document.getElementById("area-gestao");
+  area.innerHTML = `
+    <h3 class="titulo-secao">${caixa ? "Fluxo de caixa" : "Fluxo de competência"}</h3>
+    <div class="cfg-wrap">
+      <p class="fluxo-intro">${caixa
+        ? "O dinheiro que saiu, no dia em que saiu."
+        : "O que custou produzir, espalhado pelos dias em que custou."}</p>
+      <div class="campo-form">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4"/><path d="M3 9v5c0 2.2 4 4 9 4s9-1.8 9-4V9"/></svg>
+          <label>Viveiro</label>
+        </div>
+        <select id="viveiroFinanceiro" onchange="mostrarCustosFinanceiro()">
+          <option value="">Todos os viveiros</option>
+          ${viveiros.map((v, i) => `<option value="${i}">${_esc(v.nome)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="campo-form" style="margin-bottom:6px">
+        <div class="campo-label">
+          <svg class="campo-icone" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <label>Período</label>
+        </div>
+        <div class="fin-periodo-row">
+          <input type="date" id="finPeriodoIni" value="${_finPeriodoIni}" onchange="_finSetPeriodo()">
+          <span>até</span>
+          <input type="date" id="finPeriodoFim" value="${_finPeriodoFim}" onchange="_finSetPeriodo()">
+        </div>
+      </div>
+      ${caixa ? "" : `<div class="fin-modo-toggle" id="fin-modo-wrap">
+        <button class="fin-modo-btn ${_financeiroModo === "detalhado" ? "ativo" : ""}" data-modo="detalhado" onclick="_finTrocarModo('detalhado')">Detalhado</button>
+        <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" data-modo="resumido" onclick="_finTrocarModo('resumido')">Por tipo</button>
+      </div>`}
+      <div id="resultado-financeiro"></div>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirFluxo()">Voltar</button>
+    </div>
+  `;
   mostrarCustosFinanceiro();
 }
 

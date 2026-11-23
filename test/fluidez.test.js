@@ -1430,3 +1430,32 @@ test("caixa: a tela avisa o que NÃO está no número",()=>{
     "sumiu o aviso de que lançar custo não é pagar");
   assert.match(bloco, /fin-caixa-contra/, "sumiu a comparação com a competência");
 });
+
+test("fluxo: o Relatorio financeiro NUNCA mostra o caixa",()=>{
+  // _finRegime e global e a tela de Fluxo mexe nele. Sem a linha que fixa
+  // competencia em abrirFinanceiro, quem visse o caixa e depois abrisse o
+  // relatorio veria a tela de caixa dentro dos filtros do relatorio.
+  const bloco = source.match(/function abrirFinanceiro\(\)[\s\S]*?\n\}/)[0];
+  assert.match(bloco, /_finRegime = "competencia"/,
+    "abrirFinanceiro parou de fixar competencia — o caixa vai vazar para o relatorio");
+  assert.ok(!/fin-regime-btn/.test(bloco),
+    "os botoes de regime voltaram para o relatorio; eles moram na tela de Fluxo");
+});
+
+test("fluxo: a escolha vem ANTES do numero",()=>{
+  // Duas reguas nao sao dois formatos: sao duas perguntas. Mostrar um numero
+  // na tela de escolha faria o produtor achar que ja e a resposta.
+  const bloco = source.match(/function abrirFluxo\(\)[\s\S]*?\n\}/)[0];
+  assert.match(bloco, /abrirFluxoDe\('competencia'\)/);
+  assert.match(bloco, /abrirFluxoDe\('caixa'\)/);
+  assert.ok(!/formatarNumeroBR|R\$/.test(bloco),
+    "a tela de escolha passou a mostrar valor; ela so pergunta");
+});
+
+test("fluxo: no caixa nao existe Detalhado/Por tipo",()=>{
+  // Aqueles dois botoes sao do mundo da competencia: no caixa a lista e
+  // sempre por dia, e eles nao teriam o que fazer.
+  const bloco = source.match(/function abrirFluxoDe\(regime\)[\s\S]*?\n\}/)[0];
+  assert.match(bloco, /caixa \? "" : `<div class="fin-modo-toggle"/,
+    "o seletor Detalhado/Por tipo deixou de ser escondido no caixa");
+});
