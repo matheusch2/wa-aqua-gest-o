@@ -10866,26 +10866,30 @@ function _finColetarCustos() {
 /* ═══════════════════════════════════════════════════════════════════════════
    O QUE SAIU DO CAIXA
 
-   Primeira versão, e ela é deliberadamente INCOMPLETA — com o buraco escrito
-   na tela, não escondido. O sistema nasceu por competência e só duas fontes
-   sabem QUANDO o dinheiro saiu:
+   Aqui só entra DINHEIRO QUE SAIU, com dia e valor conhecidos. Nada é
+   deduzido, nada é presumido.
 
-     boletos    data_pagamento e a lista `pagamentos` [{data, valor}], que é
-                dinheiro saindo de verdade, com data de verdade;
-     custos     a data do lançamento, que é quando a compra aconteceu.
+   LANÇAMENTO DE CUSTO NÃO É PAGAMENTO, e esta é a regra que manda nesta
+   função. Comprar probiótico a prazo é custo hoje e dinheiro saindo daqui a
+   trinta dias. A primeira versão desta tela usava a data do lançamento como
+   se fosse a do pagamento — é chute, e no caixa não cabe chute. Um custo
+   lançado só vira saída de caixa quando alguém registra o pagamento dele.
+
+   E o contrário também vale: quem paga um boleto na loja não diz "isto foi
+   probiótico". Paga um boleto a um fornecedor. O caixa é por PAGAMENTO, não
+   por mercadoria — quem detalha o que foi comprado é a competência, e lá
+   isso já está por viveiro.
+
+   Hoje a única fonte que sabe a data de um pagamento é o boleto, com a lista
+   `pagamentos` [{data, valor}], parcela por parcela.
 
    Os CUSTOS FIXOS não entram, e não é esquecimento: não existe registro de
    pagamento deles em lugar nenhum. Mão de obra, aluguel e energia são valor
    mensal + vigência, nada mais. Somar o rateio aqui seria competência
    disfarçada de caixa — o erro exato que esta tela existe para desfazer.
 
-   O OUTRO BURACO, que também vai escrito: boleto não é ligado a custo. Quem
-   lançou a mesma compra nos dois lugares vai vê-la duas vezes. Não dá para
-   descobrir isso sozinho sem um vínculo que ainda não existe.
-
-   Enquanto os dois buracos estiverem abertos, o número aqui é uma APROXIMAÇÃO
-   e a tela diz isso. Melhor um número honesto com ressalva do que um número
-   redondo que mente.
+   Enquanto esse buraco estiver aberto, a tela diz que está aberto. Um total
+   parcial sem aviso é pior que total nenhum, porque parece completo.
    ═══════════════════════════════════════════════════════════════════════════ */
 function _finSaidasDeCaixa() {
   const dentro = (d) => (!_finPeriodoIni || d >= _finPeriodoIni) && (!_finPeriodoFim || d <= _finPeriodoFim);
@@ -10920,19 +10924,8 @@ function _finSaidasDeCaixa() {
     }
   }
 
-  // 2) Custos lançados: a data do lançamento vale como o dia da saída.
-  //    É suposição, e por isso vai rotulada na tela — o sistema não pergunta
-  //    se foi pago à vista ou a prazo.
-  const alvos = porViveiro ? [viveiros[viveiroIndex]] : viveiros;
-  for (const v of alvos) {
-    for (const c of _finCustosDoViveiro(v) || []) {
-      const d = String(c.data || "").slice(0, 10);
-      const val = Number(c.valor) || 0;
-      if (!d || val <= 0 || !dentro(d)) continue;
-      saidas.push({ data: d, valor: val, nome: c.nomeProduto || c.categoria || "Custo",
-        sub: v.nome || "", origem: "custo" });
-    }
-  }
+  // Custo lançado NÃO entra. Ver o cabeçalho: lançar não é pagar, e o
+  // sistema não sabe se aquela compra foi à vista ou a prazo.
 
   saidas.sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
   return { saidas, porViveiro };
@@ -10941,8 +10934,6 @@ function _finSaidasDeCaixa() {
 function _finRenderCaixa(resultado) {
   const { saidas, porViveiro } = _finSaidasDeCaixa();
   const total = saidas.reduce((s, x) => s + x.valor, 0);
-  const deBoleto = saidas.filter(x => x.origem === "boleto").reduce((s, x) => s + x.valor, 0);
-  const deCusto = total - deBoleto;
 
   // O mesmo período pela outra régua, para a diferença ficar à vista. É a
   // resposta à pergunta do produtor: "já paguei, por que não aparece tudo?"
@@ -10964,23 +10955,19 @@ function _finRenderCaixa(resultado) {
     </div>
 
     <div class="fin-caixa-aviso">
-      <b>Este número ainda não é o caixa inteiro.</b>
-      <span>Mão de obra, aluguel e energia <b>não entram aqui</b>: o sistema guarda o valor
-      mensal deles, mas não guarda em que dia foram pagos.</span>
-      ${!porViveiro ? `<span>Se a mesma compra foi lançada como custo <i>e</i> como boleto,
-        ela aparece duas vezes — ainda não há como ligar as duas.</span>` : ""}
-      <span>A data de um custo lançado é tratada como o dia do pagamento.</span>
+      <b>Só entra aqui o pagamento que o sistema conhece a data.</b>
+      <span>Hoje isso quer dizer <b>boleto pago</b>. Um custo lançado não aparece:
+      comprar a prazo é custo hoje e dinheiro saindo depois, e o sistema não
+      tem como adivinhar o dia.</span>
+      <span>Mão de obra, aluguel e energia <b>ainda não entram</b>: o sistema guarda
+      o valor mensal deles, mas não guarda em que dia foram pagos.</span>
     </div>
 
     ${saidas.length === 0 ? `<p class="sobrevivencia-texto" style="margin:16px 0">
-        Nenhuma saída registrada no período.${porViveiro
-          ? "<br><small>Boletos são da fazenda inteira: escolha “Todos os viveiros” para vê-los.</small>"
-          : ""}</p>`
-      : `<div class="fin-caixa-fontes">
-          <span><b>R$ ${formatarNumeroBR(deBoleto, 2)}</b> em boletos pagos</span>
-          <span><b>R$ ${formatarNumeroBR(deCusto, 2)}</b> em custos lançados</span>
-        </div>
-        ${[...porDia.entries()].map(([dia, itens]) => `
+        Nenhum pagamento registrado no período.${porViveiro
+          ? "<br><small>Boleto é da fazenda inteira: escolha “Todos os viveiros” para vê-los.</small>"
+          : "<br><small>Registre o pagamento dos boletos para eles aparecerem aqui.</small>"}</p>`
+      : `${[...porDia.entries()].map(([dia, itens]) => `
           <div class="cx-dia">
             <span class="cx-dia-data">${_cdDataHeader(dia)}</span>
             <span class="cx-dia-val">R$ ${formatarNumeroBR(itens.reduce((s, i) => s + i.valor, 0), 2)}</span>

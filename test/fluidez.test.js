@@ -1390,22 +1390,43 @@ test("caixa: respeita o período, pelo dia do dinheiro",()=>{
   }
 });
 
-test("caixa: boleto não aparece dentro de um viveiro — ele é da fazenda",()=>{
-  // Boleto não tem viveiro_id. Mostrá-lo dentro de um viveiro inventaria um
-  // vínculo que não existe, e o produtor somaria no custo daquele viveiro.
+test("caixa: dentro de um viveiro nao ha caixa nenhum — pagamento e da fazenda",()=>{
+  // Boleto nao tem viveiro_id, e custo lancado nao e pagamento. Entao a visao
+  // de caixa de UM viveiro fica legitimamente vazia, e a tela manda escolher
+  // "Todos os viveiros". Inventar um numero ali seria pior que o vazio.
   const a=load(); cenarioCaixa(a);
   a.run(`document.getElementById('viveiroFinanceiro').value = '0';`);
   const r = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa())`));
   assert.equal(r.porViveiro, true);
-  assert.ok(!r.saidas.some(x => x.origem === "boleto"),
-    "boleto da fazenda apareceu dentro de um viveiro só");
-  assert.ok(r.saidas.some(x => x.origem === "custo"), "os custos do viveiro sumiram junto");
+  assert.deepEqual(r.saidas, [],
+    "apareceu saida de caixa dentro de um viveiro: ou o boleto vazou, ou um custo lancado virou pagamento");
+});
+
+test("caixa: lancar custo NAO e pagar — custo lancado nao vira saida",()=>{
+  // Comprar probiotico a prazo e custo hoje e dinheiro saindo em 30 dias.
+  // Usar a data do lancamento como dia do pagamento e chute, e no caixa
+  // nao cabe chute. O cenario tem um custo de R$ 500 em 04/11 que NAO pode
+  // aparecer; so o boleto pago e as parcelas entram.
+  const a=load(); cenarioCaixa(a);
+  const s = JSON.parse(a.run(`JSON.stringify(_finSaidasDeCaixa().saidas)`));
+  assert.ok(s.length > 0, "o cenario tem boleto pago, o caixa nao podia estar vazio");
+  for (const x of s) {
+    assert.equal(x.origem, "boleto",
+      `"${x.nome}" entrou no caixa sem ser pagamento registrado`);
+  }
+  // O boleto do cenario se chama "Racao a prazo", entao procurar a palavra
+  // "racao" acusaria o inocente. O que prova a regra e o TOTAL: so os
+  // pagamentos de boleto do periodo (4000 + 150), sem os R$ 500 do custo.
+  const total = s.reduce((t,x)=>t+x.valor,0);
+  assert.equal(total, 4150,
+    `o caixa somou ${total}: deviam ser so os 4150 de boleto pago, sem o custo lancado`);
 });
 
 test("caixa: a tela avisa o que NÃO está no número",()=>{
   // Um total parcial sem aviso é pior que total nenhum: parece completo.
   const bloco = source.match(/function _finRenderCaixa\([\s\S]*?\n\}/)[0];
-  assert.match(bloco, /não entram aqui/i, "sumiu o aviso dos custos fixos");
-  assert.match(bloco, /duas vezes/i, "sumiu o aviso de contagem dupla boleto × custo");
+  assert.match(bloco, /ainda não entram/i, "sumiu o aviso dos custos fixos");
+  assert.match(bloco, /custo lançado não aparece/i,
+    "sumiu o aviso de que lançar custo não é pagar");
   assert.match(bloco, /fin-caixa-contra/, "sumiu a comparação com a competência");
 });
