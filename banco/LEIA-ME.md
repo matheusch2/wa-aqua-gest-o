@@ -28,8 +28,8 @@ carimbo no topo.
 | `seguranca-b03-migracao.sql` | aplicada | 5 chaves estrangeiras apontando para `viveiros` |
 | `whatsapp-vinculo.sql` | aplicada | tabela, índice e as 3 funções existem, já na versão corrigida |
 
-`whatsapp-webhook.ts` não é SQL: é o código da Edge Function, guardado aqui
-ao lado do SQL que ela usa.
+O código da Edge Function do WhatsApp morava aqui; foi para
+`supabase/functions/whatsapp-webhook/`, junto com as outras.
 
 ## A pendência
 
