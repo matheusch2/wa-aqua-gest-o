@@ -1460,3 +1460,24 @@ test("fluxo: no caixa nao existe Detalhado/Por tipo",()=>{
   assert.match(bloco, /caixa \? "" : `<div class="fin-modo-toggle"/,
     "o seletor Detalhado/Por tipo deixou de ser escondido no caixa");
 });
+
+test("financeiro: toda tela que usa as listas precisa do .fin-topo-acoes",()=>{
+  /* O 100-financeiro-v2.css inteiro esta escopado em
+     `#area-gestao:has(> .fin-topo-acoes)` — 71 regras. Uma tela que monta
+     as listas do financeiro SEM esse elemento como filho direto cai fora de
+     todas elas de uma vez, e o sintoma nao parece CSS: a porcentagem de
+     cada categoria aparece grudada no valor, em italico, porque o
+     `.fin-linha-valor em` mora la. Foi exatamente o que aconteceu quando a
+     tela de Fluxo nasceu com um <h3> solto no lugar do cabecalho. */
+  const fonte = fs.readFileSync(path.join(__dirname, "../app/styles/100-financeiro-v2.css"), "utf8");
+  const escopadas = (fonte.match(/:has\(> \.fin-topo-acoes\)/g) || []).length;
+  assert.ok(escopadas > 30,
+    `o escopo mudou (${escopadas} regras): confira se este teste ainda guarda a coisa certa`);
+
+  for (const fn of ["abrirFinanceiro", "abrirFluxoDe"]) {
+    const bloco = source.match(new RegExp(`function ${fn}\\([^)]*\\)[\\s\\S]*?\\n\\}`))[0];
+    assert.ok(/area\.innerHTML/.test(bloco), `${fn} nao monta mais a tela — reveja este teste`);
+    assert.match(bloco, /<div class="fin-topo-acoes">/,
+      `${fn} monta a tela sem .fin-topo-acoes: as ${escopadas} regras do financeiro nao vao valer nela`);
+  }
+});

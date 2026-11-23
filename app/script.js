@@ -11017,8 +11017,17 @@ function abrirFluxoDe(regime) {
   _finRegime = regime === "caixa" ? "caixa" : "competencia";
   const caixa = _finRegime === "caixa";
   const area = document.getElementById("area-gestao");
+  /* O cabeçalho vai dentro de .fin-topo-acoes, e NÃO é enfeite: as 71 regras
+   * do 100-financeiro-v2.css estão escopadas em
+   * `#area-gestao:has(> .fin-topo-acoes)`. Sem esse elemento como filho
+   * direto, esta tela cai fora de todas elas — foi o que fez a porcentagem
+   * de cada categoria aparecer grudada no valor, em itálico, porque o
+   * `.fin-linha-valor em` mora justamente lá. O sintoma era um; a causa
+   * valia para a tela inteira. */
   area.innerHTML = `
-    <h3 class="titulo-secao">${caixa ? "Fluxo de caixa" : "Fluxo de competência"}</h3>
+    <div class="fin-topo-acoes">
+      <h3 class="titulo-secao" style="margin:0">${caixa ? "Fluxo de caixa" : "Fluxo de competência"}</h3>
+    </div>
     <div class="cfg-wrap">
       <div class="campo-form">
         <div class="campo-label">
