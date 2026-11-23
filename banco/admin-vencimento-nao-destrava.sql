@@ -1,5 +1,6 @@
--- [ESTADO EM 23/11/2026: PENDENTE]
---   o corpo de admin_ajustar_vencimento no banco AINDA grava status='ativo' sempre (lido em 23/11/2026). O furo descrito abaixo esta VIVO.
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   aplicada como migracao admin_ajustar_vencimento_nao_destrava_cancelado;
+--   o corpo foi lido de volta depois e tem o case. O furo esta fechado.
 --   Conferido contra o banco de producao, nao contra a memoria de
 --   ninguem: o editor SQL do Supabase nao registra migracao, entao a
 --   unica prova de que um arquivo rodou e o objeto existir la.

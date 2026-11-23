@@ -15,7 +15,7 @@ carimbo no topo.
 
 | arquivo | estado | como foi conferido |
 |---|---|---|
-| `admin-vencimento-nao-destrava.sql` | **PENDENTE** | o corpo de `admin_ajustar_vencimento` ainda grava `status='ativo'` sempre |
+| `admin-vencimento-nao-destrava.sql` | aplicada 23/11/2026 | migração `admin_ajustar_vencimento_nao_destrava_cancelado`; corpo conferido depois |
 | `pausa-e-sem-historico.sql` | aplicada | migração `viveiro_pausas_e_sem_historico`, 13/11/2026 |
 | `precos-camarao.sql` | aplicada | tabela `precos_camarao` + função `precos_camarao_carimbo` existem |
 | `racao-duas-por-dia.sql` | aplicada | índice `ux_racoes_viveiro_data_tipo` existe |
@@ -31,13 +31,22 @@ carimbo no topo.
 O código da Edge Function do WhatsApp morava aqui; foi para
 `supabase/functions/whatsapp-webhook/`, junto com as outras.
 
-## A pendência
+## Não há pendência
 
-`admin-vencimento-nao-destrava.sql` conserta um furo de cobrança que está
-**no ar agora**: ajustar a data de vencimento de um cliente **bloqueado** o
-destrava sozinho, porque a função grava `status = 'ativo'` sem olhar o
-estado anterior. A correção é uma linha, e o arquivo tem o `CREATE OR
-REPLACE` inteiro pronto para colar no SQL Editor.
+Em 23/11/2026 o último arquivo aberto foi aplicado. O
+`admin-vencimento-nao-destrava.sql` fechava um furo de cobrança que estava no
+ar: ajustar a data de vencimento de um cliente **bloqueado** o destravava
+sozinho, porque a função gravava `status = 'ativo'` sem olhar o estado
+anterior.
+
+Foi aplicado como **migração**, não pelo SQL Editor — por isso ele aparece em
+`migrations`, ao contrário de quase tudo aqui. Depois de aplicar, o corpo da
+função foi lido de volta para conferir que o `case` entrou mesmo.
+
+Quem escapou enquanto o furo estava aberto: ninguém. Das 55 assinaturas, 3
+estavam vencidas (duas no plano grátis, uma no básico há 3 dias) e todas
+`ativo` desde outubro. Existe uma única assinatura `cancelado` no banco, com
+vencimento em 2027.
 
 ## Ao escrever SQL novo aqui
 

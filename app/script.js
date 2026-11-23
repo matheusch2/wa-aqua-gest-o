@@ -12363,7 +12363,16 @@ function _custoFixoRateadoPorItem(iniYmd, fimYmd, viveiro) {
         const parcela = _rateioFixoDia(cf.valorMensal, cur, nAtivos);
         if (parcela <= 0) continue;
         const chave = cf.id || cf.nome;
-        const at = acc.get(chave) || { nome: cf.nome || _custoFixoCatLabel(cf.categoria), categoria: _custoFixoCatLabel(cf.categoria), valor: 0 };
+        // A `chave` SAI junto com o item. Antes o acumulador agrupava por ela
+        // e devolvia só os valores, jogando fora a identificação — e aí o
+        // extrato mostrava "Mão de obra · R$ 320" sem ter como saber QUAL
+        // custo fixo gerou aquilo, então não dava para oferecer editar.
+        const at = acc.get(chave) || {
+          chave,
+          nome: cf.nome || _custoFixoCatLabel(cf.categoria),
+          categoria: _custoFixoCatLabel(cf.categoria),
+          valor: 0,
+        };
         at.valor += parcela;
         acc.set(chave, at);
       }
@@ -12372,6 +12381,35 @@ function _custoFixoRateadoPorItem(iniYmd, fimYmd, viveiro) {
     guard++;
   }
   return [...acc.values()].filter(x => x.valor > 0.005).sort((a, b) => b.valor - a.valor);
+}
+
+/*
+ * ABRIR O CUSTO FIXO A PARTIR DA LINHA DO EXTRATO
+ *
+ * No extrato, a linha "Mão de obra · R$ 320" não é um lançamento: é a FATIA
+ * daquele viveiro no custo fixo do mês. Não existe editar o rateio — o que
+ * se edita é o custo fixo que o gerou, e a fatia se recalcula sozinha.
+ *
+ * Por isso aqui a chave vira índice em custosFixos e a tela que abre é a
+ * mesma de sempre. O produtor não precisa saber dessa diferença; precisa
+ * tocar no número errado e chegar onde se conserta.
+ *
+ * Quando não acha, AVISA. O caso real é o ciclo encerrado: o rateio dele
+ * fica congelado no histórico, e o custo fixo que o originou pode ter sido
+ * apagado meses atrás. Abrir o formulário vazio ali seria pior que o aviso.
+ */
+function abrirCustoFixoPelaChave(chaveEnc) {
+  // Chega codificada, como todas as chaves que viajam dentro de um onclick
+  // (ver _encArg). Sem o decode, "Mão de obra" chegaria "M%C3%A3o%20de%20obra"
+  // e nunca casaria com o cadastro — o menu abriria o aviso de "não está mais
+  // cadastrado" justamente nos custos que existem.
+  const alvo = decodeURIComponent(String(chaveEnc || ""));
+  const i = (custosFixos || []).findIndex(c => String(c.id || c.nome) === alvo);
+  if (i < 0) {
+    mostrarErro("Este custo fixo não está mais cadastrado. Veja em Custos fixos.");
+    return;
+  }
+  abrirFormCustoFixo(i);
 }
 
 // Rótulo amigável da categoria
@@ -14483,12 +14521,16 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
             <span class="cx-dia-data">Custos fixos</span>
             <span class="cx-dia-val">R$ ${formatarNumeroBR(rateioFixo, 2)}</span>
           </div>
-          <div class="cx-cartao">${rateioItens.map(it => _cxLinha({
+          <div class="cx-cartao">${rateioItens.map((it, ri) => _cxLinha({
             chip: _cxChip({ categoria: it.categoria, nomeProduto: it.nome }),
             nome: it.nome,
             sub: `${it.categoria} · rateio automático`,
             valor: it.valor,
-            acoes: null,
+            acoes: it.chave ? {
+              menuId: `cf-det-${index}-${ri}`,
+              editar: `abrirCustoFixoPelaChave('${_encArg(it.chave)}')`,
+              rotuloEditar: "Editar custo fixo",
+            } : null,
           })).join("")}</div>`;
       }
     }
@@ -14518,7 +14560,7 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
             });
           }).join("")
         }${
-          rateioItens.map(it => {
+          rateioItens.map((it, ri) => {
             const pct = totalCustos > 0 ? Math.round(it.valor / totalCustos * 100) : 0;
             return _cxLinha({
               chip: _cxChip({ categoria: it.categoria, nomeProduto: it.nome }),
@@ -14526,7 +14568,11 @@ function renderizarHistoricoCustos(index, elementoId, direto) {
               sub: `${it.categoria} · ${pct}% do total`,
               valor: it.valor,
               pct,
-              acoes: null,
+              acoes: it.chave ? {
+                menuId: `cf-ger-${index}-${ri}`,
+                editar: `abrirCustoFixoPelaChave('${_encArg(it.chave)}')`,
+                rotuloEditar: "Editar custo fixo",
+              } : null,
             });
           }).join("")
         }</div>`;
@@ -14574,8 +14620,14 @@ function _cxLinha({ chip, nome, sub, valor, id, pct, acoes }) {
     ${acoes ? `<div class="cd-menu-wrap cx-menu-wrap">
         <button class="cd-menu-btn cx-menu-btn" onclick="_cdToggleMenu('${acoes.menuId}')" aria-label="Opções">⋮</button>
         <div class="cd-menu" id="${acoes.menuId}">
-          <button onclick="_cdFecharMenus();${acoes.editar}">Editar ${acoes.rotulo}</button>
-          <button class="cd-menu-excluir" onclick="_cdFecharMenus();${acoes.excluir}">Excluir ${acoes.rotulo}</button>
+          <button onclick="_cdFecharMenus();${acoes.editar}">${acoes.rotuloEditar || `Editar ${acoes.rotulo}`}</button>
+          ${/* Excluir é OPCIONAL. A linha do custo fixo no extrato abre a
+                edição, mas não oferece excluir: apagar um custo fixo dali
+                tiraria mão de obra, energia e aluguel de TODOS os viveiros e
+                de todo o histórico, a partir de uma tela que mostra um
+                viveiro só. Quem exclui é a tela de Custos fixos, onde dá
+                para ver o estrago. */ ""}
+          ${acoes.excluir ? `<button class="cd-menu-excluir" onclick="_cdFecharMenus();${acoes.excluir}">Excluir ${acoes.rotulo}</button>` : ""}
         </div>
       </div>`
       : `<span class="cx-auto" title="Calculado pelo sistema">auto</span>`}

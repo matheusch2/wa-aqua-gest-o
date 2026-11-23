@@ -1228,3 +1228,87 @@ test("faixa de preços: fora da tela inicial, não mede nem apaga o que estava g
   assert.equal(a.run("localStorage.getItem('fitaPrecosAltura')"), "30",
     "mediu a faixa escondida e apagou a reserva: a próxima abertura volta a descer");
 });
+
+/* ───────────────────────────────────────────────────────────────────────────
+   EDITAR O CUSTO FIXO PELA LINHA DO EXTRATO
+
+   No extrato, "Mão de obra · R$ 320" não é um lançamento: é a FATIA daquele
+   viveiro no custo fixo do mês. Não existe editar a fatia — edita-se o custo
+   fixo que a gerou, e ela se recalcula.
+
+   Para o menu poder abrir o cadastro certo, o rateio precisa SAIR com a
+   identificação do custo fixo. Ele agrupava por essa chave e devolvia só os
+   valores, jogando a chave fora; é essa perda que estes testes guardam.
+   ─────────────────────────────────────────────────────────────────────────── */
+function semearDoisFixos(a) {
+  a.run(`custosFixos=[
+      {id:'f-mo',nome:'Mão de obra',categoria:'mao_de_obra',valorMensal:3000,dataInicio:'2026-11-01',dataFim:null,ativo:true},
+      {id:'f-en',nome:'Energia',categoria:'energia',valorMensal:600,dataInicio:'2026-11-01',dataFim:null,ativo:true}];
+    viveiros=[{id:'v1',nome:'V1',dataPovoamento:'2026-11-01',ciclosFinalizados:[],custos:[],pausas:[]}];
+    Date = class extends Date { constructor(...x){ x.length ? super(...x) : super(2026,10,30,12); } };`);
+}
+
+test("extrato: cada item do rateio sai com a chave do custo fixo que o gerou",()=>{
+  const a=load(); semearDoisFixos(a);
+  const itens = a.run(`JSON.stringify(_custoFixoRateadoPorItem('2026-11-01','2026-11-30', viveiros[0]))`);
+  const lista = JSON.parse(itens);
+  assert.equal(lista.length, 2, "esperava um item por custo fixo");
+  for (const it of lista) {
+    assert.ok(it.chave,
+      `"${it.nome}" veio sem chave — o menu do extrato não tem como saber qual custo fixo abrir`);
+    const achou = a.run(`custosFixos.some(c => (c.id || c.nome) === ${JSON.stringify(it.chave)})`);
+    assert.ok(achou, `a chave "${it.chave}" não corresponde a nenhum custo fixo cadastrado`);
+  }
+});
+
+test("extrato: a chave abre o custo fixo CERTO, mesmo com acento e espaço",()=>{
+  const a=load(); semearDoisFixos(a);
+  // Sem id, a chave vira o nome — e nome com acento viaja codificado dentro
+  // do onclick. Decodificar no destino é o que faz "Mão de obra" casar.
+  a.run(`custosFixos[0].id = null;`);
+  const itens = JSON.parse(a.run(`JSON.stringify(_custoFixoRateadoPorItem('2026-11-01','2026-11-30', viveiros[0]))`));
+  const mo = itens.find(x => /obra/i.test(x.nome));
+  assert.equal(mo.chave, "Mão de obra", "sem id, a chave tem de ser o nome");
+
+  // Simula a viagem pelo onclick: codifica na ida, a função decodifica.
+  const abriu = a.run(`(() => {
+      let aberto = null, erro = null;
+      abrirFormCustoFixo = (i) => { aberto = i; };
+      mostrarErro = (m) => { erro = m; };
+      abrirCustoFixoPelaChave(encodeURIComponent(${JSON.stringify(mo.chave)}).replace(/'/g, "%27"));
+      return JSON.stringify({ aberto, erro });
+    })()`);
+  const r = JSON.parse(abriu);
+  assert.equal(r.erro, null, "disse que não achou um custo fixo que existe");
+  assert.equal(r.aberto, 0, "abriu o índice errado em custosFixos");
+});
+
+test("extrato: chave que não existe mais avisa, não abre formulário vazio",()=>{
+  const a=load(); semearDoisFixos(a);
+  const r = JSON.parse(a.run(`(() => {
+      let aberto = null, erro = null;
+      abrirFormCustoFixo = (i) => { aberto = i; };
+      mostrarErro = (m) => { erro = m; };
+      abrirCustoFixoPelaChave('f-que-foi-apagado');
+      return JSON.stringify({ aberto, erro });
+    })()`));
+  assert.equal(r.aberto, null, "abriu um formulário para um custo fixo que não existe");
+  assert.match(String(r.erro), /não está mais cadastrad/i);
+});
+
+test("extrato: a linha de custo fixo oferece editar, e NUNCA excluir",()=>{
+  // Excluir dali apagaria mão de obra, energia e aluguel de TODOS os
+  // viveiros e de todo o histórico, a partir de uma tela que mostra um
+  // viveiro só. O menu tem de ter um item, não dois.
+  const html = source.match(/function _cxLinha\(\{[\s\S]*?\n\}/)[0];
+  assert.match(html, /acoes\.excluir \?/,
+    "o botão Excluir voltou a ser incondicional em _cxLinha");
+
+  for (const trecho of source.match(/acoes: it\.chave \? \{[\s\S]*?\} : null/g) || []) {
+    assert.match(trecho, /abrirCustoFixoPelaChave/, "a linha do rateio parou de abrir o custo fixo");
+    assert.ok(!/excluir:/.test(trecho),
+      "alguém pôs Excluir na linha de custo fixo do extrato: apagaria para todos os viveiros");
+  }
+  const quantas = (source.match(/acoes: it\.chave \? \{/g) || []).length;
+  assert.equal(quantas, 2, `esperava as duas visões do extrato (Detalhado e Geral), achei ${quantas}`);
+});
