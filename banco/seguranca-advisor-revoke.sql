@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   nenhuma funcao SECURITY DEFINER do schema public continua com EXECUTE para PUBLIC.
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- ═══════════════════════════════════════════════════════════════════════════
 -- WA Aqua Gestão — Hardening: fecha RPC das funções-gatilho (Security Advisor)
 --

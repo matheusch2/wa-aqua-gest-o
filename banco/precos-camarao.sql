@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   a tabela precos_camarao e a funcao precos_camarao_carimbo existem no banco.
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- ============================================================================
 -- PREÇOS DO CAMARÃO — tabela de referência publicada pelo administrador
 --

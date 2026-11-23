@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   migracao viveiro_pausas_e_sem_historico, 13/11/2026 (a unica registrada em migrations).
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- JÁ APLICADA no banco de produção em 13/11/2026 (migração
 -- "viveiro_pausas_e_sem_historico"). Fica aqui como registro do que foi feito.
 --

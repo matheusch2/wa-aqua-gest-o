@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   o indice ux_racoes_viveiro_data_tipo existe no banco.
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- ═══════════════════════════════════════════════════════════════════════════
 -- WA Aqua Gestão — permitir 2 rações no mesmo dia (transição inicial→engorda)
 --

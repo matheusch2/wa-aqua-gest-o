@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: HISTORICO]
+--   so le, nao muda nada. Serviu para liberar a migracao B03, que ja entrou.
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- ═══════════════════════════════════════════════════════════════════════════
 -- WA Aqua Gestão — B03: DIAGNÓSTICO de vínculo de propriedade do viveiro
 --

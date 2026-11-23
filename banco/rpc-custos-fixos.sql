@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   a funcao reajustar_custo_fixo existe no banco.
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- ═══════════════════════════════════════════════════════════════════════════
 -- WA Aqua Gestão — reajuste de custo fixo atômico (RPC)
 --

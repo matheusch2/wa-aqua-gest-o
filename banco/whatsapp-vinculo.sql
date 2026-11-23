@@ -1,3 +1,9 @@
+-- [ESTADO EM 23/11/2026: APLICADA]
+--   tabela whatsapp_vinculos, indice e as 3 funcoes existem; a versao no banco e a corrigida (soma byte a byte, sem o cast com sinal).
+--   Conferido contra o banco de producao, nao contra a memoria de
+--   ninguem: o editor SQL do Supabase nao registra migracao, entao a
+--   unica prova de que um arquivo rodou e o objeto existir la.
+--
 -- ============================================================================
 -- VÍNCULO DO WHATSAPP — qual número pertence a qual produtor
 --
