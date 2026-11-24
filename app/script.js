@@ -8216,7 +8216,8 @@ async function abrirAssinatura() {
     } else if (atual) {
       rodape = `<div class="plano-atual-tag">✓ Plano atual</div>`;
     } else if (p.permiteCartao && valor) {
-      rodape = `<button type="button" class="plano-btn" onclick="assinarNoCartao('${_encArg(p.key)}', this)">Assinar no cartão</button>`;
+      rodape = `<button type="button" class="plano-btn" onclick="assinarNoCartao('${_encArg(p.key)}', this)">Assinar no cartão</button>
+        <button type="button" class="plano-btn" style="margin-top:8px;width:100%;background:transparent;color:#0d9488;border:1px solid #0d9488" onclick="assinarNoCartao('${_encArg(p.key)}', this, 'pix')">Pagar com Pix</button>`;
     } else {
       rodape = `<div class="plano-sem-cartao">Este plano é contratado pelo WhatsApp — o contato está no fim da tela.</div>`;
     }
@@ -8254,7 +8255,7 @@ async function abrirAssinatura() {
       </div>
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:20px 0 10px"><strong style="font-size:16px">Planos disponíveis</strong><small style="opacity:.7">${_planosCatalogo.length} opções</small></div>
       <div class="planos-grid" style="gap:14px">${cards}</div>
-      <div class="assin-obs" style="display:flex;align-items:flex-start;gap:10px;padding:14px;border:1px solid #0d948833;border-radius:14px;margin:16px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.7" style="flex-shrink:0"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><b>Pagamento seguro</b><br>O cartão é informado no Asaas. A assinatura é liberada após a confirmação do pagamento.</span></div>
+      <div class="assin-obs" style="display:flex;align-items:flex-start;gap:10px;padding:14px;border:1px solid #0d948833;border-radius:14px;margin:16px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.7" style="flex-shrink:0"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><b>Pagamento seguro</b><br>Pague por Pix ou cartão no Asaas. A assinatura é liberada após a confirmação do pagamento.</span></div>
       <a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none"
          href="${_linkWhatsAppPlano("", ciclo)}" target="_blank" rel="noopener">Entrar em contato pelo WhatsApp</a>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
@@ -8276,7 +8277,7 @@ async function abrirAssinatura() {
    Quem libera o acesso também não é esta tela: é o webhook, quando o
    dinheiro entra. Voltar da página do Asaas não ativa nada por si só.
    ─────────────────────────────────────────────────────────────────────────── */
-async function assinarNoCartao(chaveEnc, botao) {
+async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao') {
   const chave = decodeURIComponent(String(chaveEnc || ""));
   const p = _planosCatalogo.find(x => x.key === chave);
   if (!p) { _toastErro("Plano não encontrado. Recarregue a tela."); return; }
@@ -8297,7 +8298,7 @@ async function assinarNoCartao(chaveEnc, botao) {
     const token = ses?.session?.access_token;
     if (!token) { restaurar(); _toastErro("Sua sessão expirou. Entre de novo."); return; }
 
-    const resp = await fetch(`${SUPABASE_URL}/functions/v1/assinar-cartao`, {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/${metodo === 'pix' ? 'assinar-pix' : 'assinar-cartao'}`, {
       method: "POST",
       headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
