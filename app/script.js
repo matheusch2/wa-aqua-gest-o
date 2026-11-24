@@ -8113,7 +8113,7 @@ async function abrirAssinatura() {
    * "não consegui carregar" a quem só abriu a tela rápido demais. */
   if (!_planosTentou) {
     area.innerHTML = `
-      <h3 class="titulo-secao">Meu plano</h3>
+      <h3 class="titulo-secao">Meus planos</h3>
       <div class="cfg-wrap"><p class="sobrevivencia-texto" style="margin:18px 0">Carregando planos…</p></div>`;
     await carregarPlanos();
   }
@@ -8147,7 +8147,7 @@ async function abrirAssinatura() {
      velho seria pior que não mostrar nenhum. */
   if (!_planosCatalogo.length) {
     area.innerHTML = `
-      <h3 class="titulo-secao">Meu plano</h3>
+      <h3 class="titulo-secao">Meus planos</h3>
       <div class="cfg-wrap">
         <div class="assin-status assin-status-${statusCls}">
           <div class="assin-status-l1">${statusL1}</div>
@@ -8206,9 +8206,9 @@ async function abrirAssinatura() {
     }
 
     return `
-      <div class="plano-card${atual ? " plano-card-atual" : ""}">
+      <div class="plano-card${atual ? " plano-card-atual" : ""}" style="border-radius:18px;overflow:hidden;box-shadow:0 3px 14px rgba(15,23,42,.06)">
         <div class="plano-card-corpo">
-          <span class="plano-nome">${_esc(p.nome)}</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px"><span style="display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#0d948815;color:#0d9488;flex-shrink:0"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 15h4"/></svg></span><span class="plano-nome">${_esc(p.nome)}</span></div>
           <span class="plano-viv">${_esc(p.viveiros)}</span>
           ${precoBloco}
           <ul class="plano-recursos">
@@ -8222,20 +8222,22 @@ async function abrirAssinatura() {
   }).join("");
 
   area.innerHTML = `
-    <h3 class="titulo-secao">Meu plano</h3>
+    <h3 class="titulo-secao">Meus planos</h3>
     <div class="cfg-wrap">
       <div class="assin-status assin-status-${statusCls}">
         <div class="assin-status-l1">${statusL1}</div>
         <div class="assin-status-l2">${statusL2}</div>
-        <div class="assin-status-hint">Escolha o plano conforme a quantidade de viveiros que deseja gerenciar.</div>
+        <div class="assin-status-hint">Gerencie sua assinatura e escolha o limite de viveiros ideal para sua fazenda.</div>
       </div>
-      <div class="assin-toggle assin-toggle-3">
+      <div style="font-size:13px;font-weight:600;margin:18px 0 8px">Período de assinatura</div>
+      <div class="assin-toggle assin-toggle-3" style="border-radius:14px">
         <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
         <button class="assin-toggle-btn ${ciclo === "semestral" ? "ativo" : ""}" onclick="_planosCiclo='semestral';abrirAssinatura()">6 meses <span class="assin-toggle-eco">· 1 mês grátis</span></button>
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
       </div>
-      <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">No <b>cartão</b>, a cobrança é automática a cada ciclo e o plano libera na hora.</p>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:20px 0 10px"><strong style="font-size:16px">Planos disponíveis</strong><small style="opacity:.7">${_planosCatalogo.length} opções</small></div>
+      <div class="planos-grid" style="gap:14px">${cards}</div>
+      <div class="assin-obs" style="display:flex;align-items:flex-start;gap:10px;padding:14px;border:1px solid #0d948833;border-radius:14px;margin:16px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.7" style="flex-shrink:0"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><b>Pagamento seguro</b><br>O cartão é informado no Asaas. A assinatura é liberada após a confirmação do pagamento.</span></div>
       <a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none"
          href="${_linkWhatsAppPlano("", ciclo)}" target="_blank" rel="noopener">Entrar em contato pelo WhatsApp</a>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
