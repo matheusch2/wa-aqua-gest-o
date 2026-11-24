@@ -44,6 +44,7 @@ let custosFixos = [];
 // custo fixo"). Impede o congelamento de rateio gravar 0 permanente por engano.
 let _custosFixosOk = true;
 let assinatura = null;
+let _planoEfetivo = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
 
@@ -7992,6 +7993,7 @@ function _planoVencido(a) {
 // Se o campo limite_viveiros vier vazio (linhas antigas), usa o limite
 // padrão do plano — nunca rebaixa um pagante em dia para o grátis.
 function _planoLimiteEfetivo() {
+  if (_planoEfetivo) return Number(_planoEfetivo.limite_viveiros) || 1;
   const a = assinatura;
   if (a && a.plano && a.plano !== "gratis" && !_planoVencido(a)
       && (a.status === "ativo" || _dentroDaCarencia(a))) {
@@ -8006,6 +8008,7 @@ function _planoLimiteEfetivo() {
 // Só trava plano PAGO cujo pagamento parou (pendente/cancelado) e que já
 // passou da carência. Nunca trava quem está no grátis nem quem está em dia.
 function _contaBloqueada() {
+  if (_planoEfetivo) return false;
   const a = assinatura;
   if (!a) return false;                                // sem assinatura não trava
   if (!a.plano || a.plano === "gratis") return false;  // grátis não trava
@@ -8058,6 +8061,10 @@ function _viveirosLiberados() {
       }
       return a.i - b.i;          // desempate estável
     });
+  if (_planoEfetivo?.plano === 'gratis' && _planoEfetivo.viveiro_escolhido) {
+    const i = viveiros.findIndex(v => v.id === _planoEfetivo.viveiro_escolhido);
+    if (i >= 0) return new Set([i]);
+  }
   return new Set(ordem.slice(0, lim).map(x => x.i));
 }
 
@@ -8104,6 +8111,14 @@ function _mostrarBannerLeitura() {
   area.insertBefore(div, area.firstChild);
 }
 
+async function _escolherViveiroGratis(id) {
+  const r = await supabaseClient.rpc('escolher_viveiro_gratuito', {p_viveiro:id});
+  if (r.error) { _toastErro('Não foi possível escolher o viveiro.'); return; }
+  const efetivo = await supabaseClient.rpc('meu_plano_efetivo');
+  if (efetivo.error) { _toastErro('Atualize o aplicativo para confirmar a escolha.'); return; }
+  _planoEfetivo = efetivo.data;
+  abrirAssinatura();
+}
 async function abrirAssinatura() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
@@ -8118,7 +8133,8 @@ async function abrirAssinatura() {
     await carregarPlanos();
   }
 
-  const a = assinatura || { plano: "gratis", status: "ativo" };
+  const a = _planoEfetivo?.plano === 'gratis' ? {...assinatura, plano:'gratis', status:'ativo'} : (assinatura || { plano: "gratis", status: "ativo" });
+  const escolhaGratis = _planoEfetivo?.plano === 'gratis' && viveiros.length > 1 ? `<div style="margin:12px 0"><label>Viveiro liberado no plano gratuito</label><select style="width:100%" onchange="_escolherViveiroGratis(this.value)">${viveiros.map((v,i)=>`<option value="${_esc(v.id)}" ${_viveirosLiberados().has(i)?'selected':''}>${_esc(v.nome)}</option>`).join('')}</select></div>` : '';
   const ehGratis = !a.plano || a.plano === "gratis";
 
   // Bloco de status unificado (plano atual + info do grátis, sem repetir aviso)
@@ -8229,6 +8245,7 @@ async function abrirAssinatura() {
         <div class="assin-status-l2">${statusL2}</div>
         <div class="assin-status-hint">Gerencie sua assinatura e escolha o limite de viveiros ideal para sua fazenda.</div>
       </div>
+      ${escolhaGratis}
       <div style="font-size:13px;font-weight:600;margin:18px 0 8px">Período de assinatura</div>
       <div class="assin-toggle assin-toggle-3" style="border-radius:14px">
         <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
@@ -15612,6 +15629,10 @@ async function carregarViveiros(usuarioConhecido) {
     return false;
   }
   assinatura = rAssinatura.data || null;
+  _planoEfetivo = null;
+  const efetivo = await supabaseClient.rpc('meu_plano_efetivo');
+  if (!efetivo.error) _planoEfetivo = efetivo.data;
+  else console.warn('Plano efetivo:', efetivo.error);
   // Tabela nova: se ainda nao existir no banco do usuario, segue sem quebrar.
   contato = (rContato && !rContato.error) ? (rContato.data || null) : null;
 
