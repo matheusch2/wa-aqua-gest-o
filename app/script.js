@@ -7823,19 +7823,39 @@ function abrirMenuFinanceiro() {
     <h3 class="titulo-secao">Financeiro</h3>
     <div class="cfg-wrap">
       <div class="fin-portas">
-        <button class="fin-porta" onclick="abrirFinanceiro()">
-          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
-          <span class="fin-porta-txt"><b>Relatório financeiro</b><small>${_esc(subCustos)}</small></span>
+        <button class="fin-porta" onclick="abrirFluxoDireto('caixa')">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20m-5 5h2"/></svg></span>
+          <span class="fin-porta-txt"><b>Fluxo de caixa</b><small>Pagamentos e recebimentos</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="fin-porta" onclick="abrirFluxoDireto('competencia')">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 11h18"/></svg></span>
+          <span class="fin-porta-txt"><b>Fluxo de competência</b><small>Custos consolidados da fazenda</small></span>
           <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
         <button class="fin-porta${classeBoletos}" onclick="abrirBoletos()">
           <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
-          <span class="fin-porta-txt"><b>Boletos</b><small>${_esc(subBoletos)}</small></span>
+          <span class="fin-porta-txt"><b>Contas a pagar e receber</b><small>${_esc(subBoletos)}</small></span>
           <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="fin-porta" onclick="abrirFluxo()">
-          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><path d="M3 7h13l-3-3m3 3-3 3"/><path d="M21 17H8l3-3m-3 3 3 3"/></svg></span>
-          <span class="fin-porta-txt"><b>Fluxo</b><small>Caixa ou competência</small></span>
+        <button class="fin-porta" disabled aria-disabled="true" style="opacity:.65;cursor:default">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><path d="M3 7l9-5 9 5v10l-9 5-9-5zM3 7l9 5 9-5m-9 5v10"/></svg></span>
+          <span class="fin-porta-txt"><b>Estoque</b><small>Em desenvolvimento</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </button>
+        <button class="fin-porta" disabled aria-disabled="true" style="opacity:.65;cursor:default">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 16v-5m6 5V5m6 11V8"/></svg></span>
+          <span class="fin-porta-txt"><b>DRE</b><small>Em desenvolvimento</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </button>
+        <button class="fin-porta" disabled aria-disabled="true" style="opacity:.65;cursor:default">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><path d="M12 3v17M5 21h14M3 7h18M6 7l-4 8h8zm12 0l-4 8h8z"/></svg></span>
+          <span class="fin-porta-txt"><b>Balanço patrimonial</b><small>Em desenvolvimento</small></span>
+          <svg class="fin-porta-seta" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </button>
+        <button class="fin-porta" onclick="abrirFinanceiro()">
+          <span class="fin-porta-ico"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <span class="fin-porta-txt"><b>Relatórios dos viveiros</b><small>${_esc(subCustos)}</small></span>
           <svg class="fin-porta-seta" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -11027,6 +11047,17 @@ function abrirFluxo() {
   `;
 }
 
+function abrirFluxoDireto(regime) {
+  esconderMenu();
+  if (!_finPeriodoInicializado) {
+    _finPeriodoInicializado = true;
+    const now = new Date();
+    _finPeriodoIni = _dataLocalISO(new Date(now.getFullYear(), now.getMonth(), 1));
+    _finPeriodoFim = _dataLocalISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  }
+  abrirFluxoDe(regime);
+}
+
 function abrirFluxoDe(regime) {
   _finRegime = regime === "caixa" ? "caixa" : "competencia";
   _finEscopoFazenda = true;   // o Fluxo é da fazenda; ver _finEscopoFazenda
@@ -11060,7 +11091,7 @@ function abrirFluxoDe(regime) {
         <button class="fin-modo-btn ${_financeiroModo === "resumido" ? "ativo" : ""}" data-modo="resumido" onclick="_finTrocarModo('resumido')">Por tipo</button>
       </div>`}
       <div id="resultado-financeiro"></div>
-      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirFluxo()">Voltar</button>
+      <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirMenuFinanceiro()">Voltar</button>
     </div>
   `;
   mostrarCustosFinanceiro();
