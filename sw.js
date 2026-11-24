@@ -29,7 +29,7 @@
 // (O comentario antigo mandava copiar a versao do script.js. Nao serve: tem
 // publicacao que mexe so no CSS e nao bumpa o script.js, e ai o cache ficaria
 // parado. A data da publicacao, com uma letra pra desempatar, basta.)
-const CACHE = "waaqua-20261124-instalar";
+const CACHE = "waaqua-20261124-pwa";
 
 // Guardados já na instalação, para a primeira abertura sem internet funcionar.
 // Sem "?v=" de propósito: a busca de reserva ignora a query (ver ignoreSearch).
@@ -42,6 +42,9 @@ const ESSENCIAIS = [
   "/index.html",
   "/style.css",
   // O sistema
+  "/login.html",      // a ponte da raiz: e o endereco que os atalhos
+                      // antigos abrem, e sem ela no precache quem instalou
+                      // antes de 21/08 nao abre o app sem internet
   "/app/login.html",
   "/app/index.html",
   "/app/imprimir.html",   // página de impressão aberta no navegador quando o

@@ -6,7 +6,7 @@
   "lang": "pt-BR",
   "dir": "ltr",
   "start_url": "/app/login.html",
-  "scope": "/app/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#054f4b",

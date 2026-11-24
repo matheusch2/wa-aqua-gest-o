@@ -311,3 +311,46 @@ test("service worker: o precache não aponta para arquivo que não existe", () =
     "o precache pede arquivo que não existe mais — a instalação do service worker " +
     "falha nesses e a reserva offline fica incompleta: " + faltando.join(", "));
 });
+
+/*
+ * TODA PORTA DE ENTRADA PRECISA DECLARAR O MANIFESTO, E ESTAR NO ESCOPO.
+ *
+ * No Android, uma pagina que nao encontra o manifesto — ou que esta FORA do
+ * scope dele — abre como site comum: a barra com o X, o dominio e os tres
+ * pontinhos fica em cima, e o sistema parece um site espremido.
+ *
+ * Foi o que aconteceu com quem instalou antes de 21/08/2026, quando o app
+ * morava na raiz: o atalho antigo aponta para /login.html, que nao declarava
+ * manifesto e estava fora do scope "/app/". Medido no Chromium: antes,
+ * manifesto NENHUM e fora do escopo; depois, manifesto achado e dentro.
+ *
+ * O "id" do manifesto e "/login.html" justamente para amarrar aquele atalho
+ * antigo ao app. Trocar o id faria o Chrome tratar como OUTRO app, e quem ja
+ * instalou ganharia um icone duplicado.
+ */
+test("pwa: toda porta de entrada declara o manifesto e cabe no escopo", () => {
+  const manifesto = JSON.parse(fs.readFileSync(path.join(RAIZ, "app/manifest.json"), "utf8"));
+
+  assert.equal(manifesto.display, "standalone",
+    "sem display standalone o app abre em aba, com a barra do navegador");
+  assert.equal(manifesto.id, "/login.html",
+    "o id amarra o atalho antigo (app na raiz ate 21/08/2026); trocar duplica o icone de quem ja instalou");
+
+  const portas = {
+    "index.html": "/",                  // pagina de vendas
+    "login.html": "/login.html",        // a ponte dos atalhos antigos
+    "app/index.html": "/app/index.html",
+    "app/login.html": "/app/login.html",
+  };
+
+  for (const [arquivo, url] of Object.entries(portas)) {
+    const html = fs.readFileSync(path.join(RAIZ, arquivo), "utf8");
+    assert.match(html, /<link[^>]+rel="manifest"/,
+      `${arquivo} nao declara o manifesto: abre como site, com a barra do navegador em cima`);
+    assert.ok(url.startsWith(manifesto.scope),
+      `${url} esta FORA do scope "${manifesto.scope}": o Chrome trata como site comum`);
+  }
+
+  assert.ok(manifesto.start_url.startsWith(manifesto.scope),
+    `start_url "${manifesto.start_url}" fora do scope "${manifesto.scope}"`);
+});
