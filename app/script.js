@@ -8189,19 +8189,20 @@ async function abrirAssinatura() {
         ${economia > 0 ? `<div class="plano-economia">economia de R$ ${formatarNumeroBR(economia, 0)}</div>` : ""}`;
     }
 
-    /* O rodapé: o de 1 viveiro é liberado, o plano atual não se reassina, e
-       o resto ganha DUAS saídas — cartão e WhatsApp. O cartão só aparece
-       quando o plano permite e tem preço naquele ciclo. */
+    /* O rodapé do card tem UMA saída só: o cartão. O WhatsApp saiu daqui e
+       ficou no fim da tela, como contato — dois botões por card faziam cinco
+       escolhas na mesma rolagem e o cliente parava para decidir em vez de
+       assinar. Quando o plano não aceita cartão naquele ciclo, o card aponta
+       para o contato lá embaixo em vez de repetir o botão. */
     let rodape;
     if (p.liberado) {
       rodape = `<div class="plano-atual-tag">${ehGratis ? "✓ Seu plano · liberado" : "Liberado no momento"}</div>`;
     } else if (atual) {
       rodape = `<div class="plano-atual-tag">✓ Plano atual</div>`;
+    } else if (p.permiteCartao && valor) {
+      rodape = `<button type="button" class="plano-btn" onclick="assinarNoCartao('${_encArg(p.key)}', this)">Assinar no cartão</button>`;
     } else {
-      const zap = `<a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Pelo WhatsApp</a>`;
-      rodape = (p.permiteCartao && valor)
-        ? `<button type="button" class="plano-btn" onclick="assinarNoCartao('${_encArg(p.key)}', this)">Assinar no cartão</button>${zap}`
-        : zap;
+      rodape = `<div class="plano-sem-cartao">Este plano é contratado pelo WhatsApp — o contato está no fim da tela.</div>`;
     }
 
     return `
@@ -8234,7 +8235,9 @@ async function abrirAssinatura() {
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
       </div>
       <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">No <b>cartão</b>, a cobrança é automática a cada ciclo e o plano libera na hora. Pelo <b>WhatsApp</b>, o pagamento é via Pix e libera assim que for confirmado.</p>
+      <p class="assin-obs">No <b>cartão</b>, a cobrança é automática a cada ciclo e o plano libera na hora.</p>
+      <a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none"
+         href="${_linkWhatsAppPlano("", ciclo)}" target="_blank" rel="noopener">Entrar em contato pelo WhatsApp</a>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
   `;

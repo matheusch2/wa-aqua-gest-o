@@ -1727,3 +1727,33 @@ test("planos: falha na leitura avisa e deixa tentar de novo",async()=>{
   await a.run('carregarPlanos(true)');
   assert.equal(a.run('__consultas'), 2, "carregarPlanos(true) não refez a consulta");
 });
+
+/* O WhatsApp saiu de dentro dos cards e virou contato único no fim da tela.
+   Com cinco planos, dois botões por card davam dez escolhas numa rolagem só. */
+test("planos: o WhatsApp é um contato no fim da tela, não um botão por card",async()=>{
+  const a = load();
+  a.run(`
+    supabaseClient.from = () => ({ select:()=>({ eq:()=>({
+      order:()=>Promise.resolve({ data:[
+        {chave:'gratis1',nome:'1 viveiro',viveiros_label:'1 viveiro',limite_viveiros:1,
+         mensal:50,semestral:275,anual:500,permite_cartao:true},
+        {chave:'basico',nome:'Básico',viveiros_label:'2 a 5 viveiros',limite_viveiros:5,
+         mensal:100,semestral:550,anual:1000,permite_cartao:true},
+        {chave:'pro',nome:'Pro',viveiros_label:'ilimitados',limite_viveiros:999999,
+         mensal:500,semestral:2750,anual:5000,permite_cartao:true}], error:null })
+    })}) });
+    assinatura = { plano:'gratis', status:'ativo' };`);
+  await a.run('abrirAssinatura()');
+  const tela = a.get('area-gestao').innerHTML;
+
+  // Conta LINKS (wa.me), não a palavra: o texto do botão também diz WhatsApp.
+  const zaps = (tela.match(/wa\.me/g) || []).length;
+  assert.equal(zaps, 1, `são ${zaps} links de WhatsApp na tela; tem de ser um só, no fim`);
+
+  // E ele vem DEPOIS do último card, não no meio deles.
+  assert.ok(tela.lastIndexOf("plano-card") < tela.indexOf("wa.me"),
+    "o contato do WhatsApp está antes do último card — ele é o fim da tela");
+
+  assert.equal((tela.match(/Assinar no cartão/g) || []).length, 2,
+    "cada plano pago tem de ter o botão do cartão (o de 1 viveiro é liberado)");
+});
