@@ -1639,18 +1639,18 @@ async function abrirMinhaConta() {
         <div class="conta-info-linha"><span>Viveiros liberados</span><strong>${_planoLimiteEfetivo()}</strong></div>
       </div>
 
-      <a class="conta-wpp" href="${_linkWhatsAppRenovar(planoNome, a, vencStr)}" target="_blank" rel="noopener">
-        <span class="conta-wpp-ico">${_ICO.whatsapp}</span>
+      <a class="conta-wpp" href="#" onclick="event.preventDefault(); _planosCiclo = assinatura?.ciclo || 'mensal'; abrirAssinatura();">
+        <span class="conta-wpp-ico">${_ICO.renovar}</span>
         <span class="conta-wpp-txt">
           <b>Renovar assinatura</b>
-          <small>Falar comigo no WhatsApp</small>
+          <small>Escolher Pix ou cartão</small>
         </span>
         <span class="conta-wpp-seta">›</span>
       </a>
 
       <div class="conta-aviso">
         <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-        <span>Renovação pelo WhatsApp com pagamento via <b>Pix</b> — o plano é liberado assim que o pagamento for confirmado.</span>
+        <span>Renovação pelo aplicativo com <b>Pix ou cartão</b> — o plano é liberado após a confirmação do pagamento.</span>
       </div>
 
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">Voltar</button>
