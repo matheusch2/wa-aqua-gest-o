@@ -8133,7 +8133,7 @@ async function abrirAssinatura() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const dias = venc ? Math.round((venc-hoje)/86400000) : null;
   const sit = _contaSituacao(a,dias);
-  const vigente = !gratis && a.status === "ativo" && (dias === null || dias > 0);
+  const vigente = !gratis && (_planoEfetivo ? _planoEfetivo.plano !== "gratis" : a.status === "ativo" && (dias === null || dias >= 0));
   const nome = gratis ? "Grátis" : (_planosCatalogo.find(p=>p.key===a.plano)?.nome || a.plano);
   const opcoes = _planosCatalogo.filter(p=>!p.liberado);
   const ciclos = {mensal:"Mensal",semestral:"Semestral",anual:"Anual"};
@@ -8141,10 +8141,10 @@ async function abrirAssinatura() {
   const limite = _planoLimiteEfetivo();
   painel.innerHTML = `
     <header><small>MINHA CONTA</small><h3>Plano e cobrança</h3></header>
-    <div class="wb-current"><div><small>Plano atual</small><strong>${_esc(nome)}</strong></div><span>${_esc(sit.txt)}</span></div>
-    <dl><div><dt>Viveiros liberados</dt><dd>${limite >= 999999 ? "Ilimitados" : limite}</dd></div><div><dt>Vencimento</dt><dd>${venc ? _fmtDataISO(_dataLocalISO(venc)) : gratis ? "Sem cobrança" : "Não informado"}</dd></div></dl>
+    <div class="wb-current" style="display:block;background:linear-gradient(135deg,#073e39,#12675c);color:white;padding:22px;border-radius:20px"><div style="display:flex;justify-content:space-between;align-items:center"><small style="color:#b5dcd5">WA AQUA GESTÃO</small><span>${_esc(sit.txt)}</span></div><div style="margin-top:18px"><small style="color:#b5dcd5">${vigente||gratis?"Seu plano atual":"Último plano contratado"}</small><strong style="display:block;font-size:30px;color:white">${_esc(nome)}</strong></div><div style="margin-top:18px;font-size:14px">Viveiros utilizados: <b>${viveiros.length} / ${limite>=999999?"Ilimitados":limite}</b></div><div style="height:6px;background:#ffffff30;border-radius:8px;margin-top:8px;overflow:hidden"><div style="height:100%;background:#8dd9bf;width:${limite>=999999?100:Math.min(100,viveiros.length/Math.max(1,limite)*100)}%"></div></div></div><h4 style="margin:20px 0 8px">Informações da assinatura</h4>
+    <dl><div><dt>Viveiros liberados</dt><dd>${limite >= 999999 ? "Ilimitados" : limite}</dd></div><div><dt>Vencimento</dt><dd>${venc ? _fmtDataISO(_dataLocalISO(venc)) : gratis ? "Sem cobrança" : "Não informado"}</dd></div><div><dt>Periodicidade</dt><dd>${_esc(ciclos[a.ciclo] || "Não informado")}</dd></div><div><dt>Validade restante</dt><dd>${dias===null?"—":Math.max(0,dias)+" dias"}</dd></div></dl>
     ${_planoEfetivo?.plano === "gratis" && viveiros.length > 1 ? `<label>Viveiro do plano grátis<select onchange="_escolherViveiroGratis(this.value)">${viveiros.map((v,i)=>`<option value="${_esc(v.id)}" ${_viveirosLiberados().has(i)?"selected":""}>${_esc(v.nome)}</option>`).join("")}</select></label>` : ""}
-    ${opcoes.length ? `<details class="wb-options" ${vigente?"":"open"}><summary>${vigente?"Trocar ou renovar plano":gratis?"Escolher plano":"Renovar ou trocar plano"}</summary>
+    ${opcoes.length ? `<details class="wb-options" ${vigente?"":"open"}><summary>${vigente?"Consultar outros planos":gratis?"Escolher plano":"Renovar ou trocar plano"}</summary>
     <div class="wb-fields"><label>Plano<select data-plano>${opcoes.map(p=>`<option value="${_esc(p.key)}" ${p.key===a.plano?"selected":""}>${_esc(p.nome)} · ${_esc(p.viveiros)}</option>`).join("")}</select></label>
     <label>Período<select data-ciclo>${Object.entries(ciclos).map(([k,v])=>`<option value="${k}" ${k===(a.ciclo||"mensal")?"selected":""}>${v}</option>`).join("")}</select></label></div>
     <div data-revisao aria-live="polite"></div></details>` :
@@ -8155,16 +8155,16 @@ async function abrirAssinatura() {
   function atualizar() {
     const p = opcoes.find(x=>x.key===escolha.value), ciclo = periodo.value;
     _planosCiclo = ciclo;
-    const valor = p[ciclo], troca = vigente && a.plano !== p.key;
-    const suporte = troca || !p.permiteCartao;
+    const valor = p[ciclo], troca = vigente && (a.plano !== p.key || a.ciclo !== ciclo);
+    const suporte = !p.permiteCartao;
     const mensagem = `Olá! Quero ${troca?"trocar meu plano "+nome+" para":"contratar o plano"} ${p.nome} (${ciclos[ciclo]}) no WA Aqua Gestão.`;
     revisao.innerHTML = `<div class="wb-total"><div><small>Total do período</small><strong>${valor ? dinheiro(valor) : "Sob consulta"}</strong></div><span>${_esc(ciclos[ciclo])}</span></div>
-      ${troca ? '<p>Seu plano ainda está vigente. Combine a data da troca com o atendimento antes de fazer outro pagamento.</p>' :
+      ${troca ? '<p>Seu plano permanece válido até o vencimento. A troca estará disponível após esse período.</p>' :
       !valor ? '<p>Não há preço cadastrado para este período.</p>' :
       suporte ? '<p>A contratação deste plano é feita pelo atendimento.</p>' :
       vigente ? '<p>O Pix renova este plano por mais um período após a confirmação. Se já houver cartão recorrente ativo, não será gerado outro pagamento.</p>' :
       '<p>O Pix paga um período. No cartão, a cobrança é recorrente. O acesso é atualizado após a confirmação do pagamento.</p>'}
-      ${suporte ? `<a class="wb-pay" href="https://wa.me/${_WHATSAPP_COMERCIAL}?text=${encodeURIComponent(mensagem)}" target="_blank" rel="noopener">${troca?"Solicitar troca pelo WhatsApp":"Consultar atendimento"}</a>` :
+      ${troca ? `<button type="button" disabled style="width:100%;padding:14px;border:0;border-radius:12px;opacity:.65">Disponível após o vencimento</button>` : suporte ? `<a class="wb-pay" href="https://wa.me/${_WHATSAPP_COMERCIAL}?text=${encodeURIComponent(mensagem)}" target="_blank" rel="noopener">${troca?"Solicitar troca pelo WhatsApp":"Consultar atendimento"}</a>` :
       valor ? `<div class="wb-payments"><button type="button" data-metodo="pix">Pagar com Pix</button>${vigente ? "" : '<button type="button" data-metodo="cartao">Assinar no cartão</button>'}</div>` : ""}`;
     revisao.querySelectorAll("[data-metodo]").forEach(btn=>btn.onclick=async()=>{
       escolha.disabled=periodo.disabled=true;
