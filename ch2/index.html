@@ -311,17 +311,34 @@
         ];
         const NOME_PLANO = { gratis: "Grátis", basico: "Básico", intermediario: "Intermediário", avancado: "Avançado", pro: "Pro" };
         const COR_PLANO  = { gratis: "#94a3b8", basico: "#066b63", intermediario: "#2563eb", avancado: "#7c3aed", pro: "#d97706" };
-        // Preços (espelham o app) para calcular MRR/ARR
-        const PRECO_PLANO = {
-            basico: { mensal: 100, anual: 1000 }, intermediario: { mensal: 200, anual: 2000 },
-            avancado: { mensal: 400, anual: 4000 }, pro: { mensal: 600, anual: 6000 },
-        };
-        // Receita mensal recorrente de um cliente pagante (anual convertido p/ mês)
+        /* Os preços vêm de public.planos, a mesma linha que a tela do cliente
+           e a cobrança leem. Antes eram digitados aqui, e estavam errados:
+           intermediário 200 (era 150), avançado 400 (era 300), pro 600 (era
+           500). O MRR deste painel vinha inflado por isso. */
+        let PRECO_PLANO = {};
+        async function carregarPrecos() {
+            const { data, error } = await sb.from("planos")
+                .select("chave, mensal, semestral, anual").eq("ativo", true);
+            if (error) { console.log("planos:", error); return; }
+            PRECO_PLANO = {};
+            (data || []).forEach(p => {
+                PRECO_PLANO[p.chave] = {
+                    mensal: Number(p.mensal) || 0,
+                    semestral: Number(p.semestral) || 0,
+                    anual: Number(p.anual) || 0,
+                };
+            });
+        }
+        // Receita mensal recorrente de um cliente pagante (ciclo longo dividido p/ mês)
+        const _MESES_CICLO = { mensal: 1, semestral: 6, anual: 12 };
         function _mrrCliente(c) {
             if (!ehPagante(c)) return 0;
             const a = c.assinatura, p = PRECO_PLANO[a.plano];
             if (!p) return 0;
-            return a.ciclo === "anual" ? p.anual / 12 : p.mensal;
+            const ciclo = _MESES_CICLO[a.ciclo] ? a.ciclo : "mensal";
+            const valor = p[ciclo];
+            if (!valor) return 0;
+            return valor / _MESES_CICLO[ciclo];
         }
         const _rs0 = v => "R$ " + Math.round(v).toLocaleString("pt-BR");
         const FILTROS = [
@@ -510,6 +527,7 @@
             clientes = data.clientes || [];
             await juntarContatos();
             await juntarAcessos();
+            await carregarPrecos();   // o MRR depende disto; vem antes do gráfico
             // Os gráficos são desenhados com o painel JÁ visível. Chart.js mede o
             // tamanho do container ao desenhar; num container escondido isso dá
             // zero e o gráfico sai quebrado — que era o "gráfico vazio" que
@@ -922,7 +940,8 @@
                             <div class="cli-campo">
                                 <label for="ciclo-${esc(c.id)}">Cobrança</label>
                                 <select id="ciclo-${esc(c.id)}">
-                                    <option value="mensal" ${a && a.ciclo === "anual" ? "" : "selected"}>Mensal (+30 dias)</option>
+                                    <option value="mensal" ${a && (a.ciclo === "anual" || a.ciclo === "semestral") ? "" : "selected"}>Mensal (+30 dias)</option>
+                                    <option value="semestral" ${a && a.ciclo === "semestral" ? "selected" : ""}>6 meses (+182 dias)</option>
                                     <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
                                 </select>
                             </div>

@@ -29,6 +29,15 @@
  * documentação pede tratamento idempotente. Tudo aqui é "deixe nesse
  * estado", nunca "some mais um" — reenviar o mesmo aviso dez vezes dá no
  * mesmo que uma.
+ *
+ * É AQUI, E SÓ AQUI, QUE O PLANO MUDA
+ *   Quem abre o checkout grava a escolha em plano_checkout/ciclo_checkout —
+ *   o que a pessoa QUER. O que ela TEM (plano, ciclo, limite_viveiros) só
+ *   muda quando o dinheiro entra, e é esta função que move um para o outro.
+ *
+ *   Antes o checkout gravava o plano direto. Um cliente no Pro que tocasse
+ *   em "Assinar" no Básico só para ver o preço, e fechasse a página, caía
+ *   para 5 viveiros na mesma hora, sem ter pago nada.
  */
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -82,13 +91,16 @@ Deno.serve(async (req) => {
   /* O que cada evento faz com a assinatura do cliente. */
   const mudanca: Record<string, unknown> = { atualizado_em: new Date().toISOString() };
   let agir = false;
+  /* "pago" é só para os eventos em que o dinheiro ENTROU. É o que autoriza
+     a troca de plano; CHECKOUT_CANCELED e PAYMENT_OVERDUE não autorizam. */
+  let pago = false;
 
   if (evento === "CHECKOUT_PAID") {
     // O cartão passou. O Asaas cria a assinatura a partir daqui.
     mudanca.status = "ativo";
     mudanca.checkout_url = null;          // o link cumpriu o papel
     mudanca.checkout_expira_em = null;
-    agir = true;
+    agir = true; pago = true;
 
   } else if (evento === "CHECKOUT_CANCELED" || evento === "CHECKOUT_EXPIRED") {
     // Não mexe no status: quem já era assinante continua sendo. Só limpa o
@@ -110,7 +122,7 @@ Deno.serve(async (req) => {
   } else if (evento.startsWith("PAYMENT_CONFIRMED") || evento.startsWith("PAYMENT_RECEIVED")) {
     mudanca.status = "ativo";
     if (assinaturaId) mudanca.asaas_subscription_id = assinaturaId;
-    agir = true;
+    agir = true; pago = true;
 
   } else if (evento.startsWith("PAYMENT_OVERDUE") || evento === "PAYMENT_DELETED" || evento === "PAYMENT_REFUNDED") {
     mudanca.status = "pendente";
@@ -123,16 +135,64 @@ Deno.serve(async (req) => {
   const venc = cobranca?.dueDate ?? assinatura?.nextDueDate ?? checkout?.subscription?.nextDueDate;
   if (venc) mudanca.proximo_vencimento = String(venc).substring(0, 10);
 
-  let consulta = supabase.from("assinaturas").update(mudanca);
-  if (userId)            consulta = consulta.eq("user_id", userId);
-  else if (checkoutId)   consulta = consulta.eq("asaas_checkout_id", checkoutId);
-  else if (assinaturaId) consulta = consulta.eq("asaas_subscription_id", assinaturaId);
-  else {
+  /* Como se acha a linha deste cliente. Vale tanto para ler quanto para
+     escrever, por isso virou função: as duas TÊM de filtrar igual. */
+  const filtrar = <T>(q: T): T | null => {
+    const c = q as unknown as { eq: (col: string, v: string) => T };
+    if (userId)            return c.eq("user_id", userId);
+    if (checkoutId)        return c.eq("asaas_checkout_id", checkoutId);
+    if (assinaturaId)      return c.eq("asaas_subscription_id", assinaturaId);
+    return null;
+  };
+
+  if (!filtrar(supabase.from("assinaturas").select("user_id"))) {
     console.error("Evento sem nenhuma referencia utilizavel:", evento, JSON.stringify(body).slice(0, 400));
     return ok({ ok: true, ignorado: "sem referencia" });
   }
 
-  const { data, error } = await consulta.select("user_id");
+  /* O DINHEIRO ENTROU: é a hora, e a única hora, de mover a escolha do
+     checkout para o plano em vigor. Fora daqui o plano não muda. */
+  if (pago) {
+    const { data: atual, error: erroLer } = await filtrar(
+      supabase.from("assinaturas").select("plano_checkout, ciclo_checkout"),
+    )!.maybeSingle();
+
+    if (erroLer) {
+      // 500 de propósito: o Asaas reenvia. Melhor repetir do que liberar
+      // o acesso sem saber que plano o cliente comprou.
+      console.error("Erro ao ler a assinatura antes de ativar:", erroLer);
+      return new Response(JSON.stringify({ ok: false, error: erroLer.message }), { status: 500 });
+    }
+
+    const escolhido = atual?.plano_checkout as string | undefined;
+    if (escolhido) {
+      const { data: plano, error: erroPlano } = await supabase
+        .from("planos").select("chave, limite_viveiros").eq("chave", escolhido).maybeSingle();
+
+      if (erroPlano) {
+        console.error("Erro ao ler o plano comprado:", erroPlano);
+        return new Response(JSON.stringify({ ok: false, error: erroPlano.message }), { status: 500 });
+      }
+      if (!plano) {
+        /* Pagou um plano que não existe mais no catálogo. Ativa assim mesmo
+           — o dinheiro entrou — mas NÃO inventa limite, e grita no log para
+           alguém resolver na mão. */
+        console.error("PLANO COMPRADO NAO EXISTE NO CATALOGO:", escolhido, "evento", evento);
+      } else {
+        mudanca.plano = plano.chave;
+        mudanca.limite_viveiros = plano.limite_viveiros;
+        if (atual?.ciclo_checkout) mudanca.ciclo = atual.ciclo_checkout;
+        // Já foi usada. Zerar deixa o reenvio do mesmo aviso sem efeito, e
+        // impede que um pagamento futuro desta assinatura troque o plano de
+        // novo por causa de uma escolha velha.
+        mudanca.plano_checkout = null;
+        mudanca.ciclo_checkout = null;
+      }
+    }
+  }
+
+  const { data, error } = await filtrar(supabase.from("assinaturas").update(mudanca))!
+    .select("user_id");
   if (error) {
     // 500 de propósito: o Asaas reenvia, e é isso que queremos.
     console.error("Erro ao atualizar assinatura:", error);

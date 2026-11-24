@@ -183,15 +183,21 @@ Deno.serve(async (req) => {
     const expira = new Date(Date.now() + minutosAteExpirar * 60000).toISOString();
 
     /* Guarda ANTES de devolver o link. Se gravasse depois e a gravação
-     * falhasse, o cliente pagaria e nós não saberíamos de quem é. */
+     * falhasse, o cliente pagaria e nós não saberíamos de quem é.
+     *
+     * O QUE NÃO SE ESCREVE AQUI, e por quê:
+     *   plano, ciclo, limite_viveiros e status são o que o cliente TEM.
+     *   Isto aqui é só o que ele ESCOLHEU numa página que talvez nem
+     *   abra. A primeira versão gravava plano e limite na hora, e com
+     *   isso um cliente no Pro que tocasse em "Assinar" no Básico só
+     *   para ver o preço caía para 5 viveiros na mesma hora, sem ter
+     *   pago nada — e, no outro sentido, subia de plano de graça.
+     *   Quem move plano_checkout -> plano é o webhook, quando o dinheiro
+     *   entra. */
     const { error: erroBanco } = await admin.from("assinaturas").upsert({
       user_id: user.id,
-      plano: p.chave,
-      ciclo,
-      // NÃO mexe no status aqui. Quem ativa é o webhook, quando o dinheiro
-      // entra. Marcar "ativo" ao gerar o link liberaria o sistema para quem
-      // só abriu a página e fechou.
-      limite_viveiros: p.limite_viveiros,
+      plano_checkout: p.chave,
+      ciclo_checkout: ciclo,
       asaas_checkout_id: id,
       checkout_url: link,
       checkout_expira_em: expira,
