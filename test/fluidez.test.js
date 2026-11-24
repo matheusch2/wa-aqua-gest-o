@@ -1500,3 +1500,66 @@ test("financeiro: toda tela que usa as listas precisa do .fin-topo-acoes",()=>{
       `${fn} monta a tela sem .fin-topo-acoes: as ${escopadas} regras do financeiro nao vao valer nela`);
   }
 });
+
+/* ───────────────────────────────────────────────────────────────────────────
+   O CONVITE PARA INSTALAR
+
+   No Android, o Chrome tem duas opcoes de nome parecido: "Instalar
+   aplicativo" faz o app de verdade, e "Adicionar a tela inicial" faz um
+   ATALHO, que abre em aba com a barra de endereco em cima. O dono instalou
+   pela segunda e ficou com o sistema espremido dentro de uma aba.
+
+   O convite tira a escolha do caminho. O que estes testes guardam e que ele
+   nunca apareca sem o aval do Chrome, e nunca insista com quem disse nao.
+   ─────────────────────────────────────────────────────────────────────────── */
+test("instalar: a tira NAO aparece sem o aval do Chrome",()=>{
+  // beforeinstallprompt so dispara quando a pagina e mesmo instalavel.
+  // Mostrar o convite sem ele seria oferecer um botao que nao instala nada.
+  // O elemento de mentira do sandbox ja nasce com conteudo, entao comparar
+  // com "" testaria o stub, nao o codigo. O que importa e que a funcao NAO
+  // ESCREVA nada: marca-se o conteudo e confere-se que continua intacto.
+  const a=load();
+  const alvo = a.get("convite-instalar");
+  alvo.innerHTML = "__intacto__";
+  a.run(`window.__convitePWA = null; _mostrarConviteInstalar();`);
+  assert.equal(alvo.innerHTML, "__intacto__",
+    "o convite apareceu sem o Chrome ter avisado que da para instalar");
+});
+
+test("instalar: quem dispensa nao ve de novo",()=>{
+  const a=load();
+  a.run(`window.__convitePWA = { prompt(){}, userChoice: Promise.resolve({outcome:'accepted'}) };
+         _mostrarConviteInstalar();`);
+  assert.match(a.get("convite-instalar").innerHTML, /inst-convite/, "o convite nao apareceu com o aval");
+
+  a.run(`_dispensarConviteInstalar();`);
+  assert.equal(a.get("convite-instalar").innerHTML, "", "nao sumiu ao dispensar");
+
+  a.run(`_mostrarConviteInstalar();`);   // tenta de novo
+  assert.equal(a.get("convite-instalar").innerHTML, "",
+    "voltou a insistir depois de dispensado — o caminho mais curto para a pessoa parar de ler os avisos");
+});
+
+test("instalar: o evento e de uso unico e nao fica guardado",()=>{
+  // Depois de prompt() o evento nao serve mais. Guarda-lo faria o segundo
+  // toque nao abrir nada, e o botao viraria um botao morto.
+  const bloco = source.match(/async function _instalarApp\([\s\S]*?\n\}/)[0];
+  assert.match(bloco, /window\.__convitePWA = null/,
+    "o evento nao e descartado depois de usado");
+  assert.match(bloco, /await evento\.userChoice/, "nao espera a resposta da pessoa");
+});
+
+test("instalar: o botao desfaz o width:100% global dos botoes",()=>{
+  // Existe um `button { width: 100% }` global. Sem width:auto, o botao
+  // ocupava a linha inteira, espremia o texto a zero e vazava do cartao —
+  // medido no navegador antes do conserto.
+  // SEM OS COMENTARIOS. O comentario desta propria regra explica o
+  // "width: auto", entao casar o texto cru deixava o teste verde com a
+  // propriedade apagada — foi o que aconteceu na primeira versao deste
+  // teste, e o defeito plantado passou batido.
+  const css = fs.readFileSync(path.join(__dirname, "../app/styles/92-home.css"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+  const regra = css.match(/\.inst-btn \{[\s\S]*?\}/)[0];
+  assert.match(regra, /width:\s*auto/,
+    "o .inst-btn parou de desfazer o width:100% global e vai quebrar o cartao");
+});

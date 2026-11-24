@@ -421,3 +421,51 @@ body.tema-escuro #aviso-boletos .boleto-banner-vencido .boleto-banner-texto stro
 .cl-lunar .cl-lua-itens { background: #ffffff05; border-color: #ffffff24; }
 .cl-lunar .cl-lua-item + .cl-lua-item::before { background: #ffffff20; }
 .cl-lunar .cl-lua-ico { filter: drop-shadow(0 0 9px #ffdc7750); }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   CONVITE PARA INSTALAR
+
+   Discreto de propósito: não é alerta, é oferta. Verde da casa, e some para
+   sempre se a pessoa dispensar. Fica logo abaixo do aviso de boletos, antes
+   dos atalhos — onde o olho já passa, sem roubar o lugar de quem avisa
+   dinheiro vencido.
+   ─────────────────────────────────────────────────────────────────────────── */
+.inst-convite {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 11px; margin-bottom: 11px;
+    border: 1px solid #d3e7df; border-radius: 13px;
+    background: #f1f8f5;
+}
+.inst-ico {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff;
+}
+.inst-ico svg {
+    width: 17px; height: 17px; fill: none;
+    stroke: #0b6b52; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.inst-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.inst-txt b { font-size: 13.5px; font-weight: 800; color: #10322f; }
+.inst-txt small { font-size: 11px; color: #5f7a6f; line-height: 1.3; }
+.inst-btn {
+    /* width: auto NAO e redundante. Existe um `button { width: 100% }`
+       global, e sem desfaze-lo aqui o botao ocupava a linha inteira (323px
+       medidos), espremia o texto a ZERO e vazava para fora do cartao. */
+    flex-shrink: 0; width: auto; min-height: 34px; padding: 0 14px;
+    border: none; border-radius: 9px;
+    background: #0b6b52; color: #fff;
+    font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.inst-btn:active { transform: scale(.96); }
+.inst-btn:disabled { opacity: .6; }
+.inst-x {
+    flex-shrink: 0; width: 26px; height: 26px; padding: 0;
+    border: none; border-radius: 7px; background: none;
+    color: #93a5a2; font-size: 13px; cursor: pointer;
+}
+body.tema-escuro .inst-convite { background: #1d2d28; border-color: #344d43; }
+body.tema-escuro .inst-ico { background: #26463a; }
+body.tema-escuro .inst-ico svg { stroke: #7fe3b4; }
+body.tema-escuro .inst-txt b { color: #e5e7eb; }
+body.tema-escuro .inst-txt small { color: #9ab3a8; }

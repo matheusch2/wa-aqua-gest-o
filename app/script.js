@@ -15630,6 +15630,77 @@ function _armarFrasesSplash() {
   });
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   "INSTALAR O APP" — para o sistema não abrir dentro de uma aba
+
+   O Chrome do Android tem duas opções de nome parecido e efeito diferente:
+   "Instalar aplicativo" cria o app de verdade, em tela cheia; "Adicionar à
+   tela inicial" cria um ATALHO, que abre em aba com a barra de endereço em
+   cima. Quem escolhe a segunda usa o sistema espremido, com o ✕ e o domínio
+   ocupando o topo.
+
+   E há uma armadilha pior: a página de vendas (/) e a ponte antiga
+   (/login.html) NÃO declaram manifesto. Partindo de qualquer uma delas, a
+   opção de instalar nem aparece no menu — só existe a que faz atalho. Como a
+   ponte redireciona para o app, a pessoa termina vendo o sistema dentro de
+   uma aba e sem saber o que fez de errado.
+
+   Este convite tira a escolha do caminho. O botão só existe quando o próprio
+   Chrome avisou que a página é instalável (beforeinstallprompt, capturado no
+   index.html), e chamar prompt() abre a instalação de verdade.
+
+   Quem já instalou nunca vê: o evento não chega para quem abriu pelo ícone.
+   Quem dispensar também não vê de novo — insistir com quem disse não é o
+   caminho mais curto para a pessoa parar de ler os avisos do app.
+   ─────────────────────────────────────────────────────────────────────────── */
+const _INSTALAR_DISPENSADO = "conviteInstalarDispensado";
+
+function _mostrarConviteInstalar() {
+  const alvo = document.getElementById("convite-instalar");
+  if (!alvo || !window.__convitePWA) return;
+  try { if (localStorage.getItem(_INSTALAR_DISPENSADO) === "1") return; } catch (e) {}
+  // Aberto pelo ícone: já está instalado, não há o que oferecer.
+  if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
+
+  alvo.innerHTML = `
+    <div class="inst-convite">
+      <span class="inst-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </span>
+      <span class="inst-txt">
+        <b>Instalar o app</b>
+        <small>Abre em tela cheia, sem a barra do navegador</small>
+      </span>
+      <button type="button" class="inst-btn" onclick="_instalarApp(this)">Instalar</button>
+      <button type="button" class="inst-x" onclick="_dispensarConviteInstalar()" aria-label="Agora não">✕</button>
+    </div>`;
+}
+
+async function _instalarApp(botao) {
+  const evento = window.__convitePWA;
+  if (!evento) return;
+  if (botao) { botao.disabled = true; botao.textContent = "Abrindo…"; }
+  try {
+    evento.prompt();
+    const escolha = await evento.userChoice;
+    // O evento é de uso ÚNICO: depois de prompt() ele não serve mais, e
+    // guardá-lo faria o segundo toque não abrir nada.
+    window.__convitePWA = null;
+    const alvo = document.getElementById("convite-instalar");
+    if (alvo) alvo.innerHTML = "";
+    if (escolha && escolha.outcome === "dismissed") _dispensarConviteInstalar();
+  } catch (e) {
+    console.log("instalar:", e);
+    if (botao) { botao.disabled = false; botao.textContent = "Instalar"; }
+  }
+}
+
+function _dispensarConviteInstalar() {
+  try { localStorage.setItem(_INSTALAR_DISPENSADO, "1"); } catch (e) {}
+  const alvo = document.getElementById("convite-instalar");
+  if (alvo) alvo.innerHTML = "";
+}
+
 function _esconderSplash() {
   // Os avisos de lentidão não podem disparar depois que a tela já saiu.
   _splashTimers.forEach(clearTimeout);
@@ -15782,6 +15853,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       _talvezPedirContato();
       _esconderSplash();   // app pronto na tela: tira a abertura
       _aquecerArtes();     // e só então busca os desenhos das outras telas
+      // Se o Chrome já tinha avisado que dá para instalar, o aviso chegou
+      // antes desta tela existir — mostra agora.
+      _mostrarConviteInstalar();
     } else {
       window.location.replace("login.html"); // splash fica até o login assumir
     }

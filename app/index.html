@@ -70,7 +70,7 @@
     <!-- Enfeite de dezembro. O CSS vem o ano inteiro e não pinta nada fora do
          mês; quem liga é o natal.js, pelo relógio do aparelho. -->
     <link rel="stylesheet" href="styles/91-natal.css?v=20261119-artes">
-    <link rel="stylesheet" href="styles/92-home.css?v=20261117-clima-vivo">
+    <link rel="stylesheet" href="styles/92-home.css?v=20261124-instalar">
     <link rel="stylesheet" href="styles/93-custos.css?v=20261117-embalagens">
     <link rel="stylesheet" href="styles/94-viveiros.css?v=20261117-card-compacto">
     <link rel="stylesheet" href="styles/95-viveiro.css?v=20261119-cards2">
@@ -98,6 +98,36 @@
           navigator.serviceWorker.register("/sw.js").catch(function (e) { console.log("SW:", e); });
         });
       }
+
+      /* O CONVITE PARA INSTALAR DE VERDADE.
+       *
+       * O Chrome do Android tem DUAS opções parecidas no menu, e elas fazem
+       * coisas diferentes:
+       *   "Instalar aplicativo"      -> app de verdade, tela cheia
+       *   "Adicionar à tela inicial" -> ATALHO, abre em aba com barra de
+       *                                 endereço em cima
+       * Quem escolhe a segunda fica com o sistema dentro de uma aba. Pior:
+       * na página de vendas e na ponte /login.html, que não declaram
+       * manifesto, a primeira NEM APARECE — só existe a que faz atalho.
+       *
+       * Este trecho captura o evento que o Chrome dispara quando a página é
+       * instalável DE VERDADE, e guarda. Quem mostra o convite é o app, já
+       * carregado. Tem de ficar AQUI, inline e cedo: o evento chega antes do
+       * script.js terminar de carregar, e sem alguém escutando ele se perde e
+       * não volta.
+       */
+      window.__convitePWA = null;
+      window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();              // sem isto o Chrome mostra a barra dele
+        window.__convitePWA = e;
+        try { if (typeof _mostrarConviteInstalar === "function") _mostrarConviteInstalar(); } catch (err) {}
+      });
+      window.addEventListener("appinstalled", function () {
+        window.__convitePWA = null;
+        try { localStorage.setItem("appInstalado", "1"); } catch (err) {}
+        var el = document.getElementById("convite-instalar");
+        if (el) el.innerHTML = "";
+      });
     </script>
 
     <!-- ═══ TELA DE ABERTURA (splash) ═══════════════════════════════════════
@@ -291,6 +321,11 @@
                  É só a âncora; quem preenche é verificarBoletosVencendo(). -->
             <div id="aviso-boletos"></div>
 
+            <!-- Convite para instalar o app. Só aparece quando o Chrome diz
+                 que a página é mesmo instalável; quem preenche é
+                 _mostrarConviteInstalar(). -->
+            <div id="convite-instalar"></div>
+
             <div class="hm-lbl">Atalhos</div>
             <div class="hm-grade">
                 <button class="hm-btn" onclick="mostrarListaViveiros()">
@@ -397,7 +432,7 @@
 
     </div>
 
-    <script src="script.js?v=20261123-fluxo4"></script>
+    <script src="script.js?v=20261124-instalar"></script>
 
 </body>
 </html>
