@@ -1273,9 +1273,11 @@ test("extrato: a chave abre o custo fixo CERTO, mesmo com acento e espaço",()=>
   // Simula a viagem pelo onclick: codifica na ida, a função decodifica.
   const abriu = a.run(`(() => {
       let aberto = null, erro = null;
+      const original = _toastErro;
       abrirFormCustoFixo = (i) => { aberto = i; };
-      mostrarErro = (m) => { erro = m; };
-      abrirCustoFixoPelaChave(encodeURIComponent(${JSON.stringify(mo.chave)}).replace(/'/g, "%27"));
+      _toastErro = (m) => { erro = m; };
+      try { abrirCustoFixoPelaChave(encodeURIComponent(${JSON.stringify(mo.chave)}).replace(/'/g, "%27")); }
+      finally { _toastErro = original; }
       return JSON.stringify({ aberto, erro });
     })()`);
   const r = JSON.parse(abriu);
@@ -1285,11 +1287,20 @@ test("extrato: a chave abre o custo fixo CERTO, mesmo com acento e espaço",()=>
 
 test("extrato: chave que não existe mais avisa, não abre formulário vazio",()=>{
   const a=load(); semearDoisFixos(a);
+  // ATENCAO AO QUE ESTE TESTE JA ERROU: a primeira versao fazia
+  // `mostrarErro = (m) => ...`, e com isso CRIAVA a funcao que deveria estar
+  // conferindo. O teste passava e o app quebrava calado, porque mostrarErro
+  // nao existe como global — e so uma variavel local dentro de
+  // salvarCustoFixo. Agora o duble substitui _toastErro, que existe de
+  // verdade, e o teste confere que a funcao real foi chamada.
   const r = JSON.parse(a.run(`(() => {
       let aberto = null, erro = null;
+      if (typeof _toastErro !== "function") throw new Error("_toastErro nao existe mais");
+      const original = _toastErro;
       abrirFormCustoFixo = (i) => { aberto = i; };
-      mostrarErro = (m) => { erro = m; };
-      abrirCustoFixoPelaChave('f-que-foi-apagado');
+      _toastErro = (m) => { erro = m; };
+      try { abrirCustoFixoPelaChave('f-que-foi-apagado'); }
+      finally { _toastErro = original; }
       return JSON.stringify({ aberto, erro });
     })()`));
   assert.equal(r.aberto, null, "abriu um formulário para um custo fixo que não existe");
@@ -1562,4 +1573,157 @@ test("instalar: o botao desfaz o width:100% global dos botoes",()=>{
   const regra = css.match(/\.inst-btn \{[\s\S]*?\}/)[0];
   assert.match(regra, /width:\s*auto/,
     "o .inst-btn parou de desfazer o width:100% global e vai quebrar o cartao");
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   NENHUMA TELA PODE CHAMAR FUNÇÃO QUE NÃO EXISTE
+
+   Esta guarda nasceu de um erro meu que chegou a produção: eu escrevi
+   `mostrarErro(...)` em duas funções, acreditando que fosse global. Não é —
+   é uma variável LOCAL dentro de salvarCustoFixo. Fora dali, a chamada
+   explode com ReferenceError e o app para calado, sem mostrar o aviso que
+   deveria mostrar.
+
+   Pior: o teste daquela função passava, porque ele mesmo fazia
+   `mostrarErro = ...` e assim CRIAVA a global que deveria estar conferindo.
+   Um teste que inventa a peça que falta não guarda nada.
+   ─────────────────────────────────────────────────────────────────────────── */
+test("script: ninguém chama mostrarErro fora de quem a define",()=>{
+  const linhas = source.split("\n");
+  const dono = linhas.findIndex(l => /const mostrarErro\s*=/.test(l));
+  assert.ok(dono > 0, "a variável local mostrarErro sumiu — reveja este teste");
+
+  // De quem é aquela variável: a função que a declara.
+  const nomeDono = (() => {
+    for (let i = dono; i >= 0; i--) {
+      const m = linhas[i].match(/^(?:async )?function ([A-Za-z_$][\w$]*)/);
+      if (m) return m[1];
+    }
+    return null;
+  })();
+  assert.ok(nomeDono, "não achei a função dona de mostrarErro");
+
+  const forasteiras = [];
+  linhas.forEach((l, i) => {
+    if (!/\bmostrarErro\(/.test(l)) return;
+    if (/mostrarErroTipoRacao/.test(l)) return;
+    for (let k = i; k >= 0; k--) {
+      const m = linhas[k].match(/^(?:async )?function ([A-Za-z_$][\w$]*)/);
+      if (m) { if (m[1] !== nomeDono) forasteiras.push(`linha ${i + 1} em ${m[1]}()`); break; }
+    }
+  });
+  assert.deepEqual(forasteiras, [],
+    `mostrarErro só existe dentro de ${nomeDono}(); fora dali quebra calado. Use _toastErro. ` +
+    forasteiras.join("; "));
+});
+
+/* Recorta o corpo de uma função contando chaves. A primeira versão deste
+   recorte era uma expressão regular com `[\s\S]*?\n\}` e ela parava na
+   primeira chave de coluna 0 — que em função com callback dentro vem no
+   meio. O teste morreu com "Cannot read properties of null" em vez de
+   conferir coisa alguma. */
+function corpoDaFuncao(src, nome) {
+  const i = src.search(new RegExp(`^(?:async )?function ${nome}\\(`, "m"));
+  assert.ok(i >= 0, `não achei a função ${nome}() no script`);
+  let abriu = false, nivel = 0;
+  for (let k = i; k < src.length; k++) {
+    if (src[k] === "{") { abriu = true; nivel++; }
+    else if (src[k] === "}") { nivel--; if (abriu && nivel === 0) return src.slice(i, k + 1); }
+  }
+  assert.fail(`${nome}() não fecha — chaves desbalanceadas?`);
+}
+
+test("script: o fluxo de assinatura só usa peças que existem",()=>{
+  // As duas funções novas do pagamento, conferidas contra o que o arquivo
+  // realmente declara. Inventar um helper aqui significa o cliente tocar em
+  // "Assinar no cartão" e nada acontecer.
+  const alvo = ["assinarNoCartao", "_pedirCpfCnpj", "abrirAssinatura"]
+    .map(n => corpoDaFuncao(source, n)).join("\n");
+  const chamadas = [...alvo.matchAll(/\b(_[a-zA-Z][\w$]*|mostrar[A-Z][\w$]*|formatarNumeroBR|supabaseClient)\s*\(/g)]
+    .map(m => m[1]);
+  const declaradas = new Set([
+    ...[...source.matchAll(/^(?:async )?function ([A-Za-z_$][\w$]*)/gm)].map(m => m[1]),
+    ...[...source.matchAll(/^(?:const|let|var) ([A-Za-z_$][\w$]*)\s*=/gm)].map(m => m[1]),
+  ]);
+  const inventadas = [...new Set(chamadas)].filter(n => !declaradas.has(n));
+  assert.deepEqual(inventadas, [],
+    "o fluxo de assinatura chama função que não existe no arquivo: " + inventadas.join(", "));
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   O CATÁLOGO DE PREÇO TEM DE SER PEDIDO AO BANCO
+
+   Escrevi carregarPlanos() e não chamei em lugar nenhum. O resultado seria
+   silencioso e convincente: a tela de planos abriria com "Não consegui
+   carregar os planos agora", e eu teria passado a tarde atrás de um erro de
+   permissão que não existia. Função que ninguém chama não é funcionalidade.
+   ─────────────────────────────────────────────────────────────────────────── */
+test("planos: a tela de planos pede o catálogo antes de desenhar",async()=>{
+  // Teste FUNCIONAL, e não de texto: a primeira versão desta guarda procurava
+  // a palavra "_planosTentou" no corpo da função. Eu apaguei o cache inteiro
+  // e ela continuou passando, porque a palavra sobrava numa atribuição.
+  const a = load();
+  a.run(`
+    globalThis.__consultas = 0;
+    supabaseClient.from = () => { __consultas++; return { select:()=>({ eq:()=>({
+      order:()=>Promise.resolve({ data:[{chave:'basico',nome:'Básico',
+        viveiros_label:'2 a 5 viveiros',limite_viveiros:5,
+        mensal:100,semestral:550,anual:1000,permite_cartao:true}], error:null })
+    })}) }; };
+    assinatura = { plano:'gratis', status:'ativo' };`);
+
+  await a.run('abrirAssinatura()');
+  assert.equal(a.run('__consultas'), 1,
+    "abrir a tela de planos não consultou o banco — a tela mostraria 'não consegui carregar'");
+  assert.equal(a.run('_planosCatalogo.length'), 1);
+  assert.equal(a.run('_planosCatalogo[0].mensal'), 100);
+
+  // Trocar o ciclo redesenha a tela inteira; não pode virar consulta por toque.
+  await a.run("_planosCiclo='anual'; abrirAssinatura()");
+  await a.run("_planosCiclo='semestral'; abrirAssinatura()");
+  assert.equal(a.run('__consultas'), 1, "cada toque no ciclo está consultando o banco de novo");
+
+  // E o cache tem de estar DENTRO de carregarPlanos, não só no portão de quem
+  // chama: qualquer tela que pedir o catálogo depois não pode ir ao banco.
+  await a.run('carregarPlanos()');
+  assert.equal(a.run('__consultas'), 1,
+    "carregarPlanos() não lembra que já perguntou — quem chamar direto consulta de novo");
+});
+
+test("planos: duas aberturas ao mesmo tempo fazem uma consulta só",async()=>{
+  const a = load();
+  a.run(`
+    globalThis.__consultas = 0;
+    supabaseClient.from = () => { __consultas++; return { select:()=>({ eq:()=>({
+      order:()=>new Promise(r=>setTimeout(()=>r({data:[],error:null})))
+    })}) }; };`);
+  const p = a.run('Promise.all([carregarPlanos(), carregarPlanos(), carregarPlanos()])');
+  a.flush();
+  await p;
+  assert.equal(a.run('__consultas'), 1, "a busca em voo não está sendo compartilhada");
+});
+
+test("planos: falha na leitura avisa e deixa tentar de novo",async()=>{
+  const a = load();
+  a.run(`
+    globalThis.__consultas = 0;
+    supabaseClient.from = () => { __consultas++; return { select:()=>({ eq:()=>({
+      order:()=>Promise.resolve({ data:null, error:{message:'sem permissao'} })
+    })}) }; };
+    assinatura = { plano:'gratis', status:'ativo' };`);
+
+  await a.run('abrirAssinatura()');
+  const tela = a.get('area-gestao').innerHTML;
+  assert.match(tela, /não consegui carregar os planos/i,
+    "falhou a leitura e a tela não disse nada");
+  assert.match(tela, /Tentar de novo/,
+    "sem botão de tentar de novo o cliente fica preso no aviso");
+
+  // E NENHUM preço pode aparecer: um valor velho na tela é pior que tela sem
+  // valor — um faz o cliente desistir, o outro faz ele ser cobrado a mais.
+  assert.ok(!/R\$\s*\d/.test(tela), "apareceu preço numa tela que não conseguiu ler o catálogo");
+
+  // Forçar refaz a consulta.
+  await a.run('carregarPlanos(true)');
+  assert.equal(a.run('__consultas'), 2, "carregarPlanos(true) não refez a consulta");
 });

@@ -7,40 +7,34 @@
  *
  * POR QUE O LINK E NÃO UM FORMULÁRIO NOSSO
  *   O número do cartão nunca passa por aqui nem pela tela do app. Quem
- *   recebe o cartão é o Asaas, na página dele. Isso não é só comodidade:
- *   é a diferença entre o questionário de segurança SAQ-A e o SAQ-D, e o
- *   segundo é um projeto inteiro de conformidade. Um formulário nosso
- *   também significaria responder por vazamento de cartão.
+ *   recebe o cartão é o Asaas, na página dele. Isso é a diferença entre o
+ *   questionário de segurança SAQ-A e o SAQ-D, e o segundo é um projeto
+ *   inteiro de conformidade.
  *
- * O QUE SUBSTITUI
- *   A `criar-assinatura` criava uma COBRANÇA AVULSA (POST /payments). O
- *   cliente pagava uma vez e no mês seguinte alguém tinha de gerar outra
- *   na mão — que é exatamente a dor de hoje. Aqui é
- *   POST /v3/checkouts com chargeTypes RECURRENT, que cria ASSINATURA.
+ * O PREÇO VEM DO BANCO, NUNCA DAQUI
+ *   Esta função já teve a tabela de preços escrita no próprio código. Deu no
+ *   que tinha de dar: em 24/11/2026 havia TRÊS tabelas no sistema e as três
+ *   discordavam —
  *
- * O ERRO QUE DERRUBOU A TENTATIVA ANTERIOR
- *   A função antiga aponta para "https://sandbox.asaas.com/api/v3". Não é
- *   esse o endereço. A documentação do Asaas diz:
- *       Sandbox   https://api-sandbox.asaas.com/v3
- *       Produção  https://api.asaas.com/v3
+ *     a tela do app        50 / 100 / 200 / 400 / 600
+ *     esta função          50 /  90 / 160 / 250
+ *     a tabela do dono     50 / 100 / 150 / 300 / 500
+ *
+ *   O cliente veria R$ 300 na tela e seria cobrado R$ 160 no cartão, todo
+ *   mês, e só apareceria no extrato do Asaas. Agora o preço mora em
+ *   public.planos e os dois lados leem a MESMA linha. Preço escrito em dois
+ *   lugares diverge; não repita isso.
  *
  * SEM PADRÃO SILENCIOSO — DE PROPÓSITO
- *   A função antiga caía em sandbox sozinha quando o segredo faltava, e
- *   por isso o sistema passou meses "cobrando" dinheiro que não existia:
- *   todos os links gerados eram de sandbox e ninguém percebeu. Aqui, sem
- *   ASAAS_API_URL e ASAAS_API_KEY a função RECUSA e diz o que falta. É
- *   melhor a tela dar erro na hora do que o dono descobrir meses depois.
+ *   Sem ASAAS_API_URL e ASAAS_API_KEY a função RECUSA e diz o que falta. A
+ *   versão antiga caía em sandbox sozinha, e o sistema passou meses
+ *   "cobrando" dinheiro que não existia.
  *
  * SEGREDOS (Supabase → Edge Functions → Secrets)
- *   ASAAS_API_URL   https://api-sandbox.asaas.com/v3  (teste)
- *                   https://api.asaas.com/v3          (produção)
- *   ASAAS_API_KEY   a chave daquele ambiente. São chaves diferentes: a de
- *                   sandbox não funciona em produção e vice-versa.
+ *   ASAAS_API_URL   https://api.asaas.com/v3  (produção)
+ *                   https://api-sandbox.asaas.com/v3  (teste)
+ *   ASAAS_API_KEY   a chave daquele ambiente — são chaves diferentes.
  *   APP_URL         para onde o cliente volta depois de pagar.
- *
- *   ATENÇÃO: segredo novo só vale depois de REPUBLICAR a função. Salvar e
- *   não republicar deixa o valor antigo rodando, e o erro que aparece não
- *   fala de segredo. Isso já custou tempo neste projeto antes.
  */
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -49,16 +43,14 @@ const ASAAS_URL = Deno.env.get("ASAAS_API_URL") ?? "";
 const ASAAS_KEY = Deno.env.get("ASAAS_API_KEY") ?? "";
 const APP_URL   = Deno.env.get("APP_URL") ?? "https://waaqua.com.br";
 
-/* Os planos. Valores em reais; o Asaas recebe número, não texto. */
-const PLANOS: Record<string, { nome: string; limite: number; mensal: number; anual: number }> = {
-  basico:        { nome: "Básico",        limite: 5,      mensal: 50,  anual: 500 },
-  intermediario: { nome: "Intermediário", limite: 10,     mensal: 90,  anual: 900 },
-  avancado:      { nome: "Avançado",      limite: 20,     mensal: 160, anual: 1600 },
-  pro:           { nome: "Pro",           limite: 999999, mensal: 250, anual: 2500 },
+/* Os nossos nomes de ciclo, e os do Asaas. SEMIANNUALLY existe e está no
+ * enum da API (WEEKLY, BIWEEKLY, MONTHLY, BIMONTHLY, QUARTERLY,
+ * SEMIANNUALLY, YEARLY) — conferido na documentação antes de usar. */
+const CICLOS: Record<string, { asaas: string; coluna: string; rotulo: string }> = {
+  mensal:    { asaas: "MONTHLY",      coluna: "mensal",    rotulo: "Assinatura mensal" },
+  semestral: { asaas: "SEMIANNUALLY", coluna: "semestral", rotulo: "Assinatura semestral" },
+  anual:     { asaas: "YEARLY",       coluna: "anual",     rotulo: "Assinatura anual" },
 };
-
-/* MONTHLY e YEARLY são os nomes do Asaas; "mensal"/"anual" são os nossos. */
-const CICLO_ASAAS: Record<string, string> = { mensal: "MONTHLY", anual: "YEARLY" };
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -87,8 +79,8 @@ async function asaas(caminho: string, metodo: string, corpo?: unknown) {
 }
 
 /* "2027-01-31 15:02:38" — o formato que o Asaas espera em nextDueDate. */
-function quandoComeca(diasAFrente = 0): string {
-  const d = new Date(Date.now() + diasAFrente * 86400000);
+function agoraAsaas(): string {
+  const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ` +
          `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
@@ -98,15 +90,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return responde({ error: "Metodo nao permitido" }, 405);
 
-  // Antes de qualquer coisa: a função está configurada? Falhar aqui, alto,
-  // é o ponto principal desta reescrita.
   if (!ASAAS_URL || !ASAAS_KEY) {
     console.error("Faltando ASAAS_API_URL e/ou ASAAS_API_KEY nos segredos.");
     return responde({ error: "Pagamento não configurado. Avise o suporte." }, 503);
   }
   if (!/^https:\/\/api(-sandbox)?\.asaas\.com\/v3$/.test(ASAAS_URL)) {
-    // Endereço fora do padrão é o erro de 2026: parecia sandbox e não era
-    // nem sandbox. Melhor recusar do que cobrar no lugar errado.
     console.error("ASAAS_API_URL fora do esperado:", ASAAS_URL);
     return responde({ error: "Pagamento mal configurado. Avise o suporte." }, 503);
   }
@@ -123,9 +111,8 @@ Deno.serve(async (req) => {
     const user = u.user;
 
     const { plano, ciclo, cpfCnpj, nome, telefone } = await req.json().catch(() => ({}));
-    const cfg = PLANOS[plano];
-    const cicloAsaas = CICLO_ASAAS[ciclo];
-    if (!cfg || !cicloAsaas) return responde({ error: "Plano ou ciclo invalido" }, 400);
+    const c = CICLOS[String(ciclo)];
+    if (!c) return responde({ error: "Ciclo invalido" }, 400);
 
     const doc = String(cpfCnpj || "").replace(/\D/g, "");
     if (doc.length !== 11 && doc.length !== 14) return responde({ error: "CPF ou CNPJ invalido" }, 400);
@@ -135,21 +122,32 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const valor = ciclo === "anual" ? cfg.anual : cfg.mensal;
+    /* O PREÇO VEM DAQUI, e com a chave de serviço: o valor cobrado não pode
+     * depender do que o celular manda. Se um dia alguém mexer na requisição
+     * para pedir "plano pro por R$ 1", o número continua saindo do banco. */
+    const { data: p, error: erroPlano } = await admin
+      .from("planos")
+      .select("chave, nome, limite_viveiros, mensal, semestral, anual, permite_cartao, ativo")
+      .eq("chave", String(plano))
+      .maybeSingle();
+
+    if (erroPlano) {
+      console.error("Erro ao ler planos:", erroPlano);
+      return responde({ error: "Nao consegui consultar os planos. Tente de novo." }, 500);
+    }
+    if (!p || !p.ativo) return responde({ error: "Plano invalido" }, 400);
+    if (!p.permite_cartao) {
+      return responde({ error: "Este plano é contratado pelo WhatsApp." }, 400);
+    }
+
+    const valor = Number((p as Record<string, unknown>)[c.coluna]);
+    if (!valor || valor <= 0) {
+      // Ciclo sem preço cadastrado naquele plano (coluna nula).
+      return responde({ error: `O plano ${p.nome} não tem ${ciclo}.` }, 400);
+    }
+
     const minutosAteExpirar = 60;   // o Asaas aceita de 10 a 1440
 
-    /* O CHECKOUT.
-     *
-     * billingTypes CREDIT_CARD e chargeTypes RECURRENT: cartão, recorrente.
-     * O objeto `subscription` é obrigatório quando há RECURRENT.
-     *
-     * Sem `endDate` de propósito: assinatura que acaba sozinha numa data é
-     * assinatura que para de pagar sem ninguém pedir. Quem encerra é o
-     * cliente ou nós, pela API.
-     *
-     * `externalReference` leva o id do usuário, e é por ele que o webhook
-     * encontra de quem é o pagamento.
-     */
     const checkout = await asaas("/checkouts", "POST", {
       billingTypes: ["CREDIT_CARD"],
       chargeTypes: ["RECURRENT"],
@@ -161,17 +159,15 @@ Deno.serve(async (req) => {
         expiredUrl: `${APP_URL}/app/index.html?assinatura=expirada`,
       },
       items: [{
-        name: `WA Aqua Gestão — Plano ${cfg.nome}`,
-        description: ciclo === "anual" ? "Assinatura anual" : "Assinatura mensal",
+        name: `WA Aqua Gestão — Plano ${p.nome}`,
+        description: c.rotulo,
         quantity: 1,
         value: valor,
       }],
       subscription: {
-        cycle: cicloAsaas,
-        nextDueDate: quandoComeca(0),   // primeira cobrança hoje
+        cycle: c.asaas,
+        nextDueDate: agoraAsaas(),   // primeira cobrança hoje
       },
-      // Os dados que já temos vão preenchidos; o cartão, não — esse o
-      // cliente digita na página do Asaas, e é o ponto de tudo isto.
       customerData: {
         name: String(nome || user.user_metadata?.nome || user.email || "").slice(0, 100),
         cpfCnpj: doc,
@@ -183,20 +179,19 @@ Deno.serve(async (req) => {
     const id = checkout?.id as string | undefined;
     if (!id) throw new Error("O Asaas nao devolveu o id do checkout");
 
-    // A URL é montada com o id — o Asaas não devolve o link pronto.
     const link = `https://asaas.com/checkoutSession/show?id=${id}`;
     const expira = new Date(Date.now() + minutosAteExpirar * 60000).toISOString();
 
-    /* Guarda ANTES de devolver o link. Se gravar depois e a gravação
-     * falhar, o cliente paga e nós não sabemos de quem é. */
+    /* Guarda ANTES de devolver o link. Se gravasse depois e a gravação
+     * falhasse, o cliente pagaria e nós não saberíamos de quem é. */
     const { error: erroBanco } = await admin.from("assinaturas").upsert({
       user_id: user.id,
-      plano,
+      plano: p.chave,
       ciclo,
       // NÃO mexe no status aqui. Quem ativa é o webhook, quando o dinheiro
       // entra. Marcar "ativo" ao gerar o link liberaria o sistema para quem
       // só abriu a página e fechou.
-      limite_viveiros: cfg.limite,
+      limite_viveiros: p.limite_viveiros,
       asaas_checkout_id: id,
       checkout_url: link,
       checkout_expira_em: expira,
@@ -208,7 +203,7 @@ Deno.serve(async (req) => {
       return responde({ error: "Nao consegui registrar a assinatura. Tente de novo." }, 500);
     }
 
-    return responde({ ok: true, url: link, expiraEm: expira });
+    return responde({ ok: true, url: link, valor, expiraEm: expira });
   } catch (e) {
     console.error(e);
     return responde({ error: String((e as Error)?.message ?? e) }, 500);

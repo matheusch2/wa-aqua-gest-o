@@ -17,6 +17,7 @@ carimbo no topo.
 |---|---|---|
 | `admin-vencimento-nao-destrava.sql` | aplicada 23/11/2026 | migração `admin_ajustar_vencimento_nao_destrava_cancelado`; corpo conferido depois |
 | `pausa-e-sem-historico.sql` | aplicada | migração `viveiro_pausas_e_sem_historico`, 13/11/2026 |
+| `planos.sql` | aplicada 24/11/2026 | tabela `planos` existe, com RLS ligado, 1 política e as 5 linhas de preço conferidas uma a uma |
 | `precos-camarao.sql` | aplicada | tabela `precos_camarao` + função `precos_camarao_carimbo` existem |
 | `racao-duas-por-dia.sql` | aplicada | índice `ux_racoes_viveiro_data_tipo` existe |
 | `racao-preco-no-lancamento.sql` | aplicada | coluna `racoes.custo_por_kg` existe |
@@ -33,7 +34,14 @@ O código da Edge Function do WhatsApp morava aqui; foi para
 
 ## Não há pendência
 
-Em 23/11/2026 o último arquivo aberto foi aplicado. O
+Em 24/11/2026 o `planos.sql` foi rodado pelo dono no SQL Editor e conferido
+no banco. Ele acabou com um desencontro que ia cobrar errado: o preço estava
+escrito em **três** lugares (a tela, a Edge Function e a tabela do dono) e os
+três discordavam — o cliente veria R$ 300 na tela e seria cobrado R$ 160 no
+cartão, todo mês. Agora a tela e a cobrança leem a mesma linha de
+`public.planos`, e o dono muda preço pelo painel, sem deploy.
+
+Antes disso, em 23/11/2026, o
 `admin-vencimento-nao-destrava.sql` fechava um furo de cobrança que estava no
 ar: ajustar a data de vencimento de um cliente **bloqueado** o destravava
 sozinho, porque a função gravava `status = 'ativo'` sem olhar o estado

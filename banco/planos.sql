@@ -1,8 +1,8 @@
--- [ESTADO EM 24/11/2026: PENDENTE]
---   aguardando o dono rodar no SQL Editor. Enquanto nao rodar, a tela e a
---   Edge Function continuam com as tabelas de preco antigas, que DISCORDAM
---   entre si — ver o bloco abaixo.
---   Conferido contra o banco de producao: a tabela public.planos nao existe.
+-- [ESTADO EM 24/11/2026: APLICADA]
+--   O dono rodou no SQL Editor em 24/11/2026. Conferido contra o banco de
+--   producao: public.planos existe, com RLS ligado e as 5 linhas abaixo.
+--   A tela de planos e a Edge Function assinar-cartao leem daqui desde entao.
+--   Rodar de novo e seguro: o insert tem "on conflict do update".
 --
 -- ═══════════════════════════════════════════════════════════════════════════
 -- WA Aqua Gestão — O PREÇO PASSA A MORAR EM UM LUGAR SÓ

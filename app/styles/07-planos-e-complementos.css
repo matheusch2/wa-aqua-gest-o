@@ -41,6 +41,12 @@
 .plano-recursos li:before { content: "✓"; position: absolute; left: 0; color: #066b63; font-weight: 900; }
 
 .plano-btn { box-sizing: border-box; width: 100%; padding: 12px; background: rgb(6,107,99); color: #fff; border: none; border-radius: 11px; font-size: 14px; font-weight: 700; cursor: pointer; }
+/* Duas saídas no mesmo cartão: o cartão é a principal (cheia) e o WhatsApp é
+   a alternativa (contorno). Sem isto as duas saíam verdes e encostadas uma na
+   outra, parecendo um bloco só — foi o que a tela mostrou no primeiro desenho. */
+.plano-btn + .plano-btn { margin-top: 8px; }
+.plano-btn-zap { background: #fff; color: rgb(6,107,99); border: 1.5px solid rgba(6,107,99,.4); }
+
 .plano-atual-tag { box-sizing: border-box; width: 100%; padding: 12px; text-align: center; background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 11px; font-size: 14px; font-weight: 800; }
 
 .assin-obs { font-size: 11.5px; color: #9ca3af; text-align: center; margin: 16px 0 4px; line-height: 1.4; }
@@ -53,6 +59,7 @@ body.tema-escuro .assin-toggle { background: #374151; }
 body.tema-escuro .assin-toggle-btn.ativo { background: #111827; color: #34d399; }
 body.tema-escuro .plano-card { background: #1f2937; border-color: #374151; }
 body.tema-escuro .plano-card-atual { background: #05261f; border-color: #0f5132; }
+body.tema-escuro .plano-btn-zap { background: transparent; color: #8ee3bd; border-color: rgba(142,227,189,.45); }
 body.tema-escuro .plano-nome,
 body.tema-escuro .plano-preco { color: #f3f4f6; }
 body.tema-escuro .plano-viv,

@@ -1608,8 +1608,11 @@ async function abrirMinhaConta() {
   const dias = venc ? Math.round((venc - hoje) / 86400000) : null;
   const sit = _contaSituacao(a, dias);
 
-  const plano = _PLANOS_APP.find(p => p.key === a.plano);
-  const valor = plano ? (a.ciclo === "anual" ? plano.anual : plano.mensal) : null;
+  await carregarPlanos();   // o valor exibido aqui também vem de public.planos
+  const plano = _planosCatalogo.find(p => p.key === a.plano);
+  const valor = plano
+    ? (a.ciclo === "anual" ? plano.anual : a.ciclo === "semestral" ? plano.semestral : plano.mensal)
+    : null;
   const vencStr = venc ? _fmtDataISO(_dataLocalISO(venc)) : "—";
 
   area.innerHTML = `
@@ -7875,16 +7878,66 @@ function _linkWhatsAppPlano(nomePlano, ciclo) {
   return `https://wa.me/${_WHATSAPP_COMERCIAL}?text=${msg}`;
 }
 
-const _PLANOS_APP = [
-  { key: "gratis1",       nome: "1 viveiro",     viveiros: "1 viveiro",           mensal: 50,  anual: 500,  liberado: true },
-  { key: "basico",        nome: "Básico",        viveiros: "2 a 5 viveiros",      mensal: 100, anual: 1000 },
-  { key: "intermediario", nome: "Intermediário", viveiros: "até 10 viveiros",     mensal: 200, anual: 2000 },
-  { key: "avancado",      nome: "Avançado",      viveiros: "até 20 viveiros",     mensal: 400, anual: 4000 },
-  { key: "pro",           nome: "Pro",           viveiros: "viveiros ilimitados", mensal: 600, anual: 6000 },
-];
+/* O CATÁLOGO VEM DO BANCO, NÃO DAQUI.
+ *
+ * Esta lista já foi escrita à mão, e em 24/11/2026 o sistema tinha TRÊS
+ * tabelas de preço que discordavam entre si: esta, a da Edge Function que
+ * cobra, e a tabela oficial do dono. O cliente veria um valor na tela e
+ * seria cobrado outro no cartão.
+ *
+ * Agora quem manda é public.planos, e a função de cobrança lê a MESMA linha.
+ *
+ * SEM VALOR DE RESERVA, de propósito: se a leitura falhar, a tela diz que
+ * não conseguiu carregar em vez de mostrar um preço velho. Preço errado na
+ * tela é pior que tela sem preço — um faz o cliente desistir, o outro faz
+ * ele ser cobrado a mais.
+ */
+let _planosCatalogo = [];
+let _planosErro = false;
+let _planosTentou = false;    // já fomos ao banco nesta sessão?
+let _planosPromessa = null;   // busca em voo, compartilhada entre quem pedir
+
+/* Quem precisa de preço chama isto e espera. Guarda o resultado na sessão:
+ * a tela de planos se redesenha a cada toque no ciclo (mensal/6 meses/anual)
+ * e seria uma consulta ao banco por toque.
+ *
+ * O `_planosTentou` existe porque "catálogo vazio" e "ainda não perguntei"
+ * são coisas diferentes. Sem ele, uma tela que recarrega quando o catálogo
+ * está vazio ficaria pedindo para sempre. */
+function carregarPlanos(forcar = false) {
+  if (!forcar && _planosTentou) return Promise.resolve();
+  if (_planosPromessa) return _planosPromessa;
+  _planosPromessa = _buscarPlanos().finally(() => {
+    _planosPromessa = null;
+    _planosTentou = true;
+  });
+  return _planosPromessa;
+}
+
+async function _buscarPlanos() {
+  const { data, error } = await supabaseClient
+    .from("planos")
+    .select("chave, nome, viveiros_label, limite_viveiros, mensal, semestral, anual, permite_cartao")
+    .eq("ativo", true)
+    .order("ordem", { ascending: true });
+  if (error) { console.log("planos:", error); _planosErro = true; _planosCatalogo = []; return; }
+  _planosErro = false;
+  _planosCatalogo = (data || []).map(p => ({
+    key: p.chave,
+    nome: p.nome,
+    viveiros: p.viveiros_label,
+    limite: p.limite_viveiros,
+    mensal: Number(p.mensal) || 0,
+    semestral: Number(p.semestral) || 0,
+    anual: Number(p.anual) || 0,
+    permiteCartao: p.permite_cartao !== false,
+    // O de 1 viveiro é o que todo mundo tem sem pagar nada.
+    liberado: p.limite_viveiros === 1,
+  }));
+}
 
 function _planoLabel(key) {
-  const p = _PLANOS_APP.find(x => x.key === key);
+  const p = _planosCatalogo.find(x => x.key === key);
   return p ? p.nome : "Grátis";
 }
 
@@ -8051,9 +8104,20 @@ function _mostrarBannerLeitura() {
   area.insertBefore(div, area.firstChild);
 }
 
-function abrirAssinatura() {
+async function abrirAssinatura() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
+
+  /* O preço mora no banco. Se ainda não perguntamos, pergunta AGORA e espera:
+   * esta tela inteira é feita de preço, e abrir sem ele mostraria o aviso de
+   * "não consegui carregar" a quem só abriu a tela rápido demais. */
+  if (!_planosTentou) {
+    area.innerHTML = `
+      <h3 class="titulo-secao">Meu plano</h3>
+      <div class="cfg-wrap"><p class="sobrevivencia-texto" style="margin:18px 0">Carregando planos…</p></div>`;
+    await carregarPlanos();
+  }
+
   const a = assinatura || { plano: "gratis", status: "ativo" };
   const ehGratis = !a.plano || a.plano === "gratis";
 
@@ -8078,31 +8142,73 @@ function abrirAssinatura() {
   }
 
   const ciclo = _planosCiclo;
-  const cards = _PLANOS_APP.map(p => {
-    // "Plano atual" só no ciclo que a pessoa realmente assinou (mensal OU anual).
-    // Se a assinatura antiga não tiver ciclo gravado, mantém o comportamento antigo.
+
+  /* Sem catálogo não há preço na tela. Ver carregarPlanos: mostrar um valor
+     velho seria pior que não mostrar nenhum. */
+  if (!_planosCatalogo.length) {
+    area.innerHTML = `
+      <h3 class="titulo-secao">Meu plano</h3>
+      <div class="cfg-wrap">
+        <div class="assin-status assin-status-${statusCls}">
+          <div class="assin-status-l1">${statusL1}</div>
+          <div class="assin-status-l2">${statusL2}</div>
+        </div>
+        <p class="sobrevivencia-texto" style="margin:18px 0">
+          ${_planosErro ? "Não consegui carregar os planos agora." : "Nenhum plano disponível."}
+        </p>
+        <button class="plano-btn" style="width:100%" type="button"
+                onclick="carregarPlanos(true).then(abrirAssinatura)">Tentar de novo</button>
+        <a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none"
+           href="${_linkWhatsAppPlano("", ciclo)}" target="_blank" rel="noopener">Falar no WhatsApp</a>
+        <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
+      </div>`;
+    return;
+  }
+
+  /* Quantos meses cada ciclo cobre. É daqui que sai o "equivale a X/mês" e a
+     economia — nenhum dos dois é digitado, para não desencontrar do preço. */
+  const MESES = { mensal: 1, semestral: 6, anual: 12 };
+
+  const cards = _planosCatalogo.map(p => {
+    const valor = p[ciclo] || 0;
+    // "Plano atual" só no ciclo que a pessoa realmente assinou.
     const atual = p.liberado ? ehGratis : (a.plano === p.key && a.status === "ativo" && (!a.ciclo || a.ciclo === ciclo));
+
     let precoBloco;
-    if (ciclo === "anual") {
-      const equiv = p.anual / 12;
-      const economia = p.mensal * 12 - p.anual;
-      precoBloco = `
-        <div class="plano-preco">R$ ${formatarNumeroBR(p.anual, 0)}<small>por ano</small></div>
-        <div class="plano-preco-sub">equivale a R$ ${formatarNumeroBR(equiv, 2)}/mês</div>
-        <div class="plano-economia">economia de R$ ${formatarNumeroBR(economia, 0)} no ano</div>`;
+    if (!valor) {
+      precoBloco = `<div class="plano-preco-sub">Não disponível ${ciclo === "semestral" ? "no semestral" : "neste ciclo"}</div>`;
+    } else if (ciclo === "mensal") {
+      precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(valor, 0)}<small>por mês</small></div>`;
     } else {
-      precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(p.mensal, 0)}<small>por mês</small></div>`;
+      const meses = MESES[ciclo];
+      const equiv = valor / meses;
+      const economia = p.mensal * meses - valor;
+      precoBloco = `
+        <div class="plano-preco">R$ ${formatarNumeroBR(valor, 0)}<small>${ciclo === "anual" ? "por ano" : "por 6 meses"}</small></div>
+        <div class="plano-preco-sub">equivale a R$ ${formatarNumeroBR(equiv, 2)}/mês</div>
+        ${economia > 0 ? `<div class="plano-economia">economia de R$ ${formatarNumeroBR(economia, 0)}</div>` : ""}`;
     }
-    const rodape = p.liberado
-      ? `<div class="plano-atual-tag">${ehGratis ? "✓ Seu plano · liberado" : "Liberado no momento"}</div>`
-      : (atual
-        ? `<div class="plano-atual-tag">✓ Plano atual</div>`
-        : `<a class="plano-btn" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a>`);
+
+    /* O rodapé: o de 1 viveiro é liberado, o plano atual não se reassina, e
+       o resto ganha DUAS saídas — cartão e WhatsApp. O cartão só aparece
+       quando o plano permite e tem preço naquele ciclo. */
+    let rodape;
+    if (p.liberado) {
+      rodape = `<div class="plano-atual-tag">${ehGratis ? "✓ Seu plano · liberado" : "Liberado no momento"}</div>`;
+    } else if (atual) {
+      rodape = `<div class="plano-atual-tag">✓ Plano atual</div>`;
+    } else {
+      const zap = `<a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none" href="${_linkWhatsAppPlano(p.nome, ciclo)}" target="_blank" rel="noopener">Pelo WhatsApp</a>`;
+      rodape = (p.permiteCartao && valor)
+        ? `<button type="button" class="plano-btn" onclick="assinarNoCartao('${_encArg(p.key)}', this)">Assinar no cartão</button>${zap}`
+        : zap;
+    }
+
     return `
       <div class="plano-card${atual ? " plano-card-atual" : ""}">
         <div class="plano-card-corpo">
           <span class="plano-nome">${_esc(p.nome)}</span>
-          <span class="plano-viv">${p.viveiros}</span>
+          <span class="plano-viv">${_esc(p.viveiros)}</span>
           ${precoBloco}
           <ul class="plano-recursos">
             <li>Gestão completa dos ciclos</li>
@@ -8122,15 +8228,118 @@ function abrirAssinatura() {
         <div class="assin-status-l2">${statusL2}</div>
         <div class="assin-status-hint">Escolha o plano conforme a quantidade de viveiros que deseja gerenciar.</div>
       </div>
-      <div class="assin-toggle">
+      <div class="assin-toggle assin-toggle-3">
         <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
+        <button class="assin-toggle-btn ${ciclo === "semestral" ? "ativo" : ""}" onclick="_planosCiclo='semestral';abrirAssinatura()">6 meses <span class="assin-toggle-eco">· 1 mês grátis</span></button>
         <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
       </div>
       <div class="planos-grid">${cards}</div>
-      <p class="assin-obs">Contratação pelo <b>WhatsApp</b> com pagamento via <b>Pix</b> — seu plano é liberado assim que o pagamento for confirmado.</p>
+      <p class="assin-obs">No <b>cartão</b>, a cobrança é automática a cada ciclo e o plano libera na hora. Pelo <b>WhatsApp</b>, o pagamento é via Pix e libera assim que for confirmado.</p>
       <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
     </div>
   `;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   ASSINAR NO CARTÃO
+
+   Pede o CPF/CNPJ (o Asaas exige), chama a Edge Function e manda a pessoa
+   para a página do Asaas. O cartão é digitado LÁ — nunca aqui.
+
+   O VALOR NÃO VIAJA DAQUI. Mandamos só o plano e o ciclo; quem decide quanto
+   cobrar é a função, lendo public.planos com a chave de serviço. Se o preço
+   saísse do celular, bastaria mexer na requisição para assinar o Pro por
+   R$ 1.
+
+   Quem libera o acesso também não é esta tela: é o webhook, quando o
+   dinheiro entra. Voltar da página do Asaas não ativa nada por si só.
+   ─────────────────────────────────────────────────────────────────────────── */
+async function assinarNoCartao(chaveEnc, botao) {
+  const chave = decodeURIComponent(String(chaveEnc || ""));
+  const p = _planosCatalogo.find(x => x.key === chave);
+  if (!p) { _toastErro("Plano não encontrado. Recarregue a tela."); return; }
+
+  const ciclo = _planosCiclo;
+  const valor = p[ciclo] || 0;
+  if (!valor) { _toastErro(`O plano ${p.nome} não tem ${ciclo}.`); return; }
+
+  const doc = await _pedirCpfCnpj(p.nome, ciclo, valor);
+  if (!doc) return;   // desistiu
+
+  // O próprio botão vira o aviso de "estou trabalhando": é onde o olho já
+  // está, e evita inventar um toast de carregamento que não existe na casa.
+  const rotulo = botao ? botao.textContent : "";
+  if (botao) { botao.disabled = true; botao.textContent = "Abrindo…"; }
+  const restaurar = () => { if (botao) { botao.disabled = false; botao.textContent = rotulo; } };
+
+  try {
+    const { data: ses } = await supabaseClient.auth.getSession();
+    const token = ses?.session?.access_token;
+    if (!token) { restaurar(); _toastErro("Sua sessão expirou. Entre de novo."); return; }
+
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/assinar-cartao`, {
+      method: "POST",
+      headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        plano: p.key,
+        ciclo,
+        cpfCnpj: doc,
+        nome: (contato && contato.nome) || "",
+        telefone: (contato && contato.telefone) || "",
+      }),
+    });
+    const r = await resp.json().catch(() => ({}));
+    restaurar();
+
+    if (!resp.ok || !r.url) {
+      _toastErro(r.error || "Não consegui abrir o pagamento. Tente de novo.");
+      return;
+    }
+    // _blank e não location: o app fica aberto atrás, e quem fechar a aba do
+    // Asaas por engano volta para onde estava em vez de uma tela vazia.
+    window.open(r.url, "_blank", "noopener");
+  } catch (e) {
+    restaurar();
+    console.log("assinar:", e);
+    _toastErro("Não consegui falar com o servidor. Confira a internet.");
+  }
+}
+
+/* O CPF/CNPJ é exigido pelo Asaas para criar o cliente. Pedimos aqui, numa
+   caixa, em vez de mandar a pessoa preencher na página dele: assim o
+   checkout já abre com os dados prontos e sobra só o cartão. */
+function _pedirCpfCnpj(nomePlano, ciclo, valor) {
+  return new Promise((resolve) => {
+    const rotulo = ciclo === "anual" ? "por ano" : ciclo === "semestral" ? "por 6 meses" : "por mês";
+    const fundo = document.createElement("div");
+    fundo.className = "cf-vig-fundo";
+    fundo.innerHTML = `
+      <div class="cf-vig-caixa">
+        <h4>Assinar ${_esc(nomePlano)}</h4>
+        <p class="cf-vig-sub">R$ ${formatarNumeroBR(valor, 0)} ${rotulo}, no cartão</p>
+        <input type="text" id="assinDoc" class="cf-vig-data" inputmode="numeric"
+               placeholder="CPF ou CNPJ" autocomplete="off">
+        <p class="cf-vig-nota">O cartão você digita na página segura do Asaas.</p>
+        <button class="botao-salvar cf-vig-ok" type="button">Continuar</button>
+        <button class="cf-vig-cancelar" type="button">Cancelar</button>
+      </div>`;
+    const campo = () => fundo.querySelector("#assinDoc");
+    const fechar = (v) => { fundo.remove(); resolve(v); };
+    fundo.addEventListener("click", (e) => {
+      if (e.target === fundo) return fechar(null);
+      if (e.target.closest(".cf-vig-cancelar")) return fechar(null);
+      if (e.target.closest(".cf-vig-ok")) {
+        const doc = (campo().value || "").replace(/\D/g, "");
+        if (doc.length !== 11 && doc.length !== 14) {
+          fundo.querySelector(".cf-vig-nota").textContent = "CPF tem 11 dígitos e CNPJ tem 14.";
+          return;
+        }
+        return fechar(doc);
+      }
+    });
+    document.body.appendChild(fundo);
+    setTimeout(() => campo()?.focus(), 50);
+  });
 }
 
 // Porta de entrada legada: qualquer botão antigo "Assinar" cai no WhatsApp.
@@ -12662,7 +12871,10 @@ function abrirCustoFixoPelaChave(chaveEnc) {
   const alvo = decodeURIComponent(String(chaveEnc || ""));
   const i = (custosFixos || []).findIndex(c => String(c.id || c.nome) === alvo);
   if (i < 0) {
-    mostrarErro("Este custo fixo não está mais cadastrado. Veja em Custos fixos.");
+    // _toastErro, e nao mostrarErro: esta ultima NAO EXISTE como funcao
+    // global — e so uma variavel local dentro de salvarCustoFixo. Chamar
+    // aqui quebrava calado em vez de avisar.
+    _toastErro("Este custo fixo não está mais cadastrado. Veja em Custos fixos.");
     return;
   }
   abrirFormCustoFixo(i);
