@@ -1637,8 +1637,14 @@ test("script: o fluxo de assinatura só usa peças que existem",()=>{
   // As duas funções novas do pagamento, conferidas contra o que o arquivo
   // realmente declara. Inventar um helper aqui significa o cliente tocar em
   // "Assinar no cartão" e nada acontecer.
-  const alvo = ["assinarNoCartao", "_pedirCpfCnpj", "abrirAssinatura"]
-    .map(n => corpoDaFuncao(source, n)).join("\n");
+  /* Só as funções que o fluxo REALMENTE tem hoje. _pedirCpfCnpj esteve aqui
+     e saiu: o CPF passou a ser pedido na própria página do Asaas. Uma lista
+     fixa transformava essa remoção, que é correta, em teste vermelho. */
+  const doFluxo = ["assinarNoCartao", "abrirAssinatura", "_pedirCpfCnpj"]
+    .filter(n => new RegExp(`^(?:async )?function ${n}\\(`, "m").test(source));
+  assert.ok(doFluxo.includes("assinarNoCartao") && doFluxo.includes("abrirAssinatura"),
+    "sumiu uma função central do fluxo de assinatura: " + doFluxo.join(", "));
+  const alvo = doFluxo.map(n => corpoDaFuncao(source, n)).join("\n");
   const chamadas = [...alvo.matchAll(/\b(_[a-zA-Z][\w$]*|mostrar[A-Z][\w$]*|formatarNumeroBR|supabaseClient)\s*\(/g)]
     .map(m => m[1]);
   const declaradas = new Set([
