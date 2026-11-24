@@ -110,12 +110,10 @@ Deno.serve(async (req) => {
     if (!u?.user) return responde({ error: "Nao autenticado" }, 401);
     const user = u.user;
 
-    const { plano, ciclo, cpfCnpj, nome, telefone } = await req.json().catch(() => ({}));
+    const { plano, ciclo } = await req.json().catch(() => ({}));
     const c = CICLOS[String(ciclo)];
     if (!c) return responde({ error: "Ciclo invalido" }, 400);
 
-    const doc = String(cpfCnpj || "").replace(/\D/g, "");
-    if (doc.length !== 11 && doc.length !== 14) return responde({ error: "CPF ou CNPJ invalido" }, 400);
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -167,12 +165,6 @@ Deno.serve(async (req) => {
       subscription: {
         cycle: c.asaas,
         nextDueDate: agoraAsaas(),   // primeira cobrança hoje
-      },
-      customerData: {
-        name: String(nome || user.user_metadata?.nome || user.email || "").slice(0, 100),
-        cpfCnpj: doc,
-        email: user.email,
-        ...(telefone ? { phone: String(telefone).replace(/\D/g, "") } : {}),
       },
     });
 
