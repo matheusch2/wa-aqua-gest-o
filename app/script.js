@@ -8268,8 +8268,6 @@ async function assinarNoCartao(chaveEnc, botao) {
   const valor = p[ciclo] || 0;
   if (!valor) { _toastErro(`O plano ${p.nome} não tem ${ciclo}.`); return; }
 
-  const doc = await _pedirCpfCnpj(p.nome, ciclo, valor);
-  if (!doc) return;   // desistiu
 
   // O próprio botão vira o aviso de "estou trabalhando": é onde o olho já
   // está, e evita inventar um toast de carregamento que não existe na casa.
@@ -8288,9 +8286,6 @@ async function assinarNoCartao(chaveEnc, botao) {
       body: JSON.stringify({
         plano: p.key,
         ciclo,
-        cpfCnpj: doc,
-        nome: (contato && contato.nome) || "",
-        telefone: (contato && contato.telefone) || "",
       }),
     });
     const r = await resp.json().catch(() => ({}));
@@ -8308,43 +8303,6 @@ async function assinarNoCartao(chaveEnc, botao) {
     console.log("assinar:", e);
     _toastErro("Não consegui falar com o servidor. Confira a internet.");
   }
-}
-
-/* O CPF/CNPJ é exigido pelo Asaas para criar o cliente. Pedimos aqui, numa
-   caixa, em vez de mandar a pessoa preencher na página dele: assim o
-   checkout já abre com os dados prontos e sobra só o cartão. */
-function _pedirCpfCnpj(nomePlano, ciclo, valor) {
-  return new Promise((resolve) => {
-    const rotulo = ciclo === "anual" ? "por ano" : ciclo === "semestral" ? "por 6 meses" : "por mês";
-    const fundo = document.createElement("div");
-    fundo.className = "cf-vig-fundo";
-    fundo.innerHTML = `
-      <div class="cf-vig-caixa">
-        <h4>Assinar ${_esc(nomePlano)}</h4>
-        <p class="cf-vig-sub">R$ ${formatarNumeroBR(valor, 0)} ${rotulo}, no cartão</p>
-        <input type="text" id="assinDoc" class="cf-vig-data" inputmode="numeric"
-               placeholder="CPF ou CNPJ" autocomplete="off">
-        <p class="cf-vig-nota">O cartão você digita na página segura do Asaas.</p>
-        <button class="botao-salvar cf-vig-ok" type="button">Continuar</button>
-        <button class="cf-vig-cancelar" type="button">Cancelar</button>
-      </div>`;
-    const campo = () => fundo.querySelector("#assinDoc");
-    const fechar = (v) => { fundo.remove(); resolve(v); };
-    fundo.addEventListener("click", (e) => {
-      if (e.target === fundo) return fechar(null);
-      if (e.target.closest(".cf-vig-cancelar")) return fechar(null);
-      if (e.target.closest(".cf-vig-ok")) {
-        const doc = (campo().value || "").replace(/\D/g, "");
-        if (doc.length !== 11 && doc.length !== 14) {
-          fundo.querySelector(".cf-vig-nota").textContent = "CPF tem 11 dígitos e CNPJ tem 14.";
-          return;
-        }
-        return fechar(doc);
-      }
-    });
-    document.body.appendChild(fundo);
-    setTimeout(() => campo()?.focus(), 50);
-  });
 }
 
 // Porta de entrada legada: qualquer botão antigo "Assinar" cai no WhatsApp.
