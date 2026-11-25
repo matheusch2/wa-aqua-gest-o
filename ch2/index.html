@@ -199,6 +199,7 @@
         .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--tinta); color: #fff; font-size: 13.5px; font-weight: 600; border-radius: 12px; padding: 12px 18px; z-index: 50; max-width: 90vw; text-align: center; animation: sobe .2s ease; }
         .toast.ok { background: #065f46; } .toast.erro { background: #991b1b; }
         @keyframes sobe { from { opacity: 0; transform: translate(-50%,10px); } to { opacity: 1; transform: translate(-50%,0); } }
+    .acesso-resumo{border-left:3px solid var(--verde);background:#f1f7f5;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;line-height:1.5}.acesso-resumo strong{display:block}.acesso-resumo ul{padding-left:17px}.acesso-resumo summary{cursor:pointer;color:var(--verde);font-weight:650}.cli-motivo{width:100%;padding:10px;border:1px solid var(--linha);border-radius:8px;font:inherit}.cli-manual{margin-bottom:10px}.cli-manual>summary{cursor:pointer;font-size:14px;font-weight:700;padding:9px 0;color:var(--verde)}
     </style>
 </head>
 <body class="notranslate">
@@ -895,7 +896,7 @@
                 const a = c.assinatura;
                 const plano = a && a.plano ? a.plano : "gratis";
                 const status = a ? a.status : "ativo";
-                const stBadge = plano === "gratis" ? "" :
+                const stBadge = plano === "gratis" || (status === "ativo" && infoVencimento(a)?.venc) ? "" :
                     status === "ativo" ? `<span class="badge b-ativo">Ativo</span>` :
                     status === "pendente" ? `<span class="badge b-pend">Pendente</span>` :
                     `<span class="badge b-canc">Bloqueado</span>`;
@@ -929,7 +930,7 @@
                         </div>
                         <span class="cli-seta">›</span>
                     </div>
-                    <div class="cli-corpo">
+                    <div class="cli-corpo"><div class="acesso-resumo"><strong>${NOME_PLANO[plano] || esc(plano)} · ${a?.proximo_vencimento ? "Validade: "+esc(dataCurta(a.proximo_vencimento)) : "Sem validade informada"}</strong><div id="origem-${esc(c.id)}">Consultando registros…</div></div><details class="cli-manual"><summary>Gerenciar acesso manual</summary>
                         <div class="cli-linha">
                             <div class="cli-campo">
                                 <label for="plano-${esc(c.id)}">Plano</label>
@@ -938,11 +939,11 @@
                                 </select>
                             </div>
                             <div class="cli-campo">
-                                <label for="ciclo-${esc(c.id)}">Cobrança</label>
+                                <label for="ciclo-${esc(c.id)}">Ciclo</label>
                                 <select id="ciclo-${esc(c.id)}">
-                                    <option value="mensal" ${a && (a.ciclo === "anual" || a.ciclo === "semestral") ? "" : "selected"}>Mensal (+30 dias)</option>
-                                    <option value="semestral" ${a && a.ciclo === "semestral" ? "selected" : ""}>6 meses (+182 dias)</option>
-                                    <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
+                                    <option value="mensal" ${a && (a.ciclo === "anual" || a.ciclo === "semestral") ? "" : "selected"}>Mensal</option>
+                                    <option value="semestral" ${a && a.ciclo === "semestral" ? "selected" : ""}>6 meses</option>
+                                    <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual</option>
                                 </select>
                             </div>
                         </div>
@@ -951,22 +952,11 @@
                                 <label for="venc-${esc(c.id)}">Vencimento</label>
                                 <input type="date" id="venc-${esc(c.id)}" value="${a && a.proximo_vencimento ? esc(String(a.proximo_vencimento).slice(0, 10)) : ""}">
                             </div>
-                            <button class="acao-btn a-venc" onclick="ajustarVencimento(this,'${esc(c.id)}')">${ICO.calendar} Ajustar vencimento</button>
+                            
                         </div>
-                        <!-- Os dois botões renovam, mas de jeitos diferentes, e o
-                             verde é muito mais chamativo. Sem esta linha, quem
-                             escolhia a data e apertava o verde por hábito via o
-                             vencimento cair em outro dia e achava que era bug. -->
-                        <p class="cli-dica-acoes">
-                            <b>Ajustar vencimento</b> grava a data escolhida acima.
-                            <b>Registrar pagamento</b> renova a partir de hoje (+30 ou +365 dias, conforme a cobrança).
-                        </p>
-                        <!-- "Trocar plano" saiu: o "Registrar pagamento / Liberar"
-                             já envia o plano e a cobrança escolhidos acima, então
-                             eram dois caminhos para a mesma coisa. "Histórico"
-                             saiu por não ser usado no dia a dia. -->
-                        <div class="cli-acoes">
-                            <button class="acao-btn a-liberar" onclick="acao(this,'liberar','${esc(c.id)}')">${ICO.check} Registrar pagamento / Liberar</button>
+                        <label class="cli-campo">Motivo do ajuste<input class="cli-motivo" id="motivo-${esc(c.id)}" maxlength="180" placeholder="Ex.: cortesia de implantação"></label>
+                        <p class="cli-dica-acoes">Liberar aplica o plano até a data escolhida. Ajustar validade mantém o plano atual. Nenhuma dessas ações registra pagamento no Asaas.</p>
+                        <div class="cli-acoes"><button class="acao-btn a-liberar" onclick="manual(this,'${esc(c.id)}',false)">Liberar acesso manual</button><button class="acao-btn a-venc" onclick="manual(this,'${esc(c.id)}',true)">Ajustar validade</button></div></details><div class="cli-acoes">
                             <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">${ICO.check} Reativar</button>
                             <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
                         </div>
@@ -983,6 +973,7 @@
                     </div>
                 </div>`;
             }).join("");
+            lista.filter(c=>abertos.has(c.id)).forEach(c=>mostrarOrigem(c.id));
         }
 
         // Abre/fecha um card sem reconstruir a lista (preserva selects dos outros)
@@ -990,33 +981,31 @@
             const card = document.getElementById("cli-" + id);
             if (!card) return;
             if (abertos.has(id)) { abertos.delete(id); card.classList.remove("aberto"); }
-            else { abertos.add(id); card.classList.add("aberto"); }
+            else { abertos.add(id); card.classList.add("aberto"); mostrarOrigem(id); }
         }
 
         // Ajusta a DATA de vencimento (e o ciclo) direto, via RPC admin_ajustar_vencimento.
         // Útil para liberar manual com a data que o admin quiser (ex.: mensal vencendo tal dia).
-        async function ajustarVencimento(btn, alvo) {
-            if (btn.disabled) return;
-            const data = document.getElementById("venc-" + alvo).value;
-            const ciclo = document.getElementById("ciclo-" + alvo).value;
-            if (!data) { toast("Escolha a data de vencimento.", "erro"); return; }
-            const txt = btn.textContent;
-            btn.disabled = true; btn.textContent = "Aguarde…";
-            try {
-                const { error } = await sb.rpc("admin_ajustar_vencimento", { p_user: alvo, p_vencimento: data, p_ciclo: ciclo });
-                if (error) throw error;
-            } catch (e) {
-                const m = String(e.message || e);
-                toast(m.includes("NAO_AUTORIZADO") ? "Sem permissão." :
-                      m.includes("NAO_ENCONTRADO") ? "Esse cliente não tem assinatura — use 'Registrar pagamento / Liberar' primeiro." :
-                      "Erro: " + m, "erro");
-                btn.disabled = false; btn.textContent = txt;
-                return;
-            }
-            toast("Vencimento ajustado! ✅");
-            try { await carregarClientes(); } catch (e) { toast("Ajustado. Recarregue a lista.", "ok"); }
+        function dataCurta(v){return String(v||'').slice(0,10).split('-').reverse().join('/')}
+        async function mostrarOrigem(id){
+          const el=document.getElementById('origem-'+id); if(!el)return;
+          try{
+            const {data,error}=await sb.rpc('admin_painel_acesso',{p_user:id}); if(error)throw error;
+            const pix=data.pix, hist=data.historico||[], nomes={liberar:'Liberação manual',ajustar_vencimento:'Ajuste de validade',bloquear:'Bloqueio',reativar:'Reativação',trocar:'Troca de plano'};
+            el.innerHTML=(pix?'Pix confirmado · '+esc(NOME_PLANO[pix.plano]||pix.plano)+' · válido até '+esc(dataCurta(pix.validade)):'Nenhum Pix aplicado a esta conta.')+'<details><summary>Histórico administrativo</summary>'+(hist.length?'<ul>'+hist.map(h=>'<li>'+esc(new Date(h.criado_em).toLocaleDateString('pt-BR',{timeZone:'America/Fortaleza'}))+' · '+esc(nomes[h.acao]||h.acao)+(h.motivo?' · '+esc(h.motivo):'')+'</li>').join('')+'</ul>':'Sem ações registradas.')+'</details>';
+          }catch{el.textContent='Não foi possível consultar o histórico.'}
         }
-
+        async function manual(btn,id,ajuste){
+          if(btn.disabled)return;
+          const val=k=>document.getElementById(k+'-'+id).value;
+          const data=val('venc'),motivo=val('motivo').trim(),plano=val('plano'),ciclo=val('ciclo');
+          if(!data||motivo.length<3){toast('Informe a validade e um motivo de pelo menos 3 letras.','erro');return}
+          if(!confirm((ajuste?'Ajustar a validade':'Liberar o plano '+(NOME_PLANO[plano]||plano))+' até '+dataCurta(data)+'?'))return;
+          btn.disabled=true;
+          try{const {error}=await sb.rpc('admin_painel_manual',{p_user:id,p_plano:plano,p_ciclo:ciclo,p_data:data,p_motivo:motivo,p_ajuste:ajuste});if(error)throw error}
+          catch(e){toast(e.message||'Falha ao salvar.','erro');btn.disabled=false;return}
+          toast('Acesso atualizado. Ajuste salvo no histórico.','ok');try{await carregarClientes()}catch{toast('Ajuste salvo. Recarregue a lista.','ok')}
+        }
         async function acao(btn, tipo, alvo) {
             if (btn.disabled) return;
             const txt = btn.textContent;
