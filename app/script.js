@@ -8144,7 +8144,7 @@ async function abrirAssinatura() {
     <div class="wb-current" style="display:block;background:linear-gradient(135deg,#073e39,#12675c);color:white;padding:22px;border-radius:20px"><div style="display:flex;justify-content:space-between;align-items:center"><small style="color:#b5dcd5">WA AQUA GESTÃO</small><span>${_esc(sit.txt)}</span></div><div style="margin-top:18px"><small style="color:#b5dcd5">${vigente||gratis?"Seu plano atual":"Último plano contratado"}</small><strong style="display:block;font-size:30px;color:white">${_esc(nome)}</strong></div><div style="margin-top:18px;font-size:14px">Viveiros utilizados: <b>${viveiros.length} / ${limite>=999999?"Ilimitados":limite}</b></div><div style="height:6px;background:#ffffff30;border-radius:8px;margin-top:8px;overflow:hidden"><div style="height:100%;background:#8dd9bf;width:${limite>=999999?100:Math.min(100,viveiros.length/Math.max(1,limite)*100)}%"></div></div></div><h4 style="margin:20px 0 8px">Informações da assinatura</h4>
     <dl><div><dt>Viveiros liberados</dt><dd>${limite >= 999999 ? "Ilimitados" : limite}</dd></div><div><dt>Vencimento</dt><dd>${venc ? _fmtDataISO(_dataLocalISO(venc)) : gratis ? "Sem cobrança" : "Não informado"}</dd></div><div><dt>Periodicidade</dt><dd>${_esc(ciclos[a.ciclo] || "Não informado")}</dd></div><div><dt>Validade restante</dt><dd>${dias===null?"—":Math.max(0,dias)+" dias"}</dd></div></dl>
     ${_planoEfetivo?.plano === "gratis" && viveiros.length > 1 ? `<label>Viveiro do plano grátis<select onchange="_escolherViveiroGratis(this.value)">${viveiros.map((v,i)=>`<option value="${_esc(v.id)}" ${_viveirosLiberados().has(i)?"selected":""}>${_esc(v.nome)}</option>`).join("")}</select></label>` : ""}
-    ${opcoes.length ? `<details class="wb-options" ${vigente?"":"open"}><summary>${vigente?"Consultar outros planos":gratis?"Escolher plano":"Renovar ou trocar plano"}</summary>
+    ${opcoes.length ? `<details class="wb-options" ${vigente?"":"open"}><summary>${vigente?"Alterar meu plano":gratis?"Escolher plano":"Renovar ou trocar plano"}</summary>
     <div class="wb-fields"><label>Plano<select data-plano>${opcoes.map(p=>`<option value="${_esc(p.key)}" ${p.key===a.plano?"selected":""}>${_esc(p.nome)} · ${_esc(p.viveiros)}</option>`).join("")}</select></label>
     <label>Período<select data-ciclo>${Object.entries(ciclos).map(([k,v])=>`<option value="${k}" ${k===(a.ciclo||"mensal")?"selected":""}>${v}</option>`).join("")}</select></label></div>
     <div data-revisao aria-live="polite"></div></details>` :
@@ -8152,11 +8152,27 @@ async function abrirAssinatura() {
     <button type="button" class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>`;
   if (!opcoes.length) return;
   const escolha = painel.querySelector("[data-plano]"), periodo = painel.querySelector("[data-ciclo]"), revisao = painel.querySelector("[data-revisao]");
-  function atualizar() {
+  let revisaoSeq=0;
+  async function atualizar() {
+    const seq=++revisaoSeq;
     const p = opcoes.find(x=>x.key===escolha.value), ciclo = periodo.value;
     _planosCiclo = ciclo;
     const valor = p[ciclo], troca = vigente && (a.plano !== p.key || a.ciclo !== ciclo);
     const suporte = !p.permiteCartao;
+    if(vigente && a.plano!==p.key && dias>0 && !suporte && (a.ciclo in ciclos)){
+      periodo.value=a.ciclo; periodo.disabled=true; _planosCiclo=a.ciclo;
+      revisao.textContent="Consultando o valor da troca…";
+      try {
+        const {data:q,error}=await supabaseClient.rpc("cotar_troca_plano",{p_plano:p.key});
+        if(seq!==revisaoSeq)return;
+        if(error||!q){revisao.textContent=error?.message||"Não foi possível calcular a troca.";return}
+        revisao.innerHTML='<div class="wb-total"><div><small>Diferença a pagar agora</small><strong>'+dinheiro(Number(q.valor))+'</strong></div></div><p>O plano '+_esc(p.nome)+' é liberado após a confirmação do Pix. O valor considera os '+Number(q.dias)+' dias restantes. Seu vencimento continua em '+_esc(_fmtDataISO(q.validade))+'.</p><div class="wb-payments"><button type="button">Trocar de plano com Pix</button></div>';
+        const btn=revisao.querySelector("button");
+        btn.onclick=async()=>{escolha.disabled=true;try{await assinarNoCartao(_encArg(p.key),btn,"pix",q)}finally{escolha.disabled=false}};
+      }catch{if(seq===revisaoSeq)revisao.textContent="Não foi possível consultar a troca. Tente novamente."}
+      return;
+    }
+    periodo.disabled=false;
     const mensagem = `Olá! Quero ${troca?"trocar meu plano "+nome+" para":"contratar o plano"} ${p.nome} (${ciclos[ciclo]}) no WA Aqua Gestão.`;
     revisao.innerHTML = `<div class="wb-total"><div><small>Total do período</small><strong>${valor ? dinheiro(valor) : "Sob consulta"}</strong></div><span>${_esc(ciclos[ciclo])}</span></div>
       ${troca ? '<p>Seu plano permanece válido até o vencimento. A troca estará disponível após esse período.</p>' :
@@ -8192,7 +8208,7 @@ async function abrirAssinatura() {
    Quem libera o acesso também não é esta tela: é o webhook, quando o
    dinheiro entra. Voltar da página do Asaas não ativa nada por si só.
    ─────────────────────────────────────────────────────────────────────────── */
-async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao') {
+async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao', troca = null) {
   const chave = decodeURIComponent(String(chaveEnc || ""));
   const p = _planosCatalogo.find(x => x.key === chave);
   if (!p) { _toastErro("Plano não encontrado. Recarregue a tela."); return; }
@@ -8219,6 +8235,7 @@ async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao') {
       body: JSON.stringify({
         plano: p.key,
         ciclo,
+        ...(troca ? {troca} : {}),
       }),
     });
     const r = await resp.json().catch(() => ({}));
