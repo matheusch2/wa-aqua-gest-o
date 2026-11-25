@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     if (!u?.user) return responde({ error: "Nao autenticado" }, 401);
     const user = u.user;
 
-    const { plano, ciclo } = await req.json().catch(() => ({}));
+    const { plano, ciclo, troca } = await req.json().catch(() => ({}));
     const c = CICLOS[String(ciclo)];
     if (!c) return responde({ error: "Ciclo invalido" }, 400);
 
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       return responde({ error: "Este plano é contratado pelo WhatsApp." }, 400);
     }
 
-    const valor = Number((p as Record<string, unknown>)[c.coluna]);
+    let valor = Number((p as Record<string, unknown>)[c.coluna]);
     if (!valor || valor <= 0) {
       // Ciclo sem preço cadastrado naquele plano (coluna nula).
       return responde({ error: `O plano ${p.nome} não tem ${ciclo}.` }, 400);
@@ -110,7 +110,15 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id).maybeSingle();
     if (erroAssinatura) return responde({error:"Não foi possível conferir seu plano. Tente novamente."},503);
     const hoje = new Intl.DateTimeFormat("en-CA", {timeZone:"America/Fortaleza",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-    if (anterior?.status === "ativo" && anterior.plano !== "gratis" && anterior.plano !== p.chave &&
+    let extras: Record<string,unknown> = {};
+    if (troca) {
+      const {data:q,error} = await supaUser.rpc("cotar_troca_plano",{p_plano:p.chave});
+      if(error || !q || q.ciclo!==ciclo || q.validade!==troca.validade || q.origem!==troca.origem || Number(q.valor)!==Number(troca.valor))
+        return responde({error:"As condições da troca mudaram. Abra a página de cobrança novamente."},409);
+      valor = Number(q.valor);
+      extras={finalidade:"upgrade",plano_origem:q.origem,vencimento_origem:q.validade};
+    }
+    if (!troca && anterior?.status === "ativo" && anterior.plano !== "gratis" && anterior.plano !== p.chave &&
         (!anterior.proximo_vencimento || anterior.proximo_vencimento > hoje)) {
       return responde({error:"Você já possui outro plano vigente. Nenhum Pix foi gerado."},409);
     }
@@ -129,7 +137,16 @@ Deno.serve(async (req) => {
 
     const minutosAteExpirar = 60;   // o Asaas aceita de 10 a 1440
 
-    const {data: registro,error: erroRegistro}=await admin.from("cobrancas_pix").insert({user_id:user.id,plano:p.chave,ciclo,valor,limite_viveiros:p.limite_viveiros,expira_em:new Date(Date.now()+minutosAteExpirar*60000).toISOString()}).select("id").single();
+    if(troca){
+      const {data:pend,error}=await admin.from("cobrancas_pix").select("plano,ciclo,valor,asaas_checkout_id,expira_em,plano_origem,vencimento_origem").eq("user_id",user.id).eq("finalidade","upgrade").eq("status","pendente").maybeSingle();
+      if(error)return responde({error:"Não foi possível consultar a troca pendente."},503);
+      if(pend){
+        if(pend.plano===p.chave && pend.ciclo===ciclo && pend.plano_origem===extras.plano_origem && pend.vencimento_origem===extras.vencimento_origem && Number(pend.valor)===valor && pend.asaas_checkout_id && Date.parse(pend.expira_em)>Date.now())
+          return responde({url:"https://asaas.com/checkoutSession/show?id="+encodeURIComponent(pend.asaas_checkout_id),valor});
+        return responde({error:"Existe uma troca em processamento. Aguarde a confirmação ou o encerramento do checkout anterior."},409);
+      }
+    }
+    const {data: registro,error: erroRegistro}=await admin.from("cobrancas_pix").insert({...extras,user_id:user.id,plano:p.chave,ciclo,valor,limite_viveiros:p.limite_viveiros,expira_em:new Date(Date.now()+minutosAteExpirar*60000).toISOString()}).select("id").single();
     if(erroRegistro || !registro) return responde({error:"Não foi possível registrar a cobrança."},500);
     const checkout = await asaas("/checkouts", "POST", {
       billingTypes: ["PIX"],
@@ -143,7 +160,7 @@ Deno.serve(async (req) => {
       },
       items: [{
         name: Array.from(`WA Aqua - ${p.nome}`).slice(0, 30).join(""),
-        description: c.rotulo,
+        description: troca ? "Troca proporcional de plano" : c.rotulo,
         quantity: 1,
         value: valor,
       }],
