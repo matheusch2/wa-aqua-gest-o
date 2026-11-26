@@ -8213,6 +8213,7 @@ async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao', troca = null)
   const p = _planosCatalogo.find(x => x.key === chave);
   if (!p) { _toastErro("Plano não encontrado. Recarregue a tela."); return; }
 
+  if(metodo==='pix' && await waRetornoPix(false))return;
   const ciclo = _planosCiclo;
   const valor = p[ciclo] || 0;
   if (!valor) { _toastErro(`O plano ${p.nome} não tem ${ciclo}.`); return; }
@@ -8246,6 +8247,8 @@ async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao', troca = null)
       return;
     }
     // Navegação na mesma aba também funciona no Safari após o fetch.
+    if(metodo!=='pix'){try{sessionStorage.removeItem('wa-pix:'+ses.session.user.id)}catch{}}
+    if(metodo==='pix'){try{sessionStorage.setItem('wa-pix:'+ses.session.user.id,new URL(r.url).searchParams.get('id')||'')}catch{}}
     window.location.assign(r.url);
   } catch (e) {
     restaurar();
@@ -15561,6 +15564,7 @@ async function carregarViveiros(usuarioConhecido) {
     return false;
   }
   assinatura = rAssinatura.data || null;
+  if(new URLSearchParams(location.search).has('assinatura'))setTimeout(()=>waRetornoPix(true),0);
   _planoEfetivo = null;
   const efetivo = await supabaseClient.rpc('meu_plano_efetivo');
   if (!efetivo.error) _planoEfetivo = efetivo.data;
@@ -16505,4 +16509,32 @@ function _semanaRender() {
     '<h4>Conversão alimentar · FCA</h4>'+fca+
     '<p class="sem-nota">Variação = (FCA atual ÷ anterior − 1) × 100, calculada antes do arredondamento. Positiva: aumentou; negativa: caiu. Sem FCA anterior positivo, o percentual aparece como —. Sem ganho de biomassa, não calculamos o FCA do período.</p>'+
     '<details><summary>Ver cálculo e preços de referência</summary><p>Mesma sobrevivência nas duas datas. Ração do período: após '+formatarData(d1)+' até '+formatarData(d2)+'.</p><p>FCA acumulado usa toda a ração registrada até cada biometria; confira também o histórico anterior.</p><p>Preços atuais do painel: '+fmt(p1)+' g = R$ '+fmt(pr1)+'/kg; '+fmt(p2)+' g = R$ '+fmt(pr2)+'/kg. Para peso entre duas gramaturas, usamos a faixa inferior. Não extrapolamos os limites da tabela.</p><p>O resultado compara os dois pesos pela mesma tabela atual, não por preços históricos. Custo da ração usa o preço gravado no lançamento ou, quando ausente, o cadastro atual. Produtos e outros lançamentos entram pela data do custo; os custos fixos seguem o rateio diário do sistema, inclusive nos domingos de folga.</p><p>Resultado = biomassa final × preço final − biomassa inicial × preço inicial − custo do período. É uma simulação, não uma venda realizada.</p></details>';
+}
+
+async function waRetornoPix(retorno){
+ if(document.getElementById('wa-pix-dialog'))return true;
+ const session=(await supabaseClient.auth.getSession()).data?.session;if(!session)return false;
+ const key='wa-pix:'+session.user.id, url=new URL(location.href);
+ const checkout=url.searchParams.get('checkout_pix')||sessionStorage.getItem(key);
+ if(!checkout)return false;
+ const consultar=()=>supabaseClient.rpc('consultar_meu_checkout_pix',{p_checkout:checkout});
+ const primeiro=await consultar();
+ if(!retorno&&!primeiro.error && (!primeiro.data||primeiro.data.status!=='pendente')){sessionStorage.removeItem(key);return false}
+ if(document.getElementById('wa-pix-dialog'))return true;
+ const d=document.createElement('dialog');d.id='wa-pix-dialog';
+ d.style.cssText='margin:auto;padding:20px;border:0;border-radius:16px;width:min(90vw,380px);color:#16413b';
+ d.innerHTML='<strong>Pagamento com Pix</strong><p role="status"></p><button type="button">Conferir agora</button> <button type="button">Fechar</button>';
+ document.body.append(d);d.showModal();let timer,vez=0,busy=false,confirmado=false;
+ const [ver,fechar]=d.querySelectorAll('button'),msg=d.querySelector('p');
+ function limpar(){clearTimeout(timer);d.remove();if(retorno){url.searchParams.delete('assinatura');url.searchParams.delete('checkout_pix');history.replaceState(history.state,'',url)}if(confirmado)location.reload()}
+ d.addEventListener('close',limpar,{once:true});fechar.onclick=()=>d.close();
+ async function ler(inicial){if(busy)return;busy=true;clearTimeout(timer);
+ try{const {data,error}=inicial||await consultar();if(!d.isConnected)return;
+ if(error||!data){msg.textContent='Não foi possível confirmar este pagamento. Confira novamente antes de pagar.'}
+ else if(data.status==='pendente'){msg.textContent='Aguardando confirmação do Asaas. Se já pagou, não faça outro Pix.';
+ if(!d.querySelector('a')){const link=document.createElement('a');link.href='https://asaas.com/checkoutSession/show?id='+encodeURIComponent(data.checkout||checkout);link.textContent='Abrir o mesmo checkout';link.style.display='block';d.append(link)}}
+ else {confirmado=data.status==='confirmado';msg.textContent=confirmado?'Pagamento confirmado · '+data.nome+' · válido até '+_fmtDataISO(data.validade):'Situação do Pix: '+data.status;sessionStorage.removeItem(key);ver.hidden=true;d.querySelector('a')?.remove();return}
+ }catch{msg.textContent='Não foi possível consultar o pagamento.'}finally{busy=false}
+ if(d.isConnected&&++vez<12)timer=setTimeout(()=>ler(),5000)}
+ ver.onclick=()=>{vez=0;ler()};await ler(primeiro);return true;
 }
