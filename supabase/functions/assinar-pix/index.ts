@@ -155,9 +155,9 @@ Deno.serve(async (req) => {
       minutesToExpire: minutosAteExpirar,
       externalReference: registro.id,
       callback: {
-        successUrl: `${APP_URL}/app/index.html?assinatura=ok`,
-        cancelUrl:  `${APP_URL}/app/index.html?assinatura=cancelada`,
-        expiredUrl: `${APP_URL}/app/index.html?assinatura=expirada`,
+        successUrl: `${APP_URL}/app/index.html?assinatura=ok&checkout_pix=${registro.id}`,
+        cancelUrl:  `${APP_URL}/app/index.html?assinatura=cancelada&checkout_pix=${registro.id}`,
+        expiredUrl: `${APP_URL}/app/index.html?assinatura=expirada&checkout_pix=${registro.id}`,
       },
       items: [{
         name: Array.from(`WA Aqua - ${p.nome}`).slice(0, 30).join(""),
