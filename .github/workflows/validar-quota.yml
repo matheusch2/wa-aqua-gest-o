@@ -1,0 +1,36 @@
+name: Segurança da quota (isolado)
+on:
+  push:
+    branches: [refatoracao/estrutura-20261126]
+    paths:
+      - 'banco/**'
+      - 'test/**'
+      - '.github/workflows/validar-quota.yml'
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-16 postgresql-client-16 libpq-dev
+          PG_BIN_DIR=/usr/lib/postgresql/16/bin bash test/postgres/validar-quota.sh
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: |
+          npm ci
+          npm install --prefix "$RUNNER_TEMP/browser" playwright@1.56.1
+          "$RUNNER_TEMP/browser/node_modules/.bin/playwright" install --with-deps chromium
+          export NODE_PATH="$RUNNER_TEMP/browser/node_modules"
+          node -e "require('playwright')"
+          npm test
