@@ -61,7 +61,7 @@
     <link rel="stylesheet" href="styles/04-configuracoes.css?v=20261118-zap">
     <link rel="stylesheet" href="styles/05-financeiro.css?v=20260924a">
     <link rel="stylesheet" href="styles/06-viveiro-e-relatorios.css?v=20261119-cab">
-    <link rel="stylesheet" href="styles/07-planos-e-complementos.css?v=20261124-planos2">
+    <link rel="stylesheet" href="styles/07-planos-e-complementos.css?v=20261124-cobranca3">
 
     <!-- Interface de computador: carrega por ÚLTIMO (ganha por ordem, sem
          !important) e só em tela grande — no celular o navegador nem aplica. -->
@@ -374,7 +374,7 @@
                 </button>
                 <button class="hm-btn-peq" onclick="abrirAssinatura()">
                     <span class="hm-ico-peq" style="background:#2563eb18;color:#2563eb"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 15h5"/></svg></span>
-                    <span>Meus planos</span>
+                    <span>Plano e cobrança</span>
                 </button>
                 <button class="hm-btn-peq" onclick="esconderMenu();document.getElementById('area-gestao').innerHTML=document.getElementById('estoque-em-desenvolvimento').innerHTML">
                     <span class="hm-ico-peq" style="background:#0d948818;color:#0d9488"><svg viewBox="0 0 24 24"><path d="M3 7l9-5 9 5v10l-9 5-9-5zM3 7l9 5 9-5m-9 5v10"/></svg></span>
@@ -423,7 +423,7 @@
 
             <button class="botao-gestao" onclick="abrirAssinatura()">
                 <svg class="btn-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 15h5"/></svg>
-                Meus planos
+                Plano e cobrança
             </button>
 
             <button class="botao-gestao" onclick="esconderMenu();document.getElementById('area-gestao').innerHTML=document.getElementById('estoque-em-desenvolvimento').innerHTML">
@@ -450,7 +450,7 @@
 
     </div>
 
-    <script src="script.js?v=20261124-planos2"></script>
+    <script src="script.js?v=20261126-retorno-pix"></script>
 
 <template id="estoque-em-desenvolvimento">
     <h3 class="titulo-secao">Estoque</h3>

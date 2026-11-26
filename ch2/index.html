@@ -196,6 +196,7 @@
         .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--tinta); color: #fff; font-size: 13.5px; font-weight: 600; border-radius: 12px; padding: 12px 18px; z-index: 50; max-width: 90vw; text-align: center; animation: sobe .2s ease; }
         .toast.ok { background: #065f46; } .toast.erro { background: #991b1b; }
         @keyframes sobe { from { opacity: 0; transform: translate(-50%,10px); } to { opacity: 1; transform: translate(-50%,0); } }
+    .acesso-resumo{border-left:3px solid var(--verde);background:#f1f7f5;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;line-height:1.5}.acesso-resumo strong{display:block}.acesso-resumo ul{padding-left:17px}.acesso-resumo summary{cursor:pointer;color:var(--verde);font-weight:650}.cli-motivo{width:100%;padding:10px;border:1px solid var(--linha);border-radius:8px;font:inherit}.cli-manual{margin-bottom:10px}.cli-manual>summary{cursor:pointer;font-size:14px;font-weight:700;padding:9px 0;color:var(--verde)}
     </style>
 </head>
 <body class="notranslate">
@@ -270,7 +271,7 @@
                 <span><b id="adm-emails-qtd">0</b> na seleção</span>
                 <button class="adm-emails-btn" onclick="copiarEmails()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar e-mails</button>
             </div>
-            <div id="adm-lista"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+            <div id="conciliacao-adm" role="status"></div><div id="adm-lista"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
         </div>
     </div>
 
@@ -340,7 +341,7 @@
         const FILTROS = [
             { key: "todos",    nome: "Todos" },
             { key: "ativos",   nome: "Ativos (5d)" },
-            { key: "pagantes", nome: "Pagantes" },
+            { key: "pagantes", nome: "Pagantes confirmados" },
             { key: "pendentes",nome: "Pendentes" },
             { key: "vencidos", nome: "Vencidos" },
             { key: "inativos", nome: "Inativos" },
@@ -387,7 +388,7 @@
             return "dot-off";
         }
         function infoVencimento(a) {
-            if (!a || !a.proximo_vencimento) return null;
+            if (!a || a.plano === "gratis" || !a.proximo_vencimento) return null;
             const m = String(a.proximo_vencimento).match(/^(\d{4})-(\d{2})-(\d{2})/);
             if (!m) return null;
             const venc = new Date(+m[1], +m[2] - 1, +m[3]);
@@ -399,7 +400,7 @@
             if (dias <= 7) return { cls: "b-venc-perto", txt: `Vence em ${dias}d`, venc: false };
             return { cls: "b-venc-ok", txt: `Vence ${fmt}`, venc: false };
         }
-        function ehPagante(c) { const a = c.assinatura; return a && a.status === "ativo" && a.plano && a.plano !== "gratis"; }
+        function ehPagante(c) { return c.pagamentoVigente === true; }
 
         // ── Chamada às Edge Functions (tolera nome com/sem hífen final) ──
         const _slugOk = {};
@@ -521,6 +522,11 @@
             const data = await chamar({ action: "listar" });
             revelarPainel();               // é admin: agora o painel pode aparecer
             clientes = data.clientes || [];
+            const [pag,revisao]=await Promise.all([sb.rpc("admin_pagamentos_vigentes"),sb.from("cobranca_revisao").select("evento,referencia,criado_em").is("resolvido_em",null).order("criado_em",{ascending:false}).limit(40)]);
+            const ids = new Set((pag.data||[]).map(x=>x.user_id));
+            clientes.forEach(c=>c.pagamentoVigente=ids.has(c.id));
+            const avisos=document.getElementById("conciliacao-adm");
+            avisos.innerHTML=(pag.error?"<p>Não foi possível conferir os indicadores de pagamento.</p>":"")+(revisao.error?"<p>Conciliação indisponível.</p>":revisao.data?.length?"<details class='acesso-resumo' open><summary>Cobranças para conferir</summary><p>Confira a referência no Asaas. Após corrigir o vínculo, reenvie o evento original pelos logs de webhooks.</p>"+revisao.data.map(x=>"<div>"+esc(x.evento)+" · "+esc(x.referencia)+"</div>").join("")+"</details>":"");
             await juntarContatos();
             await juntarAcessos();
             await carregarPrecos();   // o MRR depende disto; vem antes do gráfico
@@ -603,8 +609,8 @@
                 tile(ICO.users, "i-cinza", total, "", "Clientes") +
                 tile(ICO.phone, "i-cinza", clientes.filter(c => c.telefone).length, `/${total}`, "Com telefone") +
                 tile(ICO.activity, "i-verde", ativos5, "", "Ativos (5 dias)") +
-                tile(ICO.card, "i-verde", pagantes, "", "Pagantes") +
-                tile(ICO.dollar, "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
+                tile(ICO.card, "i-verde", pagantes, "", "Pagantes confirmados") +
+                tile(ICO.dollar, "i-verde", _rs0(mrr), "", "Receita mensal estimada · confirmados") +
                 tile(ICO.calendar, "i-verde", _rs0(mrr * 12), "", "Receita/ano (ARR)") +
                 tile(ICO.target, "i-cinza", _rs0(ticket), "", "Ticket médio") +
                 tile(ICO.clock, "i-ambar", pend, "", "Pendentes") +
@@ -761,7 +767,7 @@
                     <div class="pc-cel-tam">${g} g</div>
                     <div class="pc-cel-campo">
                         <span class="pc-rs">R$</span>
-                        <input id="pc-in-${g}" inputmode="decimal" placeholder="—" value="${txt}"
+                        <input aria-label="Preço por quilo para ${g} gramas" id="pc-in-${g}" inputmode="decimal" placeholder="—" value="${txt}"
                                onkeydown="pcTecla(event, ${g})" oninput="pcDigitou(${g}, this)" onblur="pcAjeitar(${g}, this)">
                     </div>
                     ${var_ || '<div class="pc-var"></div>'}
@@ -891,7 +897,7 @@
                 const a = c.assinatura;
                 const plano = a && a.plano ? a.plano : "gratis";
                 const status = a ? a.status : "ativo";
-                const stBadge = plano === "gratis" ? "" :
+                const stBadge = plano === "gratis" || (status === "ativo" && infoVencimento(a)?.venc) ? "" :
                     status === "ativo" ? `<span class="badge b-ativo">Ativo</span>` :
                     status === "pendente" ? `<span class="badge b-pend">Pendente</span>` :
                     `<span class="badge b-canc">Bloqueado</span>`;
@@ -925,51 +931,40 @@
                         </div>
                         <span class="cli-seta">›</span>
                     </div>
-                    <div class="cli-corpo">
+                    <div class="cli-corpo"><div class="acesso-resumo"><strong>${NOME_PLANO[plano] || esc(plano)} · ${plano === "gratis" ? "Sem vencimento" : a?.proximo_vencimento ? "Validade: "+esc(dataCurta(a.proximo_vencimento)) : "Sem validade informada"}</strong><div id="origem-${esc(c.id)}">Consultando registros…</div></div><details class="cli-manual"><summary>Gerenciar acesso manual</summary>
                         <div class="cli-linha">
                             <div class="cli-campo">
                                 <label for="plano-${esc(c.id)}">Plano</label>
-                                <select id="plano-${esc(c.id)}">
+                                <select onchange="camposPlano(this)" id="plano-${esc(c.id)}">
                                     ${PLANOS.map(p => `<option value="${p.key}" ${p.key === plano ? "selected" : ""}>${p.nome}</option>`).join("")}
                                 </select>
                             </div>
                             <div class="cli-campo">
-                                <label for="ciclo-${esc(c.id)}">Cobrança</label>
-                                <select id="ciclo-${esc(c.id)}">
-                                    <option value="mensal" ${a && (a.ciclo === "anual" || a.ciclo === "semestral") ? "" : "selected"}>Mensal (+30 dias)</option>
-                                    <option value="semestral" ${a && a.ciclo === "semestral" ? "selected" : ""}>6 meses (+182 dias)</option>
-                                    <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual (+365 dias)</option>
+                                <label for="ciclo-${esc(c.id)}">Ciclo</label>
+                                <select ${plano==='gratis'?'disabled':''} id="ciclo-${esc(c.id)}">
+                                    <option value="mensal" ${a && (a.ciclo === "anual" || a.ciclo === "semestral") ? "" : "selected"}>Mensal</option>
+                                    <option value="semestral" ${a && a.ciclo === "semestral" ? "selected" : ""}>6 meses</option>
+                                    <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="cli-linha-venc">
+                        <div class="cli-linha-venc" style="${plano==='gratis'?'display:none':''}">
                             <div class="cli-campo">
                                 <label for="venc-${esc(c.id)}">Vencimento</label>
                                 <input type="date" id="venc-${esc(c.id)}" value="${a && a.proximo_vencimento ? esc(String(a.proximo_vencimento).slice(0, 10)) : ""}">
                             </div>
-                            <button class="acao-btn a-venc" onclick="ajustarVencimento(this,'${esc(c.id)}')">${ICO.calendar} Ajustar vencimento</button>
+                            
                         </div>
-                        <!-- Os dois botões renovam, mas de jeitos diferentes, e o
-                             verde é muito mais chamativo. Sem esta linha, quem
-                             escolhia a data e apertava o verde por hábito via o
-                             vencimento cair em outro dia e achava que era bug. -->
-                        <p class="cli-dica-acoes">
-                            <b>Ajustar vencimento</b> grava a data escolhida acima.
-                            <b>Registrar pagamento</b> renova a partir de hoje (+30 ou +365 dias, conforme a cobrança).
-                        </p>
-                        <!-- "Trocar plano" saiu: o "Registrar pagamento / Liberar"
-                             já envia o plano e a cobrança escolhidos acima, então
-                             eram dois caminhos para a mesma coisa. "Histórico"
-                             saiu por não ser usado no dia a dia. -->
-                        <div class="cli-acoes">
-                            <button class="acao-btn a-liberar" onclick="acao(this,'liberar','${esc(c.id)}')">${ICO.check} Registrar pagamento / Liberar</button>
+                        <label class="cli-campo">Motivo do ajuste<input class="cli-motivo" id="motivo-${esc(c.id)}" maxlength="180" placeholder="Ex.: cortesia de implantação"></label>
+                        <p class="cli-dica-acoes">O Grátis não vence. Nos planos pagos, escolha a validade. Nenhuma dessas ações registra pagamento no Asaas.</p>
+                        <div class="cli-acoes"><button class="acao-btn a-liberar" onclick="manual(this,'${esc(c.id)}',false)">Liberar acesso manual</button><button style="${plano==='gratis'?'display:none':''}" class="acao-btn a-venc" onclick="manual(this,'${esc(c.id)}',true)">Ajustar validade</button></div></details><div class="cli-acoes">
                             <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">${ICO.check} Reativar</button>
                             <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
                         </div>
                         <div class="cli-perigo">
                             <button class="cli-excluir-link" onclick="pedirExcluir('${esc(c.id)}')">Excluir conta e todos os dados</button>
                             <div class="cli-excluir-conf" id="exc-${esc(c.id)}" style="display:none">
-                                <div class="cli-excluir-txt">⚠️ Isso apaga <b>a conta e todos os dados</b> deste cliente. Não tem volta.</div>
+                                <div class="cli-excluir-txt">⚠️ Isso apaga a conta, o telefone, o vínculo do WhatsApp e os dados de cultivo no WA Aqua. Não tem volta.<label class="cli-campo">Digite o e-mail do cliente para confirmar<input type="email" autocomplete="off" id="exc-email-${esc(c.id)}"></label></div>
                                 <div class="cli-excluir-btns">
                                     <button class="exc-cancelar" onclick="document.getElementById('exc-${esc(c.id)}').style.display='none'">Cancelar</button>
                                     <button class="exc-ok" onclick="excluirCliente(this,'${esc(c.id)}')">Sim, excluir tudo</button>
@@ -979,6 +974,7 @@
                     </div>
                 </div>`;
             }).join("");
+            lista.filter(c=>abertos.has(c.id)).forEach(c=>mostrarOrigem(c.id));
         }
 
         // Abre/fecha um card sem reconstruir a lista (preserva selects dos outros)
@@ -986,33 +982,32 @@
             const card = document.getElementById("cli-" + id);
             if (!card) return;
             if (abertos.has(id)) { abertos.delete(id); card.classList.remove("aberto"); }
-            else { abertos.add(id); card.classList.add("aberto"); }
+            else { abertos.add(id); card.classList.add("aberto"); mostrarOrigem(id); }
         }
 
         // Ajusta a DATA de vencimento (e o ciclo) direto, via RPC admin_ajustar_vencimento.
         // Útil para liberar manual com a data que o admin quiser (ex.: mensal vencendo tal dia).
-        async function ajustarVencimento(btn, alvo) {
-            if (btn.disabled) return;
-            const data = document.getElementById("venc-" + alvo).value;
-            const ciclo = document.getElementById("ciclo-" + alvo).value;
-            if (!data) { toast("Escolha a data de vencimento.", "erro"); return; }
-            const txt = btn.textContent;
-            btn.disabled = true; btn.textContent = "Aguarde…";
-            try {
-                const { error } = await sb.rpc("admin_ajustar_vencimento", { p_user: alvo, p_vencimento: data, p_ciclo: ciclo });
-                if (error) throw error;
-            } catch (e) {
-                const m = String(e.message || e);
-                toast(m.includes("NAO_AUTORIZADO") ? "Sem permissão." :
-                      m.includes("NAO_ENCONTRADO") ? "Esse cliente não tem assinatura — use 'Registrar pagamento / Liberar' primeiro." :
-                      "Erro: " + m, "erro");
-                btn.disabled = false; btn.textContent = txt;
-                return;
-            }
-            toast("Vencimento ajustado! ✅");
-            try { await carregarClientes(); } catch (e) { toast("Ajustado. Recarregue a lista.", "ok"); }
+        function dataCurta(v){return String(v||'').slice(0,10).split('-').reverse().join('/')}
+        async function mostrarOrigem(id){
+          const el=document.getElementById('origem-'+id); if(!el)return;
+          try{
+            const {data,error}=await sb.rpc('admin_painel_acesso',{p_user:id}); if(error)throw error;
+            const pix=data.pix, hist=data.historico||[], nomes={liberar:'Liberação manual',ajustar_vencimento:'Ajuste de validade',bloquear:'Bloqueio',reativar:'Reativação',trocar:'Troca de plano'};
+            el.innerHTML=(pix?'Pix confirmado · '+esc(NOME_PLANO[pix.plano]||pix.plano)+' · válido até '+esc(dataCurta(pix.validade)):'Nenhum Pix aplicado a esta conta.')+'<details><summary>Histórico administrativo</summary>'+(hist.length?'<ul>'+hist.map(h=>'<li>'+esc(new Date(h.criado_em).toLocaleDateString('pt-BR',{timeZone:'America/Fortaleza'}))+' · '+esc(nomes[h.acao]||h.acao)+(h.motivo?' · '+esc(h.motivo):'')+'</li>').join('')+'</ul>':'Sem ações registradas.')+'</details>';
+          }catch{el.textContent='Não foi possível consultar o histórico.'}
         }
-
+        function camposPlano(el){const d=el.closest('details'),g=el.value==='gratis';const b=d.querySelector('.a-venc');b.disabled=g;b.style.display=g||!el.selectedOptions[0].defaultSelected?'none':'';d.querySelector('.cli-linha-venc').style.display=g?'none':'';d.querySelector('select[id^="ciclo-"]').disabled=g;}
+        async function manual(btn,id,ajuste){
+          if(btn.disabled)return;
+          const val=k=>document.getElementById(k+'-'+id).value;
+          const data=val('venc'),motivo=val('motivo').trim(),plano=val('plano'),ciclo=val('ciclo');
+          if((!data&&(ajuste||plano!=='gratis'))||motivo.length<3){toast('Informe a validade e um motivo de pelo menos 3 letras.','erro');return}
+          if(!confirm((ajuste?'Ajustar a validade':'Liberar o plano '+(NOME_PLANO[plano]||plano))+(plano==='gratis'&&!ajuste?' sem vencimento':' até '+dataCurta(data))+'?'))return;
+          btn.disabled=true;
+          try{const {error}=await sb.rpc('admin_painel_manual',{p_user:id,p_plano:plano,p_ciclo:ciclo,p_data:plano==='gratis'&&!ajuste?null:data,p_motivo:motivo,p_ajuste:ajuste});if(error)throw error}
+          catch(e){toast(e.message||'Falha ao salvar.','erro');btn.disabled=false;return}
+          toast('Acesso atualizado. Ajuste salvo no histórico.','ok');try{await carregarClientes()}catch{toast('Ajuste salvo. Recarregue a lista.','ok')}
+        }
         async function acao(btn, tipo, alvo) {
             if (btn.disabled) return;
             const txt = btn.textContent;
@@ -1059,7 +1054,10 @@
             if (btn.disabled) return;
             btn.disabled = true; btn.textContent = "Excluindo…";
             try {
-                await chamar({ alvo }, "excluir-conta");
+                const email=document.getElementById('exc-email-'+alvo).value.trim();
+                if(!email) throw new Error('Digite o e-mail do cliente.');
+                const {error}=await sb.rpc('admin_excluir_cliente',{p_alvo:alvo,p_email:email});
+                if(error)throw error;
             } catch (e) {
                 toast(e.message === "SEM_ACESSO" ? "Sem permissão." : "Erro: " + e.message, "erro");
                 btn.disabled = false; btn.textContent = "Sim, excluir tudo";

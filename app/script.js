@@ -44,6 +44,7 @@ let custosFixos = [];
 // custo fixo"). Impede o congelamento de rateio gravar 0 permanente por engano.
 let _custosFixosOk = true;
 let assinatura = null;
+let _planoEfetivo = null;
 let _planosCiclo = "mensal";
 let _financeiroModo = "detalhado";
 
@@ -1622,7 +1623,7 @@ async function abrirMinhaConta() {
         <div class="conta-plano-ico">${_ICO.conta}</div>
         <div class="conta-plano-txt">
           <span class="conta-plano-nome">${_esc(planoNome)}</span>
-          <small>${ehGratis ? "Plano gratuito" : (a.ciclo === "anual" ? "Cobrança anual" : "Cobrança mensal")}${valor ? " · R$ " + formatarNumeroBR(valor, 0) : ""}</small>
+          <small>${ehGratis ? "Plano gratuito" : (a.ciclo === "anual" ? "Cobrança anual" : a.ciclo === "semestral" ? "Cobrança semestral" : "Cobrança mensal")}${valor ? " · R$ " + formatarNumeroBR(valor, 0) : ""}</small>
         </div>
         <span class="conta-plano-badge conta-badge-${sit.cls}">${sit.txt}</span>
       </div>
@@ -1638,18 +1639,18 @@ async function abrirMinhaConta() {
         <div class="conta-info-linha"><span>Viveiros liberados</span><strong>${_planoLimiteEfetivo()}</strong></div>
       </div>
 
-      <a class="conta-wpp" href="${_linkWhatsAppRenovar(planoNome, a, vencStr)}" target="_blank" rel="noopener">
-        <span class="conta-wpp-ico">${_ICO.whatsapp}</span>
+      <a class="conta-wpp" href="#" onclick="event.preventDefault(); _planosCiclo = assinatura?.ciclo || 'mensal'; abrirAssinatura();">
+        <span class="conta-wpp-ico">${_ICO.renovar}</span>
         <span class="conta-wpp-txt">
-          <b>Renovar assinatura</b>
-          <small>Falar comigo no WhatsApp</small>
+          <b>Gerenciar plano</b>
+          <small>Consultar, renovar ou trocar de plano</small>
         </span>
         <span class="conta-wpp-seta">›</span>
       </a>
 
       <div class="conta-aviso">
         <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-        <span>Renovação pelo WhatsApp com pagamento via <b>Pix</b> — o plano é liberado assim que o pagamento for confirmado.</span>
+        <span>Renovação pelo aplicativo com <b>Pix ou cartão</b> — o plano é liberado após a confirmação do pagamento.</span>
       </div>
 
       <button class="botao-voltar-form" style="margin-top:14px" onclick="abrirConfiguracoes()">Voltar</button>
@@ -7992,6 +7993,7 @@ function _planoVencido(a) {
 // Se o campo limite_viveiros vier vazio (linhas antigas), usa o limite
 // padrão do plano — nunca rebaixa um pagante em dia para o grátis.
 function _planoLimiteEfetivo() {
+  if (_planoEfetivo) return Number(_planoEfetivo.limite_viveiros) || 1;
   const a = assinatura;
   if (a && a.plano && a.plano !== "gratis" && !_planoVencido(a)
       && (a.status === "ativo" || _dentroDaCarencia(a))) {
@@ -8006,6 +8008,7 @@ function _planoLimiteEfetivo() {
 // Só trava plano PAGO cujo pagamento parou (pendente/cancelado) e que já
 // passou da carência. Nunca trava quem está no grátis nem quem está em dia.
 function _contaBloqueada() {
+  if (_planoEfetivo) return false;
   const a = assinatura;
   if (!a) return false;                                // sem assinatura não trava
   if (!a.plano || a.plano === "gratis") return false;  // grátis não trava
@@ -8058,6 +8061,10 @@ function _viveirosLiberados() {
       }
       return a.i - b.i;          // desempate estável
     });
+  if (_planoEfetivo?.plano === 'gratis' && _planoEfetivo.viveiro_escolhido) {
+    const i = viveiros.findIndex(v => v.id === _planoEfetivo.viveiro_escolhido);
+    if (i >= 0) return new Set([i]);
+  }
   return new Set(ordem.slice(0, lim).map(x => x.i));
 }
 
@@ -8104,145 +8111,87 @@ function _mostrarBannerLeitura() {
   area.insertBefore(div, area.firstChild);
 }
 
+async function _escolherViveiroGratis(id) {
+  const r = await supabaseClient.rpc('escolher_viveiro_gratuito', {p_viveiro:id});
+  if (r.error) { _toastErro('Não foi possível escolher o viveiro.'); return; }
+  const efetivo = await supabaseClient.rpc('meu_plano_efetivo');
+  if (efetivo.error) { _toastErro('Atualize o aplicativo para confirmar a escolha.'); return; }
+  _planoEfetivo = efetivo.data;
+  abrirAssinatura();
+}
 async function abrirAssinatura() {
   esconderMenu();
   const area = document.getElementById("area-gestao");
+  area.innerHTML = '<section class="wa-billing"><h3>Plano e cobrança</h3><p role="status">Carregando planos…</p></section>';
+  const painel = area.firstElementChild;
+  await carregarPlanos();
+  if (!painel.isConnected) return;
 
-  /* O preço mora no banco. Se ainda não perguntamos, pergunta AGORA e espera:
-   * esta tela inteira é feita de preço, e abrir sem ele mostraria o aviso de
-   * "não consegui carregar" a quem só abriu a tela rápido demais. */
-  if (!_planosTentou) {
-    area.innerHTML = `
-      <h3 class="titulo-secao">Meus planos</h3>
-      <div class="cfg-wrap"><p class="sobrevivencia-texto" style="margin:18px 0">Carregando planos…</p></div>`;
-    await carregarPlanos();
-  }
-
-  const a = assinatura || { plano: "gratis", status: "ativo" };
-  const ehGratis = !a.plano || a.plano === "gratis";
-
-  // Bloco de status unificado (plano atual + info do grátis, sem repetir aviso)
-  let statusL1, statusL2, statusCls;
-  if (a.status === "ativo" && !ehGratis) {
-    statusL1 = `Plano atual: <b>${_planoLabel(a.plano)}</b>`;
-    statusL2 = a.ciclo ? `Cobrança ${a.ciclo} · ativa` : "Assinatura ativa";
-    statusCls = "ok";
-  } else if (a.status === "pendente") {
-    statusL1 = `Plano atual: <b>${_planoLabel(a.plano)}</b>`;
-    statusL2 = "Pagamento pendente — libera assim que confirmar";
-    statusCls = "pend";
-  } else if (a.status === "cancelado") {
-    statusL1 = `Plano atual: <b>Grátis</b>`;
-    statusL2 = "Assinatura cancelada — escolha um plano para reativar";
-    statusCls = "free";
-  } else {
-    statusL1 = `Plano atual: <b>Grátis</b>`;
-    statusL2 = "1 viveiro ativo · sem cobrança";
-    statusCls = "free";
-  }
-
-  const ciclo = _planosCiclo;
-
-  /* Sem catálogo não há preço na tela. Ver carregarPlanos: mostrar um valor
-     velho seria pior que não mostrar nenhum. */
-  if (!_planosCatalogo.length) {
-    area.innerHTML = `
-      <h3 class="titulo-secao">Meus planos</h3>
-      <div class="cfg-wrap">
-        <div class="assin-status assin-status-${statusCls}">
-          <div class="assin-status-l1">${statusL1}</div>
-          <div class="assin-status-l2">${statusL2}</div>
-        </div>
-        <p class="sobrevivencia-texto" style="margin:18px 0">
-          ${_planosErro ? "Não consegui carregar os planos agora." : "Nenhum plano disponível."}
-        </p>
-        <button class="plano-btn" style="width:100%" type="button"
-                onclick="carregarPlanos(true).then(abrirAssinatura)">Tentar de novo</button>
-        <a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none"
-           href="${_linkWhatsAppPlano("", ciclo)}" target="_blank" rel="noopener">Falar no WhatsApp</a>
-        <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
-      </div>`;
-    return;
-  }
-
-  /* Quantos meses cada ciclo cobre. É daqui que sai o "equivale a X/mês" e a
-     economia — nenhum dos dois é digitado, para não desencontrar do preço. */
-  const MESES = { mensal: 1, semestral: 6, anual: 12 };
-
-  const cards = _planosCatalogo.map(p => {
-    const valor = p[ciclo] || 0;
-    // "Plano atual" só no ciclo que a pessoa realmente assinou.
-    const atual = p.liberado ? ehGratis : (a.plano === p.key && a.status === "ativo" && (!a.ciclo || a.ciclo === ciclo));
-
-    let precoBloco;
-    if (!valor) {
-      precoBloco = `<div class="plano-preco-sub">Não disponível ${ciclo === "semestral" ? "no semestral" : "neste ciclo"}</div>`;
-    } else if (ciclo === "mensal") {
-      precoBloco = `<div class="plano-preco">R$ ${formatarNumeroBR(valor, 0)}<small>por mês</small></div>`;
-    } else {
-      const meses = MESES[ciclo];
-      const equiv = valor / meses;
-      const economia = p.mensal * meses - valor;
-      precoBloco = `
-        <div class="plano-preco">R$ ${formatarNumeroBR(valor, 0)}<small>${ciclo === "anual" ? "por ano" : "por 6 meses"}</small></div>
-        <div class="plano-preco-sub">equivale a R$ ${formatarNumeroBR(equiv, 2)}/mês</div>
-        ${economia > 0 ? `<div class="plano-economia">economia de R$ ${formatarNumeroBR(economia, 0)}</div>` : ""}`;
+  const a = assinatura || {plano:"gratis", status:"ativo"};
+  const gratis = !a.plano || a.plano === "gratis";
+  const venc = !gratis && _parseVenc(a.proximo_vencimento);
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const dias = venc ? Math.round((venc-hoje)/86400000) : null;
+  const sit = _contaSituacao(a,dias);
+  const vigente = !gratis && (_planoEfetivo ? _planoEfetivo.plano !== "gratis" : a.status === "ativo" && (dias === null || dias >= 0));
+  const nome = gratis ? "Grátis" : (_planosCatalogo.find(p=>p.key===a.plano)?.nome || a.plano);
+  const opcoes = _planosCatalogo.filter(p=>!p.liberado);
+  const ciclos = {mensal:"Mensal",semestral:"Semestral",anual:"Anual"};
+  const dinheiro = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const limite = _planoLimiteEfetivo();
+  painel.innerHTML = `
+    <header><small>MINHA CONTA</small><h3>Plano e cobrança</h3></header>
+    <div class="wb-current" style="display:block;background:linear-gradient(135deg,#073e39,#12675c);color:white;padding:22px;border-radius:20px"><div style="display:flex;justify-content:space-between;align-items:center"><small style="color:#b5dcd5">WA AQUA GESTÃO</small><span>${_esc(sit.txt)}</span></div><div style="margin-top:18px"><small style="color:#b5dcd5">${vigente||gratis?"Seu plano atual":"Último plano contratado"}</small><strong style="display:block;font-size:30px;color:white">${_esc(nome)}</strong></div><div style="margin-top:18px;font-size:14px">Viveiros utilizados: <b>${viveiros.length} / ${limite>=999999?"Ilimitados":limite}</b></div><div style="height:6px;background:#ffffff30;border-radius:8px;margin-top:8px;overflow:hidden"><div style="height:100%;background:#8dd9bf;width:${limite>=999999?100:Math.min(100,viveiros.length/Math.max(1,limite)*100)}%"></div></div></div><h4 style="margin:20px 0 8px">Informações da assinatura</h4>
+    <dl><div><dt>Viveiros liberados</dt><dd>${limite >= 999999 ? "Ilimitados" : limite}</dd></div><div><dt>Vencimento</dt><dd>${venc ? _fmtDataISO(_dataLocalISO(venc)) : gratis ? "Sem cobrança" : "Não informado"}</dd></div><div><dt>Periodicidade</dt><dd>${_esc(ciclos[a.ciclo] || "Não informado")}</dd></div><div><dt>Validade restante</dt><dd>${dias===null?"—":Math.max(0,dias)+" dias"}</dd></div></dl>
+    ${_planoEfetivo?.plano === "gratis" && viveiros.length > 1 ? `<label>Viveiro do plano grátis<select onchange="_escolherViveiroGratis(this.value)">${viveiros.map((v,i)=>`<option value="${_esc(v.id)}" ${_viveirosLiberados().has(i)?"selected":""}>${_esc(v.nome)}</option>`).join("")}</select></label>` : ""}
+    ${opcoes.length ? `<details class="wb-options" ${vigente?"":"open"}><summary>${vigente?"Alterar meu plano":gratis?"Escolher plano":"Renovar ou trocar plano"}</summary>
+    <div class="wb-fields"><label>Plano<select data-plano>${opcoes.map(p=>`<option value="${_esc(p.key)}" ${p.key===a.plano?"selected":""}>${_esc(p.nome)} · ${_esc(p.viveiros)}</option>`).join("")}</select></label>
+    <label>Período<select data-ciclo>${Object.entries(ciclos).map(([k,v])=>`<option value="${k}" ${k===(a.ciclo||"mensal")?"selected":""}>${v}</option>`).join("")}</select></label></div>
+    <div data-revisao aria-live="polite"></div></details>` :
+    '<p>Planos indisponíveis no momento.</p><button type="button" onclick="carregarPlanos(true).then(abrirAssinatura)">Tentar novamente</button>'}
+    <button type="button" class="botao-voltar-form" onclick="voltarMenuGestao()">Voltar</button>`;
+  if (!opcoes.length) return;
+  const escolha = painel.querySelector("[data-plano]"), periodo = painel.querySelector("[data-ciclo]"), revisao = painel.querySelector("[data-revisao]");
+  let revisaoSeq=0;
+  async function atualizar() {
+    const seq=++revisaoSeq;
+    const p = opcoes.find(x=>x.key===escolha.value), ciclo = periodo.value;
+    _planosCiclo = ciclo;
+    const valor = p[ciclo], troca = vigente && (a.plano !== p.key || a.ciclo !== ciclo);
+    const suporte = !p.permiteCartao;
+    if(vigente && a.plano!==p.key && dias>0 && !suporte && (a.ciclo in ciclos)){
+      periodo.value=a.ciclo; periodo.disabled=true; _planosCiclo=a.ciclo;
+      revisao.textContent="Consultando o valor da troca…";
+      try {
+        const {data:q,error}=await supabaseClient.rpc("cotar_troca_plano",{p_plano:p.key});
+        if(seq!==revisaoSeq)return;
+        if(error||!q){revisao.textContent=error?.message||"Não foi possível calcular a troca.";return}
+        revisao.innerHTML='<div class="wb-total"><div><small>Diferença a pagar agora</small><strong>'+dinheiro(Number(q.valor))+'</strong></div></div><p>O plano '+_esc(p.nome)+' é liberado após a confirmação do Pix. O valor considera os '+Number(q.dias)+' dias restantes. Seu vencimento continua em '+_esc(_fmtDataISO(q.validade))+'.</p><div class="wb-payments"><button type="button">Trocar de plano com Pix</button></div>';
+        const btn=revisao.querySelector("button");
+        btn.onclick=async()=>{escolha.disabled=true;try{await assinarNoCartao(_encArg(p.key),btn,"pix",q)}finally{escolha.disabled=false}};
+      }catch{if(seq===revisaoSeq)revisao.textContent="Não foi possível consultar a troca. Tente novamente."}
+      return;
     }
-
-    /* O rodapé do card tem UMA saída só: o cartão. O WhatsApp saiu daqui e
-       ficou no fim da tela, como contato — dois botões por card faziam cinco
-       escolhas na mesma rolagem e o cliente parava para decidir em vez de
-       assinar. Quando o plano não aceita cartão naquele ciclo, o card aponta
-       para o contato lá embaixo em vez de repetir o botão. */
-    let rodape;
-    if (p.liberado) {
-      rodape = `<div class="plano-atual-tag">${ehGratis ? "✓ Seu plano · liberado" : "Liberado no momento"}</div>`;
-    } else if (atual) {
-      rodape = `<div class="plano-atual-tag">✓ Plano atual</div>`;
-    } else if (p.permiteCartao && valor) {
-      rodape = `<button type="button" class="plano-btn" onclick="assinarNoCartao('${_encArg(p.key)}', this)">Assinar no cartão</button>`;
-    } else {
-      rodape = `<div class="plano-sem-cartao">Este plano é contratado pelo WhatsApp — o contato está no fim da tela.</div>`;
-    }
-
-    return `
-      <div class="plano-card${atual ? " plano-card-atual" : ""}" style="border-radius:18px;overflow:hidden;box-shadow:0 3px 14px rgba(15,23,42,.06)">
-        <div class="plano-card-corpo">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px"><span style="display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#0d948815;color:#0d9488;flex-shrink:0"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 15h4"/></svg></span><span class="plano-nome">${_esc(p.nome)}</span></div>
-          <span class="plano-viv">${_esc(p.viveiros)}</span>
-          ${precoBloco}
-          <ul class="plano-recursos">
-            <li>Gestão completa dos ciclos</li>
-            <li>Financeiro e relatórios</li>
-            <li>Histórico de cultivo</li>
-          </ul>
-        </div>
-        <div class="plano-card-rodape">${rodape}</div>
-      </div>`;
-  }).join("");
-
-  area.innerHTML = `
-    <h3 class="titulo-secao">Meus planos</h3>
-    <div class="cfg-wrap">
-      <div class="assin-status assin-status-${statusCls}">
-        <div class="assin-status-l1">${statusL1}</div>
-        <div class="assin-status-l2">${statusL2}</div>
-        <div class="assin-status-hint">Gerencie sua assinatura e escolha o limite de viveiros ideal para sua fazenda.</div>
-      </div>
-      <div style="font-size:13px;font-weight:600;margin:18px 0 8px">Período de assinatura</div>
-      <div class="assin-toggle assin-toggle-3" style="border-radius:14px">
-        <button class="assin-toggle-btn ${ciclo === "mensal" ? "ativo" : ""}" onclick="_planosCiclo='mensal';abrirAssinatura()">Mensal</button>
-        <button class="assin-toggle-btn ${ciclo === "semestral" ? "ativo" : ""}" onclick="_planosCiclo='semestral';abrirAssinatura()">6 meses <span class="assin-toggle-eco">· 1 mês grátis</span></button>
-        <button class="assin-toggle-btn ${ciclo === "anual" ? "ativo" : ""}" onclick="_planosCiclo='anual';abrirAssinatura()">Anual <span class="assin-toggle-eco">· 2 meses grátis</span></button>
-      </div>
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:20px 0 10px"><strong style="font-size:16px">Planos disponíveis</strong><small style="opacity:.7">${_planosCatalogo.length} opções</small></div>
-      <div class="planos-grid" style="gap:14px">${cards}</div>
-      <div class="assin-obs" style="display:flex;align-items:flex-start;gap:10px;padding:14px;border:1px solid #0d948833;border-radius:14px;margin:16px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.7" style="flex-shrink:0"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><b>Pagamento seguro</b><br>O cartão é informado no Asaas. A assinatura é liberada após a confirmação do pagamento.</span></div>
-      <a class="plano-btn plano-btn-zap" style="display:block;text-align:center;text-decoration:none"
-         href="${_linkWhatsAppPlano("", ciclo)}" target="_blank" rel="noopener">Entrar em contato pelo WhatsApp</a>
-      <button class="botao-voltar-form" style="margin-top:8px" onclick="voltarMenuGestao()">Voltar</button>
-    </div>
-  `;
+    periodo.disabled=false;
+    const mensagem = `Olá! Quero ${troca?"trocar meu plano "+nome+" para":"contratar o plano"} ${p.nome} (${ciclos[ciclo]}) no WA Aqua Gestão.`;
+    revisao.innerHTML = `<div class="wb-total"><div><small>Total do período</small><strong>${valor ? dinheiro(valor) : "Sob consulta"}</strong></div><span>${_esc(ciclos[ciclo])}</span></div>
+      ${troca ? '<p>Seu plano permanece válido até o vencimento. A troca estará disponível após esse período.</p>' :
+      !valor ? '<p>Não há preço cadastrado para este período.</p>' :
+      suporte ? '<p>A contratação deste plano é feita pelo atendimento.</p>' :
+      vigente ? '<p>O Pix renova este plano por mais um período após a confirmação. Se já houver cartão recorrente ativo, não será gerado outro pagamento.</p>' :
+      '<p>O Pix paga um período. No cartão, a cobrança é recorrente. O acesso é atualizado após a confirmação do pagamento.</p>'}
+      ${troca ? `<button type="button" disabled style="width:100%;padding:14px;border:0;border-radius:12px;opacity:.65">Disponível após o vencimento</button>` : suporte ? `<a class="wb-pay" href="https://wa.me/${_WHATSAPP_COMERCIAL}?text=${encodeURIComponent(mensagem)}" target="_blank" rel="noopener">${troca?"Solicitar troca pelo WhatsApp":"Consultar atendimento"}</a>` :
+      valor ? `<div class="wb-payments"><button type="button" data-metodo="pix">Pagar com Pix</button>${vigente ? "" : '<button type="button" data-metodo="cartao">Assinar no cartão</button>'}</div>` : ""}`;
+    revisao.querySelectorAll("[data-metodo]").forEach(btn=>btn.onclick=async()=>{
+      escolha.disabled=periodo.disabled=true;
+      const botoes=Array.from(revisao.querySelectorAll("button"));
+      botoes.forEach(b=>b.disabled=true);
+      try { await assinarNoCartao(_encArg(p.key),btn,btn.dataset.metodo); }
+      finally { escolha.disabled=periodo.disabled=false; botoes.forEach(b=>b.disabled=false); }
+    });
+  }
+  escolha.onchange=periodo.onchange=atualizar;
+  atualizar();
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -8259,11 +8208,12 @@ async function abrirAssinatura() {
    Quem libera o acesso também não é esta tela: é o webhook, quando o
    dinheiro entra. Voltar da página do Asaas não ativa nada por si só.
    ─────────────────────────────────────────────────────────────────────────── */
-async function assinarNoCartao(chaveEnc, botao) {
+async function assinarNoCartao(chaveEnc, botao, metodo = 'cartao', troca = null) {
   const chave = decodeURIComponent(String(chaveEnc || ""));
   const p = _planosCatalogo.find(x => x.key === chave);
   if (!p) { _toastErro("Plano não encontrado. Recarregue a tela."); return; }
 
+  if(metodo==='pix' && await waRetornoPix(false))return;
   const ciclo = _planosCiclo;
   const valor = p[ciclo] || 0;
   if (!valor) { _toastErro(`O plano ${p.nome} não tem ${ciclo}.`); return; }
@@ -8280,12 +8230,13 @@ async function assinarNoCartao(chaveEnc, botao) {
     const token = ses?.session?.access_token;
     if (!token) { restaurar(); _toastErro("Sua sessão expirou. Entre de novo."); return; }
 
-    const resp = await fetch(`${SUPABASE_URL}/functions/v1/assinar-cartao`, {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/${metodo === 'pix' ? 'assinar-pix' : 'assinar-cartao'}`, {
       method: "POST",
       headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         plano: p.key,
         ciclo,
+        ...(troca ? {troca} : {}),
       }),
     });
     const r = await resp.json().catch(() => ({}));
@@ -8295,9 +8246,10 @@ async function assinarNoCartao(chaveEnc, botao) {
       _toastErro(r.error || "Não consegui abrir o pagamento. Tente de novo.");
       return;
     }
-    // _blank e não location: o app fica aberto atrás, e quem fechar a aba do
-    // Asaas por engano volta para onde estava em vez de uma tela vazia.
-    window.open(r.url, "_blank", "noopener");
+    // Navegação na mesma aba também funciona no Safari após o fetch.
+    if(metodo!=='pix'){try{sessionStorage.removeItem('wa-pix:'+ses.session.user.id)}catch{}}
+    if(metodo==='pix'){try{sessionStorage.setItem('wa-pix:'+ses.session.user.id,new URL(r.url).searchParams.get('id')||'')}catch{}}
+    window.location.assign(r.url);
   } catch (e) {
     restaurar();
     console.log("assinar:", e);
@@ -15612,6 +15564,11 @@ async function carregarViveiros(usuarioConhecido) {
     return false;
   }
   assinatura = rAssinatura.data || null;
+  if(new URLSearchParams(location.search).has('assinatura'))setTimeout(()=>waRetornoPix(true),0);
+  _planoEfetivo = null;
+  const efetivo = await supabaseClient.rpc('meu_plano_efetivo');
+  if (!efetivo.error) _planoEfetivo = efetivo.data;
+  else console.warn('Plano efetivo:', efetivo.error);
   // Tabela nova: se ainda nao existir no banco do usuario, segue sem quebrar.
   contato = (rContato && !rContato.error) ? (rContato.data || null) : null;
 
@@ -16552,4 +16509,32 @@ function _semanaRender() {
     '<h4>Conversão alimentar · FCA</h4>'+fca+
     '<p class="sem-nota">Variação = (FCA atual ÷ anterior − 1) × 100, calculada antes do arredondamento. Positiva: aumentou; negativa: caiu. Sem FCA anterior positivo, o percentual aparece como —. Sem ganho de biomassa, não calculamos o FCA do período.</p>'+
     '<details><summary>Ver cálculo e preços de referência</summary><p>Mesma sobrevivência nas duas datas. Ração do período: após '+formatarData(d1)+' até '+formatarData(d2)+'.</p><p>FCA acumulado usa toda a ração registrada até cada biometria; confira também o histórico anterior.</p><p>Preços atuais do painel: '+fmt(p1)+' g = R$ '+fmt(pr1)+'/kg; '+fmt(p2)+' g = R$ '+fmt(pr2)+'/kg. Para peso entre duas gramaturas, usamos a faixa inferior. Não extrapolamos os limites da tabela.</p><p>O resultado compara os dois pesos pela mesma tabela atual, não por preços históricos. Custo da ração usa o preço gravado no lançamento ou, quando ausente, o cadastro atual. Produtos e outros lançamentos entram pela data do custo; os custos fixos seguem o rateio diário do sistema, inclusive nos domingos de folga.</p><p>Resultado = biomassa final × preço final − biomassa inicial × preço inicial − custo do período. É uma simulação, não uma venda realizada.</p></details>';
+}
+
+async function waRetornoPix(retorno){
+ if(document.getElementById('wa-pix-dialog'))return true;
+ const session=(await supabaseClient.auth.getSession()).data?.session;if(!session)return false;
+ const key='wa-pix:'+session.user.id, url=new URL(location.href);
+ const checkout=url.searchParams.get('checkout_pix')||sessionStorage.getItem(key);
+ if(!checkout)return false;
+ const consultar=()=>supabaseClient.rpc('consultar_meu_checkout_pix',{p_checkout:checkout});
+ const primeiro=await consultar();
+ if(!retorno&&!primeiro.error && (!primeiro.data||primeiro.data.status!=='pendente')){sessionStorage.removeItem(key);return false}
+ if(document.getElementById('wa-pix-dialog'))return true;
+ const d=document.createElement('dialog');d.id='wa-pix-dialog';
+ d.style.cssText='margin:auto;padding:20px;border:0;border-radius:16px;width:min(90vw,380px);color:#16413b';
+ d.innerHTML='<strong>Pagamento com Pix</strong><p role="status"></p><button type="button">Conferir agora</button> <button type="button">Fechar</button>';
+ document.body.append(d);d.showModal();let timer,vez=0,busy=false,confirmado=false;
+ const [ver,fechar]=d.querySelectorAll('button'),msg=d.querySelector('p');
+ function limpar(){clearTimeout(timer);d.remove();if(retorno){url.searchParams.delete('assinatura');url.searchParams.delete('checkout_pix');history.replaceState(history.state,'',url)}if(confirmado)location.reload()}
+ d.addEventListener('close',limpar,{once:true});fechar.onclick=()=>d.close();
+ async function ler(inicial){if(busy)return;busy=true;clearTimeout(timer);
+ try{const {data,error}=inicial||await consultar();if(!d.isConnected)return;
+ if(error||!data){msg.textContent='Não foi possível confirmar este pagamento. Confira novamente antes de pagar.'}
+ else if(data.status==='pendente'){msg.textContent='Aguardando confirmação do Asaas. Se já pagou, não faça outro Pix.';
+ if(!d.querySelector('a')){const link=document.createElement('a');link.href='https://asaas.com/checkoutSession/show?id='+encodeURIComponent(data.checkout||checkout);link.textContent='Abrir o mesmo checkout';link.style.display='block';d.append(link)}}
+ else {confirmado=data.status==='confirmado';msg.textContent=confirmado?'Pagamento confirmado · '+data.nome+' · válido até '+_fmtDataISO(data.validade):'Situação do Pix: '+data.status;sessionStorage.removeItem(key);ver.hidden=true;d.querySelector('a')?.remove();return}
+ }catch{msg.textContent='Não foi possível consultar o pagamento.'}finally{busy=false}
+ if(d.isConnected&&++vez<12)timer=setTimeout(()=>ler(),5000)}
+ ver.onclick=()=>{vez=0;ler()};await ler(primeiro);return true;
 }
