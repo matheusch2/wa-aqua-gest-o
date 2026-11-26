@@ -1,3 +1,16 @@
+-- [ESTADO EM 26/11/2026: SUPERADA — nao rode este arquivo]
+--   O que esta aqui NAO e o que esta no banco. Conferido em 26/11/2026:
+--   a versao publicada de cotar_troca_plano exigia uma cobranca Pix paga
+--   com inicio_periodo, e este arquivo mostra uma versao que calcula a
+--   duracao sozinha. As duas ja divergiam.
+--
+--   As correcoes aplicadas estao em `upgrade-proporcional-correcoes.sql`,
+--   que substitui as DUAS funcoes daqui. Este arquivo fica so como
+--   historico de como a troca proporcional nasceu.
+--
+--   Rodar este arquivo hoje seria um retrocesso: traria de volta a exigencia
+--   do Pix e o `raise exception` que fazia o pagamento sumir.
+
 create function public.cotar_troca_plano(p_plano text) returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare a public.assinaturas; origem public.planos; destino public.planos; hoje date := (now() at time zone 'America/Fortaleza')::date; dias int; duracao int; atual numeric; novo numeric; valor numeric;
 begin

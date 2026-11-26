@@ -19,6 +19,8 @@ carimbo no topo.
 | `pausa-e-sem-historico.sql` | aplicada | migração `viveiro_pausas_e_sem_historico`, 13/11/2026 |
 | `admin-vencimento-aceita-semestral.sql` | aplicada 24/11/2026 | migração `admin_ajustar_vencimento_aceita_semestral`; `prosrc` lido: aceita os 3 ciclos e a guarda do bloqueado continua lá |
 | `assinatura-plano-pretendido.sql` | aplicada 24/11/2026 | migração `assinatura_plano_pretendido_no_checkout`; colunas `plano_checkout` e `ciclo_checkout` existem |
+| `upgrade-proporcional-correcoes.sql` | aplicada 26/11/2026 | 3 migrações; conferido no banco: coluna `valor_contratado` com os 19 pagantes carimbados, cotação testada para cada cliente e os 4 caminhos do Pix ensaiados em transação desfeita |
+| `troca-proporcional.sql` | **superada** | o que está no arquivo não é o que estava no banco; substituída por `upgrade-proporcional-correcoes.sql`. Não rodar |
 | `planos.sql` | aplicada 24/11/2026 | tabela `planos` existe, com RLS ligado, 1 política e as 5 linhas de preço conferidas uma a uma |
 | `precos-camarao.sql` | aplicada | tabela `precos_camarao` + função `precos_camarao_carimbo` existem |
 | `racao-duas-por-dia.sql` | aplicada | índice `ux_racoes_viveiro_data_tipo` existe |
