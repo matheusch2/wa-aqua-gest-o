@@ -459,6 +459,11 @@ Deno.serve(async (req) => {
       atualizado_em: new Date().toISOString(),
     };
 
+    if(["PAYMENT_OVERDUE","PAYMENT_DELETED","PAYMENT_REFUNDED","SUBSCRIPTION_DELETED"].includes(evento)){
+      const ref=cobranca?.id||assinaturaId||null;
+      const {data,error}=await supabase.rpc("tratar_aviso_cobranca",{p_evento:evento,p_chave:String(body.id||evento+":"+ref),p_referencia:ref,p_sub:assinaturaId||null,p_data:cobranca?.dueDate||null});
+      return error?falha(error.message):ok({ok:true,resultado:data});
+    }
     let agir = false;
     let pago = false;
 
