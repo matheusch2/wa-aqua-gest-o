@@ -392,7 +392,7 @@
             return "dot-off";
         }
         function infoVencimento(a) {
-            if (!a || !a.proximo_vencimento) return null;
+            if (!a || a.plano === "gratis" || !a.proximo_vencimento) return null;
             const m = String(a.proximo_vencimento).match(/^(\d{4})-(\d{2})-(\d{2})/);
             if (!m) return null;
             const venc = new Date(+m[1], +m[2] - 1, +m[3]);
@@ -935,24 +935,24 @@
                         </div>
                         <span class="cli-seta">›</span>
                     </div>
-                    <div class="cli-corpo"><div class="acesso-resumo"><strong>${NOME_PLANO[plano] || esc(plano)} · ${a?.proximo_vencimento ? "Validade: "+esc(dataCurta(a.proximo_vencimento)) : "Sem validade informada"}</strong><div id="origem-${esc(c.id)}">Consultando registros…</div></div><details class="cli-manual"><summary>Gerenciar acesso manual</summary>
+                    <div class="cli-corpo"><div class="acesso-resumo"><strong>${NOME_PLANO[plano] || esc(plano)} · ${plano === "gratis" ? "Sem vencimento" : a?.proximo_vencimento ? "Validade: "+esc(dataCurta(a.proximo_vencimento)) : "Sem validade informada"}</strong><div id="origem-${esc(c.id)}">Consultando registros…</div></div><details class="cli-manual"><summary>Gerenciar acesso manual</summary>
                         <div class="cli-linha">
                             <div class="cli-campo">
                                 <label for="plano-${esc(c.id)}">Plano</label>
-                                <select id="plano-${esc(c.id)}">
+                                <select onchange="camposPlano(this)" id="plano-${esc(c.id)}">
                                     ${PLANOS.map(p => `<option value="${p.key}" ${p.key === plano ? "selected" : ""}>${p.nome}</option>`).join("")}
                                 </select>
                             </div>
                             <div class="cli-campo">
                                 <label for="ciclo-${esc(c.id)}">Ciclo</label>
-                                <select id="ciclo-${esc(c.id)}">
+                                <select ${plano==='gratis'?'disabled':''} id="ciclo-${esc(c.id)}">
                                     <option value="mensal" ${a && (a.ciclo === "anual" || a.ciclo === "semestral") ? "" : "selected"}>Mensal</option>
                                     <option value="semestral" ${a && a.ciclo === "semestral" ? "selected" : ""}>6 meses</option>
                                     <option value="anual" ${a && a.ciclo === "anual" ? "selected" : ""}>Anual</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="cli-linha-venc">
+                        <div class="cli-linha-venc" style="${plano==='gratis'?'display:none':''}">
                             <div class="cli-campo">
                                 <label for="venc-${esc(c.id)}">Vencimento</label>
                                 <input type="date" id="venc-${esc(c.id)}" value="${a && a.proximo_vencimento ? esc(String(a.proximo_vencimento).slice(0, 10)) : ""}">
@@ -960,8 +960,8 @@
                             
                         </div>
                         <label class="cli-campo">Motivo do ajuste<input class="cli-motivo" id="motivo-${esc(c.id)}" maxlength="180" placeholder="Ex.: cortesia de implantação"></label>
-                        <p class="cli-dica-acoes">Liberar aplica o plano até a data escolhida. Ajustar validade mantém o plano atual. Nenhuma dessas ações registra pagamento no Asaas.</p>
-                        <div class="cli-acoes"><button class="acao-btn a-liberar" onclick="manual(this,'${esc(c.id)}',false)">Liberar acesso manual</button><button class="acao-btn a-venc" onclick="manual(this,'${esc(c.id)}',true)">Ajustar validade</button></div></details><div class="cli-acoes">
+                        <p class="cli-dica-acoes">O Grátis não vence. Nos planos pagos, escolha a validade. Nenhuma dessas ações registra pagamento no Asaas.</p>
+                        <div class="cli-acoes"><button class="acao-btn a-liberar" onclick="manual(this,'${esc(c.id)}',false)">Liberar acesso manual</button><button style="${plano==='gratis'?'display:none':''}" class="acao-btn a-venc" onclick="manual(this,'${esc(c.id)}',true)">Ajustar validade</button></div></details><div class="cli-acoes">
                             <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">${ICO.check} Reativar</button>
                             <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
                         </div>
@@ -1000,14 +1000,15 @@
             el.innerHTML=(pix?'Pix confirmado · '+esc(NOME_PLANO[pix.plano]||pix.plano)+' · válido até '+esc(dataCurta(pix.validade)):'Nenhum Pix aplicado a esta conta.')+'<details><summary>Histórico administrativo</summary>'+(hist.length?'<ul>'+hist.map(h=>'<li>'+esc(new Date(h.criado_em).toLocaleDateString('pt-BR',{timeZone:'America/Fortaleza'}))+' · '+esc(nomes[h.acao]||h.acao)+(h.motivo?' · '+esc(h.motivo):'')+'</li>').join('')+'</ul>':'Sem ações registradas.')+'</details>';
           }catch{el.textContent='Não foi possível consultar o histórico.'}
         }
+        function camposPlano(el){const d=el.closest('details'),g=el.value==='gratis';const b=d.querySelector('.a-venc');b.disabled=g;b.style.display=g||!el.selectedOptions[0].defaultSelected?'none':'';d.querySelector('.cli-linha-venc').style.display=g?'none':'';d.querySelector('select[id^="ciclo-"]').disabled=g;}
         async function manual(btn,id,ajuste){
           if(btn.disabled)return;
           const val=k=>document.getElementById(k+'-'+id).value;
           const data=val('venc'),motivo=val('motivo').trim(),plano=val('plano'),ciclo=val('ciclo');
-          if(!data||motivo.length<3){toast('Informe a validade e um motivo de pelo menos 3 letras.','erro');return}
-          if(!confirm((ajuste?'Ajustar a validade':'Liberar o plano '+(NOME_PLANO[plano]||plano))+' até '+dataCurta(data)+'?'))return;
+          if((!data&&(ajuste||plano!=='gratis'))||motivo.length<3){toast('Informe a validade e um motivo de pelo menos 3 letras.','erro');return}
+          if(!confirm((ajuste?'Ajustar a validade':'Liberar o plano '+(NOME_PLANO[plano]||plano))+(plano==='gratis'&&!ajuste?' sem vencimento':' até '+dataCurta(data))+'?'))return;
           btn.disabled=true;
-          try{const {error}=await sb.rpc('admin_painel_manual',{p_user:id,p_plano:plano,p_ciclo:ciclo,p_data:data,p_motivo:motivo,p_ajuste:ajuste});if(error)throw error}
+          try{const {error}=await sb.rpc('admin_painel_manual',{p_user:id,p_plano:plano,p_ciclo:ciclo,p_data:plano==='gratis'&&!ajuste?null:data,p_motivo:motivo,p_ajuste:ajuste});if(error)throw error}
           catch(e){toast(e.message||'Falha ao salvar.','erro');btn.disabled=false;return}
           toast('Acesso atualizado. Ajuste salvo no histórico.','ok');try{await carregarClientes()}catch{toast('Ajuste salvo. Recarregue a lista.','ok')}
         }
