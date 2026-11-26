@@ -396,6 +396,18 @@ apesar de ser a mais sensível.
 6. **`assinatura_carimbar_valor` com EXECUTE para `anon`.** Baixa gravidade real,
    mas é desvio da regra do próprio projeto e aparece em auditoria.
 
+## Atualização de 26/11/2026 (etapa 4.1)
+
+- As onze funções de permissão **passaram a ter testes**: `test/permissoes.test.js`,
+  37 casos de caracterização. O passo 0 da ordem abaixo está cumprido.
+- O precache de **scripts** ganhou guarda em `test/sw-rede-primeiro.test.js`.
+- O padrão de extração foi decidido e está em `docs/arquitetura.md`.
+- A investigação de segurança virou documento próprio:
+  [seguranca-limites.md](seguranca-limites.md). O achado novo é grave: **o
+  limite de viveiros pode ser contornado por UPDATE**, porque o gatilho só
+  escuta INSERT e sai cedo quando `ativo` não é verdadeiro. Provado em ensaio
+  desfeito.
+
 ## Recomendações para o Work
 
 - Decidir **o padrão de extração antes do próximo arquivo**: script global (como
