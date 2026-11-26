@@ -298,6 +298,41 @@ test("service worker: nenhuma folha de estilo fica de fora do precache", () => {
   }
 });
 
+/*
+ * TODO SCRIPT PRÓPRIO QUE A PÁGINA CARREGA TEM DE ESTAR NO PRECACHE.
+ *
+ * A guarda das folhas de estilo existe desde que três CSS escaparam. A de
+ * SCRIPTS não existia — e a modularização que começou em 26/11/2026 vai criar
+ * um arquivo .js por módulo. Um script fora de ESSENCIAIS é pior que uma
+ * folha fora: offline a tela não abre sem estilo, ela não abre.
+ *
+ * Só os scripts DA CASA entram na conta. Os de CDN (supabase-js, chart.js)
+ * têm tratamento próprio no sw.js e não vivem no precache.
+ */
+test("service worker: nenhum script próprio fica de fora do precache", () => {
+  const sw = fs.readFileSync(path.join(RAIZ, "sw.js"), "utf8");
+  const essenciais = sw.slice(sw.indexOf("const ESSENCIAIS"), sw.indexOf("];", sw.indexOf("const ESSENCIAIS")));
+
+  let vistos = 0;
+  for (const pagina of ["app/index.html", "app/login.html"]) {
+    const html = fs.readFileSync(path.join(RAIZ, pagina), "utf8");
+    const scripts = [...html.matchAll(/<script[^>]+src="([^"]+\.js)(?:\?[^"]*)?"/g)]
+      .map((m) => m[1])
+      .filter((src) => !/^https?:\/\//.test(src));   // CDN tem caminho próprio
+
+    for (const f of scripts) {
+      vistos++;
+      const absoluto = f.startsWith("/") ? f : "/" + path.posix.join(path.posix.dirname(pagina), f);
+      assert.ok(essenciais.includes(absoluto),
+        `${pagina} carrega ${f}, que NÃO está no precache do sw.js. ` +
+        `Offline essa tela não abre. Acrescente "${absoluto}" em ESSENCIAIS.`);
+    }
+  }
+  assert.ok(vistos >= 2,
+    `achei só ${vistos} scripts próprios nas páginas — o teste parou de enxergar, ` +
+    "provavelmente porque a forma de carregar mudou (módulo ES, import, bundler).");
+});
+
 test("service worker: o precache não aponta para arquivo que não existe", () => {
   const sw = fs.readFileSync(path.join(RAIZ, "sw.js"), "utf8");
   const bloco = sw.slice(sw.indexOf("const ESSENCIAIS"), sw.indexOf("];", sw.indexOf("const ESSENCIAIS")));
