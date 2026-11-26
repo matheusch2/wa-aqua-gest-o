@@ -88,6 +88,7 @@ const epilogo = "\n;globalThis.__TESTE__ = {" +
   NOMES.map((n) => `${n}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(",") +
   "};";
 
+vm.runInContext(fs.readFileSync(path.join(__dirname,"../../app/js/numeros-br.js"),"utf8"), sandbox);
 vm.runInContext(src + epilogo, sandbox, { filename: "app/script.js" });
 
 module.exports = sandbox.__TESTE__;

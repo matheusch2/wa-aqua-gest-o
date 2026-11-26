@@ -48,6 +48,7 @@ function load() {
   };
   vm.createContext(ctx);
   const run = s => vm.runInContext(s,ctx);
+  run(fs.readFileSync(path.join(__dirname,"../app/js/numeros-br.js"),"utf8"));
   run(source);
   run('_toastErro = msg => __errors.push(msg);');
   function painelAssinatura(){
