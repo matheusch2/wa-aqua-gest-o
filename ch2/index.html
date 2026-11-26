@@ -75,9 +75,6 @@
            para criar linha por linha e escrever o nome do tamanho antes do
            número — três passos para cada preço, e nada impedia dois "12 g". */
         .pc-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-bottom:18px; }
-        .pc-aviso { margin:0 0 4px; font-size:12.5px; line-height:1.5; color:#6b7280; }
-        .pc-aviso b { color:#1f2937; }
-        .pc-aviso .alerta { color:#b45309; font-weight:700; }
         .pc-resumo { margin:0 0 12px; font-size:12px; font-weight:700; color:#52606d; }
         .pc-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(104px,1fr)); gap:7px; }
         /* A célula vazia fica cinza e a preenchida fica branca com borda verde:
@@ -254,11 +251,10 @@
                  A grade é montada por pcRender(), de 6 a 35 g. -->
             <div class="sec-tit">Preços do camarão</div>
             <div class="pc-card">
-                <p class="pc-aviso">
-                    Valor do <b>quilo</b> por tamanho. Preencha só os tamanhos que têm preço —
-                    quem fica em branco não aparece para ninguém.
-                    <span class="alerta">A faixa some sozinha depois de 10 dias sem atualização</span>: preço velho é pior que preço nenhum.
-                </p>
+                <!-- O texto explicativo saiu daqui a pedido do dono. O que ele
+                     dizia continua valendo e está no comentário acima: tamanho em
+                     branco não aparece para ninguém, e a faixa some sozinha depois
+                     de 10 dias sem atualização. -->
                 <p class="pc-resumo" id="pc-resumo"></p>
                 <div class="pc-grade" id="pc-grade"></div>
                 <div class="pc-acoes">
