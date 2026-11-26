@@ -375,7 +375,7 @@ function _cfgItem(ico, titulo, sub, onclick, id) {
    LANÇAR PELO WHATSAPP — a ponta do app
 
    Aqui o produtor liga o número dele à conta. O banco guarda o vínculo (ver
-   banco/whatsapp-vinculo.sql); esta tela só mostra o código e confere.
+   banco/migracoes/whatsapp-vinculo.sql); esta tela só mostra o código e confere.
 
    O CÓDIGO VAI NO SENTIDO CONTRÁRIO do que se espera: o app mostra, e a
    PESSOA manda para o nosso número. É isso que prova que o WhatsApp é dela —
@@ -585,7 +585,7 @@ function _fmtDataISO(iso) {
    Uma tira que passa no alto da tela, tipo painel de bolsa, com o preço do
    quilo por tamanho. Não existe índice público semanal do camarão cultivado no
    Brasil, então quem publica é o administrador, pelo painel ADM (tabela
-   precos_camarao; ver banco/precos-camarao.sql).
+   precos_camarao; ver banco/migracoes/precos-camarao.sql).
 
    Uma linha por tamanho em GRAMAS, de 8 a 35 — o tamanho é a chave da tabela,
    e é dele que sai a ordem da faixa. Só os tamanhos que têm preço existem no

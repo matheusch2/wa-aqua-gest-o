@@ -720,7 +720,7 @@
             if (error) {
                 // 42P01: a tabela ainda não foi criada neste banco.
                 pcMsg(error.code === "42P01"
-                    ? 'Tabela ainda não existe. Rode banco/precos-camarao.sql no Supabase.'
+                    ? 'Tabela ainda não existe. Rode banco/migracoes/precos-camarao.sql no Supabase.'
                     : "Erro ao carregar: " + error.message, "erro");
                 pcSalvos = {};
             } else {

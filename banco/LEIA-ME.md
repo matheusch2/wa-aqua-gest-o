@@ -15,30 +15,30 @@ carimbo no topo.
 
 | arquivo | estado | como foi conferido |
 |---|---|---|
-| `admin-vencimento-nao-destrava.sql` | aplicada 23/11/2026 | migração `admin_ajustar_vencimento_nao_destrava_cancelado`; corpo conferido depois |
-| `pausa-e-sem-historico.sql` | aplicada | migração `viveiro_pausas_e_sem_historico`, 13/11/2026 |
-| `admin-vencimento-aceita-semestral.sql` | aplicada 24/11/2026 | migração `admin_ajustar_vencimento_aceita_semestral`; `prosrc` lido: aceita os 3 ciclos e a guarda do bloqueado continua lá |
-| `assinatura-plano-pretendido.sql` | aplicada 24/11/2026 | migração `assinatura_plano_pretendido_no_checkout`; colunas `plano_checkout` e `ciclo_checkout` existem |
-| `upgrade-proporcional-correcoes.sql` | aplicada 26/11/2026 | 3 migrações; conferido no banco: coluna `valor_contratado` com os 19 pagantes carimbados, cotação testada para cada cliente e os 4 caminhos do Pix ensaiados em transação desfeita |
-| `troca-proporcional.sql` | **superada** | o que está no arquivo não é o que estava no banco; substituída por `upgrade-proporcional-correcoes.sql`. Não rodar |
-| `planos.sql` | aplicada 24/11/2026 | tabela `planos` existe, com RLS ligado, 1 política e as 5 linhas de preço conferidas uma a uma |
-| `precos-camarao.sql` | aplicada | tabela `precos_camarao` + função `precos_camarao_carimbo` existem |
-| `racao-duas-por-dia.sql` | aplicada | índice `ux_racoes_viveiro_data_tipo` existe |
-| `racao-preco-no-lancamento.sql` | aplicada | coluna `racoes.custo_por_kg` existe |
-| `rpc-boletos.sql` | aplicada | função `pagar_boleto` existe |
-| `rpc-ciclos.sql` | aplicada | funções `encerrar_ciclo` e `reiniciar_ciclo` existem |
-| `rpc-custos-fixos.sql` | aplicada | função `reajustar_custo_fixo` existe |
-| `seguranca-advisor-revoke.sql` | aplicada | nenhuma `SECURITY DEFINER` do `public` com EXECUTE para PUBLIC |
-| `seguranca-b03-diagnostico.sql` | histórico | só lê; serviu para liberar a migração B03 |
-| `seguranca-b03-migracao.sql` | aplicada | 5 chaves estrangeiras apontando para `viveiros` |
-| `whatsapp-vinculo.sql` | aplicada | tabela, índice e as 3 funções existem, já na versão corrigida |
+| [admin-vencimento-nao-destrava.sql](migracoes/admin-vencimento-nao-destrava.sql) | aplicada 23/11/2026 | migração `admin_ajustar_vencimento_nao_destrava_cancelado`; corpo conferido depois |
+| [pausa-e-sem-historico.sql](migracoes/pausa-e-sem-historico.sql) | aplicada | migração `viveiro_pausas_e_sem_historico`, 13/11/2026 |
+| [admin-vencimento-aceita-semestral.sql](migracoes/admin-vencimento-aceita-semestral.sql) | aplicada 24/11/2026 | migração `admin_ajustar_vencimento_aceita_semestral`; `prosrc` lido: aceita os 3 ciclos e a guarda do bloqueado continua lá |
+| [assinatura-plano-pretendido.sql](migracoes/assinatura-plano-pretendido.sql) | aplicada 24/11/2026 | migração `assinatura_plano_pretendido_no_checkout`; colunas `plano_checkout` e `ciclo_checkout` existem |
+| [upgrade-proporcional-correcoes.sql](migracoes/upgrade-proporcional-correcoes.sql) | aplicada 26/11/2026 | 3 migrações; conferido no banco: coluna `valor_contratado` com os 19 pagantes carimbados, cotação testada para cada cliente e os 4 caminhos do Pix ensaiados em transação desfeita |
+| [troca-proporcional.sql](historico/troca-proporcional.sql) | **superada** | o que está no arquivo não é o que estava no banco; substituída por [upgrade-proporcional-correcoes.sql](migracoes/upgrade-proporcional-correcoes.sql). Não rodar |
+| [planos.sql](migracoes/planos.sql) | aplicada 24/11/2026 | tabela `planos` existe, com RLS ligado, 1 política e as 5 linhas de preço conferidas uma a uma |
+| [precos-camarao.sql](migracoes/precos-camarao.sql) | aplicada | tabela `precos_camarao` + função `precos_camarao_carimbo` existem |
+| [racao-duas-por-dia.sql](migracoes/racao-duas-por-dia.sql) | aplicada | índice `ux_racoes_viveiro_data_tipo` existe |
+| [racao-preco-no-lancamento.sql](migracoes/racao-preco-no-lancamento.sql) | aplicada | coluna `racoes.custo_por_kg` existe |
+| [rpc-boletos.sql](migracoes/rpc-boletos.sql) | aplicada | função `pagar_boleto` existe |
+| [rpc-ciclos.sql](migracoes/rpc-ciclos.sql) | aplicada | funções `encerrar_ciclo` e `reiniciar_ciclo` existem |
+| [rpc-custos-fixos.sql](migracoes/rpc-custos-fixos.sql) | aplicada | função `reajustar_custo_fixo` existe |
+| [seguranca-advisor-revoke.sql](migracoes/seguranca-advisor-revoke.sql) | aplicada | nenhuma `SECURITY DEFINER` do `public` com EXECUTE para PUBLIC |
+| [seguranca-b03-diagnostico.sql](diagnosticos/seguranca-b03-diagnostico.sql) | histórico | só lê; serviu para liberar a migração B03 |
+| [seguranca-b03-migracao.sql](migracoes/seguranca-b03-migracao.sql) | aplicada | 5 chaves estrangeiras apontando para `viveiros` |
+| [whatsapp-vinculo.sql](migracoes/whatsapp-vinculo.sql) | aplicada | tabela, índice e as 3 funções existem, já na versão corrigida |
 
 O código da Edge Function do WhatsApp morava aqui; foi para
 `supabase/functions/whatsapp-webhook/`, junto com as outras.
 
 ## Não há pendência
 
-Em 24/11/2026 o `planos.sql` foi rodado pelo dono no SQL Editor e conferido
+Em 24/11/2026 o [planos.sql](migracoes/planos.sql) foi rodado pelo dono no SQL Editor e conferido
 no banco. Ele acabou com um desencontro que ia cobrar errado: o preço estava
 escrito em **três** lugares (a tela, a Edge Function e a tabela do dono) e os
 três discordavam — o cliente veria R$ 300 na tela e seria cobrado R$ 160 no
@@ -46,7 +46,7 @@ cartão, todo mês. Agora a tela e a cobrança leem a mesma linha de
 `public.planos`, e o dono muda preço pelo painel, sem deploy.
 
 Antes disso, em 23/11/2026, o
-`admin-vencimento-nao-destrava.sql` fechava um furo de cobrança que estava no
+[admin-vencimento-nao-destrava.sql](migracoes/admin-vencimento-nao-destrava.sql) fechava um furo de cobrança que estava no
 ar: ajustar a data de vencimento de um cliente **bloqueado** o destravava
 sozinho, porque a função gravava `status = 'ativo'` sem olhar o estado
 anterior.
