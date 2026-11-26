@@ -50,7 +50,14 @@ function load() {
   const run = s => vm.runInContext(s,ctx);
   run(source);
   run('_toastErro = msg => __errors.push(msg);');
-  return {run,get,button,win,errors,scrolls,flush(){while(timers.length)timers.shift()();}};
+  function painelAssinatura(){
+    const painel=element(), escolha=element(), ciclo=element(), revisao=element();
+    painel.isConnected=true; escolha.value="basico"; ciclo.value="mensal";
+    painel.querySelector=s=>({"[data-plano]":escolha,"[data-ciclo]":ciclo,"[data-revisao]":revisao})[s];
+    get("area-gestao").firstElementChild=painel;
+    return {painel,escolha,revisao};
+  }
+  return {painelAssinatura,run,get,button,win,errors,scrolls,flush(){while(timers.length)timers.shift()();}};
 }
 function seed(a) {
   a.run(`tiposRacao=[{id:'a',nome:'A',custoPorKg:5},{id:'b',nome:'B',custoPorKg:6}];
@@ -1678,6 +1685,7 @@ test("planos: a tela de planos pede o catálogo antes de desenhar",async()=>{
     })}) }; };
     assinatura = { plano:'gratis', status:'ativo' };`);
 
+  a.painelAssinatura();
   await a.run('abrirAssinatura()');
   assert.equal(a.run('__consultas'), 1,
     "abrir a tela de planos não consultou o banco — a tela mostraria 'não consegui carregar'");
@@ -1718,11 +1726,12 @@ test("planos: falha na leitura avisa e deixa tentar de novo",async()=>{
     })}) }; };
     assinatura = { plano:'gratis', status:'ativo' };`);
 
+  const {painel}=a.painelAssinatura();
   await a.run('abrirAssinatura()');
-  const tela = a.get('area-gestao').innerHTML;
-  assert.match(tela, /não consegui carregar os planos/i,
+  const tela = painel.innerHTML;
+  assert.match(tela, /Planos indisponíveis/i,
     "falhou a leitura e a tela não disse nada");
-  assert.match(tela, /Tentar de novo/,
+  assert.match(tela, /Tentar novamente/,
     "sem botão de tentar de novo o cliente fica preso no aviso");
 
   // E NENHUM preço pode aparecer: um valor velho na tela é pior que tela sem
@@ -1736,7 +1745,7 @@ test("planos: falha na leitura avisa e deixa tentar de novo",async()=>{
 
 /* O WhatsApp saiu de dentro dos cards e virou contato único no fim da tela.
    Com cinco planos, dois botões por card davam dez escolhas numa rolagem só. */
-test("planos: o WhatsApp é um contato no fim da tela, não um botão por card",async()=>{
+test("planos: os meios de contratação acompanham o plano selecionado",async()=>{
   const a = load();
   a.run(`
     supabaseClient.from = () => ({ select:()=>({ eq:()=>({
@@ -1746,20 +1755,15 @@ test("planos: o WhatsApp é um contato no fim da tela, não um botão por card",
         {chave:'basico',nome:'Básico',viveiros_label:'2 a 5 viveiros',limite_viveiros:5,
          mensal:100,semestral:550,anual:1000,permite_cartao:true},
         {chave:'pro',nome:'Pro',viveiros_label:'ilimitados',limite_viveiros:999999,
-         mensal:500,semestral:2750,anual:5000,permite_cartao:true}], error:null })
+         mensal:500,semestral:2750,anual:5000,permite_cartao:false}], error:null })
     })}) });
     assinatura = { plano:'gratis', status:'ativo' };`);
+  const {escolha,revisao}=a.painelAssinatura();
   await a.run('abrirAssinatura()');
-  const tela = a.get('area-gestao').innerHTML;
-
-  // Conta LINKS (wa.me), não a palavra: o texto do botão também diz WhatsApp.
-  const zaps = (tela.match(/wa\.me/g) || []).length;
-  assert.equal(zaps, 1, `são ${zaps} links de WhatsApp na tela; tem de ser um só, no fim`);
-
-  // E ele vem DEPOIS do último card, não no meio deles.
-  assert.ok(tela.lastIndexOf("plano-card") < tela.indexOf("wa.me"),
-    "o contato do WhatsApp está antes do último card — ele é o fim da tela");
-
-  assert.equal((tela.match(/Assinar no cartão/g) || []).length, 2,
-    "cada plano pago tem de ter o botão do cartão (o de 1 viveiro é liberado)");
+  assert.match(revisao.innerHTML,/Assinar no cartão/);
+  assert.match(revisao.innerHTML,/Pagar com Pix/);
+  assert.doesNotMatch(revisao.innerHTML,/wa\.me/);
+  escolha.value="pro"; await escolha.onchange();
+  assert.equal((revisao.innerHTML.match(/wa\.me/g)||[]).length,1);
+  assert.doesNotMatch(revisao.innerHTML,/Assinar no cartão/);
 });

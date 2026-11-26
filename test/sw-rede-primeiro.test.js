@@ -116,7 +116,8 @@ const texto = (p) => p.evaluate(() => document.body.textContent.trim());
 test("service worker: as duas promessas", { skip: chromium ? false : "playwright não instalado", timeout: 90000 }, async (t) => {
   const s = servidor();
   const porta = await s.ouvir();
-  const navegador = await chromium.launch({ args: ["--no-sandbox"] });
+  t.after(() => s.fechar());
+  const navegador = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--no-sandbox"] });
   const ctx = await navegador.newContext();
 
   try {
@@ -199,7 +200,7 @@ test("service worker: as duas promessas", { skip: chromium ? false : "playwright
 
   } finally {
     await navegador.close();
-    await s.fechar();
+
   }
 });
 
