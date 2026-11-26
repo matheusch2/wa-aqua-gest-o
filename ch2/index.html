@@ -275,7 +275,7 @@
                 <span><b id="adm-emails-qtd">0</b> na seleção</span>
                 <button class="adm-emails-btn" onclick="copiarEmails()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar e-mails</button>
             </div>
-            <div id="adm-lista"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+            <div id="conciliacao-adm" role="status"></div><div id="adm-lista"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
         </div>
     </div>
 
@@ -345,7 +345,7 @@
         const FILTROS = [
             { key: "todos",    nome: "Todos" },
             { key: "ativos",   nome: "Ativos (5d)" },
-            { key: "pagantes", nome: "Pagantes" },
+            { key: "pagantes", nome: "Pagantes confirmados" },
             { key: "pendentes",nome: "Pendentes" },
             { key: "vencidos", nome: "Vencidos" },
             { key: "inativos", nome: "Inativos" },
@@ -404,7 +404,7 @@
             if (dias <= 7) return { cls: "b-venc-perto", txt: `Vence em ${dias}d`, venc: false };
             return { cls: "b-venc-ok", txt: `Vence ${fmt}`, venc: false };
         }
-        function ehPagante(c) { const a = c.assinatura; return a && a.status === "ativo" && a.plano && a.plano !== "gratis"; }
+        function ehPagante(c) { return c.pagamentoVigente === true; }
 
         // ── Chamada às Edge Functions (tolera nome com/sem hífen final) ──
         const _slugOk = {};
@@ -526,6 +526,11 @@
             const data = await chamar({ action: "listar" });
             revelarPainel();               // é admin: agora o painel pode aparecer
             clientes = data.clientes || [];
+            const [pag,revisao]=await Promise.all([sb.rpc("admin_pagamentos_vigentes"),sb.from("cobranca_revisao").select("evento,referencia,criado_em").is("resolvido_em",null).order("criado_em",{ascending:false}).limit(40)]);
+            const ids = new Set((pag.data||[]).map(x=>x.user_id));
+            clientes.forEach(c=>c.pagamentoVigente=ids.has(c.id));
+            const avisos=document.getElementById("conciliacao-adm");
+            avisos.innerHTML=(pag.error?"<p>Não foi possível conferir os indicadores de pagamento.</p>":"")+(revisao.error?"<p>Conciliação indisponível.</p>":revisao.data?.length?"<details class='acesso-resumo' open><summary>Cobranças para conferir</summary><p>Confira a referência no Asaas. Após corrigir o vínculo, reenvie o evento original pelos logs de webhooks.</p>"+revisao.data.map(x=>"<div>"+esc(x.evento)+" · "+esc(x.referencia)+"</div>").join("")+"</details>":"");
             await juntarContatos();
             await juntarAcessos();
             await carregarPrecos();   // o MRR depende disto; vem antes do gráfico
@@ -608,8 +613,8 @@
                 tile(ICO.users, "i-cinza", total, "", "Clientes") +
                 tile(ICO.phone, "i-cinza", clientes.filter(c => c.telefone).length, `/${total}`, "Com telefone") +
                 tile(ICO.activity, "i-verde", ativos5, "", "Ativos (5 dias)") +
-                tile(ICO.card, "i-verde", pagantes, "", "Pagantes") +
-                tile(ICO.dollar, "i-verde", _rs0(mrr), "", "Receita/mês (MRR)") +
+                tile(ICO.card, "i-verde", pagantes, "", "Pagantes confirmados") +
+                tile(ICO.dollar, "i-verde", _rs0(mrr), "", "Receita mensal estimada · confirmados") +
                 tile(ICO.calendar, "i-verde", _rs0(mrr * 12), "", "Receita/ano (ARR)") +
                 tile(ICO.target, "i-cinza", _rs0(ticket), "", "Ticket médio") +
                 tile(ICO.clock, "i-ambar", pend, "", "Pendentes") +
