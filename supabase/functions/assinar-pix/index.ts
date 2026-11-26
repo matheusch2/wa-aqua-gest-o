@@ -34,7 +34,7 @@ async function asaas(caminho: string, metodo: string, corpo?: unknown) {
   const dados = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = dados?.errors?.[0]?.description ?? JSON.stringify(dados);
-    throw new Error(`Asaas ${res.status} ${metodo} ${caminho}: ${msg}`);
+    throw Object.assign(new Error(`Asaas ${res.status} ${metodo} ${caminho}: ${msg}`),{providerStatus:res.status});
   }
   return dados;
 }
@@ -148,7 +148,8 @@ Deno.serve(async (req) => {
     }
     const {data: registro,error: erroRegistro}=await admin.from("cobrancas_pix").insert({...extras,user_id:user.id,plano:p.chave,ciclo,valor,limite_viveiros:p.limite_viveiros,expira_em:new Date(Date.now()+minutosAteExpirar*60000).toISOString()}).select("id").single();
     if(erroRegistro || !registro) return responde({error:"Não foi possível registrar a cobrança."},500);
-    const checkout = await asaas("/checkouts", "POST", {
+    let checkout;
+    try {checkout = await asaas("/checkouts", "POST", {
       billingTypes: ["PIX"],
       chargeTypes: ["DETACHED"],
       minutesToExpire: minutosAteExpirar,
@@ -166,6 +167,16 @@ Deno.serve(async (req) => {
       }],
     });
 
+    }catch(err){
+      const status=(err as {providerStatus?:number})?.providerStatus;
+      if(status && [400,401,403,422].includes(status)){
+        const {error}=await admin.from("cobrancas_pix").update({status:"cancelado"}).eq("id",registro.id).eq("status","pendente").is("asaas_checkout_id",null);
+        if(!error)return responde({error:"O Asaas recusou a criação do checkout. Nenhum Pix foi emitido. Tente novamente ou contate o atendimento."},422);
+      }
+      const {error}=await admin.from("cobranca_revisao").upsert({chave:"checkout:"+registro.id,evento:"CHECKOUT_INDETERMINADO",referencia:registro.id});
+      if(error)console.error("revisao checkout",error.message);
+      return responde({error:"Estamos conferindo se o Asaas criou seu checkout. Não faça outro pagamento; consulte o atendimento."},503);
+    }
     const id = checkout?.id as string | undefined;
     if (!id) throw new Error("O Asaas nao devolveu o id do checkout");
 
