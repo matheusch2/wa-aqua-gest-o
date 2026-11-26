@@ -255,12 +255,6 @@
                  A grade é montada por pcRender(), de 6 a 35 g. -->
             <div class="sec-tit">Preços do camarão</div>
             <div class="pc-card">
-                <p class="pc-aviso">
-                    Valor do <b>quilo</b> por tamanho. Preencha só os tamanhos que têm preço —
-                    quem fica em branco não aparece para ninguém.
-                    <span class="alerta">A faixa some sozinha depois de 10 dias sem atualização</span>: preço velho é pior que preço nenhum.
-                </p>
-                <p class="pc-resumo" id="pc-resumo"></p>
                 <div class="pc-grade" id="pc-grade"></div>
                 <div class="pc-acoes">
                     <button class="pc-btn" id="pc-salvar" onclick="pcSalvar(this)">Publicar preços</button>
@@ -757,24 +751,15 @@
             if (!el) return;
             let html = "";
             for (let g = PC_MIN; g <= PC_MAX; g++) {
-                const salvo = pcSalvos[g];
                 const txt = pcCampos[g] ?? "";
-                const ant = salvo && salvo.preco_anterior ? Number(salvo.preco_anterior) : null;
-                let var_ = "";
-                if (ant !== null && salvo) {
-                    const d = Number(salvo.preco) - ant;
-                    const cls = d > 0 ? "sobe" : d < 0 ? "desce" : "";
-                    var_ = `<div class="pc-var ${cls}">${d > 0 ? "▲" : d < 0 ? "▼" : ""} antes ${pcMoeda(ant)}</div>`;
-                }
                 html += `
                 <div class="pc-cel${pcValor(g) > 0 ? " tem" : ""}">
                     <div class="pc-cel-tam">${g} g</div>
                     <div class="pc-cel-campo">
                         <span class="pc-rs">R$</span>
-                        <input id="pc-in-${g}" inputmode="decimal" placeholder="—" value="${txt}"
+                        <input aria-label="Preço por quilo para ${g} gramas" id="pc-in-${g}" inputmode="decimal" placeholder="—" value="${txt}"
                                onkeydown="pcTecla(event, ${g})" oninput="pcDigitou(${g}, this)" onblur="pcAjeitar(${g}, this)">
                     </div>
-                    ${var_ || '<div class="pc-var"></div>'}
                 </div>`;
             }
             el.innerHTML = html;
