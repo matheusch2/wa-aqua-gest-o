@@ -8007,7 +8007,28 @@ function _planoLimiteEfetivo() {
 // A conta está em modo somente leitura?
 // Só trava plano PAGO cujo pagamento parou (pendente/cancelado) e que já
 // passou da carência. Nunca trava quem está no grátis nem quem está em dia.
+// A conta foi bloqueada pelo suporte? Nada a ver com plano ou vencimento.
+function _bloqueioAdministrativo() {
+  return !!(_planoEfetivo && _planoEfetivo.bloqueio_admin);
+}
+
+// O aviso certo para cada caso. Mandar "regularize o pagamento" para quem foi
+// bloqueado pelo suporte faz a pessoa pagar achando que resolve — e não
+// resolve: o desbloqueio é outra coisa, e só o suporte faz.
+function _avisoBloqueio() {
+  if (_bloqueioAdministrativo()) {
+    const m = _planoEfetivo && _planoEfetivo.bloqueio_admin_motivo;
+    return "Conta bloqueada pelo suporte." + (m ? " Motivo: " + m : "") + " Fale com a gente para resolver.";
+  }
+  return "Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.";
+}
+
 function _contaBloqueada() {
+  // Bloqueio administrativo vem primeiro e não tem relação com pagamento:
+  // o suporte travou a conta, e pagar não destrava. Vem do servidor, em
+  // meu_plano_efetivo, e as políticas do banco barram a escrita de todo jeito
+  // — isto aqui é só para a tela avisar em vez de deixar o lançamento falhar.
+  if (_bloqueioAdministrativo()) return true;
   if (_planoEfetivo) return false;
   const a = assinatura;
   if (!a) return false;                                // sem assinatura não trava
@@ -8027,7 +8048,7 @@ function _contaBloqueada() {
 // viveiro específico (catálogos, boletos, custos fixos, produtos).
 function _bloqueioEdicao() {
   if (_contaBloqueada()) {
-    _toastErro("Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.");
+    _toastErro(_avisoBloqueio());
     return true;
   }
   return false;
@@ -8078,7 +8099,7 @@ function _viveiroForaDoLimite(idx) {
 // viveiro específico está além do limite do plano.
 function _bloqueioViveiro(idx) {
   if (_contaBloqueada()) {
-    _toastErro("Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.");
+    _toastErro(_avisoBloqueio());
     return true;
   }
   if (_viveiroForaDoLimite(idx)) {

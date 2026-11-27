@@ -897,10 +897,17 @@
                 const a = c.assinatura;
                 const plano = a && a.plano ? a.plano : "gratis";
                 const status = a ? a.status : "ativo";
+                /* O selo comercial e o selo de bloqueio são coisas diferentes agora.
+                   Antes "Bloqueado" era só o status 'cancelado' — e o status é o
+                   mesmo campo que o pagamento escreve. O bloqueio administrativo
+                   tem selo próprio, com quem, quando e por quê. */
                 const stBadge = plano === "gratis" || (status === "ativo" && infoVencimento(a)?.venc) ? "" :
                     status === "ativo" ? `<span class="badge b-ativo">Ativo</span>` :
                     status === "pendente" ? `<span class="badge b-pend">Pendente</span>` :
-                    `<span class="badge b-canc">Bloqueado</span>`;
+                    `<span class="badge b-canc">Cancelado</span>`;
+                const bloqBadge = a && a.bloqueio_admin_em
+                    ? `<span class="badge b-canc" title="${esc(a.bloqueio_admin_motivo || "")}">Bloqueado por admin · ${dataCurta(a.bloqueio_admin_em)}</span>`
+                    : "";
                 const v = infoVencimento(a);
                 const ini = ((c.nome || c.email || "?").trim()[0] || "?").toUpperCase();
                 const aberto = abertos.has(c.id);
@@ -913,7 +920,7 @@
                             ${c.nome ? `<div class="cli-email">${esc(c.email)}</div>` : ""}
                             <div class="cli-badges">
                                 <span class="badge b-plano">${NOME_PLANO[plano] || esc(plano)}</span>
-                                ${stBadge}
+                                ${stBadge}${bloqBadge}
                                 ${v ? `<span class="badge ${v.cls}">${v.txt}</span>` : ""}
                                 <span class="badge b-viv">${c.viveiros} viveiro${c.viveiros === 1 ? "" : "s"}</span>
                             </div>
@@ -958,8 +965,8 @@
                         <label class="cli-campo">Motivo do ajuste<input class="cli-motivo" id="motivo-${esc(c.id)}" maxlength="180" placeholder="Ex.: cortesia de implantação"></label>
                         <p class="cli-dica-acoes">O Grátis não vence. Nos planos pagos, escolha a validade. Nenhuma dessas ações registra pagamento no Asaas.</p>
                         <div class="cli-acoes"><button class="acao-btn a-liberar" onclick="manual(this,'${esc(c.id)}',false)">Liberar acesso manual</button><button style="${plano==='gratis'?'display:none':''}" class="acao-btn a-venc" onclick="manual(this,'${esc(c.id)}',true)">Ajustar validade</button></div></details><div class="cli-acoes">
-                            <button class="acao-btn a-reativar" onclick="acao(this,'reativar','${esc(c.id)}')">${ICO.check} Reativar</button>
-                            <button class="acao-btn a-bloquear" onclick="acao(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
+                            <button class="acao-btn a-reativar" onclick="bloqueioAdmin(this,'desbloquear','${esc(c.id)}')">${ICO.check} Desbloquear</button>
+                            <button class="acao-btn a-bloquear" onclick="bloqueioAdmin(this,'bloquear','${esc(c.id)}')">${ICO.block} Bloquear</button>
                         </div>
                         <div class="cli-perigo">
                             <button class="cli-excluir-link" onclick="pedirExcluir('${esc(c.id)}')">Excluir conta e todos os dados</button>
@@ -1008,6 +1015,45 @@
           catch(e){toast(e.message||'Falha ao salvar.','erro');btn.disabled=false;return}
           toast('Acesso atualizado. Ajuste salvo no histórico.','ok');try{await carregarClientes()}catch{toast('Ajuste salvo. Recarregue a lista.','ok')}
         }
+        /* BLOQUEIO ADMINISTRATIVO — caminho separado do comercial.
+           Antes isto ia pela Edge Function e gravava assinaturas.status, o
+           mesmo campo que o Pix e o cartão escrevem: um pagamento desfazia o
+           bloqueio, e um "Liberar" também (aconteceu em 01/10, ver
+           docs/bloqueio-administrativo.md). Agora chama a RPC dedicada, que
+           exige motivo, registra quem e quando, e não encosta em plano,
+           ciclo, status nem vencimento. */
+        async function bloqueioAdmin(btn, tipo, alvo) {
+            if (btn.disabled) return;
+            const bloquear = tipo === "bloquear";
+            const motivo = prompt(bloquear
+                ? "Por que está bloqueando este cliente? (3 a 180 caracteres)"
+                : "Por que está desbloqueando? (3 a 180 caracteres)");
+            if (motivo === null) return;                       // desistiu
+            if (motivo.trim().length < 3 || motivo.trim().length > 180) {
+                toast("O motivo precisa ter de 3 a 180 caracteres.", "erro");
+                return;
+            }
+            const txt = btn.textContent;
+            btn.disabled = true; btn.textContent = "Aguarde…";
+            try {
+                const { error } = await sb.rpc(
+                    bloquear ? "admin_bloquear_cliente" : "admin_desbloquear_cliente",
+                    { p_user: alvo, p_motivo: motivo.trim() });
+                if (error) throw error;
+            } catch (e) {
+                const m = String(e.message || e);
+                toast(m.includes("NAO_AUTORIZADO") ? "Sem permissão." :
+                      m.includes("NAO_ENCONTRADO") ? "Esse cliente não tem assinatura." :
+                      "Erro: " + m, "erro");
+                btn.disabled = false; btn.textContent = txt;
+                return;
+            }
+            // Daqui pra baixo já está feito no servidor.
+            const ok = bloquear ? "Cliente bloqueado." : "Bloqueio removido. O plano e o vencimento continuam como estavam.";
+            try { await carregarClientes(); toast(ok, bloquear ? "" : "ok"); }
+            catch (e) { toast(ok + " Atualize a página para ver a lista.", "ok"); }
+        }
+
         async function acao(btn, tipo, alvo) {
             if (btn.disabled) return;
             const txt = btn.textContent;
@@ -1029,15 +1075,13 @@
                 return;
             }
 
-            const ok = tipo === "liberar" ? "Pagamento registrado — plano liberado! ✅" :
-                tipo === "trocar" ? "Plano trocado." :
-                tipo === "bloquear" ? "Cliente bloqueado." : "Cliente reativado.";
+            const ok = tipo === "liberar" ? "Pagamento registrado — plano liberado! ✅" : "Plano trocado.";
             // Daqui pra baixo a ação JÁ ESTÁ FEITA no servidor. Se a lista não
             // atualizar, o botão continua travado de propósito: melhor pedir
             // para recarregar do que arriscar um segundo clique.
             try {
                 await carregarClientes();
-                toast(ok, tipo === "bloquear" ? "" : "ok");
+                toast(ok, "ok");
             } catch (e) {
                 toast(ok + " Atualize a página para ver a lista.", "ok");
             }
