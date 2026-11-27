@@ -1,0 +1,18 @@
+name: Validar bloqueio administrativo no PostgreSQL 17.6
+on:
+  push:
+    branches: [seguranca/bloqueio-administrativo-20261126]
+permissions:
+  contents: read
+jobs:
+  banco:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      # Sem rede e sem credenciais: cluster descartável dentro do contêiner.
+      # Esta máquina de desenvolvimento não tem servidor PostgreSQL, só o
+      # cliente psql — por isso o ensaio de banco roda aqui, e não local.
+      - name: Migração, gatilho, RPCs, políticas e reversão
+        run: docker run --rm --network none --user postgres -v "$PWD:/repo:ro" -w /repo postgres:17.6 bash test/postgres/validar-bloqueio.sh
