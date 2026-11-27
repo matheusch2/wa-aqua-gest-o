@@ -1,0 +1,15 @@
+name: Validar hotfix isolado no PostgreSQL 17.6
+on:
+  push:
+    branches: [hotfix/quota-viveiros-20261126]
+permissions:
+  contents: read
+jobs:
+  banco:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Migração, concorrência e reversão sem rede ou credenciais
+        run: docker run --rm --network none --user postgres -v "$PWD:/repo:ro" -w /repo postgres:17.6 bash test/postgres/validar-quota.sh
