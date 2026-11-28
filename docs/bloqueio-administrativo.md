@@ -56,7 +56,7 @@ com `service_role`, que não tem `auth.uid()`.
 
 ---
 
-## 2. Auditoria dos caminhos de escrita
+## 2. Estado anterior à correção: auditoria dos caminhos de escrita
 
 ### RLS
 
@@ -84,7 +84,7 @@ corpo de cada uma.
 - `asaas-webhook` (`service_role`): grava `status` em quatro pontos.
 - `assinar-pix` / `assinar-cartao`: escrevem só os campos de checkout.
 - **`whatsapp-webhook` não toca em assinatura nem em acesso** — só confirma
-  identidade por `whatsapp_confirmar`. Fora do alcance desta mudança.
+  identidade por `whatsapp_confirmar`. A escrita de vínculo passa pelo gatilho de whatsapp_vinculos, inclusive em RPC SECURITY DEFINER.
 
 ### Frontend
 
@@ -146,77 +146,21 @@ servidor.
 
 ## 4. Como foi ensaiado
 
-### Contra o banco de produção, numa transação desfeita
+O registro original do Claude está no commit 06db6d3. Na revisão de 28/11, produção foi consultada somente por SELECT. A validação de escrita é exclusiva de um PostgreSQL 17.6 descartável, sem rede nem credenciais do sistema.
 
-A migração inteira rodou dentro de `BEGIN … ROLLBACK`, contra o schema real.
-Resultado, com resíduo conferido em zero depois:
+## 5. Validação para revisão
 
-```
-pagamento limpando o bloqueio  -> barrado: BLOQUEIO_ADMIN_PROTEGIDO
-pagamento só no comercial      -> passou (correto)
-meu_plano_efetivo              -> bloqueio_admin=true, plano=basico, limite=5
-viveiro_permite_lancamento     -> false
-o cliente continua lendo       -> 2 viveiros
-trg_limite_viveiros            -> tgtype 21 (AFTER INSERT OR UPDATE), intacto
-carga inicial                  -> 1 conta marcada
-```
+A suíte incorpora os testes de permissões e as correções das dependências simuladas da etapa 4.1 sem importar a refatoração do app. O teste que documentava uma resposta da RPC liberando indiscriminadamente a conta passou a exigir a regra corrigida; o caso complementar mantém a precedência do plano pago vigente informado pelo servidor. A referência é 251 testes incluindo cinco subtestes do Chromium. A evidência da revisão é a execução verde dos dois jobs no SHA do PR.
 
-A terceira linha é o ponto da tarefa: a situação comercial segue intacta
-(`basico`, limite 5) e a conta está bloqueada assim mesmo.
-
-### Testes automatizados
-
-`test/bloqueio-administrativo.test.js` — 16 casos, todos provados com defeito
-plantado, um de cada vez:
-
-| defeito plantado | casos que quebram |
-|---|---|
-| a tela ignora o bloqueio administrativo | 3 |
-| o aviso volta a mandar pagar | 1 |
-| o painel para de pedir motivo | 1 |
-| a Edge Function volta a gravar `status` | 1 |
-| o desbloqueio deixa de conferir o plano | 1 |
-| a migração encosta na quota | 1 |
-| a reversão perde o passo 0 | 1 |
-
-### O que **não** deu para rodar aqui
-
-O ensaio de banco em cluster próprio. Esta máquina tem só o cliente `psql`,
-sem `initdb`/`pg_ctl`. Escrevi `test/postgres/bloqueio.sql` e
-`test/postgres/validar-bloqueio.sh` no mesmo molde do `validar-quota.sh` do
-hotfix, com workflow em `.github/workflows/validar-bloqueio-administrativo.yml`
-— **eles nunca foram executados**. A sintaxe do shell foi conferida
-(`bash -n`); a do SQL, não. Rodar na CI é pré-requisito para aplicar.
-
----
-
-## 5. Estado dos testes
-
-| | antes | depois |
-|---|---:|---:|
-| passam | 187 | **203** |
-| falham | 10 | **10** |
-| ignorados | 0 | 0 |
-
-As 10 falhas são herdadas da `main` e **não têm relação com esta mudança**:
-são os testes de `planos` e `webhook` que a branch `refatoracao/estrutura-20261126`
-já corrigiu (lá são 235 passando). Confirmei que são exatamente as mesmas de
-antes das minhas alterações. Quando as duas branches se encontrarem, a conta
-passa a ser 235 + 16.
-
-Não toquei em `test/fluidez.test.js`, `test/helpers/*` nem
-`test/sw-rede-primeiro.test.js`, justamente para não conflitar com a branch de
-refatoração. Também não encostei na modularização do JavaScript.
-
----
+No banco descartável, aplicar primeiro a quota publicada, depois esta migração. Verificar leitura com RLS, escrita operacional com service_role, RPC de escolha executada com privilégios do proprietário, custo sem viveiro, WhatsApp, pagamento comercial, UPSERT e exclusão de assinatura. A reversão precisa recusar bloqueios vigentes; depois de um desbloqueio legítimo no ambiente de teste, deve preservar a quota e o histórico.
 
 ## 6. Plano de reversão
 
 `banco/reversoes/bloqueio-administrativo-20261127.sql`, na ordem inversa:
-políticas, funções de plano de volta à versão de 26/11, gatilho e RPCs, e por
+guarda de bloqueios vigentes, gatilhos operacionais, políticas, funções de plano de volta à versão de 26/11, gatilho e RPCs, e por
 último as colunas.
 
-**Reverter apaga quem está bloqueado.** O histórico em `admin_historico`
+**A reversão recusa prosseguir enquanto houver qualquer bloqueio vigente.** Em uma instalação sem bloqueios, remove as colunas. O histórico em `admin_historico`
 permanece (as ações e os motivos ficam), mas o *estado* se perde. Por isso o
 arquivo começa com um **passo 0** que não é destrutivo: uma consulta que lista
 os bloqueados, para alguém anotar antes. A reversão termina conferindo que a
@@ -245,11 +189,12 @@ trava o `assinaturas.status`, que é o problema de origem.
    (1) migração, (2) Edge Function, (3) painel e app. Entre (1) e (3) o painel
    antigo continua funcionando pelo caminho velho — daí o 410 vir depois da
    migração, e não antes.
-4. **`_contaBloqueada()` continua com o atalho do `_planoEfetivo`.** Acrescentei
-   o bloqueio administrativo antes dele, mas a inconsistência comercial
-   registrada em `docs/seguranca-limites.md` segue de pé. É assunto da outra
-   branch; misturar aqui atrapalharia as duas.
-5. **O gatilho depende de um sinal de sessão** (`wa.bloqueio_admin`). Quem
-   escrever uma função nova com `set_config('wa.bloqueio_admin','1',true)`
-   contorna a proteção. É uma barreira contra engano, não contra um
-   administrador do banco decidido — e nenhuma barreira dentro do banco seria.
+
+## Revisão de 28/11: controles finais
+
+- A autorização de alteração dos três campos é privada ao banco e vinculada à transação e ao titular. O gatilho a consome. Não há sinal de sessão aceito. DELETE da assinatura bloqueada, transferência do titular e TRUNCATE são recusados. UPSERT comercial pode atualizar o plano sem limpar o bloqueio.
+- O gatilho operacional verifica os titulares anterior e novo, com trava de leitura na assinatura até o commit, nas 13 tabelas de gestão, incluindo escolha gratuita, contatos e vínculo WhatsApp. Custos consultam user_id mesmo sem viveiro. Acessos (telemetria), Pix e períodos de cartão continuam independentes. Novas tabelas operacionais precisam aderir explicitamente.
+- A RPC de consulta não aceita identificador: consulta somente auth.uid(). O aviso da aplicação separa pagamento de suporte e utiliza a assinatura carregada quando faltar a informação da RPC.
+- Conta 32bcf26d: básico anual, status comercial cancelado, vencimento registrado em 29/08/2027. Sem assinatura de cartão vinculada, períodos de cartão ou Pix aplicado encontrados. O último evento administrativo relevante é bloquear em 12/10. Isso sustenta migrar o bloqueio, não reativar o plano nem atribuir causa comercial ao cancelamento.
+- Pré-publicação: com aprovação separada, suspender ações administrativas durante a troca; conferir main, CI, titularidade das tabelas e RPCs, ACL, ausência do novo schema e lista atual de candidatos no histórico. Registrar contagens, quota e ACL do carimbo. Divergência: parar. Aplicar somente a nova migração, depois admin-clientes e a interface. Conferir por SELECT trilha, quantidade de bloqueios, esquema, acesso de leitura, status comercial e logs. Não repetir a migração da quota.
+- Reversão: não desbloquear clientes para contornar a guarda. Havendo qualquer bloqueio vigente, manter o banco protegido e corrigir incrementalmente. Sem bloqueios e com operações administrativas suspensas, guardar auditoria, coordenar versões da função e painel, executar somente o SQL de reversão do bloqueio e conferir a quota. Nunca reverter a quota para desfazer esta mudança.

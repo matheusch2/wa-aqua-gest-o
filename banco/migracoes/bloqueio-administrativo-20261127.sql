@@ -56,15 +56,8 @@
 --     gatilho, nem na funcao da quota, nem no schema dela. Ha teste que confere
 --     que nenhum desses nomes aparece aqui fora de comentario.
 --
--- ENSAIADA CONTRA O BANCO DE PRODUCAO em 27/11/2026, dentro de uma transacao
--- desfeita no fim (BEGIN ... ROLLBACK). Resultado, com residuo conferido em
--- zero depois:
---   pagamento tentando limpar o bloqueio -> barrado pelo gatilho
---   pagamento mexendo so no comercial    -> passou
---   meu_plano_efetivo: bloqueio_admin=true, plano=basico, limite=5
---   viveiro_permite_lancamento           -> false
---   o cliente continua lendo os viveiros dele
---   trg_limite_viveiros                  -> tgtype 21, intacto
+-- Os testes desta revisão são executados exclusivamente em cluster descartável.
+-- Conferências em produção são somente leitura.
 --
 -- COMO RODAR: como postgres, num unico BEGIN/COMMIT. Reversao em
 -- banco/reversoes/bloqueio-administrativo-20261127.sql.
@@ -108,7 +101,7 @@ CREATE INDEX IF NOT EXISTS ix_assinaturas_bloqueio_admin
 -- A garantia nao pode depender de disciplina de quem escreve codigo. O
 -- webhook do Asaas e a admin-clientes usam service_role, que passa por cima
 -- de RLS; gatilho eles nao passam. Qualquer escrita que mude uma das tres
--- colunas sem o sinal da sessao e recusada.
+-- colunas sem autorização privada da RPC é recusada.
 
 WITH ultima AS (
   SELECT DISTINCT ON (alvo_user_id) alvo_user_id, acao, criado_em, admin_id

@@ -111,6 +111,16 @@ END $$;
 RESET ROLE;
 SQL
 
+if "${sql[@]}" -f "banco/reversoes/$m" >"$tmp/reversao" 2>&1; then exit 1; fi
+grep -q REVERSAO_COM_BLOQUEIOS "$tmp/reversao"
+"${sql[@]}" <<'SQL'
+SELECT set_config('wa.uid','00000000-0000-0000-0000-00000000000a',false);
+SELECT public.admin_desbloquear_cliente('00000000-0000-0000-0000-000000000001','fim do ensaio isolado');
+DO $$ BEGIN
+ IF EXISTS (SELECT FROM wa_bloqueio_interno.autorizacoes) THEN RAISE EXCEPTION 'autorização residual'; END IF;
+ IF NOT EXISTS (SELECT FROM public.admin_historico WHERE acao='desbloquear') THEN RAISE EXCEPTION 'auditoria ausente'; END IF;
+END $$;
+SQL
 "${sql[@]}" -f "banco/reversoes/$m"
 [[ $("${sql[@]}" -Atc "select count(*)=0 from information_schema.columns where table_schema='public' and table_name='assinaturas' and column_name like 'bloqueio_admin%'") = t ]]
 echo 'Bloqueio administrativo: gatilho, RPCs, politicas, leitura preservada e reversao: OK'

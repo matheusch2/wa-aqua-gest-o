@@ -49,3 +49,21 @@ DO $$ DECLARE t text; alvo uuid := '00000000-0000-0000-0000-000000000001'; BEGIN
  IF to_regprocedure('public.bloqueio_admin_ativo(uuid)') IS NOT NULL THEN RAISE EXCEPTION 'consulta arbitraria exposta'; END IF;
 END $$;
 RESET ROLE;
+
+-- Mesma porta para uma RPC SECURITY DEFINER e para chamadas diretas.
+CREATE FUNCTION public.ensaio_escolha(p uuid) RETURNS void LANGUAGE sql SECURITY DEFINER
+SET search_path='' AS $$ INSERT INTO public.viveiro_gratuito_escolha(user_id,viveiro_id)
+ VALUES(auth.uid(),p) $$;
+SET ROLE authenticated;
+SELECT set_config('wa.uid','00000000-0000-0000-0000-000000000001',false);
+DO $$ BEGIN
+ IF NOT public.bloqueio_admin_ativo() THEN RAISE EXCEPTION 'titular bloqueado invisível'; END IF;
+ BEGIN PERFORM public.ensaio_escolha(gen_random_uuid()); RAISE EXCEPTION 'permitiu escolha';
+ EXCEPTION WHEN insufficient_privilege THEN IF position('BLOQUEIO_ADMIN:' in SQLERRM)=0 THEN RAISE; END IF; END;
+END $$;
+SELECT set_config('wa.uid','00000000-0000-0000-0000-00000000000a',false);
+DO $$ BEGIN
+ IF public.bloqueio_admin_ativo() THEN RAISE EXCEPTION 'consulta vazou outro titular'; END IF;
+ PERFORM public.ensaio_escolha(gen_random_uuid());
+END $$;
+RESET ROLE;

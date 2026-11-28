@@ -34,6 +34,12 @@ DO $$ BEGIN
 END $$;
 
 
+-- Falhar fechado: o histórico não substitui a proteção da escrita.
+LOCK TABLE public.assinaturas IN SHARE ROW EXCLUSIVE MODE;
+DO $$ BEGIN
+ IF EXISTS (SELECT FROM public.assinaturas WHERE bloqueio_admin_em IS NOT NULL)
+ THEN RAISE EXCEPTION 'REVERSAO_COM_BLOQUEIOS: mantenha a proteção e aplique uma correção incremental'; END IF;
+END $$;
 DO $$ DECLARE t text; BEGIN
  FOREACH t IN ARRAY ARRAY['viveiros','racoes','biometrias','despescas','ciclos','custos','produtos','boletos','custos_fixos','tipos_racao','viveiro_gratuito_escolha','whatsapp_vinculos','contatos'] LOOP
    EXECUTE format('DROP TRIGGER bloqueio_admin_escrita ON public.%I',t);
