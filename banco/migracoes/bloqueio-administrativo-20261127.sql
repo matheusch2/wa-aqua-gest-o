@@ -124,11 +124,46 @@ REVOKE ALL ON SCHEMA wa_bloqueio_interno FROM PUBLIC, anon, authenticated, servi
 CREATE TABLE wa_bloqueio_interno.autorizacoes (tx xid8, titular uuid, PRIMARY KEY(tx,titular));
 REVOKE ALL ON wa_bloqueio_interno.autorizacoes FROM PUBLIC, anon, authenticated, service_role;
 
+CREATE TABLE wa_bloqueio_interno.exclusoes(tx xid8, titular uuid, administrador uuid NOT NULL, PRIMARY KEY(tx,titular));
+REVOKE ALL ON wa_bloqueio_interno.exclusoes FROM PUBLIC, anon, authenticated, service_role;
+CREATE OR REPLACE FUNCTION public.admin_excluir_cliente(p_alvo uuid, p_email text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare email_alvo text;
+begin
+if not exists(select 1 from public.perfis where user_id=auth.uid() and role='admin') then raise exception 'Sem permissão.'; end if;
+if p_alvo=auth.uid() or exists(select 1 from public.perfis where user_id=p_alvo and role='admin') then raise exception 'Contas administrativas não podem ser excluídas.'; end if;
+select email into email_alvo from auth.users where id=p_alvo for update;
+if email_alvo is null or lower(trim(p_email)) is distinct from lower(email_alvo) then raise exception 'O e-mail não corresponde ao cadastro.'; end if;
+perform 1 from public.assinaturas where user_id=p_alvo for update;
+if exists(select 1 from public.assinaturas where user_id=p_alvo and (asaas_subscription_id is not null or (asaas_checkout_id is not null and (checkout_expira_em is null or checkout_expira_em>now())))) or exists(select 1 from public.cobrancas_pix where user_id=p_alvo and (status='pendente' or validade_ate>=current_date)) or exists(select 1 from public.periodos_cartao where user_id=p_alvo and validade>=current_date) then raise exception 'Há cobrança, assinatura vinculada ou período pago em aberto. Revise a cobrança antes de excluir.'; end if;
+if exists(select 1 from storage.objects where owner_id=p_alvo::text or owner=p_alvo) then raise exception 'Remova os arquivos deste cliente antes de excluir.'; end if;
+insert into wa_bloqueio_interno.exclusoes values(pg_current_xact_id(),p_alvo,auth.uid());
+delete from public.viveiro_gratuito_escolha where user_id=p_alvo;
+delete from public.custos where user_id=p_alvo;
+delete from public.racoes where user_id=p_alvo;
+delete from public.biometrias where user_id=p_alvo;
+delete from public.despescas where user_id=p_alvo;
+delete from public.ciclos where user_id=p_alvo;
+delete from public.viveiros where user_id=p_alvo;
+delete from public.boletos where user_id=p_alvo;
+delete from public.custos_fixos where user_id=p_alvo;
+delete from public.periodos_cartao where user_id=p_alvo;
+delete from public.cobrancas_pix where user_id=p_alvo;
+delete from public.admin_historico where alvo_user_id=p_alvo or admin_id=p_alvo;
+delete from auth.users where id=p_alvo;
+if not found then raise exception 'Exclusão não concluída'; end if;
+delete from wa_bloqueio_interno.exclusoes where tx=pg_current_xact_id() and titular=p_alvo;
+end $function$;
+
 CREATE OR REPLACE FUNCTION public.assinatura_bloqueio_admin_protegido()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 BEGIN
  IF TG_OP = 'DELETE' THEN
-   IF OLD.bloqueio_admin_em IS NOT NULL THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO'; END IF;
+   IF OLD.bloqueio_admin_em IS NOT NULL AND NOT EXISTS (SELECT FROM wa_bloqueio_interno.exclusoes WHERE tx=pg_current_xact_id() AND titular=OLD.user_id AND administrador=auth.uid()) THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO'; END IF;
    RETURN OLD;
  END IF;
  IF TG_OP = 'INSERT' THEN
@@ -327,6 +362,9 @@ CREATE FUNCTION wa_bloqueio_interno.validar_escrita() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE anterior uuid; destino uuid; marcada timestamptz;
 BEGIN
+ IF TG_OP='DELETE' THEN
+   IF EXISTS (SELECT FROM wa_bloqueio_interno.exclusoes WHERE tx=pg_current_xact_id() AND titular=OLD.user_id AND administrador=auth.uid()) THEN RETURN OLD; END IF;
+ END IF;
  IF TG_OP <> 'INSERT' THEN anterior := OLD.user_id; END IF;
  IF TG_OP <> 'DELETE' THEN destino := NEW.user_id; END IF;
  FOR marcada IN SELECT a.bloqueio_admin_em FROM public.assinaturas a

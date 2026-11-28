@@ -49,6 +49,37 @@ END $$;
 DROP TRIGGER bloqueio_admin_truncate ON public.assinaturas;
 DROP FUNCTION wa_bloqueio_interno.validar_escrita();
 DROP FUNCTION wa_bloqueio_interno.negar_truncate();
+CREATE OR REPLACE FUNCTION public.admin_excluir_cliente(p_alvo uuid, p_email text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare email_alvo text;
+begin
+if not exists(select 1 from public.perfis where user_id=auth.uid() and role='admin') then raise exception 'Sem permissão.'; end if;
+if p_alvo=auth.uid() or exists(select 1 from public.perfis where user_id=p_alvo and role='admin') then raise exception 'Contas administrativas não podem ser excluídas.'; end if;
+select email into email_alvo from auth.users where id=p_alvo for update;
+if email_alvo is null or lower(trim(p_email)) is distinct from lower(email_alvo) then raise exception 'O e-mail não corresponde ao cadastro.'; end if;
+perform 1 from public.assinaturas where user_id=p_alvo for update;
+if exists(select 1 from public.assinaturas where user_id=p_alvo and (asaas_subscription_id is not null or (asaas_checkout_id is not null and (checkout_expira_em is null or checkout_expira_em>now())))) or exists(select 1 from public.cobrancas_pix where user_id=p_alvo and (status='pendente' or validade_ate>=current_date)) or exists(select 1 from public.periodos_cartao where user_id=p_alvo and validade>=current_date) then raise exception 'Há cobrança, assinatura vinculada ou período pago em aberto. Revise a cobrança antes de excluir.'; end if;
+if exists(select 1 from storage.objects where owner_id=p_alvo::text or owner=p_alvo) then raise exception 'Remova os arquivos deste cliente antes de excluir.'; end if;
+delete from public.viveiro_gratuito_escolha where user_id=p_alvo;
+delete from public.custos where user_id=p_alvo;
+delete from public.racoes where user_id=p_alvo;
+delete from public.biometrias where user_id=p_alvo;
+delete from public.despescas where user_id=p_alvo;
+delete from public.ciclos where user_id=p_alvo;
+delete from public.viveiros where user_id=p_alvo;
+delete from public.boletos where user_id=p_alvo;
+delete from public.custos_fixos where user_id=p_alvo;
+delete from public.periodos_cartao where user_id=p_alvo;
+delete from public.cobrancas_pix where user_id=p_alvo;
+delete from public.admin_historico where alvo_user_id=p_alvo or admin_id=p_alvo;
+delete from auth.users where id=p_alvo;
+end $function$;
+
+DROP TABLE wa_bloqueio_interno.exclusoes;
 DROP TABLE wa_bloqueio_interno.autorizacoes;
 DROP SCHEMA wa_bloqueio_interno;
 -- ─── 1. As politicas de escrita voltam ao que eram ─────────────────────────

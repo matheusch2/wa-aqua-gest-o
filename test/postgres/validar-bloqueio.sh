@@ -19,11 +19,11 @@ m=bloqueio-administrativo-20261127.sql
 CREATE ROLE service_role BYPASSRLS; CREATE ROLE anon; CREATE ROLE authenticated;
 CREATE SCHEMA auth;
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
-CREATE TABLE auth.users(id uuid PRIMARY KEY);
+CREATE TABLE auth.users(id uuid PRIMARY KEY, email text);
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
   $$ SELECT nullif(current_setting('wa.uid', true),'')::uuid $$;
 CREATE TABLE public.perfis(user_id uuid, role text);
-CREATE TABLE public.assinaturas(user_id uuid PRIMARY KEY, plano text, ciclo text, status text,
+CREATE TABLE public.assinaturas(user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, asaas_checkout_id text, checkout_expira_em timestamptz, plano text, ciclo text, status text,
   limite_viveiros int, proximo_vencimento date, asaas_subscription_id text, atualizado_em timestamptz);
 CREATE TABLE public.admin_historico(admin_id uuid, alvo_user_id uuid, acao text, detalhes jsonb,
   criado_em timestamptz DEFAULT now());
@@ -32,7 +32,10 @@ CREATE TABLE public.viveiros(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user
 CREATE TABLE public.viveiro_gratuito_escolha(user_id uuid, viveiro_id uuid);
 CREATE TABLE public.boletos(user_id uuid);
 CREATE TABLE public.custos_fixos(user_id uuid);
-CREATE TABLE public.produtos(user_id uuid);
+CREATE TABLE public.produtos(user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE);
+CREATE SCHEMA storage; CREATE TABLE storage.objects(owner uuid,owner_id text);
+CREATE TABLE public.cobrancas_pix(user_id uuid,status text,validade_ate date);
+CREATE TABLE public.periodos_cartao(user_id uuid,validade date);
 CREATE TABLE public.tipos_racao(user_id uuid);
 ALTER TABLE public.viveiros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.boletos ENABLE ROW LEVEL SECURITY;
@@ -60,6 +63,7 @@ SQL
 "${sql[@]}" -f banco/migracoes/seguranca-viveiros-20261126.sql
 "${sql[@]}" -f "banco/migracoes/$m"
 "${sql[@]}" -f test/postgres/bloqueio.sql
+"${sql[@]}" -f test/postgres/exclusao.sql
 
 # As RPCs, com um admin de verdade na sessao.
 "${sql[@]}" <<'SQL'
