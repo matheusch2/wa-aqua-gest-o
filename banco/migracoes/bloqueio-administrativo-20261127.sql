@@ -110,25 +110,47 @@ CREATE INDEX IF NOT EXISTS ix_assinaturas_bloqueio_admin
 -- de RLS; gatilho eles nao passam. Qualquer escrita que mude uma das tres
 -- colunas sem o sinal da sessao e recusada.
 
-CREATE OR REPLACE FUNCTION public.assinatura_bloqueio_admin_protegido()
-RETURNS trigger LANGUAGE plpgsql SET search_path TO '' AS $function$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    IF NEW.bloqueio_admin_em IS NOT NULL
-       AND coalesce(current_setting('wa.bloqueio_admin', true),'') <> '1' THEN
-      RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO: use admin_bloquear_cliente()';
-    END IF;
-    RETURN NEW;
-  END IF;
+WITH ultima AS (
+  SELECT DISTINCT ON (alvo_user_id) alvo_user_id, acao, criado_em, admin_id
+    FROM public.admin_historico
+   WHERE acao IN ('bloquear','reativar','desbloquear')
+   ORDER BY alvo_user_id, criado_em DESC)
+UPDATE public.assinaturas a
+   SET bloqueio_admin_em     = u.criado_em,
+       bloqueio_admin_por    = u.admin_id,
+       bloqueio_admin_motivo = 'Migrado do historico administrativo em 27/11/2026; motivo original nao foi registrado na epoca.'
+  FROM ultima u
+ WHERE a.user_id = u.alvo_user_id
+   AND u.acao = 'bloquear'
+   AND a.bloqueio_admin_em IS NULL;
 
-  IF NEW.bloqueio_admin_em     IS DISTINCT FROM OLD.bloqueio_admin_em
-     OR NEW.bloqueio_admin_por    IS DISTINCT FROM OLD.bloqueio_admin_por
-     OR NEW.bloqueio_admin_motivo IS DISTINCT FROM OLD.bloqueio_admin_motivo THEN
-    IF coalesce(current_setting('wa.bloqueio_admin', true),'') <> '1' THEN
-      RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO: pagamento, webhook ou liberacao nao mexem no bloqueio administrativo';
-    END IF;
-  END IF;
-  RETURN NEW;
+
+-- Autorizações de uma única linha, emitidas e consumidas na mesma transação.
+CREATE SCHEMA wa_bloqueio_interno;
+REVOKE ALL ON SCHEMA wa_bloqueio_interno FROM PUBLIC, anon, authenticated, service_role;
+CREATE TABLE wa_bloqueio_interno.autorizacoes (tx xid8, titular uuid, PRIMARY KEY(tx,titular));
+REVOKE ALL ON wa_bloqueio_interno.autorizacoes FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.assinatura_bloqueio_admin_protegido()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
+BEGIN
+ IF TG_OP = 'DELETE' THEN
+   IF OLD.bloqueio_admin_em IS NOT NULL THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO'; END IF;
+   RETURN OLD;
+ END IF;
+ IF TG_OP = 'INSERT' THEN
+   IF num_nonnulls(NEW.bloqueio_admin_em,NEW.bloqueio_admin_por,NEW.bloqueio_admin_motivo)>0
+   THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO'; END IF;
+   RETURN NEW;
+ END IF;
+ IF OLD.bloqueio_admin_em IS NOT NULL AND OLD.user_id IS DISTINCT FROM NEW.user_id
+ THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO'; END IF;
+ IF (NEW.bloqueio_admin_em,NEW.bloqueio_admin_por,NEW.bloqueio_admin_motivo)
+ IS DISTINCT FROM (OLD.bloqueio_admin_em,OLD.bloqueio_admin_por,OLD.bloqueio_admin_motivo) THEN
+   DELETE FROM wa_bloqueio_interno.autorizacoes WHERE tx=pg_current_xact_id() AND titular=OLD.user_id;
+   IF NOT FOUND THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN_PROTEGIDO'; END IF;
+ END IF;
+ RETURN NEW;
 END $function$;
 
 COMMENT ON FUNCTION public.assinatura_bloqueio_admin_protegido() IS
@@ -138,7 +160,7 @@ REVOKE EXECUTE ON FUNCTION public.assinatura_bloqueio_admin_protegido() FROM PUB
 
 DROP TRIGGER IF EXISTS trg_assinatura_bloqueio_admin ON public.assinaturas;
 CREATE TRIGGER trg_assinatura_bloqueio_admin
-  BEFORE INSERT OR UPDATE ON public.assinaturas
+  BEFORE INSERT OR UPDATE OR DELETE ON public.assinaturas
   FOR EACH ROW EXECUTE FUNCTION public.assinatura_bloqueio_admin_protegido();
 
 -- ─── 3. AS DUAS ACOES ADMINISTRATIVAS ──────────────────────────────────────
@@ -155,18 +177,18 @@ BEGIN
   END IF;
   IF p_user IS NULL THEN RAISE EXCEPTION 'Informe o cliente.'; END IF;
 
-  PERFORM set_config('wa.bloqueio_admin','1',true);   -- so vale nesta transacao
+  INSERT INTO wa_bloqueio_interno.autorizacoes VALUES(pg_current_xact_id(),p_user);
 
   UPDATE public.assinaturas
      SET bloqueio_admin_em     = coalesce(bloqueio_admin_em, now()),
          bloqueio_admin_por    = auth.uid(),
-         bloqueio_admin_motivo = trim(p_motivo),
-         atualizado_em         = now()
+         bloqueio_admin_motivo = trim(p_motivo)
    WHERE user_id = p_user
    RETURNING * INTO v_linha;
 
   IF NOT FOUND THEN RAISE EXCEPTION 'NAO_ENCONTRADO: esse cliente nao tem assinatura'; END IF;
 
+  DELETE FROM wa_bloqueio_interno.autorizacoes WHERE tx=pg_current_xact_id() AND titular=p_user;
   INSERT INTO public.admin_historico(admin_id, alvo_user_id, acao, detalhes)
   VALUES (auth.uid(), p_user, 'bloquear',
           jsonb_build_object('motivo', trim(p_motivo), 'desde', v_linha.bloqueio_admin_em));
@@ -189,13 +211,12 @@ BEGIN
   SELECT * INTO v_antes FROM public.assinaturas WHERE user_id = p_user FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'NAO_ENCONTRADO: esse cliente nao tem assinatura'; END IF;
 
-  PERFORM set_config('wa.bloqueio_admin','1',true);
+  INSERT INTO wa_bloqueio_interno.autorizacoes VALUES(pg_current_xact_id(),p_user);
 
   UPDATE public.assinaturas
      SET bloqueio_admin_em     = NULL,
          bloqueio_admin_por    = NULL,
-         bloqueio_admin_motivo = NULL,
-         atualizado_em         = now()
+         bloqueio_admin_motivo = NULL
    WHERE user_id = p_user
    RETURNING * INTO v_depois;
 
@@ -211,6 +232,7 @@ BEGIN
     RAISE EXCEPTION 'DESBLOQUEIO_MEXEU_NO_COMERCIAL: operacao desfeita';
   END IF;
 
+  DELETE FROM wa_bloqueio_interno.autorizacoes WHERE tx=pg_current_xact_id() AND titular=p_user;
   INSERT INTO public.admin_historico(admin_id, alvo_user_id, acao, detalhes)
   VALUES (auth.uid(), p_user, 'desbloquear',
           jsonb_build_object('motivo', trim(p_motivo),
@@ -227,14 +249,14 @@ GRANT EXECUTE ON FUNCTION public.admin_desbloquear_cliente(uuid,text) TO authent
 
 -- ─── 4. O BLOQUEIO VALE NO SERVIDOR ────────────────────────────────────────
 
-CREATE OR REPLACE FUNCTION public.bloqueio_admin_ativo(p_user uuid DEFAULT auth.uid())
+CREATE OR REPLACE FUNCTION public.bloqueio_admin_ativo()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $function$
   SELECT EXISTS (SELECT 1 FROM public.assinaturas
-                  WHERE user_id = p_user AND bloqueio_admin_em IS NOT NULL)
+                  WHERE user_id = auth.uid() AND bloqueio_admin_em IS NOT NULL)
 $function$;
 
-REVOKE ALL ON FUNCTION public.bloqueio_admin_ativo(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.bloqueio_admin_ativo(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.bloqueio_admin_ativo() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.bloqueio_admin_ativo() TO authenticated;
 
 /* meu_plano_efetivo passa a dizer se a conta esta bloqueada. O resto do
    objeto continua igual: plano, limite e vencimento sao a situacao COMERCIAL,
@@ -307,27 +329,30 @@ BEGIN
   END LOOP;
 END $$;
 
--- ─── 5. CARGA INICIAL A PARTIR DO HISTORICO ────────────────────────────────
---
--- Conferido em 27/11/2026: cinco bloqueios e cinco reativacoes no
--- admin_historico, em tres clientes. So UM continua com "bloquear" como
--- ultima acao administrativa — os outros foram reativados por um admin.
--- Nenhum pagamento aparece desfazendo bloqueio.
 
-DO $$ BEGIN PERFORM set_config('wa.bloqueio_admin','1',true); END $$;
-
-WITH ultima AS (
-  SELECT DISTINCT ON (alvo_user_id) alvo_user_id, acao, criado_em, admin_id
-    FROM public.admin_historico
-   WHERE acao IN ('bloquear','reativar','desbloquear')
-   ORDER BY alvo_user_id, criado_em DESC)
-UPDATE public.assinaturas a
-   SET bloqueio_admin_em     = u.criado_em,
-       bloqueio_admin_por    = u.admin_id,
-       bloqueio_admin_motivo = 'Migrado do historico administrativo em 27/11/2026; motivo original nao foi registrado na epoca.'
-  FROM ultima u
- WHERE a.user_id = u.alvo_user_id
-   AND u.acao = 'bloquear'
-   AND a.bloqueio_admin_em IS NULL;
-
+CREATE FUNCTION wa_bloqueio_interno.validar_escrita() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE anterior uuid; destino uuid; marcada timestamptz;
+BEGIN
+ IF TG_OP <> 'INSERT' THEN anterior := OLD.user_id; END IF;
+ IF TG_OP <> 'DELETE' THEN destino := NEW.user_id; END IF;
+ FOR marcada IN SELECT a.bloqueio_admin_em FROM public.assinaturas a
+   WHERE a.user_id IN (anterior,destino) ORDER BY a.user_id FOR SHARE LOOP
+   IF marcada IS NOT NULL THEN RAISE EXCEPTION 'BLOQUEIO_ADMIN: conta somente leitura' USING ERRCODE='42501'; END IF;
+ END LOOP;
+ IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+ RETURN NEW;
+END $$;
+CREATE FUNCTION wa_bloqueio_interno.negar_truncate() RETURNS trigger
+LANGUAGE plpgsql SET search_path='' AS $$ BEGIN
+ RAISE EXCEPTION 'TRUNCATE não permitido em tabelas protegidas' USING ERRCODE='42501';
+END $$;
+DO $$ DECLARE t text; BEGIN
+ FOREACH t IN ARRAY ARRAY['viveiros','racoes','biometrias','despescas','ciclos','custos','produtos','boletos','custos_fixos','tipos_racao','viveiro_gratuito_escolha','whatsapp_vinculos','contatos'] LOOP
+   EXECUTE format('CREATE TRIGGER bloqueio_admin_escrita BEFORE INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION wa_bloqueio_interno.validar_escrita()',t);
+ END LOOP;
+ FOREACH t IN ARRAY (ARRAY['viveiros','racoes','biometrias','despescas','ciclos','custos','produtos','boletos','custos_fixos','tipos_racao','viveiro_gratuito_escolha','whatsapp_vinculos','contatos'] || ARRAY['assinaturas']) LOOP
+   EXECUTE format('CREATE TRIGGER bloqueio_admin_truncate BEFORE TRUNCATE ON public.%I FOR EACH STATEMENT EXECUTE FUNCTION wa_bloqueio_interno.negar_truncate()',t);
+ END LOOP;
+END $$;
 COMMIT;

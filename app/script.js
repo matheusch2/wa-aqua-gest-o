@@ -8009,7 +8009,7 @@ function _planoLimiteEfetivo() {
 // passou da carência. Nunca trava quem está no grátis nem quem está em dia.
 // A conta foi bloqueada pelo suporte? Nada a ver com plano ou vencimento.
 function _bloqueioAdministrativo() {
-  return !!(_planoEfetivo && _planoEfetivo.bloqueio_admin);
+  return !!(_planoEfetivo?.bloqueio_admin ?? assinatura?.bloqueio_admin_em);
 }
 
 // O aviso certo para cada caso. Mandar "regularize o pagamento" para quem foi
@@ -8017,7 +8017,7 @@ function _bloqueioAdministrativo() {
 // resolve: o desbloqueio é outra coisa, e só o suporte faz.
 function _avisoBloqueio() {
   if (_bloqueioAdministrativo()) {
-    const m = _planoEfetivo && _planoEfetivo.bloqueio_admin_motivo;
+    const m = _planoEfetivo?.bloqueio_admin_motivo ?? assinatura?.bloqueio_admin_motivo;
     return "Conta bloqueada pelo suporte." + (m ? " Motivo: " + m : "") + " Fale com a gente para resolver.";
   }
   return "Conta em modo somente leitura. Regularize o pagamento para lançar ou editar.";
@@ -8029,7 +8029,7 @@ function _contaBloqueada() {
   // meu_plano_efetivo, e as políticas do banco barram a escrita de todo jeito
   // — isto aqui é só para a tela avisar em vez de deixar o lançamento falhar.
   if (_bloqueioAdministrativo()) return true;
-  if (_planoEfetivo) return false;
+  if (_planoEfetivo?.plano && !["gratis", "gratis1"].includes(_planoEfetivo.plano)) return false;
   const a = assinatura;
   if (!a) return false;                                // sem assinatura não trava
   if (!a.plano || a.plano === "gratis") return false;  // grátis não trava
@@ -8098,7 +8098,7 @@ function _viveiroForaDoLimite(idx) {
 // Guarda de escrita POR VIVEIRO: bloqueia se a conta está travada OU se este
 // viveiro específico está além do limite do plano.
 function _bloqueioViveiro(idx) {
-  if (_contaBloqueada()) {
+  if (_bloqueioAdministrativo() || (!_planoEfetivo && _contaBloqueada())) {
     _toastErro(_avisoBloqueio());
     return true;
   }
@@ -8119,13 +8119,13 @@ function _mostrarBannerLeitura() {
   const div = document.createElement("div");
   div.id = "banner-leitura";
   div.innerHTML = `
-    <div class="leitura-banner" onclick="abrirAssinatura()">
+    <div class="leitura-banner" ${_bloqueioAdministrativo() ? '' : 'onclick="abrirAssinatura()"'}>
       <div class="leitura-banner-icone">
         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
       <div class="leitura-banner-texto">
         <strong>Modo somente leitura</strong>
-        <span>Você continua vendo tudo. Para voltar a lançar e editar, regularize seu plano.</span>
+        <span>${_esc(_avisoBloqueio())}</span>
       </div>
       <span class="leitura-banner-seta">›</span>
     </div>`;
@@ -8133,6 +8133,7 @@ function _mostrarBannerLeitura() {
 }
 
 async function _escolherViveiroGratis(id) {
+  if (_bloqueioAdministrativo()) { _toastErro(_avisoBloqueio()); return; }
   const r = await supabaseClient.rpc('escolher_viveiro_gratuito', {p_viveiro:id});
   if (r.error) { _toastErro('Não foi possível escolher o viveiro.'); return; }
   const efetivo = await supabaseClient.rpc('meu_plano_efetivo');

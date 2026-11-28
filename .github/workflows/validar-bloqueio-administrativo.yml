@@ -1,5 +1,8 @@
 name: Validar bloqueio administrativo no PostgreSQL 17.6
 on:
+  pull_request:
+    branches: [main]
+    paths: [banco/migracoes/bloqueio-administrativo-20261127.sql]
   push:
     branches: [seguranca/bloqueio-administrativo-20261126]
 permissions:
@@ -16,3 +19,18 @@ jobs:
       # cliente psql — por isso o ensaio de banco roda aqui, e não local.
       - name: Migração, gatilho, RPCs, políticas e reversão
         run: docker run --rm --network none --user postgres -v "$PWD:/repo:ro" -w /repo postgres:17.6 bash test/postgres/validar-bloqueio.sh
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: |
+          npm ci
+          npm install --prefix "$RUNNER_TEMP/browser" playwright@1.56.1
+          "$RUNNER_TEMP/browser/node_modules/.bin/playwright" install --with-deps chromium
+          export NODE_PATH="$RUNNER_TEMP/browser/node_modules"
+          node -e "require('playwright')"
+          npm test

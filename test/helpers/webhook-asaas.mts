@@ -106,10 +106,11 @@ await caso("cobrança do mês seguinte não ressuscita escolha velha", async () 
   const b = bancoFalso([linha], PLANOS);
   const h = await carregar(b.cliente);
   await h(pedir({ event: "PAYMENT_CONFIRMED",
-    payment: { subscription: "sub9", externalReference: UID, dueDate: "2027-01-10" } }));
+    payment: { id:"pay9", subscription: "sub9", externalReference: UID, dueDate: "2027-01-10" } }));
   assert.equal(linha.plano, "basico");
   assert.equal(linha.limite_viveiros, 5);
-  assert.equal(linha.proximo_vencimento, "2027-01-10");
+  assert.equal(linha.proximo_vencimento, "2027-02-10");
+  assert.equal(b.tabelas.periodos_cartao[0].evento,"pay9");
 });
 
 await caso("liberação manual não é desfeita pela cobrança do mês seguinte", async () => {
@@ -132,23 +133,27 @@ await caso("liberação manual não é desfeita pela cobrança do mês seguinte"
   assert.equal(linha.limite_viveiros, 999999);
 });
 
-await caso("atraso não troca plano, só marca pendente", async () => {
+await caso("atraso é encaminhado à conciliação sem rebaixamento direto", async () => {
   const linha = cliente({ plano: "pro", plano_checkout: "gratis1" });
   const b = bancoFalso([linha], PLANOS);
   const h = await carregar(b.cliente);
   await h(pedir({ event: "PAYMENT_OVERDUE", payment: { externalReference: UID } }));
-  assert.equal(linha.status, "pendente");
+  assert.equal(b.chamadas.length,1);
+  assert.equal(b.chamadas[0].nome,"tratar_aviso_cobranca");
+  assert.equal(b.chamadas[0].args.p_evento,"PAYMENT_OVERDUE");
+  assert.equal(linha.status, "ativo");
   assert.equal(linha.plano, "pro", "um atraso rebaixou o plano");
   assert.equal(linha.limite_viveiros, 999999);
 });
 
-await caso("plano que sumiu do catálogo ativa, mas não inventa limite", async () => {
+await caso("plano ausente vai para revisão e preserva o acesso anterior", async () => {
   const linha = cliente({ plano: "gratis", limite_viveiros: 1, plano_checkout: "plano-que-nao-existe" });
   const b = bancoFalso([linha], PLANOS);
   const h = await carregar(b.cliente);
   const r = await h(pedir({ event: "CHECKOUT_PAID", checkout: { externalReference: UID } }));
-  assert.equal(r.status, 200);
-  assert.equal(linha.status, "ativo", "o dinheiro entrou; tem de liberar");
+  assert.equal(r.status, 500);
+  assert.equal(b.tabelas.cobranca_revisao.length,1);
+  assert.equal(linha.plano,"gratis");
   assert.equal(linha.limite_viveiros, 1, "inventou limite para um plano inexistente");
 });
 
@@ -167,7 +172,8 @@ await caso("pagamento sem dono não escreve em ninguém", async () => {
   const h = await carregar(b.cliente);
   const r = await h(pedir({ event: "CHECKOUT_PAID",
     checkout: { id: "chk-de-outro", externalReference: "99999999-9999-9999-9999-999999999999" } }));
-  assert.equal(r.status, 200);
+  assert.equal(r.status, 500);
+  assert.equal(b.tabelas.cobranca_revisao.length,1);
   assert.equal(linha.plano, "pro");
   assert.equal(linha.status, "ativo");
 });

@@ -33,6 +33,18 @@ DO $$ BEGIN
   IF current_user <> 'postgres' THEN RAISE EXCEPTION 'Aplicar como postgres'; END IF;
 END $$;
 
+
+DO $$ DECLARE t text; BEGIN
+ FOREACH t IN ARRAY ARRAY['viveiros','racoes','biometrias','despescas','ciclos','custos','produtos','boletos','custos_fixos','tipos_racao','viveiro_gratuito_escolha','whatsapp_vinculos','contatos'] LOOP
+   EXECUTE format('DROP TRIGGER bloqueio_admin_escrita ON public.%I',t);
+   EXECUTE format('DROP TRIGGER bloqueio_admin_truncate ON public.%I',t);
+ END LOOP;
+END $$;
+DROP TRIGGER bloqueio_admin_truncate ON public.assinaturas;
+DROP FUNCTION wa_bloqueio_interno.validar_escrita();
+DROP FUNCTION wa_bloqueio_interno.negar_truncate();
+DROP TABLE wa_bloqueio_interno.autorizacoes;
+DROP SCHEMA wa_bloqueio_interno;
 -- ─── 1. As politicas de escrita voltam ao que eram ─────────────────────────
 DO $$
 DECLARE t text;
@@ -76,7 +88,7 @@ DROP TRIGGER IF EXISTS trg_assinatura_bloqueio_admin ON public.assinaturas;
 DROP FUNCTION IF EXISTS public.assinatura_bloqueio_admin_protegido();
 DROP FUNCTION IF EXISTS public.admin_bloquear_cliente(uuid, text);
 DROP FUNCTION IF EXISTS public.admin_desbloquear_cliente(uuid, text);
-DROP FUNCTION IF EXISTS public.bloqueio_admin_ativo(uuid);
+DROP FUNCTION IF EXISTS public.bloqueio_admin_ativo();
 
 -- ─── 4. As colunas, por ultimo ─────────────────────────────────────────────
 -- É aqui que o estado de bloqueio se perde. O passo 0 existe por causa disto.
