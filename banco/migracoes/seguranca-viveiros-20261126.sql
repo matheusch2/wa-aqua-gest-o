@@ -1,4 +1,4 @@
--- Proposta, ainda não aplicada. Não atualiza registros de clientes.
+-- Aplicada em produção: 20261127001241 (65d6885). Não reaplicar.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 DO $$ BEGIN

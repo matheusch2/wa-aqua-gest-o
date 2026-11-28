@@ -1,3 +1,5 @@
+**Estado: aplicada em produção.** Commit 65d6885, migração Supabase 20261127001241. Não reaplicar nem reverter junto ao bloqueio administrativo. O restante é o procedimento histórico.
+
 Hotfix isolado da main e derivado da correção 73c189d. Não executa deploy.
 O CI cria um cluster PostgreSQL 17.6 descartável; não usa credenciais.
 

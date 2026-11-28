@@ -150,13 +150,25 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    /* BLOQUEAR E REATIVAR SAIRAM DAQUI, de proposito.
+     *
+     * Esta funcao escreve com service_role, que nao tem auth.uid(): o bloqueio
+     * ficava sem responsavel, e o log ia com detalhes vazios — os cinco
+     * bloqueios do historico ate 26/11/2026 nao tem motivo nenhum registrado.
+     * Pior: ela gravava assinaturas.status, o MESMO campo que o Pix, o cartao
+     * e o "liberar" escrevem. Quem escrevesse por ultimo mandava.
+     *
+     * Agora o painel chama direto as RPCs admin_bloquear_cliente e
+     * admin_desbloquear_cliente, com o JWT do administrador: elas exigem
+     * motivo, gravam quem e quando em colunas proprias, e um gatilho impede
+     * que qualquer outro caminho — inclusive este, com service_role — encoste
+     * nessas colunas.
+     *
+     * A recusa abaixo e explicita para que um painel antigo em cache nao
+     * continue bloqueando pelo caminho velho em silencio. */
     if (action === "bloquear" || action === "reativar") {
-      const status = action === "bloquear" ? "cancelado" : "ativo";
-      const { error } = await admin.from("assinaturas")
-        .upsert({ user_id: alvo, status, atualizado_em: agora }, { onConflict: "user_id" });
-      if (error) throw error;
-      await log(alvo, action, {});
-      return json({ ok: true });
+      return json({ error: "Acao movida: use as funcoes admin_bloquear_cliente / "
+                         + "admin_desbloquear_cliente. Atualize a pagina do painel." }, 410);
     }
 
     if (action === "trocar") {
